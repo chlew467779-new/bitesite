@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+@theme {
+  /* === FRESH CAFE (Default) === */
+  --color-fresh-bg: #FAFBF7;
+  --color-fresh-bg2: #F0F4EC;
+  --color-fresh-text: #2C3E2D;
+  --color-fresh-text2: #6B6560;
+  --color-fresh-muted: #8A968B;
+  --color-fresh-accent: #5A8F6E;
+  --color-fresh-accent-h: #4A7A5E;
+  --color-fresh-price: #C4785A;
+  --color-fresh-border: #DDE5DC;
+  --color-fresh-footer: #1A1A1A;
+  --color-fresh-footer-text: #A0A0A0;
+
+  /* === DARK LUXURY === */
+  --color-luxury-bg: #0F0F0F;
+  --color-luxury-bg2: #1A1A1A;
+  --color-luxury-text: #F5F0E8;
+  --color-luxury-text2: #B8B0A0;
+  --color-luxury-muted: #7A7268;
+  --color-luxury-accent: #C9A96E;
+  --color-luxury-accent-h: #B8955A;
+  --color-luxury-price: #D4A574;
+  --color-luxury-border: #2A2A2A;
+  --color-luxury-footer: #0A0A0A;
+  --color-luxury-footer-text: #7A7268;
+
+  /* === JAPANESE MINIMAL === */
+  --color-jp-bg: #F7F5F0;
+  --color-jp-bg2: #EDE9E0;
+  --color-jp-text: #2D2D2D;
+  --color-jp-text2: #6B6560;
+  --color-jp-muted: #9A958D;
+  --color-jp-accent: #6B8E6B;
+  --color-jp-accent-h: #5A7A5A;
+  --color-jp-price: #B85C3D;
+  --color-jp-border: #D8D4CC;
+  --color-jp-footer: #2D2D2D;
+  --color-jp-footer-text: #9A958D;
+
+  /* Fonts */
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Playfair Display", ui-serif, Georgia, serif;
+  --font-luxury: "Cormorant Garamond", ui-serif, Georgia, serif;
+  --font-jp-serif: "Noto Serif JP", ui-serif, Georgia, serif;
+  --font-jp-sans: "Noto Sans JP", ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  html { scroll-behavior: smooth; }
+  body {
+    background-color: var(--color-fresh-bg);
+    color: var(--color-fresh-text);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-serif);
+  }
+}
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+}
