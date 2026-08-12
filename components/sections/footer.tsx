@@ -1,4 +1,4 @@
-import Link from "next/link";
+
 
 export function Footer() {
   return (
@@ -14,7 +14,7 @@ export function Footer() {
           <div className="flex gap-6 text-sm text-[#6B6560]">
             <a href="/" className="transition-colors hover:text-[#5A8F6E]">
               Home
-            </Link>
+            </a>
             <span className="text-[#DDE5DC]">|</span>
             <span className="text-[#8A968B]">
               © {new Date().getFullYear()} BiteSite
