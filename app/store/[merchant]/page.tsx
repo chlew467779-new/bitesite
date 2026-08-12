@@ -187,11 +187,11 @@ const FEATURED_DATA: Record<string, { title: string; desc: string; image: string
 };
 
 interface Props {
-  params: Promise<{ merchant: string }>;
+  params: { merchant: string };
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { merchant } = await params;
+  const { merchant } = params;
   const data = DEMO_MERCHANTS[merchant];
 
   if (!data) {
@@ -226,7 +226,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function StorePage({ params }: Props) {
-  const { merchant } = await params;
+  const { merchant } = params;
   const data = DEMO_MERCHANTS[merchant];
 
   if (!data) {
