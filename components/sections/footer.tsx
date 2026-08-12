@@ -12,7 +12,7 @@ export function Footer() {
             </p>
           </div>
           <div className="flex gap-6 text-sm text-[#6B6560]">
-            <Link href="/" className="transition-colors hover:text-[#5A8F6E]">
+            <a href="/" className="transition-colors hover:text-[#5A8F6E]">
               Home
             </Link>
             <span className="text-[#DDE5DC]">|</span>
