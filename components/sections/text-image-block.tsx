@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { cn } from "@/lib/utils";
 import type { StyleConfig } from "@/lib/styles";
 
@@ -30,12 +29,10 @@ export function TextImageBlock({
         >
           <div className="md:w-1/2">
             <div className="relative aspect-[4/3] overflow-hidden rounded-xl">
-              <Image
+              <img
                 src={imageUrl}
                 alt={imageAlt}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 50vw"
+                className="h-full w-full object-cover"
               />
             </div>
           </div>
