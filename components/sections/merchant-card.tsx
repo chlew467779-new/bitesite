@@ -1,5 +1,3 @@
-import Image from "next/image";
-import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { CuisineTag } from "@/components/ui/cuisine-tag";
 import type { Merchant } from "@/types";
@@ -10,16 +8,15 @@ interface MerchantCardProps {
 
 export function MerchantCard({ merchant }: MerchantCardProps) {
   return (
-    <Link href={`/store/${merchant.slug}`} className="group block">
+    <a href={`/store/${merchant.slug}`} className="group block">
       <article className="overflow-hidden rounded-xl border border-[#DDE5DC] bg-[#FAFBF7] shadow-sm transition-all duration-700 hover:shadow-md">
         <div className="relative aspect-[4/3] overflow-hidden">
           {merchant.cover_image ? (
-            <Image
+            <img
               src={merchant.cover_image}
               alt={`${merchant.name} cover photo`}
-              fill
-              className="object-cover transition-transform duration-700 group-hover:scale-105"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+              loading="lazy"
             />
           ) : (
             <div className="flex h-full items-center justify-center bg-[#F0F4EC]">
@@ -43,6 +40,6 @@ export function MerchantCard({ merchant }: MerchantCardProps) {
           </span>
         </div>
       </article>
-    </Link>
+    </a>
   );
 }
