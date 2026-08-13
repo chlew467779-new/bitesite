@@ -1,4 +1,3 @@
-import Image from "next/image";
 import type { Product } from "@/types";
 import type { StyleConfig } from "@/lib/styles";
 
@@ -13,12 +12,10 @@ export function ProductCard({ product, merchantName, style }: ProductCardProps) 
     <div className="group overflow-hidden rounded-lg border transition-shadow duration-300 hover:shadow-md" style={{ backgroundColor: style.bg, borderColor: style.border }}>
       <div className="relative aspect-[4/3] overflow-hidden">
         {product.image_url ? (
-          <Image
+          <img
             src={product.image_url}
             alt={`${product.name} at ${merchantName}`}
-            fill
-            className="object-cover transition-transform duration-700 group-hover:scale-105"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
             loading="lazy"
           />
         ) : (
