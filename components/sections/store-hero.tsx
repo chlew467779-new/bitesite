@@ -9,11 +9,15 @@ interface StoreHeroProps {
 export function StoreHero({ merchant, style }: StoreHeroProps) {
   return (
     <section className="relative h-[60vh] min-h-[400px] overflow-hidden">
-      <img
-        src={merchant.cover_image}
-        alt={`${merchant.name} cover`}
-        className="h-full w-full object-cover"
-      />
+      {merchant.cover_image ? (
+        <img
+          src={merchant.cover_image}
+          alt={`${merchant.name} cover`}
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        <div className="h-full w-full" style={{ backgroundColor: style.bg2 }} />
+      )}
       <div className="absolute inset-0 z-10 flex items-end justify-center pb-16 px-4 bg-gradient-to-t from-black/60 to-transparent">
         <div className="text-center">
           <p className="mb-2 text-sm uppercase tracking-widest" style={{ color: style.accent }}>
