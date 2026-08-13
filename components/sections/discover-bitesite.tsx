@@ -9,7 +9,7 @@ export function DiscoverBiteSite({ style }: DiscoverBiteSiteProps) {
     <section className="py-16 text-center">
       <div className="mx-auto max-w-2xl px-4">
         <p>
-          Discover more at{ " }
+          Discover more at{ " "}
           <a
             href="/"
             className="underline font-medium transition-colors hover:opacity-80"
