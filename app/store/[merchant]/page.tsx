@@ -64,41 +64,6 @@ export default async function StorePage({ params }: { params: Params }) {
     notFound();
   }
 
-  const title = `${data.name} | ${data.cuisine_type || "Restaurant"} in KL`;
-  const description =
-    data.description?.replace(/\n/g, " ").slice(0, 150) ||
-    `Discover ${data.name} in Kuala Lumpur. Browse the menu, view photos, and get directions.`;
-
-  return {
-    title,
-    description,
-    openGraph: {
-      title,
-      description,
-      images: data.cover_image ? [data.cover_image] : [],
-      type: "website",
-      locale: "en_MY",
-    },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-      images: data.cover_image ? [data.cover_image] : [],
-    },
-    alternates: {
-      canonical: `https://bitesite.my/store/${merchant}`,
-    },
-  };
-}
-
-export default async function StorePage({ params }: Props) {
-  const { merchant } = params;
-  const data = await getMerchantBySlug(merchant);
-
-  if (!data) {
-    notFound();
-  }
-
   const style = getStyleConfig(data.style);
   const categories = await getCategoriesByMerchant(data.id);
   const products = await getProductsByMerchant(data.id);
