@@ -61,6 +61,13 @@ export function InfoAccordion({ merchant, style }: InfoAccordionProps) {
   const hours = merchant.operating_hours;
   const hasHours = hours && Object.keys(hours).length > 0;
 
+  // 获取今天是星期几
+  const today = new Date().toLocaleDateString("en-US", { weekday: "long" });
+  const todayLower = today.toLowerCase();
+
+  // 按正确顺序排列星期
+  const dayOrder = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+
   const socials = [];
   if (merchant.instagram) socials.push({ icon: <Instagram className="h-4 w-4" />, label: 'Instagram', url: merchant.instagram });
   if (merchant.facebook) socials.push({ icon: <Facebook className="h-4 w-4" />, label: 'Facebook', url: merchant.facebook });
@@ -87,14 +94,22 @@ export function InfoAccordion({ merchant, style }: InfoAccordionProps) {
           )}
 
           {hasHours && (
-            <AccordionItem icon={<Clock className="h-4 w-4" />} title="Operating Hours" style={style}>
+            <AccordionItem icon={<Clock className="h-4 w-4" />} title="Operating Hours" defaultOpen style={style}>
               <div className="space-y-1">
-                {Object.entries(hours).map(([day, time]) => (
-                  <div key={day} className="flex justify-between">
-                    <span className="capitalize">{day}</span>
-                    <span>{time}</span>
-                  </div>
-                ))}
+                {dayOrder.map((day) => {
+                  const time = hours[day];
+                  const isToday = day === todayLower;
+                  return (
+                    <div 
+                      key={day} 
+                      className="flex justify-between py-1 px-2 rounded"
+                      style={isToday ? { backgroundColor: style.accent + "20", color: style.accent } : {}}
+                    >
+                      <span className="capitalize font-medium">{day}</span>
+                      <span>{time || "Closed"}</span>
+                    </div>
+                  );
+                })}
               </div>
             </AccordionItem>
           )}
