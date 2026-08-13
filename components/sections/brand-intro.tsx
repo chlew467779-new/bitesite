@@ -1,3 +1,5 @@
+"use client";
+
 import { DiamondSeparator } from "@/components/ui/diamond-separator";
 import { CuisineTag } from "@/components/ui/cuisine-tag";
 import type { Merchant } from "@/types";
@@ -40,15 +42,12 @@ export function BrandIntro({ merchant, style }: BrandIntroProps) {
             href={`https://wa.me/${merchant.whatsapp.replace(/\D/g, "")}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-8 inline-block rounded-full border-2 px-8 py-3 text-sm font-medium uppercase tracking-wider transition-all duration-300"
-            style={{ borderColor: style.accent, color: style.accent }}
-            onMouseEnter={(e) => {
-              (e.target as HTMLElement).style.backgroundColor = style.accent;
-              (e.target as HTMLElement).style.color = style.bg;
-            }}
-            onMouseLeave={(e) => {
-              (e.target as HTMLElement).style.backgroundColor = "transparent";
-              (e.target as HTMLElement).style.color = style.accent;
+            className="mt-8 inline-block rounded-full border-2 px-8 py-3 text-sm font-medium uppercase tracking-wider transition-all duration-300 hover:bg-[var(--hover-bg)] hover:text-[var(--hover-text)]"
+            style={{ 
+              borderColor: style.accent, 
+              color: style.accent,
+              ["--hover-bg" as string]: style.accent,
+              ["--hover-text" as string]: style.bg,
             }}
           >
             Message on WhatsApp
