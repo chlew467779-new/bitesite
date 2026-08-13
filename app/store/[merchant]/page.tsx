@@ -15,16 +15,53 @@ import {
   getProductsByMerchant,
 } from "@/lib/supabase";
 
-interface Props {
-  params: { merchant: string };
-}
+type Params = Promise<{ merchant: string }>;
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { merchant } = params;
+export async function generateMetadata({
+  params,
+}: {
+  params: Params;
+}): Promise<Metadata> {
+  const { merchant } = await params;
   const data = await getMerchantBySlug(merchant);
 
   if (!data) {
     return { title: "Not Found | BiteSite" };
+  }
+
+  const title = `${data.name} | ${data.cuisine_type || "Restaurant"} in KL`;
+  const description =
+    data.description?.replace(/\n/g, " ").slice(0, 150) ||
+    `Discover ${data.name} in Kuala Lumpur. Browse the menu, view photos, and get directions.`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      images: data.cover_image ? [data.cover_image] : [],
+      type: "website",
+      locale: "en_MY",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: data.cover_image ? [data.cover_image] : [],
+    },
+    alternates: {
+      canonical: `https://bitesite.my/store/${merchant}`,
+    },
+  };
+}
+
+export default async function StorePage({ params }: { params: Params }) {
+  const { merchant } = await params;
+  const data = await getMerchantBySlug(merchant);
+
+  if (!data) {
+    notFound();
   }
 
   const title = `${data.name} | ${data.cuisine_type || "Restaurant"} in KL`;
