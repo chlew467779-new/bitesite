@@ -22,7 +22,7 @@ export function VideoSection({ merchant, videos = [], style }: VideoSectionProps
   if (merchant.video_url && merchant.video_type !== "none") {
     allVideos.push({
       url: merchant.video_url,
-      type: merchant.video_type,
+      type: (merchant.video_type as "youtube" | "self_hosted") || "youtube",
       caption: merchant.video_caption,
     });
   }
