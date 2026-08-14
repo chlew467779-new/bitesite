@@ -126,9 +126,11 @@ export default function ModernLayout({ merchant, categories, products }: ModernL
 
       {/* Footer */}
       <footer className="bg-gray-900 text-gray-400 py-12 text-center">
-        <p className="font-medium">BiteSite</p>
-        <p className="text-sm mt-1 text-gray-600">Discover more restaurants</p>
-      </footer>
+        <a href="/" className="block hover:text-white transition-colors">
+          <p className="font-medium">BiteSite</p>
+          <p className="text-sm mt-1 text-gray-600">Discover more restaurants</p>
+        </a>
+     </footer>
     </div>
   );
 }
