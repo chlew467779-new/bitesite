@@ -127,9 +127,11 @@ export default function RusticLayout({ merchant, categories, products }: RusticL
 
       {/* Footer */}
       <footer className="bg-[#3d3229] text-[#d4a574] py-10 text-center">
-        <p className="font-medium">BiteSite</p>
-        <p className="text-sm mt-1 text-[#a08060]">Discover more restaurants</p>
-      </footer>
+        <a href="/" className="block hover:text-[#e8c9a0] transition-colors">
+          <p className="font-medium">BiteSite</p>
+          <p className="text-sm mt-1 text-[#a08060]">Discover more restaurants</p>
+        </a>
+     </footer>
     </div>
   );
 }
