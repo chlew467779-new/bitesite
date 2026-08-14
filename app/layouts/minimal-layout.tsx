@@ -118,7 +118,9 @@ export default function MinimalLayout({ merchant, categories, products }: Minima
 
       {/* Footer */}
       <footer className="py-12 text-center border-t border-stone-100">
-        <p className="text-stone-300 text-xs tracking-widest uppercase">BiteSite</p>
+        <a href="/" className="block hover:text-stone-500 transition-colors">
+          <p className="text-stone-300 text-xs tracking-widest uppercase">BiteSite</p>
+        </a>
       </footer>
     </div>
   );
