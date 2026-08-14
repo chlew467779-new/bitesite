@@ -126,8 +126,10 @@ export default function ClassicLayout({ merchant, categories, products }: Classi
 
       {/* Footer */}
       <footer className="bg-stone-900 text-stone-400 py-8 text-center text-sm">
-        <p>Powered by BiteSite</p>
-        <p className="mt-1 text-stone-500">Discover more restaurants</p>
+        <a href="/" className="block hover:text-stone-300 transition-colors">
+          <p>Powered by BiteSite</p>
+          <p className="mt-1 text-stone-500">Discover more restaurants</p>
+        </a>
       </footer>
     </div>
   );
