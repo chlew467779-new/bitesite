@@ -1,5 +1,9 @@
 import { notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import {
+  getMerchantBySlug,
+  getCategoriesByMerchant,
+  getProductsByMerchant,
+} from "@/lib/supabase";
 import { layouts } from "@/app/layouts";
 
 interface PageProps {
@@ -9,34 +13,17 @@ interface PageProps {
 export default async function MerchantPage({ params }: PageProps) {
   const { merchant: slug } = await params;
 
-  const supabase = await createClient();
-
   // Fetch merchant
-  const { data: merchant, error: merchantError } = await supabase
-    .from("merchants")
-    .select("*")
-    .eq("slug", slug)
-    .eq("is_published", true)
-    .single();
-
-  if (merchantError || !merchant) {
+  const merchant = await getMerchantBySlug(slug);
+  if (!merchant) {
     notFound();
   }
 
-  // Fetch categories
-  const { data: categories } = await supabase
-    .from("categories")
-    .select("*")
-    .eq("merchant_id", merchant.id)
-    .order("sort_order", { ascending: true });
-
-  // Fetch products
-  const { data: products } = await supabase
-    .from("products")
-    .select("*")
-    .eq("merchant_id", merchant.id)
-    .eq("is_available", true)
-    .order("sort_order", { ascending: true });
+  // Fetch categories and products in parallel
+  const [categories, products] = await Promise.all([
+    getCategoriesByMerchant(merchant.id),
+    getProductsByMerchant(merchant.id),
+  ]);
 
   // Get layout component
   const layoutKey = merchant.layout || "classic";
