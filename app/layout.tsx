@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Playfair_Display, Cormorant_Garamond, Noto_Sans_JP, Noto_Serif_JP } from "next/font/google";
+import { Inter, Playfair_Display, Cormorant_Garamond, Noto_Sans_JP } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({
@@ -28,13 +28,6 @@ const notoSansJP = Noto_Sans_JP({
   display: "swap",
 });
 
-const notoSerifJP = Noto_Serif_JP({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-noto-serif-jp",
-  display: "swap",
-});
-
 export const metadata: Metadata = {
   title: "BiteSite | Beautiful Menus for Local Restaurants",
   description:
@@ -57,7 +50,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${playfair.variable} ${cormorant.variable} ${notoSansJP.variable} ${notoSerifJP.variable}`}
+      className={`${inter.variable} ${playfair.variable} ${cormorant.variable} ${notoSansJP.variable}`}
     >
       <body className="min-h-screen antialiased">{children}</body>
     </html>
