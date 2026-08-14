@@ -19,13 +19,18 @@ export interface Merchant {
   dress_code: string | null;
   menu_pdf_url: string | null;
   video_url: string | null;
-  video_type: "youtube" | "self_hosted" | "none";
+  video_type: string | null;
   video_caption: string | null;
   reference_website: string | null;
-  custom_style: boolean;
-  style: MerchantStyle;
+  custom_style: Record<string, unknown> | null;
+  style: string;
   is_published: boolean;
   created_at: string;
+  // 新增字段
+  layout: string;
+  features: Record<string, boolean>;
+  settings: Record<string, unknown>;
+  status: string;
 }
 
 export interface Category {
