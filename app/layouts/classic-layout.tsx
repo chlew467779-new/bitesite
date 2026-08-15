@@ -1,252 +1,256 @@
 "use client";
 
-import { MapPin, Phone, Clock, MessageCircle } from "lucide-react";
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
+import { TierSections } from "@/app/components/sections/tier-sections";        // ← 修改1：新增导入
+import { MapPin, Phone, Clock, Mail, Instagram, ArrowLeft, MessageSquare } from "lucide-react";
+import Link from "next/link";
 import type { LayoutProps } from "@/types";
-import { TierSections } from "@/app/components/sections/tier-sections";
-import { mergeFeatures } from "@/types";
+import { mergeFeatures } from "@/types";                                         // ← 修改1：新增导入
 
-export default function ClassicLayout({
+export function ClassicLayout({
   merchant,
   categories,
   products,
   videos,
-  features,
+  features,                                                                    // ← 修改2：这里加 features
 }: LayoutProps) {
-  const getProductsByCategory = (categoryId: string) => {
-    return products.filter((p) => p.category_id === categoryId);
-  };
+  const resolvedFeatures = mergeFeatures(features);                              // ← 修改2：这里解构使用
 
-  const todayKey = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"][
-    new Date().getDay()
-  ];
-
-  const todayHours = merchant.operating_hours
-    ? merchant.operating_hours[todayKey] || merchant.operating_hours["monday"]
-    : null;
+  const today = new Date().toLocaleDateString("en-MY", { weekday: "long" }).toLowerCase();
+  const hours = merchant.operating_hours as Record<string, string> | null;
+  const todayHours = hours?.[today] || "Closed";
 
   return (
-    <div className="min-h-screen bg-[#faf8f5] text-stone-800">
-      {/* Back Navigation */}
-      <nav className="w-full px-4 py-3 flex items-center justify-between sticky top-0 z-50 backdrop-blur-md bg-[#faf8f5]/90 border-b border-stone-200/50">
-        <a
-          href="/"
-          className="text-sm text-stone-500 active:text-stone-800 active:scale-95 transition-all duration-150 flex items-center gap-1.5 select-none"
-          style={{ WebkitTapHighlightColor: "transparent" }}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M19 12H5M12 19l-7-7 7-7" />
-          </svg>
-          <span className="hidden sm:inline">Back to BiteSite</span>
-          <span className="sm:hidden">Back</span>
-        </a>
-      </nav>
-
-      {/* Hero */}
-      <FadeIn direction="up" duration={0.6}>
-        <div className="relative h-[50vh] min-h-[400px] w-full overflow-hidden">
-          <SafeImage
-            src={merchant.cover_image}
-            alt={merchant.name}
-            fill
-            className="object-cover"
-            sizes="100vw"
-            priority
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10">
-            <div className="max-w-4xl mx-auto">
-              <span className="inline-block px-3 py-1 bg-amber-500/90 text-white text-xs font-medium rounded-full mb-3 tracking-wide">
-                {merchant.cuisine_type}
-              </span>
-              <h1 className="text-4xl md:text-6xl font-bold text-white mb-2 leading-tight">
-                {merchant.name}
-              </h1>
-              <p className="text-white/80 text-base md:text-lg max-w-xl leading-relaxed">
-                {merchant.description}
-              </p>
-            </div>
-          </div>
-        </div>
-      </FadeIn>
-
-      {/* Info Bar */}
-      <div className="bg-white border-b border-stone-200">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex flex-wrap gap-4 text-sm text-stone-600">
-          {merchant.address && (
-            <a
-              href={`https://maps.google.com/?q=${encodeURIComponent(merchant.address)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 active:scale-95 transition-transform duration-150"
-              style={{ WebkitTapHighlightColor: "transparent" }}
-            >
-              <MapPin className="w-4 h-4 text-amber-600 flex-shrink-0" />
-              <span className="leading-relaxed">{merchant.address}</span>
-            </a>
-          )}
-          {merchant.phone && (
-            <a
-              href={`tel:${merchant.phone.replace(/\s/g, "")}`}
-              className="flex items-center gap-2 active:scale-95 transition-transform duration-150"
-              style={{ WebkitTapHighlightColor: "transparent" }}
-            >
-              <Phone className="w-4 h-4 text-amber-600 flex-shrink-0" />
-              <span>{merchant.phone}</span>
-            </a>
-          )}
-          <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-amber-600 flex-shrink-0" />
-            <span className="leading-relaxed">
-              {todayHours ? `Today: ${todayHours}` : "Open Today"}
-            </span>
-          </div>
+    <div className="min-h-screen bg-amber-50">
+      {/* Sticky Back Nav */}
+      <div className="sticky top-0 z-40 bg-amber-50/80 backdrop-blur-md border-b border-amber-200/50">
+        <div className="max-w-4xl mx-auto px-4 py-3">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-amber-800 text-sm font-medium active:scale-95 transition-transform"
+            style={{ WebkitTapHighlightColor: "transparent" }}
+          >
+            <ArrowLeft size={18} />
+            Back to BiteSite
+          </Link>
         </div>
       </div>
 
-      {/* WhatsApp CTA */}
-      {merchant.whatsapp && (
-        <FadeIn delay={0.1}>
-          <div className="max-w-4xl mx-auto px-6 py-6">
-            <a
-              href={`https://wa.me/${merchant.whatsapp.replace(/[^0-9]/g, "")}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full md:w-auto px-8 py-3 bg-green-600 active:bg-green-700 text-white rounded-full font-medium flex items-center justify-center gap-2 active:scale-[0.98] transition-all duration-150 select-none"
-              style={{ WebkitTapHighlightColor: "transparent" }}
-            >
-              <MessageCircle className="w-5 h-5" />
-              Message on WhatsApp
-            </a>
+      {/* Hero */}
+      {resolvedFeatures.hero && (
+        <FadeIn>
+          <div className="relative h-64 sm:h-80 lg:h-96">
+            <SafeImage
+              src={merchant.cover_image}
+              alt={merchant.name}
+              fill
+              className="object-cover"
+              priority
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
+              <div className="max-w-4xl mx-auto">
+                <span className="inline-block px-3 py-1 rounded-full bg-amber-100/90 text-amber-800 text-xs font-semibold mb-3">
+                  {merchant.cuisine_type}
+                </span>
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-2">
+                  {merchant.name}
+                </h1>
+                <p className="text-white/80 text-sm sm:text-base max-w-xl">
+                  Today: {todayHours}
+                </p>
+              </div>
+            </div>
           </div>
         </FadeIn>
       )}
 
-      {/* Menu Sections */}
-      <div className="max-w-4xl mx-auto px-6 pb-16 space-y-12">
-        {categories.map((category, catIndex) => {
-          const categoryProducts = getProductsByCategory(category.id);
-          if (categoryProducts.length === 0) return null;
+      {/* About */}
+      {resolvedFeatures.about && (
+        <FadeIn>
+          <section className="py-10 px-4 sm:px-6">
+            <div className="max-w-4xl mx-auto">
+              <p className="text-amber-900/80 text-base sm:text-lg leading-relaxed">
+                {merchant.description}
+              </p>
+            </div>
+          </section>
+        </FadeIn>
+      )}
 
-          return (
-            <FadeIn key={category.id} delay={catIndex * 0.1}>
-              <section>
-                <h2 className="text-xl font-semibold text-stone-800 mb-6 pb-2 border-b border-stone-200 tracking-wide">
-                  {category.name}
-                </h2>
-                <div className="grid gap-4">
-                  {categoryProducts.map((product, prodIndex) => (
-                    <FadeIn key={product.id} delay={prodIndex * 0.05} direction="up">
-                      <div className="flex gap-4 p-4 bg-white rounded-xl border border-stone-100">
-                        {product.image_url && (
-                          <div className="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden">
-                            <SafeImage
-                              src={product.image_url}
-                              alt={product.name}
-                              width={96}
-                              height={96}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <h3 className="font-medium text-stone-800 text-base leading-snug tracking-wide">
-                              {product.name}
-                            </h3>
-                            {product.show_prices !== false && product.price > 0 && (
-                              <span className="text-amber-700 font-semibold text-sm whitespace-nowrap tracking-wide">
-                                {product.discount_price ? (
-                                  <>
-                                    <span className="line-through text-stone-400 mr-1 text-xs">
-                                      RM {product.price}
-                                    </span>
-                                    RM {product.discount_price}
-                                  </>
-                                ) : (
-                                  `RM ${product.price}`
-                                )}
-                              </span>
+      {/* Menu */}
+      {resolvedFeatures.menu && (
+        <FadeIn>
+          <section className="py-10 px-4 sm:px-6">
+            <div className="max-w-4xl mx-auto">
+              <h2 className="text-2xl font-bold text-amber-900 mb-6">Menu</h2>
+              <div className="space-y-8">
+                {categories.map((cat) => {
+                  const catProducts = products.filter((p) => p.category_id === cat.id);
+                  if (catProducts.length === 0) return null;
+                  return (
+                    <div key={cat.id}>
+                      <h3 className="text-lg font-semibold text-amber-800 mb-4 pb-2 border-b border-amber-200">
+                        {cat.name}
+                      </h3>
+                      <div className="space-y-4">
+                        {catProducts.map((product) => (
+                          <div
+                            key={product.id}
+                            className="flex gap-4 p-4 bg-white rounded-xl border border-amber-100"
+                          >
+                            {product.image_url && (
+                              <div className="relative w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden">
+                                <SafeImage
+                                  src={product.image_url}
+                                  alt={product.name}
+                                  fill
+                                  className="object-cover"
+                                />
+                              </div>
                             )}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex justify-between items-start gap-2">
+                                <h4 className="font-semibold text-amber-900">{product.name}</h4>
+                                <span className="font-bold text-amber-700 whitespace-nowrap">
+                                  {product.discount_price ? (
+                                    <>
+                                      <span className="line-through opacity-50 text-sm mr-1">
+                                        RM {product.price}
+                                      </span>
+                                      RM {product.discount_price}
+                                    </>
+                                  ) : (
+                                    `RM ${product.price}`
+                                  )}
+                                </span>
+                              </div>
+                              {product.description && (
+                                <p className="text-sm text-amber-800/60 mt-1 line-clamp-2">
+                                  {product.description}
+                                </p>
+                              )}
+                              {!product.is_available && (
+                                <span className="inline-block mt-1 text-xs font-medium text-red-500 bg-red-50 px-2 py-0.5 rounded">
+                                  Currently Unavailable
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          {product.description && (
-                            <p className="text-sm text-stone-500 mt-1 leading-relaxed line-clamp-2">
-                              {product.description}
-                            </p>
-                          )}
-                          {product.is_available === false && (
-                            <span className="inline-block mt-2 text-xs text-red-500 font-medium">
-                              Currently Unavailable
-                            </span>
-                          )}
-                        </div>
+                        ))}
                       </div>
-                    </FadeIn>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        </FadeIn>
+      )}
+
+      {/* ── TIER SECTIONS（修改3：就这一行）── */}
+      <TierSections
+        merchant={merchant}
+        products={products}
+        features={features}
+        variant="classic"
+      />
+
+      {/* Contact / Hours */}
+      {resolvedFeatures.contact && (
+        <FadeIn>
+          <section className="py-10 px-4 sm:px-6 bg-white">
+            <div className="max-w-4xl mx-auto">
+              <h2 className="text-2xl font-bold text-amber-900 mb-6">Opening Hours</h2>
+              <div className="grid sm:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  {hours && Object.entries(hours).map(([day, time]) => (
+                    <div
+                      key={day}
+                      className={`flex justify-between py-2 px-3 rounded-lg text-sm ${
+                        day === today
+                          ? "bg-amber-100 text-amber-900 font-medium"
+                          : "text-amber-800/70"
+                      }`}
+                    >
+                      <span className="capitalize">{day}</span>
+                      <span>{time}</span>
+                    </div>
                   ))}
                 </div>
-              </section>
-            </FadeIn>
-          );
-        })}
-      </div>
-
-      {/* Operating Hours */}
-      {merchant.operating_hours && (
-        <FadeIn>
-          <div className="max-w-4xl mx-auto px-6 pb-16">
-            <h3 className="text-lg font-semibold text-stone-800 mb-6 tracking-wide">
-              Opening Hours
-            </h3>
-            <div className="bg-white rounded-xl border border-stone-200 p-6">
-              {Object.entries(merchant.operating_hours).map(([day, hours]) => {
-                const isToday = day.toLowerCase() === todayKey;
-                return (
-                  <div
-                    key={day}
-                    className={`flex justify-between py-3 border-b border-stone-100 last:border-0 ${
-                      isToday ? "bg-amber-50 -mx-6 px-6" : ""
-                    }`}
-                  >
-                    <span
-                      className={`text-sm capitalize leading-relaxed ${
-                        isToday ? "text-amber-700 font-semibold" : "text-stone-500"
-                      }`}
+                <div className="space-y-4">
+                  {merchant.address && (
+                    <a
+                      href={`https://maps.google.com/?q=${encodeURIComponent(merchant.address)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-start gap-3 text-amber-800 active:scale-[0.98] transition-transform"
+                      style={{ WebkitTapHighlightColor: "transparent" }}
                     >
-                      {day} {isToday && "· Today"}
-                    </span>
-                    <span
-                      className={`text-sm ${
-                        isToday ? "text-amber-700 font-semibold" : "text-stone-700"
-                      }`}
+                      <MapPin size={18} className="mt-0.5 flex-shrink-0" />
+                      <span className="text-sm">{merchant.address}</span>
+                    </a>
+                  )}
+                  {merchant.phone && (
+                    <a
+                      href={`tel:${merchant.phone}`}
+                      className="flex items-center gap-3 text-amber-800 active:scale-[0.98] transition-transform"
+                      style={{ WebkitTapHighlightColor: "transparent" }}
                     >
-                      {hours}
-                    </span>
-                  </div>
-                );
-              })}
+                      <Phone size={18} />
+                      <span className="text-sm">{merchant.phone}</span>
+                    </a>
+                  )}
+                  {merchant.whatsapp && (
+                    <a
+                      href={`https://wa.me/${merchant.whatsapp.replace(/\D/g, "")}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 text-green-700 active:scale-[0.98] transition-transform"
+                      style={{ WebkitTapHighlightColor: "transparent" }}
+                    >
+                      <MessageSquare size={18} />
+                      <span className="text-sm font-medium">WhatsApp</span>
+                    </a>
+                  )}
+                  {merchant.email && (
+                    <a
+                      href={`mailto:${merchant.email}`}
+                      className="flex items-center gap-3 text-amber-800 active:scale-[0.98] transition-transform"
+                      style={{ WebkitTapHighlightColor: "transparent" }}
+                    >
+                      <Mail size={18} />
+                      <span className="text-sm">{merchant.email}</span>
+                    </a>
+                  )}
+                  {merchant.instagram && (
+                    <a
+                      href={merchant.instagram}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 text-amber-800 active:scale-[0.98] transition-transform"
+                      style={{ WebkitTapHighlightColor: "transparent" }}
+                    >
+                      <Instagram size={18} />
+                      <span className="text-sm">Instagram</span>
+                    </a>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
+          </section>
         </FadeIn>
       )}
 
       {/* Footer */}
-      <footer className="bg-stone-900 text-stone-400 py-10">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <a
-            href="/"
-            className="inline-flex items-center gap-2 text-sm opacity-60 active:opacity-100 active:scale-95 transition-all duration-200 select-none"
-            style={{ WebkitTapHighlightColor: "transparent" }}
-          >
-            Discover more restaurants
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M5 12h14M12 5l7 7-7 7" />
-            </svg>
-          </a>
-          <p className="mt-4 text-xs opacity-40">
-            Powered by BiteSite
-          </p>
-        </div>
+      <footer className="py-8 px-4 text-center border-t border-amber-200">
+        <Link
+          href="/"
+          className="text-sm text-amber-700 hover:text-amber-900 transition-colors"
+        >
+          Discover more restaurants on BiteSite
+        </Link>
       </footer>
     </div>
   );
