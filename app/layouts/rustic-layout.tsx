@@ -1,242 +1,122 @@
 "use client";
 
-import { MapPin, Phone, MessageCircle, Clock } from "lucide-react";
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
+import { TierSections } from "@/app/components/sections/tier-sections";
+import { mergeFeatures } from "@/types";
 import type { LayoutProps } from "@/types";
+import { MapPin, Phone, Mail, Instagram, ArrowLeft, MessageSquare, Clock } from "lucide-react";
+import Link from "next/link";
 
-export default function RusticLayout({
-  merchant,
-  categories,
-  products,
-  videos,
-  features,
+export function RusticLayout({
+  merchant, categories, products, videos, features,
 }: LayoutProps) {
-  const getProductsByCategory = (categoryId: string) => {
-    return products.filter((p) => p.category_id === categoryId);
-  };
-
-  const todayKey = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"][
-    new Date().getDay()
-  ];
+  const resolvedFeatures = mergeFeatures(features);
+  const today = new Date().toLocaleDateString("en-MY", { weekday: "long" }).toLowerCase();
+  const hours = merchant.operating_hours as Record<string, string> | null;
 
   return (
-    <div className="min-h-screen bg-[#f5f0e8] text-[#3d3229]">
-      {/* Back Navigation */}
-      <nav className="w-full px-4 py-3 flex items-center justify-between sticky top-0 z-50 backdrop-blur-md bg-[#f5f0e8]/90 border-b border-[#3d3229]/10">
-        <a
-          href="/"
-          className="text-sm text-[#3d3229]/60 active:text-[#3d3229] active:scale-95 transition-all duration-150 flex items-center gap-1.5 select-none"
-          style={{ WebkitTapHighlightColor: "transparent" }}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M19 12H5M12 19l-7-7 7-7" />
-          </svg>
-          <span className="hidden sm:inline">Back to BiteSite</span>
-          <span className="sm:hidden">Back</span>
-        </a>
-      </nav>
-
-      {/* Warm Hero */}
-      <FadeIn direction="up">
-        <div className="relative h-[60vh] w-full overflow-hidden">
-          <SafeImage
-            src={merchant.cover_image}
-            alt={merchant.name}
-            fill
-            className="object-cover"
-            sizes="100vw"
-            priority
-          />
-          <div className="absolute inset-0 bg-[#3d3229]/40" />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center px-6">
-              <span className="text-[#d4a574] text-sm tracking-[0.3em] uppercase block mb-4">
-                {merchant.cuisine_type}
-              </span>
-              <h1 className="text-4xl md:text-7xl font-bold text-white mb-4 leading-tight" style={{ fontFamily: 'serif' }}>
-                {merchant.name}
-              </h1>
-              <p className="text-white/80 max-w-md mx-auto leading-relaxed text-base">
-                {merchant.description}
-              </p>
-            </div>
-          </div>
-        </div>
-      </FadeIn>
-
-      {/* Info Cards */}
-      <div className="max-w-5xl mx-auto px-6 -mt-16 relative z-10">
-        <div className="grid md:grid-cols-2 gap-4">
-          <FadeIn delay={0.1}>
-            <a
-              href={merchant.address ? `https://maps.google.com/?q=${encodeURIComponent(merchant.address)}` : "#"}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block bg-white p-6 rounded-lg shadow-lg text-center active:scale-[0.98] transition-transform duration-150"
-              style={{ WebkitTapHighlightColor: "transparent" }}
-            >
-              <MapPin className="w-6 h-6 text-[#8b6914] mx-auto mb-3" />
-              <h3 className="font-semibold text-[#3d3229] mb-1 tracking-wide">Visit Us</h3>
-              <p className="text-sm text-stone-500 leading-relaxed">{merchant.address || "Not available"}</p>
-            </a>
-          </FadeIn>
-          <FadeIn delay={0.2}>
-            <a
-              href={merchant.phone ? `tel:${merchant.phone.replace(/\s/g, "")}` : "#"}
-              className="block bg-white p-6 rounded-lg shadow-lg text-center active:scale-[0.98] transition-transform duration-150"
-              style={{ WebkitTapHighlightColor: "transparent" }}
-            >
-              <Phone className="w-6 h-6 text-[#8b6914] mx-auto mb-3" />
-              <h3 className="font-semibold text-[#3d3229] mb-1 tracking-wide">Call</h3>
-              <p className="text-sm text-stone-500">{merchant.phone || "N/A"}</p>
-            </a>
-          </FadeIn>
+    <div className="min-h-screen bg-orange-50 text-orange-950">
+      <div className="sticky top-0 z-40 bg-orange-50/80 backdrop-blur-md border-b border-orange-200/50">
+        <div className="max-w-4xl mx-auto px-4 py-3">
+          <Link href="/" className="inline-flex items-center gap-2 text-orange-800 text-sm font-medium active:scale-95 transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}>
+            <ArrowLeft size={18} /> Back to BiteSite
+          </Link>
         </div>
       </div>
 
-      {/* WhatsApp */}
-      {merchant.whatsapp && (
-        <FadeIn delay={0.2}>
-          <div className="max-w-5xl mx-auto px-6 py-10 text-center">
-            <a
-              href={`https://wa.me/${merchant.whatsapp.replace(/[^0-9]/g, "")}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-8 py-3 bg-[#8b6914] active:bg-[#6b5010] text-white rounded-full font-medium active:scale-[0.98] transition-all duration-150 shadow-md select-none"
-              style={{ WebkitTapHighlightColor: "transparent" }}
-            >
-              <MessageCircle className="w-5 h-5" />
-              WhatsApp
-            </a>
+      {resolvedFeatures.hero && (
+        <FadeIn>
+          <div className="relative">
+            <div className="h-64 sm:h-80">
+              <SafeImage src={merchant.cover_image} alt={merchant.name} fill className="object-cover" priority />
+              <div className="absolute inset-0 bg-gradient-to-t from-orange-950/70 to-transparent" />
+            </div>
+            <div className="max-w-4xl mx-auto px-4 -mt-20 relative z-10">
+              <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-lg border border-orange-100">
+                <span className="inline-block px-3 py-1 rounded-full bg-orange-100 text-orange-800 text-xs font-semibold mb-3">{merchant.cuisine_type}</span>
+                <h1 className="text-3xl sm:text-4xl font-bold text-orange-900 mb-3">{merchant.name}</h1>
+                <p className="text-orange-800/70 leading-relaxed">{merchant.description}</p>
+                {hours && <p className="mt-3 text-sm text-orange-700 font-medium flex items-center gap-2"><Clock size={16} /> Today: {hours[today] || "Closed"}</p>}
+              </div>
+            </div>
           </div>
         </FadeIn>
       )}
 
-      {/* Menu - Warm Cards */}
-      <div className="max-w-5xl mx-auto px-6 pb-20">
-        {categories.map((category, catIndex) => {
-          const categoryProducts = getProductsByCategory(category.id);
-          if (categoryProducts.length === 0) return null;
-
-          return (
-            <FadeIn key={category.id} delay={catIndex * 0.1}>
-              <section className="mb-16">
-                <h2 className="text-2xl font-bold text-[#3d3229] mb-8 text-center tracking-wide">
-                  {category.name}
-                </h2>
-                <div className="grid md:grid-cols-2 gap-6">
-                  {categoryProducts.map((product, prodIndex) => (
-                    <FadeIn key={product.id} delay={prodIndex * 0.05}>
-                      <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-[#3d3229]/5">
-                        {product.image_url && (
-                          <div className="relative h-48 w-full overflow-hidden">
-                            <SafeImage
-                              src={product.image_url}
-                              alt={product.name}
-                              fill
-                              className="object-cover"
-                              sizes="(max-width: 768px) 100vw, 50vw"
-                            />
-                          </div>
-                        )}
-                        <div className="p-5">
-                          <div className="flex items-start justify-between gap-2 mb-2">
-                            <h3 className="font-semibold text-[#3d3229] text-base leading-snug tracking-wide">
-                              {product.name}
-                            </h3>
-                            {product.show_prices !== false && product.price > 0 && (
-                              <span className="text-[#8b6914] font-bold text-sm whitespace-nowrap tracking-wide">
-                                {product.discount_price ? (
-                                  <>
-                                    <span className="line-through text-stone-400 mr-1 text-xs">
-                                      RM {product.price}
-                                    </span>
-                                    RM {product.discount_price}
-                                  </>
-                                ) : (
-                                  `RM ${product.price}`
-                                )}
-                              </span>
+      {resolvedFeatures.menu && (
+        <FadeIn>
+          <section className="py-10 px-4 sm:px-6">
+            <div className="max-w-4xl mx-auto">
+              <h2 className="text-2xl font-bold text-orange-900 mb-6 text-center">Our Menu</h2>
+              <div className="space-y-8">
+                {categories.map((cat) => {
+                  const catProducts = products.filter((p) => p.category_id === cat.id);
+                  if (catProducts.length === 0) return null;
+                  return (
+                    <div key={cat.id} className="bg-white rounded-2xl p-6 border border-orange-100">
+                      <h3 className="text-lg font-bold text-orange-800 mb-4 text-center">{cat.name}</h3>
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        {catProducts.map((product) => (
+                          <div key={product.id} className="flex gap-3 p-3 rounded-xl hover:bg-orange-50/50 transition-colors">
+                            {product.image_url && (
+                              <div className="relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden">
+                                <SafeImage src={product.image_url} alt={product.name} fill className="object-cover" />
+                              </div>
                             )}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex justify-between items-start gap-2">
+                                <h4 className="font-semibold text-orange-900 text-sm">{product.name}</h4>
+                                <span className="font-bold text-orange-700 text-sm whitespace-nowrap">
+                                  {product.discount_price ? (
+                                    <><span className="line-through opacity-50 text-xs mr-1">RM {product.price}</span>RM {product.discount_price}</>
+                                  ) : `RM ${product.price}`}
+                                </span>
+                              </div>
+                              {product.description && <p className="text-xs text-orange-800/60 mt-1 line-clamp-2">{product.description}</p>}
+                              {!product.is_available && <span className="inline-block mt-1 text-xs text-red-500">Unavailable</span>}
+                            </div>
                           </div>
-                          {product.description && (
-                            <p className="text-sm text-stone-500 leading-relaxed">
-                              {product.description}
-                            </p>
-                          )}
-                          {product.is_available === false && (
-                            <span className="inline-block mt-2 text-xs text-red-500 font-medium">
-                              Currently Unavailable
-                            </span>
-                          )}
-                        </div>
+                        ))}
                       </div>
-                    </FadeIn>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        </FadeIn>
+      )}
+
+      <TierSections merchant={merchant} products={products} features={features} variant="rustic" />
+
+      {resolvedFeatures.contact && (
+        <FadeIn>
+          <section className="py-10 px-4 sm:px-6 bg-white">
+            <div className="max-w-4xl mx-auto">
+              <h2 className="text-2xl font-bold text-orange-900 mb-6 text-center">Find Us</h2>
+              <div className="grid sm:grid-cols-2 gap-8">
+                <div className="space-y-4">
+                  {merchant.address && <a href={`https://maps.google.com/?q=${encodeURIComponent(merchant.address)}`} target="_blank" rel="noopener noreferrer" className="flex items-start gap-3 text-orange-800 active:scale-[0.98] transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}><MapPin size={18} className="mt-0.5 flex-shrink-0" /><span className="text-sm">{merchant.address}</span></a>}
+                  {merchant.phone && <a href={`tel:${merchant.phone}`} className="flex items-center gap-3 text-orange-800 active:scale-[0.98] transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}><Phone size={18} /><span className="text-sm">{merchant.phone}</span></a>}
+                  {merchant.whatsapp && <a href={`https://wa.me/${merchant.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-green-700 active:scale-[0.98] transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}><MessageSquare size={18} /><span className="text-sm font-medium">WhatsApp</span></a>}
+                  {merchant.email && <a href={`mailto:${merchant.email}`} className="flex items-center gap-3 text-orange-800 active:scale-[0.98] transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}><Mail size={18} /><span className="text-sm">{merchant.email}</span></a>}
+                </div>
+                <div className="space-y-2">
+                  {hours && Object.entries(hours).map(([day, time]) => (
+                    <div key={day} className={`flex justify-between py-2 px-3 rounded-lg text-sm ${day === today ? "bg-orange-100 text-orange-900 font-medium" : "text-orange-800/60"}`}>
+                      <span className="capitalize">{day}</span><span>{time}</span>
+                    </div>
                   ))}
                 </div>
-              </section>
-            </FadeIn>
-          );
-        })}
-      </div>
-
-      {/* Operating Hours */}
-      {merchant.operating_hours && (
-        <FadeIn>
-          <div className="max-w-2xl mx-auto px-6 pb-16">
-            <h3 className="text-center text-lg font-semibold text-[#3d3229] mb-6 tracking-wide">
-              Opening Hours
-            </h3>
-            <div className="bg-white rounded-xl p-6 shadow-sm">
-              {Object.entries(merchant.operating_hours).map(([day, hours]) => {
-                const isToday = day.toLowerCase() === todayKey;
-                return (
-                  <div
-                    key={day}
-                    className={`flex justify-between py-3 border-b border-stone-100 last:border-0 ${
-                      isToday ? "bg-[#f5f0e8] -mx-6 px-6" : ""
-                    }`}
-                  >
-                    <span
-                      className={`text-sm capitalize leading-relaxed ${
-                        isToday ? "text-[#8b6914] font-semibold" : "text-stone-500"
-                      }`}
-                    >
-                      {day} {isToday && "· Today"}
-                    </span>
-                    <span
-                      className={`text-sm ${
-                        isToday ? "text-[#8b6914] font-semibold" : "text-[#3d3229]"
-                      }`}
-                    >
-                      {hours}
-                    </span>
-                  </div>
-                );
-              })}
+              </div>
             </div>
-          </div>
+          </section>
         </FadeIn>
       )}
 
-      {/* Footer */}
-      <footer className="bg-[#3d3229] text-[#d4a574]/60 py-10">
-        <div className="max-w-5xl mx-auto px-6 text-center">
-          <a
-            href="/"
-            className="inline-flex items-center gap-2 text-sm opacity-60 active:opacity-100 active:scale-95 transition-all duration-200 select-none"
-            style={{ WebkitTapHighlightColor: "transparent" }}
-          >
-            Discover more restaurants
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M5 12h14M12 5l7 7-7 7" />
-            </svg>
-          </a>
-          <p className="mt-4 text-xs opacity-40">
-            Powered by BiteSite
-          </p>
-        </div>
+      <footer className="py-8 px-4 text-center border-t border-orange-200">
+        <Link href="/" className="text-sm text-orange-700 hover:text-orange-900 transition-colors">Discover more restaurants on BiteSite</Link>
       </footer>
     </div>
   );
