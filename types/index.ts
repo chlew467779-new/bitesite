@@ -30,6 +30,7 @@ export interface Merchant {
   features: MerchantFeatures;
   settings: Record<string, unknown>;
   status: string;
+  tags: string[];  // ← 新增这一行
 }
 
 export interface MerchantFeatures {
