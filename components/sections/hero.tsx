@@ -5,24 +5,21 @@ import { useState, useCallback } from "react";
 import { FadeIn } from "@/app/components/animations";
 
 interface HeroProps {
+  searchQuery: string;
   onSearch?: (query: string) => void;
 }
 
-export function Hero({ onSearch }: HeroProps) {
-  const [query, setQuery] = useState("");
+export function Hero({ searchQuery, onSearch }: HeroProps) {
   const [isFocused, setIsFocused] = useState(false);
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value;
-      setQuery(value);
-      onSearch?.(value);
+      onSearch?.(e.target.value);
     },
     [onSearch]
   );
 
   const handleClear = useCallback(() => {
-    setQuery("");
     onSearch?.("");
   }, [onSearch]);
 
@@ -62,13 +59,13 @@ export function Hero({ onSearch }: HeroProps) {
               <input
                 type="text"
                 placeholder="Search restaurants, cuisines..."
-                value={query}
+                value={searchQuery}
                 onChange={handleChange}
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
                 className="w-full bg-transparent py-3.5 pl-3 pr-10 text-sm text-[#2C3E2D] outline-none placeholder:text-[#8A968B]"
               />
-              {query && (
+              {searchQuery && (
                 <button
                   onClick={handleClear}
                   className="mr-3 flex h-6 w-6 items-center justify-center rounded-full bg-[#DDE5DC] text-[#6B6560] active:scale-90 transition-transform duration-150"
