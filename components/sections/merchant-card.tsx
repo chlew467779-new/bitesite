@@ -39,14 +39,22 @@ export function MerchantCard({ merchant }: MerchantCardProps) {
               {isOpen ? "Open Now" : "Closed"}
             </span>
           </div>
-          {/* Subtle gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
         </div>
         <div className="p-5">
-          <div className="mb-2 flex items-center gap-2 flex-wrap">
+          {/* Tags */}
+          <div className="mb-2 flex flex-wrap items-center gap-1.5">
             {merchant.cuisine_type && (
               <CuisineTag label={merchant.cuisine_type.split(",")[0].trim()} />
             )}
+            {merchant.tags?.slice(0, 3).map((tag) => (
+              <span
+                key={tag}
+                className="inline-flex rounded-full border border-[#DDE5DC] bg-white px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-[#8A968B]"
+              >
+                {tag}
+              </span>
+            ))}
           </div>
           <h3 className="mb-1 font-serif text-xl font-medium text-[#2C3E2D] leading-tight tracking-wide">
             {merchant.name}
