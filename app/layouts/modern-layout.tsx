@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPin, Phone, MessageCircle, ArrowRight } from "lucide-react";
+import { MapPin, Phone, MessageCircle, ArrowRight, Clock } from "lucide-react";
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
 import type { LayoutProps } from "@/types";
@@ -18,7 +18,7 @@ export default function ModernLayout({
 
   return (
     <div className="min-h-screen bg-white text-gray-900">
-      {/* Mobile Back Navigation — 白色版 */}
+      {/* Mobile Back Navigation */}
       <nav className="w-full px-4 py-3 flex items-center justify-between sticky top-0 z-50 backdrop-blur-md bg-white/90 border-b border-gray-100">
         <a
           href="/"
@@ -88,6 +88,7 @@ export default function ModernLayout({
                 className="mt-6 md:mt-8 w-fit px-6 py-3 bg-indigo-600 active:bg-indigo-700 text-white rounded-lg font-medium flex items-center gap-2 active:scale-[0.98] transition-all duration-150 select-none"
                 style={{ WebkitTapHighlightColor: "transparent" }}
               >
+                <MessageCircle className="w-5 h-5" />
                 WhatsApp <ArrowRight className="w-4 h-4" />
               </a>
             )}
@@ -121,11 +122,9 @@ export default function ModernLayout({
                   <div className={`grid gap-4 md:gap-6 ${catIndex % 2 === 0 ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
                     {categoryProducts.map((product, idx) => (
                       <FadeIn key={product.id} delay={idx * 0.05}>
-                        <div
-                          className={`${idx === 0 && catIndex % 2 === 0 ? 'md:col-span-2 md:row-span-2' : ''}`}
-                        >
+                        <div className={`bg-white rounded-xl border border-gray-100 p-4 ${idx === 0 && catIndex % 2 === 0 ? 'md:col-span-2 md:row-span-2' : ''}`}>
                           {product.image_url && (
-                            <div className={`relative overflow-hidden rounded-xl mb-3 md:mb-4 ${idx === 0 && catIndex % 2 === 0 ? 'aspect-[4/3]' : 'aspect-square'}`}>
+                            <div className={`relative overflow-hidden rounded-lg mb-3 md:mb-4 ${idx === 0 && catIndex % 2 === 0 ? 'aspect-[4/3]' : 'aspect-square'}`}>
                               <SafeImage
                                 src={product.image_url}
                                 alt={product.name}
@@ -186,12 +185,16 @@ export default function ModernLayout({
               <h3 className="text-xl md:text-2xl font-bold text-gray-900 mt-2 tracking-tight">Opening Hours</h3>
             </div>
             <div className="bg-gray-50 rounded-xl p-6">
-              {Object.entries(merchant.operating_hours).map(([day, hours]) => (
-                <div key={day} className="flex justify-between py-3 border-b border-gray-200 last:border-0">
-                  <span className="text-sm text-gray-500 capitalize tracking-wide">{day}</span>
-                  <span className="text-sm font-medium text-gray-900">{hours}</span>
-                </div>
-              ))}
+              {Object.entries(merchant.operating_hours).map(([day, hours]) => {
+                const days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+                const isToday = day.toLowerCase() === days[new Date().getDay()] || day.toLowerCase() === days[new Date().getDay()].slice(0, 3);
+                return (
+                  <div key={day} className={`flex justify-between py-3 border-b border-gray-200 last:border-0 ${isToday ? 'bg-white -mx-3 px-3 rounded shadow-sm' : ''}`}>
+                    <span className={`text-sm capitalize tracking-wide ${isToday ? 'font-semibold text-indigo-600' : 'text-gray-500'}`}>{day}</span>
+                    <span className={`text-sm ${isToday ? 'font-semibold text-indigo-600' : 'text-gray-900'}`}>{hours}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </FadeIn>
