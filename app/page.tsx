@@ -8,13 +8,15 @@ import { MerchantCardSkeleton } from "@/components/sections/merchant-card-skelet
 import { Footer } from "@/components/sections/footer";
 import { supabase } from "@/lib/supabase";
 import { FadeIn } from "@/app/components/animations";
+import { isCurrentlyOpen } from "@/lib/hours";
 import type { Merchant } from "@/types";
 
 export default function HomePage() {
   const [merchants, setMerchants] = useState<Merchant[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState("All");
+  const [activeTags, setActiveTags] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [openNow, setOpenNow] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
 
   // Fetch merchants on mount
@@ -37,18 +39,34 @@ export default function HomePage() {
   // Filter logic
   const filtered = useMemo(() => {
     return merchants.filter((m) => {
-      const matchesCategory =
-        activeCategory === "All" ||
-        (m.cuisine_type || "").toLowerCase().includes(activeCategory.toLowerCase());
+      // Tag filter: OR logic (any selected tag matches)
+      const matchesTags =
+        activeTags.length === 0 ||
+        activeTags.some((tag) =>
+          m.tags?.some((t) => t.toLowerCase() === tag.toLowerCase())
+        );
+
+      // Open Now filter
+      const matchesOpenNow = !openNow || (() => {
+        const todayKey = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"][
+          new Date().getDay()
+        ];
+        const hours = m.operating_hours?.[todayKey];
+        return hours ? isCurrentlyOpen(hours) : false;
+      })();
+
+      // Search filter
       const q = searchQuery.toLowerCase().trim();
       const searchMatch =
         !q ||
         m.name.toLowerCase().includes(q) ||
         (m.cuisine_type || "").toLowerCase().includes(q) ||
-        (m.description || "").toLowerCase().includes(q);
-      return matchesCategory && searchMatch;
+        (m.description || "").toLowerCase().includes(q) ||
+        m.tags?.some((t) => t.toLowerCase().includes(q));
+
+      return matchesTags && matchesOpenNow && searchMatch;
     });
-  }, [activeCategory, searchQuery, merchants]);
+  }, [activeTags, openNow, searchQuery, merchants]);
 
   // Handle search with loading state
   const handleSearch = useCallback((query: string) => {
@@ -57,10 +75,17 @@ export default function HomePage() {
     setTimeout(() => setIsSearching(false), 300);
   }, []);
 
-  // Handle category change with loading state
-  const handleCategoryChange = useCallback((category: string) => {
+  // Handle tag change with loading state
+  const handleTagChange = useCallback((tags: string[]) => {
     setIsSearching(true);
-    setActiveCategory(category);
+    setActiveTags(tags);
+    setTimeout(() => setIsSearching(false), 300);
+  }, []);
+
+  // Handle Open Now toggle
+  const handleOpenNowChange = useCallback((v: boolean) => {
+    setIsSearching(true);
+    setOpenNow(v);
     setTimeout(() => setIsSearching(false), 300);
   }, []);
 
@@ -68,27 +93,42 @@ export default function HomePage() {
   const handleClearAll = useCallback(() => {
     setIsSearching(true);
     setSearchQuery("");
-    setActiveCategory("All");
+    setActiveTags([]);
+    setOpenNow(false);
     setTimeout(() => setIsSearching(false), 300);
   }, []);
 
   const showLoading = loading || isSearching;
 
+  // Active filter count
+  const activeFilterCount = activeTags.length + (openNow ? 1 : 0) + (searchQuery ? 1 : 0);
+
   return (
     <main>
       <Hero searchQuery={searchQuery} onSearch={handleSearch} />
-      <CategoryFilter active={activeCategory} onChange={handleCategoryChange} />
+
+      <CategoryFilter
+        activeTags={activeTags}
+        onChange={handleTagChange}
+        openNow={openNow}
+        onOpenNowChange={handleOpenNowChange}
+      />
 
       <section className="px-4 pb-16">
         <div className="mx-auto max-w-6xl">
-          {/* Results count */}
+          {/* Results count + active filters */}
           {!showLoading && filtered.length > 0 && (
             <FadeIn>
-              <p className="mb-6 text-sm text-[#8A968B]">
-                {filtered.length} {filtered.length === 1 ? "restaurant" : "restaurants"} found
-                {searchQuery && ` for "${searchQuery}"`}
-                {activeCategory !== "All" && ` in ${activeCategory}`}
-              </p>
+              <div className="mb-6 flex flex-wrap items-center gap-2">
+                <p className="text-sm text-[#8A968B]">
+                  {filtered.length} {filtered.length === 1 ? "restaurant" : "restaurants"} found
+                </p>
+                {activeFilterCount > 0 && (
+                  <span className="rounded-full bg-[#5A8F6E]/10 px-2 py-0.5 text-xs text-[#5A8F6E]">
+                    {activeFilterCount} filter{activeFilterCount > 1 ? "s" : ""} active
+                  </span>
+                )}
+              </div>
             </FadeIn>
           )}
 
@@ -118,15 +158,15 @@ export default function HomePage() {
                   No restaurants found
                 </p>
                 <p className="mt-2 text-sm text-[#8A968B]">
-                  Try adjusting your search or category filter.
+                  Try adjusting your filters or search.
                 </p>
-                {(searchQuery || activeCategory !== "All") && (
+                {activeFilterCount > 0 && (
                   <button
                     onClick={handleClearAll}
                     className="mt-4 rounded-full bg-[#5A8F6E] px-6 py-2 text-sm font-medium text-white active:scale-[0.98] transition-transform duration-150"
                     style={{ WebkitTapHighlightColor: "transparent" }}
                   >
-                    Clear Filters
+                    Clear All Filters
                   </button>
                 )}
               </div>
@@ -135,7 +175,7 @@ export default function HomePage() {
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {filtered.map((merchant, index) => (
                 <FadeIn
-                  key={`${merchant.id}-${activeCategory}-${searchQuery}`}
+                  key={`${merchant.id}-${activeTags.join(",")}-${openNow}-${searchQuery}`}
                   delay={index * 0.06}
                   duration={0.4}
                   direction="up"
