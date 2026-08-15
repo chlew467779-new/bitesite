@@ -26,11 +26,22 @@ export interface Merchant {
   style: string;
   is_published: boolean;
   created_at: string;
-  // 新增字段
   layout: string;
-  features: Record<string, boolean>;
+  features: MerchantFeatures;
   settings: Record<string, unknown>;
   status: string;
+}
+
+export interface MerchantFeatures {
+  hero: boolean;
+  about: boolean;
+  menu: boolean;
+  contact: boolean;
+  gallery: boolean;
+  reviews: boolean;
+  appointment: boolean;
+  seasonal_popup: boolean;
+  events: boolean;
 }
 
 export interface Category {
@@ -52,6 +63,9 @@ export interface Product {
   is_featured: boolean;
   sort_order: number;
   created_at: string;
+  is_available: boolean;
+  discount_price: number | null;
+  show_prices: boolean;
 }
 
 export interface MerchantVideo {
@@ -62,4 +76,12 @@ export interface MerchantVideo {
   caption: string | null;
   sort_order: number;
   created_at: string;
+}
+
+export interface LayoutProps {
+  merchant: Merchant;
+  categories: Category[];
+  products: Product[];
+  videos?: MerchantVideo[];
+  features?: MerchantFeatures;
 }
