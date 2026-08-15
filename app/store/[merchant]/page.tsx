@@ -34,12 +34,13 @@ export async function generateMetadata({
     description,
     keywords: [
       merchant.name,
-      merchant.cuisine_type,
+      merchant.cuisine_type ?? "restaurant",
       "menu",
       "Kuala Lumpur",
       "restaurant",
       "cafe",
       "KL food",
+],
     ],
     openGraph: {
       title: `${merchant.name} — ${merchant.cuisine_type}`,
