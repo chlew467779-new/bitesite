@@ -14,8 +14,15 @@ export async function generateMetadata({
 }: {
   params: { merchant: string };
 }): Promise<Metadata> {
-  const merchant = await getMerchantBySlug(params.merchant);
+  const slug = params?.merchant;
+  if (!slug) {
+    return {
+      title: "Restaurant Not Found | BiteSite",
+      description: "The restaurant you are looking for could not be found.",
+    };
+  }
 
+  const merchant = await getMerchantBySlug(slug);
   if (!merchant) {
     return {
       title: "Restaurant Not Found | BiteSite",
@@ -63,7 +70,10 @@ export default async function MerchantPage({
 }: {
   params: { merchant: string };
 }) {
-  const merchant = await getMerchantBySlug(params.merchant);
+  const slug = params?.merchant;
+  if (!slug) notFound();
+
+  const merchant = await getMerchantBySlug(slug);
   if (!merchant) notFound();
 
   const [categories, products, videos] = await Promise.all([
@@ -75,15 +85,12 @@ export default async function MerchantPage({
   const layoutKey = merchant.layout || "classic";
   const LayoutComponent = layouts[layoutKey as keyof typeof layouts];
 
+  if (!LayoutComponent) notFound();
+
   // Schema.org JSON-LD
   const dayMap: Record<string, string> = {
-    monday: "Mo",
-    tuesday: "Tu",
-    wednesday: "We",
-    thursday: "Th",
-    friday: "Fr",
-    saturday: "Sa",
-    sunday: "Su",
+    monday: "Mo", tuesday: "Tu", wednesday: "We", thursday: "Th",
+    friday: "Fr", saturday: "Sa", sunday: "Su",
   };
 
   const schemaData = {
@@ -92,15 +99,15 @@ export default async function MerchantPage({
     name: merchant.name,
     image: merchant.cover_image,
     description: merchant.description,
-    address: {
+    address: merchant.address ? {
       "@type": "PostalAddress",
       streetAddress: merchant.address,
       addressLocality: "Kuala Lumpur",
       addressCountry: "MY",
-    },
-    telephone: merchant.phone,
+    } : undefined,
+    telephone: merchant.phone ?? undefined,
     priceRange: "$$",
-    servesCuisine: merchant.cuisine_type,
+    servesCuisine: merchant.cuisine_type ?? undefined,
     url: `https://bitesite-pied.vercel.app/store/${merchant.slug}`,
     openingHours: Object.entries(merchant.operating_hours || {}).map(
       ([day, time]) => `${dayMap[day] || day} ${time}`
