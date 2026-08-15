@@ -24,10 +24,12 @@ export function TierSections({
 }: TierSectionsProps) {
   const resolved = mergeFeatures(features);
 
-  const galleryImages = [
+const galleryImages = [
     merchant.cover_image,
-    ...products.map((p) => p.image_url).filter(Boolean),
-  ].filter((url, i, arr) => arr.indexOf(url) === i);
+    ...products.map((p) => p.image_url),
+  ]
+    .filter((url): url is string => typeof url === "string" && url.length > 0)
+    .filter((url, i, arr) => arr.indexOf(url) === i);
 
   const seasonalItems = products
     .filter((p) => p.is_featured)
