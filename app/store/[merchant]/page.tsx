@@ -3,6 +3,7 @@ import {
   getMerchantBySlug,
   getCategoriesByMerchant,
   getProductsByMerchant,
+  getVideosByMerchant,
 } from "@/lib/supabase";
 import { layouts } from "@/app/layouts";
 
@@ -13,30 +14,46 @@ interface PageProps {
 export default async function MerchantPage({ params }: PageProps) {
   const { merchant: slug } = await params;
 
-  // Fetch merchant
   const merchant = await getMerchantBySlug(slug);
   if (!merchant) {
     notFound();
   }
 
-  // Fetch categories and products in parallel
-  const [categories, products] = await Promise.all([
+  const [categories, products, videos] = await Promise.all([
     getCategoriesByMerchant(merchant.id),
     getProductsByMerchant(merchant.id),
+    getVideosByMerchant(merchant.id),
   ]);
 
-  // Get layout component
+  const defaultFeatures = {
+    hero: true,
+    about: true,
+    menu: true,
+    contact: true,
+    gallery: false,
+    reviews: false,
+    appointment: false,
+    seasonal_popup: false,
+    events: false,
+  };
+
+  const features = {
+    ...defaultFeatures,
+    ...(merchant.features || {}),
+  };
+
   const layoutKey = merchant.layout || "classic";
   const LayoutComponent = layouts[layoutKey as keyof typeof layouts];
 
   if (!LayoutComponent) {
-    // Fallback to classic if layout not found
     const FallbackLayout = layouts.classic;
     return (
       <FallbackLayout
         merchant={merchant}
-        categories={categories || []}
-        products={products || []}
+        categories={categories}
+        products={products}
+        videos={videos}
+        features={features}
       />
     );
   }
@@ -44,8 +61,10 @@ export default async function MerchantPage({ params }: PageProps) {
   return (
     <LayoutComponent
       merchant={merchant}
-      categories={categories || []}
-      products={products || []}
+      categories={categories}
+      products={products}
+      videos={videos}
+      features={features}
     />
   );
 }
