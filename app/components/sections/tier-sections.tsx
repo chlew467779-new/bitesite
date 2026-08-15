@@ -36,4 +36,41 @@ export function TierSections({
     .map((p) => ({
       id: p.id,
       name: p.name,
-      description: p.description ??
+      description: p.description ?? undefined,
+      image: p.image_url ?? undefined,
+      price: p.discount_price
+        ? `RM ${p.discount_price}`
+        : p.price
+        ? `RM ${p.price}`
+        : undefined,
+    }));
+
+  return (
+    <>
+      {resolved.gallery && (
+        <GallerySection images={galleryImages} variant={variant} />
+      )}
+
+      {resolved.seasonal_popup && seasonalItems.length > 0 && (
+        <SeasonalSection items={seasonalItems} variant={variant} />
+      )}
+
+      {resolved.events && (
+        <EventsSection events={[]} variant={variant} />
+      )}
+
+      {resolved.reviews && (
+        <ReviewsSection reviews={[]} variant={variant} />
+      )}
+
+      {resolved.appointment && (
+        <AppointmentSection
+          merchantName={merchant.name}
+          phone={merchant.phone}
+          whatsapp={merchant.whatsapp}
+          variant={variant}
+        />
+      )}
+    </>
+  );
+}
