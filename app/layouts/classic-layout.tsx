@@ -5,16 +5,6 @@ import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
 import type { LayoutProps } from "@/types";
 
-function getTodayHours(operatingHours: Record<string, string> | null): { day: string; hours: string } | null {
-  if (!operatingHours) return null;
-  const days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-  const todayIndex = new Date().getDay();
-  const todayLower = days[todayIndex];
-  const todayCapitalized = todayLower.charAt(0).toUpperCase() + todayLower.slice(1);
-  const hours = operatingHours[todayLower] || operatingHours[todayCapitalized] || operatingHours[todayLower.slice(0, 3)] || operatingHours[todayCapitalized.slice(0, 3)];
-  return hours ? { day: todayCapitalized, hours } : null;
-}
-
 export default function ClassicLayout({
   merchant,
   categories,
@@ -26,11 +16,17 @@ export default function ClassicLayout({
     return products.filter((p) => p.category_id === categoryId);
   };
 
-  const todayInfo = getTodayHours(merchant.operating_hours);
+  const todayKey = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"][
+    new Date().getDay()
+  ];
+
+  const todayHours = merchant.operating_hours
+    ? merchant.operating_hours[todayKey] || merchant.operating_hours["monday"]
+    : null;
 
   return (
     <div className="min-h-screen bg-[#faf8f5] text-stone-800">
-      {/* Mobile Back Navigation */}
+      {/* Back Navigation */}
       <nav className="w-full px-4 py-3 flex items-center justify-between sticky top-0 z-50 backdrop-blur-md bg-[#faf8f5]/90 border-b border-stone-200/50">
         <a
           href="/"
@@ -84,7 +80,7 @@ export default function ClassicLayout({
               className="flex items-center gap-2 active:scale-95 transition-transform duration-150"
               style={{ WebkitTapHighlightColor: "transparent" }}
             >
-              <MapPin className="w-4 h-4 text-amber-600" />
+              <MapPin className="w-4 h-4 text-amber-600 flex-shrink-0" />
               <span className="leading-relaxed">{merchant.address}</span>
             </a>
           )}
@@ -94,23 +90,16 @@ export default function ClassicLayout({
               className="flex items-center gap-2 active:scale-95 transition-transform duration-150"
               style={{ WebkitTapHighlightColor: "transparent" }}
             >
-              <Phone className="w-4 h-4 text-amber-600" />
+              <Phone className="w-4 h-4 text-amber-600 flex-shrink-0" />
               <span>{merchant.phone}</span>
             </a>
           )}
-          {todayInfo ? (
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-amber-600" />
-              <span className="leading-relaxed">
-                <span className="font-medium text-stone-800">{todayInfo.day}:</span> {todayInfo.hours}
-              </span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-amber-600" />
-              <span className="leading-relaxed">Open Today</span>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4 text-amber-600 flex-shrink-0" />
+            <span className="leading-relaxed">
+              {todayHours ? `Today: ${todayHours}` : "Open Today"}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -200,21 +189,37 @@ export default function ClassicLayout({
         })}
       </div>
 
-      {/* Operating Hours Detail */}
+      {/* Operating Hours */}
       {merchant.operating_hours && (
         <FadeIn>
-          <div className="max-w-2xl mx-auto px-6 pb-16">
-            <h3 className="text-center text-lg font-semibold text-stone-800 mb-6 tracking-wide">
+          <div className="max-w-4xl mx-auto px-6 pb-16">
+            <h3 className="text-lg font-semibold text-stone-800 mb-6 tracking-wide">
               Opening Hours
             </h3>
-            <div className="bg-white rounded-xl p-6 border border-stone-100">
+            <div className="bg-white rounded-xl border border-stone-200 p-6">
               {Object.entries(merchant.operating_hours).map(([day, hours]) => {
-                const days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-                const isToday = day.toLowerCase() === days[new Date().getDay()] || day.toLowerCase() === days[new Date().getDay()].slice(0, 3);
+                const isToday = day.toLowerCase() === todayKey;
                 return (
-                  <div key={day} className={`flex justify-between py-2.5 border-b border-stone-100 last:border-0 ${isToday ? 'bg-amber-50 -mx-2 px-2 rounded' : ''}`}>
-                    <span className={`text-sm capitalize leading-relaxed ${isToday ? 'font-semibold text-amber-700' : 'text-stone-500'}`}>{day}</span>
-                    <span className={`text-sm ${isToday ? 'font-semibold text-amber-700' : 'text-stone-700'}`}>{hours}</span>
+                  <div
+                    key={day}
+                    className={`flex justify-between py-3 border-b border-stone-100 last:border-0 ${
+                      isToday ? "bg-amber-50 -mx-6 px-6" : ""
+                    }`}
+                  >
+                    <span
+                      className={`text-sm capitalize leading-relaxed ${
+                        isToday ? "text-amber-700 font-semibold" : "text-stone-500"
+                      }`}
+                    >
+                      {day} {isToday && "· Today"}
+                    </span>
+                    <span
+                      className={`text-sm ${
+                        isToday ? "text-amber-700 font-semibold" : "text-stone-700"
+                      }`}
+                    >
+                      {hours}
+                    </span>
                   </div>
                 );
               })}
