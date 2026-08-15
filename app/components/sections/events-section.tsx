@@ -19,6 +19,7 @@ interface EventsSectionProps {
   events: EventItem[];
   title?: string;
   variant?: LayoutVariant;
+  id?: string;
 }
 
 const sectionBg: Record<LayoutVariant, string> = {
@@ -57,11 +58,12 @@ export function EventsSection({
   events,
   title = "Upcoming Events",
   variant = "classic",
+  id,
 }: EventsSectionProps) {
   if (!events || events.length === 0) {
     return (
       <FadeIn>
-        <section className={`py-16 px-4 sm:px-6 lg:px-8 ${sectionBg[variant]}`}>
+        <section id={id} className={`py-16 px-4 sm:px-6 lg:px-8 ${sectionBg[variant]}`}>
           <div className="max-w-4xl mx-auto text-center">
             <h2 className={`text-2xl font-bold mb-3 ${textColor[variant]}`}>{title}</h2>
             <div className={`inline-flex items-center gap-2 px-4 py-3 rounded-xl ${cardBg[variant]}`}>
@@ -78,7 +80,7 @@ export function EventsSection({
 
   return (
     <FadeIn>
-      <section className={`py-16 px-4 sm:px-6 lg:px-8 ${sectionBg[variant]}`}>
+      <section id={id} className={`py-16 px-4 sm:px-6 lg:px-8 ${sectionBg[variant]}`}>
         <div className="max-w-4xl mx-auto">
           <h2 className={`text-3xl font-bold text-center mb-10 ${textColor[variant]}`}>{title}</h2>
           <div className="space-y-5">
