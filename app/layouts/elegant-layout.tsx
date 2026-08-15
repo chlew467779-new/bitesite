@@ -6,23 +6,38 @@ import { TierSections } from "@/app/components/sections/tier-sections";
 import { mergeFeatures } from "@/types";
 import type { LayoutProps } from "@/types";
 import {
-  MapPin, Phone, Mail, Instagram, ArrowLeft,
-  MessageSquare, Clock
+  MapPin, Phone, Mail, Instagram, ArrowLeft, MessageSquare,
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
 
 export function ElegantLayout({
   merchant, categories, products, videos, features,
 }: LayoutProps) {
   const resolvedFeatures = mergeFeatures(features);
-  const [activeTab, setActiveTab] = useState<"menu" | "hours">("menu");
 
   const today = new Date().toLocaleDateString("en-MY", { weekday: "long" }).toLowerCase();
   const hours = merchant.operating_hours as Record<string, string> | null;
 
+  // 导航项
+  const navItems = [
+    { label: "Menu", id: "menu-section", show: resolvedFeatures.menu },
+    { label: "Hours", id: "hours-section", show: resolvedFeatures.contact },
+    { label: "Gallery", id: "gallery-section", show: resolvedFeatures.gallery },
+    { label: "Reserve", id: "reserve-section", show: resolvedFeatures.appointment },
+    { label: "Reviews", id: "reviews-section", show: resolvedFeatures.reviews },
+    { label: "Events", id: "events-section", show: resolvedFeatures.events },
+  ].filter((item) => item.show);
+
+  const scrollTo = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200">
+      {/* Back Nav */}
       <div className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md border-b border-slate-800">
         <div className="max-w-4xl mx-auto px-4 py-3">
           <Link href="/" className="inline-flex items-center gap-2 text-slate-400 text-sm font-medium active:scale-95 transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}>
@@ -31,6 +46,25 @@ export function ElegantLayout({
         </div>
       </div>
 
+      {/* Scroll Nav */}
+      {navItems.length > 0 && (
+        <div className="sticky top-[53px] z-30 bg-slate-950/90 backdrop-blur border-b border-slate-800">
+          <div className="max-w-4xl mx-auto px-4 flex gap-1 overflow-x-auto no-scrollbar">
+            {navItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => scrollTo(item.id)}
+                className="px-4 py-3 text-sm font-medium text-slate-400 hover:text-amber-400 transition-colors whitespace-nowrap active:scale-95"
+                style={{ WebkitTapHighlightColor: "transparent" }}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Hero */}
       {resolvedFeatures.hero && (
         <FadeIn>
           <div className="relative h-72 sm:h-96">
@@ -55,27 +89,10 @@ export function ElegantLayout({
         </FadeIn>
       )}
 
-      <div className="sticky top-[53px] z-30 bg-slate-950/90 backdrop-blur border-b border-slate-800">
-        <div className="max-w-4xl mx-auto px-4 flex gap-6">
-          {(["menu", "hours"] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`py-3 text-sm font-medium capitalize border-b-2 transition-colors ${
-                activeTab === tab
-                  ? "border-amber-500 text-amber-400"
-                  : "border-transparent text-slate-500 hover:text-slate-300"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {resolvedFeatures.menu && activeTab === "menu" && (
+      {/* Menu */}
+      {resolvedFeatures.menu && (
         <FadeIn>
-          <section className="py-10 px-4 sm:px-6">
+          <section id="menu-section" className="py-10 px-4 sm:px-6">
             <div className="max-w-4xl mx-auto space-y-10">
               {categories.map((cat) => {
                 const catProducts = products.filter((p) => p.category_id === cat.id);
@@ -124,18 +141,34 @@ export function ElegantLayout({
         </FadeIn>
       )}
 
-      {resolvedFeatures.contact && activeTab === "hours" && (
+      <TierSections merchant={merchant} products={products} features={features} variant="elegant" />
+
+      {/* Hours & Contact */}
+      {resolvedFeatures.contact && (
         <FadeIn>
-          <section className="py-10 px-4 sm:px-6">
+          <section id="hours-section" className="py-10 px-4 sm:px-6">
             <div className="max-w-4xl mx-auto">
               <h2 className="text-2xl font-bold text-amber-100 mb-6">Opening Hours</h2>
               <div className="space-y-2">
-                {hours && Object.entries(hours).map(([day, time]) => (
-                  <div key={day} className={`flex justify-between py-3 px-4 rounded-lg ${day === today ? "bg-slate-800 text-amber-300 font-medium" : "text-slate-400"}`}>
-                    <span className="capitalize">{day}</span>
-                    <span>{time}</span>
-                  </div>
-                ))}
+                {hours && Object.entries(hours).map(([day, time]) => {
+                  const isToday = day === today;
+                  const timeSlots = time.split(",").map((t) => t.trim());
+                  return (
+                    <div
+                      key={day}
+                      className={`flex justify-between py-3 px-4 rounded-lg ${
+                        isToday ? "bg-slate-800 text-amber-300 font-medium" : "text-slate-400"
+                      }`}
+                    >
+                      <span className="capitalize flex-shrink-0">{day}</span>
+                      <div className="text-right">
+                        {timeSlots.map((slot, i) => (
+                          <div key={i}>{slot}</div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
               <div className="mt-8 space-y-4">
                 {merchant.address && (
@@ -159,8 +192,6 @@ export function ElegantLayout({
           </section>
         </FadeIn>
       )}
-
-      <TierSections merchant={merchant} products={products} features={features} variant="elegant" />
 
       <footer className="py-8 px-4 text-center border-t border-slate-800">
         <Link href="/" className="text-sm text-slate-500 hover:text-slate-300 transition-colors">Discover more restaurants on BiteSite</Link>
