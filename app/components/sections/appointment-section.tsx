@@ -13,6 +13,7 @@ interface AppointmentSectionProps {
   whatsapp?: string;
   title?: string;
   variant?: LayoutVariant;
+  id?: string;
 }
 
 const sectionBg: Record<LayoutVariant, string> = {
@@ -40,7 +41,6 @@ const textColor: Record<LayoutVariant, string> = {
 };
 
 const inputBase = "w-full px-4 py-3 rounded-xl border outline-none transition-all duration-200 text-base";
-
 const inputStyles: Record<LayoutVariant, string> = {
   classic: `${inputBase} bg-white border-amber-200 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20`,
   elegant:   `${inputBase} bg-slate-800 border-slate-600 text-white placeholder:text-slate-500 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20`,
@@ -57,12 +57,14 @@ const btnPrimary: Record<LayoutVariant, string> = {
   rustic:  "bg-orange-700 hover:bg-orange-800",
 };
 
+// 你的号码
+const BITESITE_WHATSAPP = "60165660239";
+
 export function AppointmentSection({
   merchantName,
-  phone,
-  whatsapp,
   title = "Book a Table",
   variant = "classic",
+  id,
 }: AppointmentSectionProps) {
   const [formData, setFormData] = useState({
     name: "",
@@ -78,9 +80,30 @@ export function AppointmentSection({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    await new Promise((r) => setTimeout(r, 800));
-    setSubmitted(true);
+
+    // 拼接 WhatsApp 消息
+    const message = [
+      `*New Reservation Request via BiteSite*`,
+      ``,
+      `*Restaurant:* ${merchantName}`,
+      `*Name:* ${formData.name}`,
+      `*Phone:* ${formData.phone}`,
+      `*Date:* ${formData.date}`,
+      `*Time:* ${formData.time}`,
+      `*Guests:* ${formData.guests}`,
+      formData.notes ? `*Notes:* ${formData.notes}` : "",
+    ].filter(Boolean).join("\n");
+
+    const encoded = encodeURIComponent(message);
+    const waUrl = `https://wa.me/${BITESITE_WHATSAPP}?text=${encoded}`;
+
+    // 模拟网络延迟
+    await new Promise((r) => setTimeout(r, 600));
     setSubmitting(false);
+    setSubmitted(true);
+
+    // 自动打开 WhatsApp
+    window.open(waUrl, "_blank");
   };
 
   const updateField = (field: string, value: string) => {
@@ -90,15 +113,26 @@ export function AppointmentSection({
   if (submitted) {
     return (
       <FadeIn>
-        <section className={`py-16 px-4 sm:px-6 lg:px-8 ${sectionBg[variant]}`}>
+        <section id={id} className={`py-16 px-4 sm:px-6 lg:px-8 ${sectionBg[variant]}`}>
           <div className="max-w-md mx-auto">
             <div className={`p-8 rounded-2xl border text-center ${cardBg[variant]}`}>
               <CheckCircle2 size={48} className={`mx-auto mb-4 ${variant === "elegant" ? "text-amber-400" : "text-green-500"}`} />
               <h3 className={`text-2xl font-bold mb-3 ${textColor[variant]}`}>Request Sent!</h3>
-              <p className={`opacity-70 leading-relaxed ${textColor[variant]}`}>
-                Thank you for your reservation request.<br />
-                <strong>{merchantName}</strong> will contact you shortly to confirm.
+              <p className={`opacity-70 leading-relaxed mb-6 ${textColor[variant]}`}>
+                We&apos;ve opened WhatsApp for you.<br />
+                Please send the pre-filled message to confirm your reservation.
               </p>
+              <a
+                href={`https://wa.me/${BITESITE_WHATSAPP}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-green-600 text-white font-semibold hover:bg-green-700 transition-all active:scale-[0.98]"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                </svg>
+                Open WhatsApp Again
+              </a>
             </div>
           </div>
         </section>
@@ -106,15 +140,13 @@ export function AppointmentSection({
     );
   }
 
-  const waNumber = whatsapp?.replace(/\D/g, "");
-
   return (
     <FadeIn>
-      <section className={`py-16 px-4 sm:px-6 lg:px-8 ${sectionBg[variant]}`}>
+      <section id={id} className={`py-16 px-4 sm:px-6 lg:px-8 ${sectionBg[variant]}`}>
         <div className="max-w-2xl mx-auto">
           <h2 className={`text-3xl font-bold text-center mb-3 ${textColor[variant]}`}>{title}</h2>
           <p className={`text-center mb-10 opacity-60 ${textColor[variant]}`}>
-            Reserve your spot and we&apos;ll confirm within 30 minutes
+            Fill in your details and we&apos;ll send your request via WhatsApp
           </p>
           <div className={`p-6 sm:p-8 rounded-2xl border ${cardBg[variant]}`}>
             <form onSubmit={handleSubmit} className="space-y-5">
@@ -171,23 +203,9 @@ export function AppointmentSection({
                 {submitting ? (
                   <><span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />Sending...</>
                 ) : (
-                  <><Send size={18} />Request Reservation</>
+                  <><Send size={18} />Send Request via WhatsApp</>
                 )}
               </button>
-              {waNumber && (
-                <a
-                  href={`https://wa.me/${waNumber}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block w-full py-3.5 rounded-xl font-semibold text-center bg-green-600 text-white hover:bg-green-700 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-                  style={{ WebkitTapHighlightColor: "transparent" }}
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                  </svg>
-                  Quick Book via WhatsApp
-                </a>
-              )}
             </form>
           </div>
         </div>
