@@ -5,6 +5,16 @@ import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
 import type { LayoutProps } from "@/types";
 
+function getTodayHours(operatingHours: Record<string, string> | null): { day: string; hours: string } | null {
+  if (!operatingHours) return null;
+  const days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+  const todayIndex = new Date().getDay();
+  const todayLower = days[todayIndex];
+  const todayCapitalized = todayLower.charAt(0).toUpperCase() + todayLower.slice(1);
+  const hours = operatingHours[todayLower] || operatingHours[todayCapitalized] || operatingHours[todayLower.slice(0, 3)] || operatingHours[todayCapitalized.slice(0, 3)];
+  return hours ? { day: todayCapitalized, hours } : null;
+}
+
 export default function ElegantLayout({
   merchant,
   categories,
@@ -18,7 +28,7 @@ export default function ElegantLayout({
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-stone-200">
-      {/* Mobile Back Navigation — 深色版 */}
+      {/* Mobile Back Navigation */}
       <nav className="w-full px-4 py-3 flex items-center justify-between sticky top-0 z-50 backdrop-blur-md bg-black/60 border-b border-stone-800/50">
         <a
           href="/"
@@ -122,9 +132,10 @@ export default function ElegantLayout({
                   href={`https://wa.me/${merchant.whatsapp.replace(/[^0-9]/g, "")}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block px-6 py-2 border border-amber-500/50 text-amber-500 active:bg-amber-500 active:text-black active:scale-[0.98] transition-all text-sm tracking-wider uppercase select-none"
+                  className="inline-flex items-center gap-2 px-6 py-2 border border-amber-500/50 text-amber-500 active:bg-amber-500 active:text-black active:scale-[0.98] transition-all text-sm tracking-wider uppercase select-none"
                   style={{ WebkitTapHighlightColor: "transparent" }}
                 >
+                  <MessageCircle className="w-4 h-4" />
                   WhatsApp
                 </a>
               )}
@@ -165,7 +176,7 @@ export default function ElegantLayout({
                   <div className="grid md:grid-cols-2 gap-4 md:gap-6">
                     {categoryProducts.map((product, prodIndex) => (
                       <FadeIn key={product.id} delay={prodIndex * 0.05}>
-                        <div className="flex gap-4 p-4 active:bg-stone-900/80 transition-colors rounded-lg">
+                        <div className="flex gap-4 p-4 rounded-lg">
                           {product.image_url && (
                             <div className="relative w-24 h-24 md:w-28 md:h-28 flex-shrink-0 overflow-hidden rounded-lg">
                               <SafeImage
@@ -230,12 +241,16 @@ export default function ElegantLayout({
               <h3 className="text-2xl font-light text-white mt-3 tracking-wide">Opening Hours</h3>
             </div>
             <div className="bg-[#111] border border-stone-800 rounded-lg p-6">
-              {Object.entries(merchant.operating_hours).map(([day, hours]) => (
-                <div key={day} className="flex justify-between py-3 border-b border-stone-800/50 last:border-0">
-                  <span className="text-sm text-stone-500 capitalize tracking-wide">{day}</span>
-                  <span className="text-sm text-stone-300">{hours}</span>
-                </div>
-              ))}
+              {Object.entries(merchant.operating_hours).map(([day, hours]) => {
+                const days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+                const isToday = day.toLowerCase() === days[new Date().getDay()] || day.toLowerCase() === days[new Date().getDay()].slice(0, 3);
+                return (
+                  <div key={day} className={`flex justify-between py-3 border-b border-stone-800/50 last:border-0 ${isToday ? 'bg-amber-500/10 -mx-3 px-3 rounded' : ''}`}>
+                    <span className={`text-sm capitalize tracking-wide ${isToday ? 'font-medium text-amber-500' : 'text-stone-500'}`}>{day}</span>
+                    <span className={`text-sm ${isToday ? 'font-medium text-amber-500' : 'text-stone-300'}`}>{hours}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </FadeIn>
