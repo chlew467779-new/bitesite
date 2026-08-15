@@ -11,6 +11,7 @@ interface GallerySectionProps {
   images: string[];
   title?: string;
   variant?: LayoutVariant;
+  id?: string;
 }
 
 const sectionBg: Record<LayoutVariant, string> = {
@@ -41,6 +42,7 @@ export function GallerySection({
   images,
   title = "Gallery",
   variant = "classic",
+  id,
 }: GallerySectionProps) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
@@ -73,7 +75,7 @@ export function GallerySection({
   if (validImages.length === 0) {
     return (
       <FadeIn>
-        <section className={`py-16 px-4 sm:px-6 lg:px-8 ${sectionBg[variant]}`}>
+        <section id={id} className={`py-16 px-4 sm:px-6 lg:px-8 ${sectionBg[variant]}`}>
           <div className="max-w-4xl mx-auto text-center">
             <h2 className={`text-2xl font-bold mb-3 ${titleColor[variant]}`}>{title}</h2>
             <div className={`inline-flex items-center gap-2 px-4 py-3 rounded-xl ${emptyStateBg[variant]}`}>
@@ -91,23 +93,18 @@ export function GallerySection({
   return (
     <>
       <FadeIn>
-        <section className={`py-16 px-4 sm:px-6 lg:px-8 ${sectionBg[variant]}`}>
+        <section id={id} className={`py-16 px-4 sm:px-6 lg:px-8 ${sectionBg[variant]}`}>
           <div className="max-w-6xl mx-auto">
             <h2 className={`text-3xl font-bold text-center mb-10 ${titleColor[variant]}`}>
               {title}
             </h2>
+            {/* 统一 aspect-square，无 masonry，避免压图 */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {validImages.map((src, i) => (
                 <button
                   key={`${src}-${i}`}
                   onClick={() => openLightbox(i)}
-                  className={`
-                    relative overflow-hidden rounded-xl
-                    ${i % 5 === 0 ? "col-span-2 row-span-2" : "aspect-square"}
-                    group
-                    active:scale-[0.96] transition-transform duration-150
-                    touch-manipulation
-                  `}
+                  className="relative aspect-square overflow-hidden rounded-xl group active:scale-[0.96] transition-transform duration-150 touch-manipulation"
                   style={{ WebkitTapHighlightColor: "transparent" }}
                 >
                   <SafeImage
