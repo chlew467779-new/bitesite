@@ -16,9 +16,13 @@ export default function RusticLayout({
     return products.filter((p) => p.category_id === categoryId);
   };
 
+  const todayKey = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"][
+    new Date().getDay()
+  ];
+
   return (
     <div className="min-h-screen bg-[#f5f0e8] text-[#3d3229]">
-      {/* Mobile Back Navigation */}
+      {/* Back Navigation */}
       <nav className="w-full px-4 py-3 flex items-center justify-between sticky top-0 z-50 backdrop-blur-md bg-[#f5f0e8]/90 border-b border-[#3d3229]/10">
         <a
           href="/"
@@ -63,13 +67,19 @@ export default function RusticLayout({
 
       {/* Info Cards */}
       <div className="max-w-5xl mx-auto px-6 -mt-16 relative z-10">
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid md:grid-cols-2 gap-4">
           <FadeIn delay={0.1}>
-            <div className="bg-white p-6 rounded-lg shadow-lg text-center active:scale-[0.98] transition-transform duration-150">
+            <a
+              href={merchant.address ? `https://maps.google.com/?q=${encodeURIComponent(merchant.address)}` : "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block bg-white p-6 rounded-lg shadow-lg text-center active:scale-[0.98] transition-transform duration-150"
+              style={{ WebkitTapHighlightColor: "transparent" }}
+            >
               <MapPin className="w-6 h-6 text-[#8b6914] mx-auto mb-3" />
               <h3 className="font-semibold text-[#3d3229] mb-1 tracking-wide">Visit Us</h3>
-              <p className="text-sm text-stone-500 leading-relaxed">{merchant.address}</p>
-            </div>
+              <p className="text-sm text-stone-500 leading-relaxed">{merchant.address || "Not available"}</p>
+            </a>
           </FadeIn>
           <FadeIn delay={0.2}>
             <a
@@ -81,22 +91,6 @@ export default function RusticLayout({
               <h3 className="font-semibold text-[#3d3229] mb-1 tracking-wide">Call</h3>
               <p className="text-sm text-stone-500">{merchant.phone || "N/A"}</p>
             </a>
-          </FadeIn>
-          <FadeIn delay={0.3}>
-            <div className="bg-white p-6 rounded-lg shadow-lg text-center">
-              <Clock className="w-6 h-6 text-[#8b6914] mx-auto mb-3" />
-              <h3 className="font-semibold text-[#3d3229] mb-1 tracking-wide">Hours</h3>
-              {merchant.operating_hours ? (
-                <div className="text-sm text-stone-500 space-y-1">
-                  {Object.entries(merchant.operating_hours).slice(0, 1).map(([day, hours]) => (
-                    <p key={day} className="leading-relaxed">{day}: {hours}</p>
-                  ))}
-                  <p className="text-xs opacity-60">See all hours below</p>
-                </div>
-              ) : (
-                <p className="text-sm text-stone-500">Open Daily</p>
-              )}
-            </div>
           </FadeIn>
         </div>
       </div>
@@ -134,7 +128,7 @@ export default function RusticLayout({
                 <div className="grid md:grid-cols-2 gap-6">
                   {categoryProducts.map((product, prodIndex) => (
                     <FadeIn key={product.id} delay={prodIndex * 0.05}>
-                      <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-[#3d3229]/5 active:scale-[0.99] active:shadow-md transition-all duration-150">
+                      <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-[#3d3229]/5">
                         {product.image_url && (
                           <div className="relative h-48 w-full overflow-hidden">
                             <SafeImage
@@ -187,7 +181,7 @@ export default function RusticLayout({
         })}
       </div>
 
-      {/* Operating Hours Detail */}
+      {/* Operating Hours */}
       {merchant.operating_hours && (
         <FadeIn>
           <div className="max-w-2xl mx-auto px-6 pb-16">
@@ -195,12 +189,32 @@ export default function RusticLayout({
               Opening Hours
             </h3>
             <div className="bg-white rounded-xl p-6 shadow-sm">
-              {Object.entries(merchant.operating_hours).map(([day, hours]) => (
-                <div key={day} className="flex justify-between py-2 border-b border-stone-100 last:border-0">
-                  <span className="text-sm text-stone-500 capitalize leading-relaxed">{day}</span>
-                  <span className="text-sm font-medium text-[#3d3229]">{hours}</span>
-                </div>
-              ))}
+              {Object.entries(merchant.operating_hours).map(([day, hours]) => {
+                const isToday = day.toLowerCase() === todayKey;
+                return (
+                  <div
+                    key={day}
+                    className={`flex justify-between py-3 border-b border-stone-100 last:border-0 ${
+                      isToday ? "bg-[#f5f0e8] -mx-6 px-6" : ""
+                    }`}
+                  >
+                    <span
+                      className={`text-sm capitalize leading-relaxed ${
+                        isToday ? "text-[#8b6914] font-semibold" : "text-stone-500"
+                      }`}
+                    >
+                      {day} {isToday && "· Today"}
+                    </span>
+                    <span
+                      className={`text-sm ${
+                        isToday ? "text-[#8b6914] font-semibold" : "text-[#3d3229]"
+                      }`}
+                    >
+                      {hours}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </FadeIn>
