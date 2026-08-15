@@ -4,6 +4,8 @@ import { MapPin, Phone, Clock, MessageCircle } from "lucide-react";
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
 import type { LayoutProps } from "@/types";
+import { TierSections } from "@/app/components/sections/tier-sections";
+import { mergeFeatures } from "@/types";
 
 export default function ClassicLayout({
   merchant,
