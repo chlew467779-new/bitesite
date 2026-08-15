@@ -48,19 +48,19 @@ export function TierSections({
   return (
     <>
       {resolved.gallery && (
-        <GallerySection images={galleryImages} variant={variant} />
+        <GallerySection images={galleryImages} variant={variant} id="gallery-section" />
       )}
 
       {resolved.seasonal_popup && seasonalItems.length > 0 && (
-        <SeasonalSection items={seasonalItems} variant={variant} />
+        <SeasonalSection items={seasonalItems} variant={variant} id="seasonal-section" />
       )}
 
       {resolved.events && (
-        <EventsSection events={[]} variant={variant} />
+        <EventsSection events={[]} variant={variant} id="events-section" />
       )}
 
       {resolved.reviews && (
-        <ReviewsSection reviews={[]} variant={variant} />
+        <ReviewsSection reviews={[]} variant={variant} id="reviews-section" />
       )}
 
       {resolved.appointment && (
@@ -69,6 +69,7 @@ export function TierSections({
           phone={merchant.phone ?? undefined}
           whatsapp={merchant.whatsapp ?? undefined}
           variant={variant}
+          id="reserve-section"
         />
       )}
     </>
