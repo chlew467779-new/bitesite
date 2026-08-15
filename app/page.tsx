@@ -64,11 +64,19 @@ export default function HomePage() {
     setTimeout(() => setIsSearching(false), 300);
   }, []);
 
+  // Clear everything
+  const handleClearAll = useCallback(() => {
+    setIsSearching(true);
+    setSearchQuery("");
+    setActiveCategory("All");
+    setTimeout(() => setIsSearching(false), 300);
+  }, []);
+
   const showLoading = loading || isSearching;
 
   return (
     <main>
-      <Hero onSearch={handleSearch} />
+      <Hero searchQuery={searchQuery} onSearch={handleSearch} />
       <CategoryFilter active={activeCategory} onChange={handleCategoryChange} />
 
       <section className="px-4 pb-16">
@@ -85,7 +93,6 @@ export default function HomePage() {
           )}
 
           {showLoading ? (
-            // Skeleton loading grid
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {Array.from({ length: 6 }).map((_, i) => (
                 <MerchantCardSkeleton key={i} delay={i * 0.08} />
@@ -115,10 +122,7 @@ export default function HomePage() {
                 </p>
                 {(searchQuery || activeCategory !== "All") && (
                   <button
-                    onClick={() => {
-                      handleSearch("");
-                      handleCategoryChange("All");
-                    }}
+                    onClick={handleClearAll}
                     className="mt-4 rounded-full bg-[#5A8F6E] px-6 py-2 text-sm font-medium text-white active:scale-[0.98] transition-transform duration-150"
                     style={{ WebkitTapHighlightColor: "transparent" }}
                   >
