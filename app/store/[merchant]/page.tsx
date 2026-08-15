@@ -8,7 +8,7 @@ import {
 } from "@/lib/supabase";
 import { layouts } from "@/app/layouts";
 
-// ── 动态 SEO：每个商家页有独立的 title / description / OG 图 ──
+// ── 动态 SEO ──
 export async function generateMetadata({
   params,
 }: {
@@ -30,7 +30,7 @@ export async function generateMetadata({
     : `View the full menu, photos and opening hours for ${merchant.name} in Kuala Lumpur.`;
 
   return {
-    title: `${merchant.name} | ${merchant.cuisine_type} Menu | BiteSite`,
+    title: `${merchant.name} | ${merchant.cuisine_type ?? "Restaurant"} Menu | BiteSite`,
     description,
     keywords: [
       merchant.name,
@@ -40,10 +40,9 @@ export async function generateMetadata({
       "restaurant",
       "cafe",
       "KL food",
-],
     ],
     openGraph: {
-      title: `${merchant.name} — ${merchant.cuisine_type}`,
+      title: `${merchant.name} — ${merchant.cuisine_type ?? "Restaurant"}`,
       description: merchant.description || `Menu & opening hours for ${merchant.name}`,
       images: merchant.cover_image ? [{ url: merchant.cover_image }] : [],
       type: "website",
