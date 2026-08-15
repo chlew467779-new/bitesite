@@ -87,37 +87,6 @@ export interface LayoutProps {
   features?: MerchantFeatures;
 }
 
-
-// types/index.ts — 加到文件底部
-export interface MerchantFeatures {
-  hero: boolean;
-  about: boolean;
-  menu: boolean;
-  contact: boolean;
-  gallery: boolean;
-  reviews: boolean;
-  appointment: boolean;
-  seasonal_popup: boolean;
-  events: boolean;
-}
-
-export const defaultFeatures: MerchantFeatures = {
-  hero: true,
-  about: true,
-  menu: true,
-  contact: true,
-  gallery: false,
-  reviews: false,
-  appointment: false,
-  seasonal_popup: false,
-  events: false,
-};
-
-export function mergeFeatures(partial?: Partial<MerchantFeatures>): MerchantFeatures {
-  return { ...defaultFeatures, ...partial };
-}
-
-
 // ============================================
 // Tier Features
 // ============================================
