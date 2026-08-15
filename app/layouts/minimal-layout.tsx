@@ -1,9 +1,19 @@
 "use client";
 
-import { MapPin, Phone, MessageCircle } from "lucide-react";
+import { MapPin, Phone, MessageCircle, Clock } from "lucide-react";
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
 import type { LayoutProps } from "@/types";
+
+function getTodayHours(operatingHours: Record<string, string> | null): { day: string; hours: string } | null {
+  if (!operatingHours) return null;
+  const days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+  const todayIndex = new Date().getDay();
+  const todayLower = days[todayIndex];
+  const todayCapitalized = todayLower.charAt(0).toUpperCase() + todayLower.slice(1);
+  const hours = operatingHours[todayLower] || operatingHours[todayCapitalized] || operatingHours[todayLower.slice(0, 3)] || operatingHours[todayCapitalized.slice(0, 3)];
+  return hours ? { day: todayCapitalized, hours } : null;
+}
 
 export default function MinimalLayout({
   merchant,
@@ -15,6 +25,8 @@ export default function MinimalLayout({
   const getProductsByCategory = (categoryId: string) => {
     return products.filter((p) => p.category_id === categoryId);
   };
+
+  const todayInfo = getTodayHours(merchant.operating_hours);
 
   return (
     <div className="min-h-screen bg-[#fefefe] text-stone-700">
@@ -66,7 +78,7 @@ export default function MinimalLayout({
       </FadeIn>
 
       {/* Info */}
-      <div className="max-w-3xl mx-auto px-6 pb-12 flex flex-wrap justify-center gap-6 text-sm text-stone-500">
+      <div className="max-w-3xl mx-auto px-6 pb-8 flex flex-wrap justify-center gap-6 text-sm text-stone-500">
         {merchant.address && (
           <a
             href={`https://maps.google.com/?q=${encodeURIComponent(merchant.address)}`}
@@ -89,9 +101,17 @@ export default function MinimalLayout({
             <span>{merchant.phone}</span>
           </a>
         )}
+        {todayInfo && (
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4" />
+            <span className="leading-relaxed">
+              <span className="font-medium text-stone-700">{todayInfo.day}:</span> {todayInfo.hours}
+            </span>
+          </div>
+        )}
       </div>
 
-      {/* WhatsApp */}
+      {/* WhatsApp — 绿色按钮样式 */}
       {merchant.whatsapp && (
         <FadeIn delay={0.1}>
           <div className="max-w-3xl mx-auto px-6 pb-16 text-center">
@@ -99,10 +119,11 @@ export default function MinimalLayout({
               href={`https://wa.me/${merchant.whatsapp.replace(/[^0-9]/g, "")}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block px-8 py-3 border border-stone-300 text-stone-600 active:bg-stone-800 active:text-white active:border-stone-800 active:scale-[0.98] transition-all text-sm tracking-widest uppercase select-none"
+              className="inline-flex items-center gap-2 px-8 py-3 bg-green-600 active:bg-green-700 text-white rounded-full font-medium active:scale-[0.98] transition-all duration-150 select-none shadow-sm"
               style={{ WebkitTapHighlightColor: "transparent" }}
             >
-              WhatsApp
+              <MessageCircle className="w-5 h-5" />
+              Message on WhatsApp
             </a>
           </div>
         </FadeIn>
@@ -123,7 +144,7 @@ export default function MinimalLayout({
                 <div className="space-y-6">
                   {categoryProducts.map((product, prodIndex) => (
                     <FadeIn key={product.id} delay={prodIndex * 0.05}>
-                      <div className="flex gap-4 items-start active:scale-[0.99] transition-transform duration-150">
+                      <div className="flex gap-4 items-start p-4 bg-white rounded-lg border border-stone-100">
                         {product.image_url && (
                           <div className="w-20 h-20 flex-shrink-0 overflow-hidden rounded-sm">
                             <SafeImage
@@ -178,6 +199,29 @@ export default function MinimalLayout({
           );
         })}
       </div>
+
+      {/* Operating Hours Detail */}
+      {merchant.operating_hours && (
+        <FadeIn>
+          <div className="max-w-2xl mx-auto px-6 pb-16">
+            <h3 className="text-center text-lg font-light text-stone-800 mb-6 tracking-wide">
+              Opening Hours
+            </h3>
+            <div className="bg-white rounded-lg p-6 border border-stone-100">
+              {Object.entries(merchant.operating_hours).map(([day, hours]) => {
+                const days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+                const isToday = day.toLowerCase() === days[new Date().getDay()] || day.toLowerCase() === days[new Date().getDay()].slice(0, 3);
+                return (
+                  <div key={day} className={`flex justify-between py-2.5 border-b border-stone-100 last:border-0 ${isToday ? 'bg-stone-50 -mx-2 px-2 rounded' : ''}`}>
+                    <span className={`text-sm capitalize leading-relaxed ${isToday ? 'font-semibold text-stone-800' : 'text-stone-500'}`}>{day}</span>
+                    <span className={`text-sm ${isToday ? 'font-semibold text-stone-800' : 'text-stone-600'}`}>{hours}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </FadeIn>
+      )}
 
       {/* Footer */}
       <footer className="bg-stone-900 text-stone-400 py-10">
