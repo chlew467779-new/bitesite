@@ -8,13 +8,15 @@ import {
 } from "@/lib/supabase";
 import { layouts } from "@/app/layouts";
 
+// Next.js 15: params is a Promise
+type PageProps = {
+  params: Promise<{ merchant: string }>;
+};
+
 // ── 动态 SEO ──
-export async function generateMetadata({
-  params,
-}: {
-  params: { merchant: string };
-}): Promise<Metadata> {
-  const slug = params?.merchant;
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { merchant: slug } = await params;
+
   if (!slug) {
     return {
       title: "Restaurant Not Found | BiteSite",
@@ -65,16 +67,17 @@ export async function generateMetadata({
 }
 
 // ── 页面组件 ──
-export default async function MerchantPage({
-  params,
-}: {
-  params: { merchant: string };
-}) {
-  const slug = params?.merchant;
-  if (!slug) notFound();
+export default async function MerchantPage({ params }: PageProps) {
+  const { merchant: slug } = await params;
+
+  if (!slug) {
+    notFound();
+  }
 
   const merchant = await getMerchantBySlug(slug);
-  if (!merchant) notFound();
+  if (!merchant) {
+    notFound();
+  }
 
   const [categories, products, videos] = await Promise.all([
     getCategoriesByMerchant(merchant.id),
@@ -85,34 +88,53 @@ export default async function MerchantPage({
   const layoutKey = merchant.layout || "classic";
   const LayoutComponent = layouts[layoutKey as keyof typeof layouts];
 
-  if (!LayoutComponent) notFound();
+  if (!LayoutComponent) {
+    notFound();
+  }
 
   // Schema.org JSON-LD
   const dayMap: Record<string, string> = {
-    monday: "Mo", tuesday: "Tu", wednesday: "We", thursday: "Th",
-    friday: "Fr", saturday: "Sa", sunday: "Su",
+    monday: "Mo",
+    tuesday: "Tu",
+    wednesday: "We",
+    thursday: "Th",
+    friday: "Fr",
+    saturday: "Sa",
+    sunday: "Su",
   };
 
-  const schemaData = {
+  const schemaData: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Restaurant",
     name: merchant.name,
     image: merchant.cover_image,
     description: merchant.description,
-    address: merchant.address ? {
+    priceRange: "$$",
+    url: `https://bitesite-pied.vercel.app/store/${merchant.slug}`,
+  };
+
+  if (merchant.address) {
+    schemaData.address = {
       "@type": "PostalAddress",
       streetAddress: merchant.address,
       addressLocality: "Kuala Lumpur",
       addressCountry: "MY",
-    } : undefined,
-    telephone: merchant.phone ?? undefined,
-    priceRange: "$$",
-    servesCuisine: merchant.cuisine_type ?? undefined,
-    url: `https://bitesite-pied.vercel.app/store/${merchant.slug}`,
-    openingHours: Object.entries(merchant.operating_hours || {}).map(
+    };
+  }
+
+  if (merchant.phone) {
+    schemaData.telephone = merchant.phone;
+  }
+
+  if (merchant.cuisine_type) {
+    schemaData.servesCuisine = merchant.cuisine_type;
+  }
+
+  if (merchant.operating_hours && typeof merchant.operating_hours === "object") {
+    schemaData.openingHours = Object.entries(merchant.operating_hours).map(
       ([day, time]) => `${dayMap[day] || day} ${time}`
-    ),
-  };
+    );
+  }
 
   return (
     <>
