@@ -11,21 +11,27 @@ interface CategoryFilterProps {
 
 export function CategoryFilter({ active, onChange }: CategoryFilterProps) {
   return (
-    <div className="flex flex-wrap items-center justify-center gap-2 px-4 py-6">
-      {CATEGORIES.map((cat) => (
-        <button
-          key={cat}
-          onClick={() => onChange(cat)}
-          className={cn(
-            "rounded-full px-5 py-2 text-sm font-medium uppercase tracking-wider transition-all duration-300",
-            active === cat
-              ? "bg-[#5A8F6E] text-white"
-              : "border border-[#DDE5DC] bg-[#FAFBF7] text-[#6B6560] hover:border-[#5A8F6E] hover:text-[#5A8F6E]"
-          )}
-        >
-          {cat}
-        </button>
-      ))}
+    <div className="sticky top-0 z-40 border-b border-[#DDE5DC] bg-[#FAFBF7]/95 backdrop-blur-sm px-4 py-4">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-2">
+        {CATEGORIES.map((cat) => (
+          <button
+            key={cat}
+            onClick={() => onChange(cat)}
+            className={cn(
+              "relative rounded-full px-5 py-2 text-xs font-medium uppercase tracking-wider transition-all duration-200 active:scale-95 select-none",
+              active === cat
+                ? "bg-[#5A8F6E] text-white shadow-sm"
+                : "border border-[#DDE5DC] bg-white text-[#6B6560] active:bg-[#5A8F6E] active:text-white active:border-[#5A8F6E]"
+            )}
+            style={{ WebkitTapHighlightColor: "transparent" }}
+          >
+            {cat}
+            {active === cat && (
+              <span className="absolute inset-0 rounded-full animate-ping bg-[#5A8F6E]/20" />
+            )}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
