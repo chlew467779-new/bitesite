@@ -21,17 +21,40 @@ const notoSansJP = Noto_Sans_JP({
   display: "swap",
 });
 
-export const metadata: Metadata = {
+export const metadata = {
   title: "BiteSite | Beautiful Menus for Local Restaurants",
   description:
-    "Discover beautiful menu pages for cafes and restaurants in Kuala Lumpur. Browse photos, find contact info, and get directions.",
-  keywords: ["restaurant menu", "KL cafe", "Kuala Lumpur food", "menu showcase"],
+    "Discover the best cafes, restaurants, and dessert shops in Kuala Lumpur. Browse menus, photos, opening hours, and book your table instantly.",
+  keywords: [
+    "restaurant menu",
+    "KL cafe",
+    "Kuala Lumpur food",
+    "online menu",
+    "restaurant website",
+    "cafe menu",
+    "food delivery",
+    "BiteSite",
+  ],
+  authors: [{ name: "BiteSite" }],
+  creator: "BiteSite",
+  metadataBase: new URL("https://bitesite-pied.vercel.app"),
   openGraph: {
     title: "BiteSite | Beautiful Menus for Local Restaurants",
     description:
-      "Discover beautiful menu pages for cafes and restaurants in Kuala Lumpur.",
-    type: "website",
+      "Discover the best cafes, restaurants, and dessert shops in Kuala Lumpur.",
+    url: "https://bitesite-pied.vercel.app",
+    siteName: "BiteSite",
     locale: "en_MY",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "BiteSite | Beautiful Menus for Local Restaurants",
+    description:
+      "Discover the best cafes, restaurants, and dessert shops in Kuala Lumpur.",
+  },
+  verification: {
+    google: "uBOqQMI8xgJcUJVyR_mezk4PAY66QMUTrcenNUPcjWs",
   },
 };
 
