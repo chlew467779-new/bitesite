@@ -66,8 +66,8 @@ export function TierSections({
       {resolved.appointment && (
         <AppointmentSection
           merchantName={merchant.name}
-          phone={merchant.phone}
-          whatsapp={merchant.whatsapp}
+          phone={merchant.phone ?? undefined}
+          whatsapp={merchant.whatsapp ?? undefined}
           variant={variant}
         />
       )}
