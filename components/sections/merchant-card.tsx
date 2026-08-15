@@ -1,6 +1,7 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Clock } from "lucide-react";
 import { SafeImage } from "@/app/components/safe-image";
 import { CuisineTag } from "@/components/ui/cuisine-tag";
+import { getTodayHours } from "@/lib/hours";
 import type { Merchant } from "@/types";
 
 interface MerchantCardProps {
@@ -8,6 +9,8 @@ interface MerchantCardProps {
 }
 
 export function MerchantCard({ merchant }: MerchantCardProps) {
+  const { isOpen, hoursText } = getTodayHours(merchant.operating_hours);
+
   return (
     <a
       href={`/store/${merchant.slug}`}
@@ -23,6 +26,19 @@ export function MerchantCard({ merchant }: MerchantCardProps) {
             className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />
+          {/* Open Now badge */}
+          <div className="absolute top-3 left-3">
+            <span
+              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium backdrop-blur-md ${
+                isOpen
+                  ? "bg-green-500/90 text-white"
+                  : "bg-stone-800/80 text-stone-300"
+              }`}
+            >
+              <Clock className="h-3 w-3" />
+              {isOpen ? "Open Now" : "Closed"}
+            </span>
+          </div>
           {/* Subtle gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
         </div>
@@ -35,8 +51,13 @@ export function MerchantCard({ merchant }: MerchantCardProps) {
           <h3 className="mb-1 font-serif text-xl font-medium text-[#2C3E2D] leading-tight tracking-wide">
             {merchant.name}
           </h3>
-          <p className="mb-4 line-clamp-2 text-sm text-[#6B6560] leading-relaxed">
+          <p className="mb-3 line-clamp-2 text-sm text-[#6B6560] leading-relaxed">
             {merchant.description || "Discover this amazing restaurant."}
+          </p>
+          {/* Hours info */}
+          <p className="mb-4 text-xs text-[#8A968B] flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            Today: {hoursText}
           </p>
           <span className="inline-flex items-center gap-1.5 text-sm font-medium text-[#5A8F6E] transition-colors group-hover:text-[#4A7A5E]">
             View Menu
