@@ -8,7 +8,7 @@ import {
 } from "@/lib/supabase";
 import { layouts } from "@/app/layouts";
 
-// ── SEO: 每个商家页有独立的 title / description / OG 图 ──
+// ── 动态 SEO：每个商家页有独立的 title / description / OG 图 ──
 export async function generateMetadata({
   params,
 }: {
@@ -32,11 +32,21 @@ export async function generateMetadata({
   return {
     title: `${merchant.name} | ${merchant.cuisine_type} Menu | BiteSite`,
     description,
+    keywords: [
+      merchant.name,
+      merchant.cuisine_type,
+      "menu",
+      "Kuala Lumpur",
+      "restaurant",
+      "cafe",
+      "KL food",
+    ],
     openGraph: {
       title: `${merchant.name} — ${merchant.cuisine_type}`,
       description: merchant.description || `Menu & opening hours for ${merchant.name}`,
       images: merchant.cover_image ? [{ url: merchant.cover_image }] : [],
       type: "website",
+      locale: "en_MY",
     },
     twitter: {
       card: "summary_large_image",
@@ -47,7 +57,7 @@ export async function generateMetadata({
   };
 }
 
-// ── 页面组件（和原来一样）──
+// ── 页面组件 ──
 export default async function MerchantPage({
   params,
 }: {
@@ -65,13 +75,51 @@ export default async function MerchantPage({
   const layoutKey = merchant.layout || "classic";
   const LayoutComponent = layouts[layoutKey as keyof typeof layouts];
 
+  // Schema.org JSON-LD
+  const dayMap: Record<string, string> = {
+    monday: "Mo",
+    tuesday: "Tu",
+    wednesday: "We",
+    thursday: "Th",
+    friday: "Fr",
+    saturday: "Sa",
+    sunday: "Su",
+  };
+
+  const schemaData = {
+    "@context": "https://schema.org",
+    "@type": "Restaurant",
+    name: merchant.name,
+    image: merchant.cover_image,
+    description: merchant.description,
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: merchant.address,
+      addressLocality: "Kuala Lumpur",
+      addressCountry: "MY",
+    },
+    telephone: merchant.phone,
+    priceRange: "$$",
+    servesCuisine: merchant.cuisine_type,
+    url: `https://bitesite-pied.vercel.app/store/${merchant.slug}`,
+    openingHours: Object.entries(merchant.operating_hours || {}).map(
+      ([day, time]) => `${dayMap[day] || day} ${time}`
+    ),
+  };
+
   return (
-    <LayoutComponent
-      merchant={merchant}
-      categories={categories}
-      products={products}
-      videos={videos}
-      features={merchant.features}
-    />
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaData) }}
+      />
+      <LayoutComponent
+        merchant={merchant}
+        categories={categories}
+        products={products}
+        videos={videos}
+        features={merchant.features}
+      />
+    </>
   );
 }
