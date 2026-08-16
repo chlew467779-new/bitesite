@@ -4,14 +4,17 @@ import Link from "next/link";
 import { ArrowRight, Clock } from "lucide-react";
 import { SafeImage } from "@/app/components/safe-image";
 import { CuisineTag } from "@/components/ui/cuisine-tag";
+import { ShareMenu } from "@/components/sections/share-menu";
+import { ViewCountInline } from "@/components/sections/view-count-inline";
 import { getTodayHours } from "@/lib/hours";
 import type { Merchant } from "@/types";
 
 interface MerchantCardProps {
   merchant: Merchant;
+  viewCount?: number;
 }
 
-export function MerchantCard({ merchant }: MerchantCardProps) {
+export function MerchantCard({ merchant, viewCount = 0 }: MerchantCardProps) {
   const { isOpen, hoursText } = getTodayHours(merchant.operating_hours);
 
   return (
@@ -29,8 +32,9 @@ export function MerchantCard({ merchant }: MerchantCardProps) {
             className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />
-          {/* Open Now badge */}
-          <div className="absolute top-3 left-3">
+          
+          {/* Open Now badge - top left */}
+          <div className="absolute top-3 left-3 z-10">
             <span
               className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium backdrop-blur-md ${
                 isOpen
@@ -42,6 +46,19 @@ export function MerchantCard({ merchant }: MerchantCardProps) {
               {isOpen ? "Open Now" : "Closed"}
             </span>
           </div>
+
+          {/* Share Menu - top right */}
+          <div className="absolute top-3 right-3 z-20">
+            <ShareMenu slug={merchant.slug} name={merchant.name} />
+          </div>
+
+          {/* View Count - bottom right */}
+          {viewCount > 0 && (
+            <div className="absolute bottom-3 right-3 z-10">
+              <ViewCountInline count={viewCount} size="sm" />
+            </div>
+          )}
+
           <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
         </div>
         <div className="p-5">
