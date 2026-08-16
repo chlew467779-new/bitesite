@@ -5,13 +5,15 @@
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
 import { TierSections } from "@/app/components/sections/tier-sections";
+import { ViewCountInline } from "@/components/sections/view-count-inline";
+import { ShareButtons } from "@/components/sections/share-buttons";
 import { mergeFeatures } from "@/types";
 import type { LayoutProps } from "@/types";
 import { MapPin, Phone, Instagram, ArrowLeft, MessageSquare, Banknote, Smartphone, CreditCard } from "lucide-react";
 import Link from "next/link";
 
 export function MinimalLayout({
-  merchant, categories, products, videos, features,
+  merchant, categories, products, videos, features, viewCount,
 }: LayoutProps) {
   const resolvedFeatures = mergeFeatures(features);
   const today = new Date().toLocaleDateString("en-MY", { weekday: "long" }).toLowerCase();
@@ -35,7 +37,12 @@ export function MinimalLayout({
                 <SafeImage src={merchant.cover_image} alt={merchant.name} fill className="object-cover" priority />
               </div>
             )}
-            <span className="text-xs font-medium tracking-widest uppercase text-stone-500">{merchant.cuisine_type}</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-medium tracking-widest uppercase text-stone-500">{merchant.cuisine_type}</span>
+              {typeof viewCount !== "undefined" && viewCount > 0 && (
+                <ViewCountInline count={viewCount} className="ml-0" />
+              )}
+            </div>
             <h1 className="text-3xl font-light mt-2 mb-4">{merchant.name}</h1>
             <p className="text-stone-600 leading-relaxed text-sm">{merchant.description}</p>
           </div>
@@ -117,6 +124,14 @@ export function MinimalLayout({
                   </div>
                 </div>
               )}
+
+              {/* Share */}
+              <div className="mt-6 pt-6 border-t border-stone-200">
+                <p className="text-xs font-medium uppercase tracking-widest text-stone-500 mb-3">
+                  Share
+                </p>
+                <ShareButtons slug={merchant.slug} name={merchant.name} variant="minimal" />
+              </div>
             </div>
           </section>
         </FadeIn>
