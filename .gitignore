@@ -1,3 +1,5 @@
+# bitesite/.gitignore
+
 # Dependencies
 node_modules/
 .pnp
