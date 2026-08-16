@@ -1,3 +1,5 @@
+/* bitesite/components/sections/footer.tsx */
+
 export function Footer() {
   return (
     <footer className="border-t border-[#DDE5DC] bg-[#FAFBF7]">
