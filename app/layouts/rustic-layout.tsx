@@ -5,13 +5,15 @@
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
 import { TierSections } from "@/app/components/sections/tier-sections";
+import { ViewCountInline } from "@/components/sections/view-count-inline";
+import { ShareButtons } from "@/components/sections/share-buttons";
 import { mergeFeatures } from "@/types";
 import type { LayoutProps } from "@/types";
 import { MapPin, Phone, Mail, Instagram, ArrowLeft, MessageSquare, Clock, Banknote, Smartphone, CreditCard } from "lucide-react";
 import Link from "next/link";
 
 export function RusticLayout({
-  merchant, categories, products, videos, features,
+  merchant, categories, products, videos, features, viewCount,
 }: LayoutProps) {
   const resolvedFeatures = mergeFeatures(features);
   const today = new Date().toLocaleDateString("en-MY", { weekday: "long" }).toLowerCase();
@@ -36,7 +38,12 @@ export function RusticLayout({
             </div>
             <div className="max-w-4xl mx-auto px-4 -mt-20 relative z-10">
               <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-lg border border-orange-100">
-                <span className="inline-block px-3 py-1 rounded-full bg-orange-100 text-orange-800 text-xs font-semibold mb-3">{merchant.cuisine_type}</span>
+                <div className="flex items-center gap-2 mb-3 flex-wrap">
+                  <span className="inline-block px-3 py-1 rounded-full bg-orange-100 text-orange-800 text-xs font-semibold">{merchant.cuisine_type}</span>
+                  {typeof viewCount !== "undefined" && viewCount > 0 && (
+                    <ViewCountInline count={viewCount} className="ml-0" />
+                  )}
+                </div>
                 <h1 className="text-3xl sm:text-4xl font-bold text-orange-900 mb-3">{merchant.name}</h1>
                 <p className="text-orange-800/70 leading-relaxed">{merchant.description}</p>
                 {hours && <p className="mt-3 text-sm text-orange-700 font-medium flex items-center gap-2"><Clock size={16} /> Today: {hours[today] || "Closed"}</p>}
@@ -131,6 +138,14 @@ export function RusticLayout({
                   </div>
                 </div>
               )}
+
+              {/* Share */}
+              <div className="mt-8 pt-6 border-t border-orange-200">
+                <p className="text-xs font-medium uppercase tracking-wider text-orange-800 mb-3">
+                  Share
+                </p>
+                <ShareButtons slug={merchant.slug} name={merchant.name} variant="rustic" />
+              </div>
             </div>
           </section>
         </FadeIn>
