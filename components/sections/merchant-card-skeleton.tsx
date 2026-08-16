@@ -1,3 +1,5 @@
+/* bitesite/components/sections/merchant-card-skeleton.tsx */
+
 "use client";
 
 import { FadeIn } from "@/app/components/animations";
