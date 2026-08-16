@@ -1,3 +1,5 @@
+/* bitesite/components/sections/category-filter.tsx */
+
 "use client";
 
 import { useCallback } from "react";
