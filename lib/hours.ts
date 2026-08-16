@@ -2,11 +2,15 @@
 
 /**
  * Get current day key: "monday", "tuesday", etc.
+ * Forces Asia/Kuala_Lumpur timezone to prevent hydration mismatch
+ * between server (UTC) and client (UTC+8).
  */
 export function getTodayKey(): string {
-  return ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"][
-    new Date().getDay()
-  ];
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Kuala_Lumpur",
+    weekday: "long",
+  });
+  return formatter.format(new Date()).toLowerCase();
 }
 
 /**
@@ -26,20 +30,30 @@ function parseTime(timeStr: string): number {
 
 /**
  * Check if currently open based on hours string like "9:00 AM - 10:00 PM"
+ * Forces Asia/Kuala_Lumpur timezone to prevent hydration mismatch.
  */
 export function isCurrentlyOpen(hoursStr: string): boolean {
   if (!hoursStr || hoursStr.toLowerCase().includes("closed")) return false;
 
-  const now = new Date();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  // Force KL timezone for consistent server/client behavior
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Kuala_Lumpur",
+    hour: "numeric",
+    minute: "numeric",
+    hour12: false,
+  });
+  const parts = formatter.formatToParts(new Date());
+  const hourPart = parts.find((p) => p.type === "hour")?.value;
+  const minutePart = parts.find((p) => p.type === "minute")?.value;
+  const currentMinutes = parseInt(hourPart || "0") * 60 + parseInt(minutePart || "0");
 
   // Handle formats: "9:00 AM - 10:00 PM" or "09:00 - 22:00"
-  const parts = hoursStr.split("-").map((s) => s.trim());
-  if (parts.length !== 2) return true; // Can't parse, assume open
+  const parts2 = hoursStr.split("-").map((s) => s.trim());
+  if (parts2.length !== 2) return true; // Can't parse, assume open
 
   try {
-    const openMinutes = parseTime(parts[0]);
-    const closeMinutes = parseTime(parts[1]);
+    const openMinutes = parseTime(parts2[0]);
+    const closeMinutes = parseTime(parts2[1]);
 
     if (closeMinutes < openMinutes) {
       // Overnight (e.g., 6PM - 2AM)
