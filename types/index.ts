@@ -89,6 +89,7 @@ export interface LayoutProps {
   products: Product[];
   videos?: MerchantVideo[];
   features?: MerchantFeatures;
+  viewCount?: number;
 }
 
 export const defaultFeatures: MerchantFeatures = {
