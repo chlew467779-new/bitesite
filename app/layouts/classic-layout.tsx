@@ -4,20 +4,20 @@
 
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
-import { TierSections } from "@/app/components/sections/tier-sections";        // ← 修改1：新增导入
-import { MapPin, Phone, Clock, Mail, Instagram, ArrowLeft, MessageSquare } from "lucide-react";
+import { TierSections } from "@/app/components/sections/tier-sections";
+import { MapPin, Phone, Clock, Mail, Instagram, ArrowLeft, MessageSquare, Banknote, Smartphone, CreditCard } from "lucide-react";
 import Link from "next/link";
 import type { LayoutProps } from "@/types";
-import { mergeFeatures } from "@/types";                                         // ← 修改1：新增导入
+import { mergeFeatures } from "@/types";
 
 export function ClassicLayout({
   merchant,
   categories,
   products,
   videos,
-  features,                                                                    // ← 修改2：这里加 features
+  features,
 }: LayoutProps) {
-  const resolvedFeatures = mergeFeatures(features);                              // ← 修改2：这里解构使用
+  const resolvedFeatures = mergeFeatures(features);
 
   const today = new Date().toLocaleDateString("en-MY", { weekday: "long" }).toLowerCase();
   const hours = merchant.operating_hours as Record<string, string> | null;
@@ -151,7 +151,7 @@ export function ClassicLayout({
         </FadeIn>
       )}
 
-      {/* ── TIER SECTIONS（修改3：就这一行）── */}
+      {/* ── TIER SECTIONS ── */}
       <TierSections
         merchant={merchant}
         products={products}
@@ -240,6 +240,25 @@ export function ClassicLayout({
                   )}
                 </div>
               </div>
+
+              {/* Payment Methods */}
+              {merchant.payment_methods && merchant.payment_methods.length > 0 && (
+                <div className="mt-8 pt-6 border-t border-amber-200">
+                  <p className="text-xs font-medium uppercase tracking-wider text-amber-800 mb-3">
+                    Payment Methods
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {merchant.payment_methods.map((method) => (
+                      <span key={method} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-200">
+                        {method === "Cash" && <Banknote className="h-3 w-3" />}
+                        {method === "Cashless" && <Smartphone className="h-3 w-3" />}
+                        {method === "Cards" && <CreditCard className="h-3 w-3" />}
+                        {method}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </section>
         </FadeIn>
