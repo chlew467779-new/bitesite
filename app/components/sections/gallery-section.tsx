@@ -1,3 +1,5 @@
+/* bitesite/app/components/sections/gallery-section.tsx */
+
 "use client";
 
 import { useState, useCallback } from "react";
