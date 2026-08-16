@@ -64,23 +64,8 @@ const faqs = [
   },
   {
     question: "Any hidden cost?",
-    answer: (
-      <>
-        Zero hidden costs! You pay exactly RM599 one-time setup + RM149/month.
-        That is it. No commission, no transaction fees, no surprises. 🎉
-        <div className="mt-4 flex justify-center">
-          <div className="relative w-full max-w-[280px] overflow-hidden rounded-xl">
-            <Image
-              src="/images/memes/sus-cat-meme.png"
-              alt="Sus cat meme"
-              width={280}
-              height={280}
-              className="h-auto w-full"
-            />
-          </div>
-        </div>
-      </>
-    ),
+    answer:
+      "Zero hidden costs! You pay exactly RM599 one-time setup + RM149/month. That is it. No commission, no transaction fees, no surprises. 🎉",
   },
   {
     question: "Can I customize my restaurant page?",
