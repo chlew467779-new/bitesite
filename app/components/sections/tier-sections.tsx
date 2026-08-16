@@ -1,3 +1,5 @@
+/* bitesite/app/components/sections/tier-sections.tsx */
+
 "use client";
 
 import { GallerySection } from "./gallery-section";
