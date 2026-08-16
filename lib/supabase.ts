@@ -63,3 +63,48 @@ export async function getVideosByMerchant(merchantId: string): Promise<MerchantV
   if (error) throw error;
   return data || [];
 }
+
+// ── 相关商家推荐（按 cuisine → tags → 地区 优先级匹配）──
+export async function getRelatedMerchants(
+  currentSlug: string,
+  cuisineType: string | null,
+  tags: string[] | null,
+  area: string | null,
+  limit: number = 3
+): Promise<Merchant[]> {
+  const { data: allMerchants, error } = await supabase
+    .from("merchants")
+    .select("*")
+    .eq("is_published", true)
+    .neq("slug", currentSlug);
+
+  if (error || !allMerchants) return [];
+  const merchants = allMerchants as Merchant[];
+
+  const scored = merchants.map((m) => {
+    let score = 0;
+
+    // 第 1 层：同 cuisine_type
+    if (cuisineType && m.cuisine_type?.toLowerCase() === cuisineType.toLowerCase()) {
+      score += 10;
+    }
+
+    // 第 2 层：tags 重叠
+    if (tags && m.tags) {
+      const overlap = m.tags.filter((t) =>
+        tags.map((tag) => tag.toLowerCase()).includes(t.toLowerCase())
+      ).length;
+      score += overlap * 3;
+    }
+
+    // 第 3 层：同地区
+    if (area && m.area?.toLowerCase() === area.toLowerCase()) {
+      score += 5;
+    }
+
+    return { merchant: m, score };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, limit).map((s) => s.merchant);
+}
