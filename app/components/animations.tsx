@@ -1,3 +1,5 @@
+/* bitesite/app/components/animations.tsx */
+
 "use client";
 
 import { useEffect, useRef, useState, ReactNode } from "react";
