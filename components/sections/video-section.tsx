@@ -1,3 +1,5 @@
+/* bitesite/components/sections/video-section.tsx */
+
 import type { Merchant, MerchantVideo } from "@/types";
 import type { StyleConfig } from "@/lib/styles";
 
