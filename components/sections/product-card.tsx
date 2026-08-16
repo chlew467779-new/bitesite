@@ -1,3 +1,5 @@
+/* bitesite/components/sections/product-card.tsx */
+
 import type { Product } from "@/types";
 import type { StyleConfig } from "@/lib/styles";
 
