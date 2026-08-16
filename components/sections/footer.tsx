@@ -13,13 +13,20 @@ export function Footer() {
               Beautiful Menus for Local Restaurants
             </p>
           </div>
-          <div className="flex gap-6 text-sm text-[#6B6560]">
+          <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-[#6B6560]">
             <a
               href="/"
               className="transition-colors duration-200 active:text-[#5A8F6E]"
               style={{ WebkitTapHighlightColor: "transparent" }}
             >
               Home
+            </a>
+            <a
+              href="/stories"
+              className="transition-colors duration-200 active:text-[#5A8F6E]"
+              style={{ WebkitTapHighlightColor: "transparent" }}
+            >
+              Stories
             </a>
             <a
               href="/join-us"
