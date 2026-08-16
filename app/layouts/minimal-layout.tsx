@@ -7,7 +7,7 @@ import { FadeIn } from "@/app/components/animations";
 import { TierSections } from "@/app/components/sections/tier-sections";
 import { mergeFeatures } from "@/types";
 import type { LayoutProps } from "@/types";
-import { MapPin, Phone, Instagram, ArrowLeft, MessageSquare } from "lucide-react";
+import { MapPin, Phone, Instagram, ArrowLeft, MessageSquare, Banknote, Smartphone, CreditCard } from "lucide-react";
 import Link from "next/link";
 
 export function MinimalLayout({
@@ -98,6 +98,25 @@ export function MinimalLayout({
                 {merchant.phone && <a href={`tel:${merchant.phone}`} className="flex items-center gap-2 text-stone-600"><Phone size={16} />{merchant.phone}</a>}
                 {merchant.whatsapp && <a href={`https://wa.me/${merchant.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-green-600"><MessageSquare size={16} />WhatsApp</a>}
               </div>
+
+              {/* Payment Methods */}
+              {merchant.payment_methods && merchant.payment_methods.length > 0 && (
+                <div className="mt-6 pt-6 border-t border-stone-200">
+                  <p className="text-xs font-medium uppercase tracking-widest text-stone-500 mb-3">
+                    Payment Methods
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {merchant.payment_methods.map((method) => (
+                      <span key={method} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-stone-100 text-stone-700 border border-stone-200">
+                        {method === "Cash" && <Banknote className="h-3 w-3" />}
+                        {method === "Cashless" && <Smartphone className="h-3 w-3" />}
+                        {method === "Cards" && <CreditCard className="h-3 w-3" />}
+                        {method}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </section>
         </FadeIn>
