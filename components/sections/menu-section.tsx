@@ -1,3 +1,5 @@
+/* bitesite/components/sections/menu-section.tsx */
+
 import { ProductCard } from "./product-card";
 import type { Category, Product } from "@/types";
 import type { StyleConfig } from "@/lib/styles";
