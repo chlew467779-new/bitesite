@@ -1,3 +1,5 @@
+/* bitesite/app/layouts/rustic-layout.tsx    */
+
 "use client";
 
 import { SafeImage } from "@/app/components/safe-image";
