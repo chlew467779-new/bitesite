@@ -44,6 +44,7 @@ export interface Merchant {
   features: MerchantFeatures;
   settings: Record<string, unknown>;
   status: string;
+  area: string | null;
   tags: string[];
 }
 
