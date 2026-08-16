@@ -22,7 +22,7 @@ export function Footer() {
               Home
             </a>
             <span className="text-[#DDE5DC]">|</span>
-            <span className="text-[#8A968B]">
+            <span className="text-[#8A968B]" suppressHydrationWarning>
               © {new Date().getFullYear()} BiteSite
             </span>
           </div>
