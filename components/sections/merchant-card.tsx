@@ -1,5 +1,6 @@
 /* bitesite/components/sections/merchant-card.tsx */
 
+import Link from "next/link";
 import { ArrowRight, Clock } from "lucide-react";
 import { SafeImage } from "@/app/components/safe-image";
 import { CuisineTag } from "@/components/ui/cuisine-tag";
@@ -14,7 +15,7 @@ export function MerchantCard({ merchant }: MerchantCardProps) {
   const { isOpen, hoursText } = getTodayHours(merchant.operating_hours);
 
   return (
-    <a
+    <Link
       href={`/store/${merchant.slug}`}
       className="group block active:scale-[0.98] transition-all duration-200"
       style={{ WebkitTapHighlightColor: "transparent" }}
@@ -75,6 +76,6 @@ export function MerchantCard({ merchant }: MerchantCardProps) {
           </span>
         </div>
       </article>
-    </a>
+    </Link>
   );
 }
