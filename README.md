@@ -23,7 +23,8 @@ Beautiful Menus for Local Restaurants — Kuala Lumpur, Malaysia.
 ---
 
 ## Project Structure
-
+## Note: When creating any new modules or code , please insert 1 line of comment on the top stating the path of the code.
+##       for example : bitesite/components/sections/latest-stories.tsx
 ```
 app/
 ├── page.tsx                    # Homepage — merchant grid + filters
