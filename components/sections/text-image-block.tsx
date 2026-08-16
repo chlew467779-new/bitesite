@@ -1,3 +1,5 @@
+/* bitesite/components/sections/text-image-block.tsx */
+
 import { cn } from "@/lib/utils";
 import type { StyleConfig } from "@/lib/styles";
 
