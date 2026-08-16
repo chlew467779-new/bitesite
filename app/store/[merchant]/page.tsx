@@ -11,7 +11,7 @@ import {
 } from "@/lib/supabase";
 import { layouts } from "@/app/layouts";
 
-// ISR: 每 5 分钟重新生成页面（数据更新后自动同步）
+// ISR: 每 5 分钟后台自动刷新数据
 export const revalidate = 300;
 
 // Next.js 15: params is a Promise
@@ -50,6 +50,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       : merchant.description
     : `View the full menu, photos and opening hours for ${merchant.name} in Kuala Lumpur.`;
 
+  // 确保 OG 图片是绝对路径
+  const ogImage = merchant.cover_image
+    ? merchant.cover_image.startsWith("http")
+      ? merchant.cover_image
+      : `https://bitesite-pied.vercel.app${merchant.cover_image}`
+    : null;
+
   return {
     title: `${merchant.name} | ${merchant.cuisine_type ?? "Restaurant"} Menu | BiteSite`,
     description,
@@ -65,9 +72,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     openGraph: {
       title: `${merchant.name} — ${merchant.cuisine_type ?? "Restaurant"}`,
       description: merchant.description || `Menu & opening hours for ${merchant.name}`,
-      images: merchant.cover_image
-      ? [{ url: merchant.cover_image.startsWith("http") ? merchant.cover_image : `https://bitesite-pied.vercel.app${merchant.cover_image}` }]
-      : [],
+      images: ogImage ? [{ url: ogImage }] : [],
       type: "website",
       locale: "en_MY",
     },
@@ -75,7 +80,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       card: "summary_large_image",
       title: merchant.name,
       description,
-      images: merchant.cover_image ? [merchant.cover_image] : [],
+      images: ogImage ? [ogImage] : [],
     },
   };
 }
