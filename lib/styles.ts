@@ -1,3 +1,5 @@
+/* bitesite/lib/styles.ts */
+
 import type { MerchantStyle } from "@/types";
 
 export interface StyleConfig {
