@@ -1,3 +1,5 @@
+/* bitesite/components/ui/diamond-separator.tsx */
+
 "use client";
 
 import { cn } from "@/lib/utils";
