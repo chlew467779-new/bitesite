@@ -57,6 +57,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       : `https://bitesite-pied.vercel.app${merchant.cover_image}`
     : null;
 
+  const canonicalUrl = `https://bitesite-pied.vercel.app/store/${merchant.slug}`;
+
   return {
     title: `${merchant.name} | ${merchant.cuisine_type ?? "Restaurant"} Menu | BiteSite`,
     description,
@@ -69,12 +71,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       "cafe",
       "KL food",
     ],
+    alternates: {
+      canonical: canonicalUrl,
+    },
     openGraph: {
       title: `${merchant.name} — ${merchant.cuisine_type ?? "Restaurant"}`,
       description: merchant.description || `Menu & opening hours for ${merchant.name}`,
       images: ogImage ? [{ url: ogImage }] : [],
       type: "website",
       locale: "en_MY",
+      url: canonicalUrl,
     },
     twitter: {
       card: "summary_large_image",
@@ -111,7 +117,9 @@ export default async function MerchantPage({ params }: PageProps) {
     notFound();
   }
 
-  // Schema.org JSON-LD
+  const canonicalUrl = `https://bitesite-pied.vercel.app/store/${merchant.slug}`;
+
+  // Schema.org JSON-LD: Restaurant
   const dayMap: Record<string, string> = {
     monday: "Mo",
     tuesday: "Tu",
@@ -129,7 +137,7 @@ export default async function MerchantPage({ params }: PageProps) {
     image: merchant.cover_image,
     description: merchant.description,
     priceRange: "$$",
-    url: `https://bitesite-pied.vercel.app/store/${merchant.slug}`,
+    url: canonicalUrl,
   };
 
   if (merchant.address) {
@@ -155,11 +163,35 @@ export default async function MerchantPage({ params }: PageProps) {
     );
   }
 
+  // Breadcrumb Schema
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: "https://bitesite-pied.vercel.app",
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: merchant.name,
+        item: canonicalUrl,
+      },
+    ],
+  };
+
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaData) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
       <LayoutComponent
         merchant={merchant}
