@@ -1,6 +1,7 @@
 /* bitesite/lib/supabase.ts */
 
 import { createClient } from "@supabase/supabase-js";
+import { isCurrentlyOpen, getTodayKey } from "@/lib/hours";   // ← 新增
 import type { Merchant, Category, Product, MerchantVideo } from "@/types";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -64,7 +65,7 @@ export async function getVideosByMerchant(merchantId: string): Promise<MerchantV
   return data || [];
 }
 
-// ── 相关商家推荐（按 cuisine → tags → 地区 优先级匹配）──
+// ── 相关商家推荐（按 营业中 → cuisine → tags → 地区 优先级匹配）──
 export async function getRelatedMerchants(
   currentSlug: string,
   cuisineType: string | null,
@@ -81,8 +82,16 @@ export async function getRelatedMerchants(
   if (error || !allMerchants) return [];
   const merchants = allMerchants as Merchant[];
 
+  const todayKey = getTodayKey();
+
   const scored = merchants.map((m) => {
     let score = 0;
+
+    // 第 0 层：正在营业（权重最高 +20）
+    const todayHours = m.operating_hours?.[todayKey];
+    if (todayHours && isCurrentlyOpen(todayHours)) {
+      score += 20;
+    }
 
     // 第 1 层：同 cuisine_type
     if (cuisineType && m.cuisine_type?.toLowerCase() === cuisineType.toLowerCase()) {
