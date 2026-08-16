@@ -10,13 +10,15 @@ import { MerchantCardSkeleton } from "@/components/sections/merchant-card-skelet
 import { Footer } from "@/components/sections/footer";
 import { supabase } from "@/lib/supabase";
 import { FadeIn } from "@/app/components/animations";
-import { isCurrentlyOpen } from "@/lib/hours";
+import { isCurrentlyOpen, getTodayKey } from "@/lib/hours";
 import type { Merchant } from "@/types";
 
 export default function HomePage() {
   const [merchants, setMerchants] = useState<Merchant[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTags, setActiveTags] = useState<string[]>([]);
+  const [activeCuisines, setActiveCuisines] = useState<string[]>([]);
+  const [activeArea, setActiveArea] = useState<string | null>(null);
+  const [activeMore, setActiveMore] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [openNow, setOpenNow] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
@@ -38,21 +40,42 @@ export default function HomePage() {
     fetchData();
   }, []);
 
+  // 动态提取所有 area
+  const availableAreas = useMemo(() => {
+    const areas = new Set<string>();
+    merchants.forEach((m) => {
+      if (m.area) areas.add(m.area);
+    });
+    return ["All Areas", ...Array.from(areas).sort()];
+  }, [merchants]);
+
   // Filter logic
   const filtered = useMemo(() => {
     return merchants.filter((m) => {
-      // Tag filter: OR logic (any selected tag matches)
-      const matchesTags =
-        activeTags.length === 0 ||
-        activeTags.some((tag) =>
-          m.tags?.some((t) => t.toLowerCase() === tag.toLowerCase())
+      // Cuisine filter: 匹配 cuisine_type（逗号分隔）或 tags
+      const matchesCuisine =
+        activeCuisines.length === 0 ||
+        activeCuisines.some((c) =>
+          m.cuisine_type?.toLowerCase().includes(c.toLowerCase()) ||
+          m.tags?.some((t) => t.toLowerCase() === c.toLowerCase())
         );
+
+      // Area filter
+      const matchesArea = !activeArea || activeArea === "All Areas" || m.area === activeArea;
+
+      // More filter: tags 或 payment_methods
+      const matchesMore =
+        activeMore.length === 0 ||
+        activeMore.some((item) => {
+          if (["Cash", "Cashless", "Cards"].includes(item)) {
+            return m.payment_methods?.includes(item);
+          }
+          return m.tags?.some((t) => t.toLowerCase() === item.toLowerCase());
+        });
 
       // Open Now filter
       const matchesOpenNow = !openNow || (() => {
-        const todayKey = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"][
-          new Date().getDay()
-        ];
+        const todayKey = getTodayKey();
         const hours = m.operating_hours?.[todayKey];
         return hours ? isCurrentlyOpen(hours) : false;
       })();
@@ -66,9 +89,9 @@ export default function HomePage() {
         (m.description || "").toLowerCase().includes(q) ||
         m.tags?.some((t) => t.toLowerCase().includes(q));
 
-      return matchesTags && matchesOpenNow && searchMatch;
+      return matchesCuisine && matchesArea && matchesMore && matchesOpenNow && searchMatch;
     });
-  }, [activeTags, openNow, searchQuery, merchants]);
+  }, [activeCuisines, activeArea, activeMore, openNow, searchQuery, merchants]);
 
   // Handle search with loading state
   const handleSearch = useCallback((query: string) => {
@@ -77,48 +100,67 @@ export default function HomePage() {
     setTimeout(() => setIsSearching(false), 300);
   }, []);
 
-  // Handle tag change with loading state
-  const handleTagChange = useCallback((tags: string[]) => {
+  const handleCuisineChange = useCallback((tags: string[]) => {
     setIsSearching(true);
-    setActiveTags(tags);
+    setActiveCuisines(tags);
     setTimeout(() => setIsSearching(false), 300);
   }, []);
 
-  // Handle Open Now toggle
+  const handleAreaChange = useCallback((area: string | null) => {
+    setIsSearching(true);
+    setActiveArea(area);
+    setTimeout(() => setIsSearching(false), 300);
+  }, []);
+
+  const handleMoreChange = useCallback((more: string[]) => {
+    setIsSearching(true);
+    setActiveMore(more);
+    setTimeout(() => setIsSearching(false), 300);
+  }, []);
+
   const handleOpenNowChange = useCallback((v: boolean) => {
     setIsSearching(true);
     setOpenNow(v);
     setTimeout(() => setIsSearching(false), 300);
   }, []);
 
-  // Clear everything
   const handleClearAll = useCallback(() => {
     setIsSearching(true);
     setSearchQuery("");
-    setActiveTags([]);
+    setActiveCuisines([]);
+    setActiveArea(null);
+    setActiveMore([]);
     setOpenNow(false);
     setTimeout(() => setIsSearching(false), 300);
   }, []);
 
   const showLoading = loading || isSearching;
 
-  // Active filter count
-  const activeFilterCount = activeTags.length + (openNow ? 1 : 0) + (searchQuery ? 1 : 0);
+  const activeFilterCount =
+    activeCuisines.length +
+    (activeArea && activeArea !== "All Areas" ? 1 : 0) +
+    activeMore.length +
+    (openNow ? 1 : 0) +
+    (searchQuery ? 1 : 0);
 
   return (
     <main>
       <Hero searchQuery={searchQuery} onSearch={handleSearch} />
 
       <CategoryFilter
-        activeTags={activeTags}
-        onChange={handleTagChange}
+        activeCuisines={activeCuisines}
+        onCuisineChange={handleCuisineChange}
+        activeArea={activeArea}
+        onAreaChange={handleAreaChange}
+        activeMore={activeMore}
+        onMoreChange={handleMoreChange}
         openNow={openNow}
         onOpenNowChange={handleOpenNowChange}
+        availableAreas={availableAreas}
       />
 
       <section className="px-4 pb-16">
         <div className="mx-auto max-w-6xl">
-          {/* Results count + active filters */}
           {!showLoading && filtered.length > 0 && (
             <FadeIn>
               <div className="mb-6 flex flex-wrap items-center gap-2">
@@ -177,7 +219,7 @@ export default function HomePage() {
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {filtered.map((merchant, index) => (
                 <FadeIn
-                  key={`${merchant.id}-${activeTags.join(",")}-${openNow}-${searchQuery}`}
+                  key={`${merchant.id}-${activeCuisines.join(",")}-${activeArea}-${activeMore.join(",")}-${openNow}-${searchQuery}`}
                   delay={index * 0.06}
                   duration={0.4}
                   direction="up"
