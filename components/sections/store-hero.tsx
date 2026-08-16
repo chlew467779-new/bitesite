@@ -1,3 +1,5 @@
+/* bitesite/components/sections/store-hero.tsx */
+
 import type { Merchant } from "@/types";
 import type { StyleConfig } from "@/lib/styles";
 
