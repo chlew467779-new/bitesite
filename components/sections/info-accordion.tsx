@@ -1,3 +1,5 @@
+/* bitesite/components/sections/info-accordion.tsx */
+
 "use client";
 
 import { useState } from "react";
