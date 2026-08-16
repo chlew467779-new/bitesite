@@ -1,6 +1,7 @@
 /* bitesite/components/sections/info-accordion.tsx */
 
 "use client";
+import { getTodayKey } from "@/lib/hours";
 
 import { useState } from "react";
 import { ChevronDown, MapPin, Clock, Shirt, Instagram, Facebook, Globe } from "lucide-react";
@@ -64,8 +65,7 @@ export function InfoAccordion({ merchant, style }: InfoAccordionProps) {
   const hasHours = hours && Object.keys(hours).length > 0;
 
   // 获取今天是星期几
-  const today = new Date().toLocaleDateString("en-US", { weekday: "long" });
-  const todayLower = today.toLowerCase();
+  const today = getTodayKey();
 
   // 按正确顺序排列星期
   const dayOrder = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
@@ -100,7 +100,7 @@ export function InfoAccordion({ merchant, style }: InfoAccordionProps) {
               <div className="space-y-1">
                 {dayOrder.map((day) => {
                   const time = hours[day];
-                  const isToday = day === todayLower;
+                  const isToday = day === today;
                   return (
                     <div 
                       key={day} 
