@@ -11,6 +11,15 @@ interface StoryContentProps {
 }
 
 export function StoryContent({ content }: StoryContentProps) {
+  // Fix: Supabase Table Editor sometimes stores 
+ as literal "\n" string
+  // We convert literal "\n" to real newlines before rendering Markdown
+  const processedContent = content
+    .replace(/\\n/g, "
+")
+    .replace(/\n/g, "
+");
+
   return (
     <section className="px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-3xl">
@@ -117,7 +126,7 @@ export function StoryContent({ content }: StoryContentProps) {
               ),
             }}
           >
-            {content}
+            {processedContent}
           </ReactMarkdown>
         </div>
       </div>
