@@ -1,3 +1,5 @@
+/* bitesite/app/components/safe-image.tsx */
+
 "use client";
 
 import { useState } from "react";
