@@ -1,3 +1,5 @@
+/* bitesite/app/components/sections/events-section.tsx */
+
 "use client";
 
 import { FadeIn } from "@/app/components/animations";
