@@ -155,6 +155,18 @@ export default function HomePage() {
 
   return (
     <main>
+      {/* Restaurant owner banner */}
+      <div className="bg-[#2C3E2D] px-4 py-3 text-center">
+        <p className="text-sm text-white">
+          Are you a restaurant owner?{" "}
+          <a
+             href="/join-us"
+             className="font-semibold underline underline-offset-2 transition-colors hover:text-[#5A8F6E]"
+          >
+            Join BiteSite
+          </a>
+        </p>
+      </div>
       <Hero searchQuery={searchQuery} onSearch={handleSearch} />
 
       <CategoryFilter
