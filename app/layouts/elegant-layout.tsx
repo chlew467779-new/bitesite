@@ -8,7 +8,7 @@ import { TierSections } from "@/app/components/sections/tier-sections";
 import { mergeFeatures } from "@/types";
 import type { LayoutProps } from "@/types";
 import {
-  MapPin, Phone, Mail, Instagram, ArrowLeft, MessageSquare,
+  MapPin, Phone, Mail, Instagram, ArrowLeft, MessageSquare, Banknote, Smartphone, CreditCard,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -20,7 +20,6 @@ export function ElegantLayout({
   const today = new Date().toLocaleDateString("en-MY", { weekday: "long" }).toLowerCase();
   const hours = merchant.operating_hours as Record<string, string> | null;
 
-  // 导航项
   const navItems = [
     { label: "Menu", id: "menu-section", show: resolvedFeatures.menu },
     { label: "Hours", id: "hours-section", show: resolvedFeatures.contact },
@@ -190,6 +189,25 @@ export function ElegantLayout({
                   </a>
                 )}
               </div>
+
+              {/* Payment Methods */}
+              {merchant.payment_methods && merchant.payment_methods.length > 0 && (
+                <div className="mt-8 pt-6 border-t border-slate-800">
+                  <p className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-3">
+                    Payment Methods
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {merchant.payment_methods.map((method) => (
+                      <span key={method} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700">
+                        {method === "Cash" && <Banknote className="h-3 w-3" />}
+                        {method === "Cashless" && <Smartphone className="h-3 w-3" />}
+                        {method === "Cards" && <CreditCard className="h-3 w-3" />}
+                        {method}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </section>
         </FadeIn>
