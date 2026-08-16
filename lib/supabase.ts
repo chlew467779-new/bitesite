@@ -1,3 +1,5 @@
+/* bitesite/lib/supabase.ts */
+
 import { createClient } from "@supabase/supabase-js";
 import type { Merchant, Category, Product, MerchantVideo } from "@/types";
 
