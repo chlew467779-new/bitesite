@@ -3,6 +3,7 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display, Noto_Sans_JP } from "next/font/google";
 import "./globals.css";
+import { SiteHeader } from "@/components/sections/site-header";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -70,7 +71,10 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} ${playfair.variable} ${notoSansJP.variable}`}
     >
-      <body className="min-h-screen antialiased">{children}</body>
+      <body className="min-h-screen antialiased">
+        <SiteHeader />
+        {children}
+      </body>>
     </html>
   );
 }
