@@ -1,3 +1,5 @@
+/* bitesite/components/sections/discover-bitesite.tsx */
+
 import type { StyleConfig } from "@/lib/styles";
 
 interface DiscoverBiteSiteProps {
