@@ -9,6 +9,7 @@ import { MapPin, Phone, Clock, Mail, Instagram, ArrowLeft, MessageSquare, Bankno
 import Link from "next/link";
 import type { LayoutProps } from "@/types";
 import { mergeFeatures } from "@/types";
+import { getTodayKey } from "@/lib/hours";
 
 export function ClassicLayout({
   merchant,
@@ -19,7 +20,7 @@ export function ClassicLayout({
 }: LayoutProps) {
   const resolvedFeatures = mergeFeatures(features);
 
-  const today = new Date().toLocaleDateString("en-MY", { weekday: "long" }).toLowerCase();
+  const today = getTodayKey();
   const hours = merchant.operating_hours as Record<string, string> | null;
   const todayHours = hours?.[today] || "Closed";
 
