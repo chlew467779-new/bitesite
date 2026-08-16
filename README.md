@@ -1,10 +1,39 @@
-# BiteSite #
+# BiteSite
 
 Beautiful Menus for Local Restaurants — Kuala Lumpur, Malaysia.
 
 > **Live URL**: https://bitesite-pied.vercel.app  
 > **GitHub**: https://github.com/chlew467779-new/bitesite  
 > **Owner**: CH (BiteSite)
+
+---
+
+## 📌 Code Convention — IMPORTANT
+
+**Every new file MUST have a path comment at the very top:**
+
+```tsx
+/* bitesite/app/page.tsx */
+
+"use client";
+// ... rest of the code
+```
+
+```ts
+/* bitesite/lib/supabase.ts */
+
+import { createClient } from "@supabase/supabase-js";
+// ... rest of the code
+```
+
+```css
+/* bitesite/app/globals.css */
+
+@import "tailwindcss";
+// ... rest of the code
+```
+
+This makes it easy to identify which file is which when copying code or debugging.
 
 ---
 
@@ -19,27 +48,35 @@ Beautiful Menus for Local Restaurants — Kuala Lumpur, Malaysia.
 | Deployment | Vercel |
 | Icons | Lucide React |
 | Fonts | Inter, Playfair Display, Noto Sans JP |
+| Markdown | react-markdown + remark-gfm |
 
 ---
 
 ## Project Structure
-## Note: When creating any new modules or code , please insert 1 line of comment on the top stating the path of the code.
-##       for example : bitesite/components/sections/latest-stories.tsx
+
 ```
 app/
-├── page.tsx                    # Homepage — merchant grid + filters
-├── layout.tsx                  # Root layout (fonts + metadata + SEO)
+├── page.tsx                    # Homepage — merchant grid + filters + Latest Stories
+├── layout.tsx                  # Root layout (fonts + metadata + SEO + SiteHeader)
 ├── globals.css                 # Tailwind v4 + CSS custom properties
 ├── sitemap.ts                  # Auto-generated sitemap.xml
 ├── robots.ts                   # robots.txt
-├── loading.tsx                 # Global loading fallback (unused)
+├── loading.tsx                 # Global loading fallback
+├── join-us/
+│   └── page.tsx                # Join Us pricing page
+├── stories/
+│   ├── page.tsx                # Stories list page (articles grid + category filter)
+│   └── [slug]/
+│       └── page.tsx            # Story detail page (ISR 300s + Markdown render)
 ├── api/
-│   └── view/
-│       └── route.ts            # POST /api/view — increment view count
+│   ├── view/
+│   │   └── route.ts            # POST /api/view — increment merchant view count
+│   └── story-view/
+│       └── route.ts            # POST /api/story-view — increment article view count
 ├── store/
 │   └── [merchant]/
 │       ├── page.tsx              # Merchant detail page (ISR + SSR + Schema.org)
-│       └── loading.tsx           # Merchant page skeleton (hero + menu + categories)
+│       └── loading.tsx           # Merchant page skeleton
 ├── layouts/
 │   ├── index.ts                  # Layout registry (classic/elegant/minimal/modern/rustic)
 │   ├── classic-layout.tsx        # Warm amber cafe style
@@ -53,42 +90,53 @@ app/
 
 components/
 ├── ui/
-│   ├── cuisine-tag.tsx           # Pill-shaped cuisine label (border + text color customizable)
+│   ├── cuisine-tag.tsx           # Pill-shaped cuisine label
 │   └── diamond-separator.tsx     # Decorative divider (◆)
 └── sections/
     ├── hero.tsx                  # Homepage hero with search bar + pattern bg
-    ├── category-filter.tsx       # 3-row sticky filter bar (Open Now / Cuisine / Area / More)
+    ├── category-filter.tsx       # 3-row sticky filter bar with smooth animations
     ├── merchant-card.tsx         # Card: Open Now badge + ShareMenu + ViewCount + tags + hours
     ├── merchant-card-skeleton.tsx # Loading skeleton with pulse animation
-    ├── footer.tsx                # Site footer (BiteSite branding + copyright)
-    ├── brand-intro.tsx           # Merchant brand intro (old 3-style system, still used)
+    ├── footer.tsx                # Site footer (Home / Stories / Join Us + copyright)
+    ├── brand-intro.tsx           # Merchant brand intro
     ├── discover-bitesite.tsx     # "Discover more" CTA link to homepage
     ├── info-accordion.tsx        # Location / Hours / Dress Code / Social accordion
-    ├── menu-section.tsx          # Category-based menu grid (delegates to ProductCard)
-    ├── product-card.tsx          # Individual dish card with image, price, discount, availability
-    ├── related-merchants.tsx     # "You May Also Like" recommendations (scored algorithm)
+    ├── menu-section.tsx          # Category-based menu grid
+    ├── product-card.tsx          # Individual dish card with image, price, discount
+    ├── related-merchants.tsx     # "You May Also Like" recommendations
     ├── share-menu.tsx            # Floating share menu (WhatsApp/FB/Twitter/Copy/IG)
-    ├── share-buttons.tsx         # Inline share buttons (merchant page contact section)
-    ├── view-tracker.tsx          # Client-side view count tracker (2s delay POST)
-    ├── view-count-inline.tsx     # Eye icon + formatted count badge (sm/md)
-    ├── store-hero.tsx            # Full-bleed hero image (old style system)
+    ├── share-buttons.tsx         # Inline share buttons
+    ├── view-tracker.tsx          # Client-side merchant view count tracker (2s delay)
+    ├── view-count-inline.tsx     # Eye icon + formatted count badge
+    ├── store-hero.tsx            # Full-bleed hero image
     ├── store-footer.tsx          # Merchant footer with WhatsApp CTA
-    ├── text-image-block.tsx      # Alternating text/image section (about)
-    └── video-section.tsx         # YouTube embed + self-hosted video player
-
-components/sections/ (Tier Sections — optional per merchant)
-├── gallery-section.tsx         # Photo grid with lightbox (prev/next, counter, keyboard nav)
-├── reviews-section.tsx         # Customer reviews display + submit form (mock/pending)
-├── appointment-section.tsx     # Table reservation form → sends WhatsApp to BiteSite
-├── seasonal-section.tsx        # Featured/limited-time items with "LIMITED TIME ONLY" badge
-├── events-section.tsx          # Event cards with date badge (month + day)
-└── tier-sections.tsx           # Orchestrates all tier sections based on features flags
+    ├── text-image-block.tsx      # Alternating text/image section
+    ├── video-section.tsx         # YouTube embed + self-hosted video player
+    │
+    ├── join-us-hero.tsx          # Join Us page hero
+    ├── how-it-works.tsx          # 3-step process (Shoot → Build → Share)
+    ├── pricing-card.tsx          # Pricing card (RM599 + RM149/mo)
+    ├── faq-accordion.tsx         # FAQ accordion (6 questions)
+    ├── join-us-cta.tsx           # Bottom WhatsApp CTA
+    │
+    ├── story-filter.tsx          # Stories category filter buttons
+    ├── story-card.tsx            # Article card (featured + list variants)
+    ├── story-list.tsx            # Article list with featured article on top
+    ├── story-hero.tsx            # Story detail hero (title + meta + cover image)
+    ├── story-content.tsx         # Markdown renderer for article body
+    ├── story-related.tsx         # "More Stories" recommendations
+    ├── story-view-tracker.tsx    # Client-side article view count tracker
+    ├── latest-stories.tsx        # Homepage "Latest Stories" section (latest 3 articles)
+    │
+    └── site-header.tsx           # Global nav bar (Home / Stories / Join Us)
 
 lib/
 ├── supabase.ts                 # Supabase client + all DB queries + related merchant scoring
 ├── hours.ts                    # Timezone-safe open/closed logic (Asia/Kuala_Lumpur)
 ├── utils.ts                    # cn() — clsx + tailwind-merge
-└── styles.ts                   # OLD 3-style theme map (fresh/luxury/japanese) — DEPRECATED
+├── styles.ts                   # OLD 3-style theme map (fresh/luxury/japanese) — DEPRECATED
+├── whatsapp.ts                 # BiteSite WhatsApp link constant
+└── markdown.ts                 # Markdown rendering utilities (reserved)
 
 types/
 └── index.ts                    # All TypeScript interfaces + defaultFeatures + mergeFeatures
@@ -188,10 +236,121 @@ types/
 | view_count | INT DEFAULT 0 | Views for that month |
 | UNIQUE(slug, year_month) | Composite unique constraint |
 
-### Supabase RPC Functions
+### `articles` (blog / stories)
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID | PK, auto-generated |
+| slug | TEXT | **Required.** URL-friendly identifier. Example: `the-hearth-bakery-opening`. Must be unique. |
+| title | TEXT | **Required.** Article headline. Example: `The Hearth Bakery Opens in Desa ParkCity` |
+| excerpt | TEXT | Short summary shown on the list page. ~1-2 sentences. |
+| content | TEXT | **Required.** Full article body in **Markdown** format. Supports headings, bold, links, images, lists, tables, blockquotes. |
+| cover_image | TEXT | URL to the featured image. Used as hero image on detail page and thumbnail on list page. **Recommended:** 16:9 ratio. |
+| category | TEXT | **Required.** Used for filtering on `/stories`. Examples: `New Opening`, `Promotion`, `Featured`. Dynamically appears as filter buttons. |
+| tags | TEXT[] | Array of tags. Example: `{bakery, desaparkcity}`. Displayed as pills on the article detail page. |
+| merchant_slug | TEXT | **Optional.** If set, links to a merchant page (`/store/{merchant_slug}`). Must match an existing merchant slug. |
+| author | TEXT | Defaults to `BiteSite Team`. Can be changed to any name. |
+| published | BOOLEAN | **Must be `true`** for the article to appear on the website. Drafts should be `false`. |
+| view_count | INT | Auto-incremented. Do NOT edit manually. |
+| created_at | TIMESTAMPTZ | Auto-generated. |
+| updated_at | TIMESTAMPTZ | Auto-generated. |
+
+---
+
+## 📝 How to Publish an Article (Zero Code)
+
+### Step 1: Open Supabase Dashboard
+1. Go to https://supabase.com/dashboard
+2. Select your BiteSite project
+3. Navigate to **Table Editor** → `articles`
+
+### Step 2: Click "Insert row"
+
+### Step 3: Fill in the fields
+
+#### Required fields (must fill):
+| Field | What to enter | Example |
+|-------|--------------|---------|
+| **slug** | URL-friendly ID, no spaces, use hyphens | `the-hearth-bakery-opening` |
+| **title** | Article headline | `The Hearth Bakery Opens in Desa ParkCity` |
+| **content** | Full article in **Markdown** | See Markdown syntax below |
+| **category** | Filter category | `New Opening` |
+| **published** | Set to **true** | ✅ Check the box |
+
+#### Optional but recommended fields:
+| Field | What to enter | Example |
+|-------|--------------|---------|
+| **excerpt** | 1-2 sentence summary | `After months of anticipation, The Hearth Bakery has finally opened...` |
+| **cover_image** | Direct image URL | `https://images.unsplash.com/photo-xxx` or Google Drive direct link |
+| **tags** | Array of keywords | `{bakery, desaparkcity, sourdough}` |
+| **merchant_slug** | Link to restaurant page | `the-hearth-bakery` (must exist in `merchants` table) |
+| **author** | Author name | `BiteSite Team` |
+
+#### Do NOT touch:
+- `id` — auto-generated
+- `view_count` — auto-incremented by the website
+- `created_at` / `updated_at` — auto-generated
+
+### Step 4: Save
+Click **Save** → The article immediately appears on:
+- `/stories` (list page)
+- `/stories/{slug}` (detail page)
+- Homepage "Latest Stories" section (if among the 3 newest)
+
+---
+
+## 🖊️ Markdown Syntax for Articles
+
+The `content` field supports full **GitHub Flavored Markdown**:
+
+```markdown
+# Main Heading (H1)
+
+## Subheading (H2)
+
+**Bold text** for emphasis.
+
+Regular paragraph text. You can write multiple paragraphs.
+
+- Bullet point 1
+- Bullet point 2
+- Bullet point 3
+
+1. Numbered item 1
+2. Numbered item 2
+
+[Link to merchant page](/store/the-hearth-bakery)
+
+[External link](https://example.com)
+
+![Image description](https://your-image-url.jpg)
+
+> Blockquote: This is a highlighted quote or testimonial.
+
+| Item | Price |
+|------|-------|
+| Country Sourdough | RM 18 |
+| Olive Ciabatta | RM 16 |
+
+---
+
+Emoji work too! 🍞☕🎉
+```
+
+### Important notes:
+- **Images**: Use direct image URLs. For Google Drive, you need a **public direct link** (ends in `.jpg` or similar, not the sharing page).
+- **Links to merchants**: Use `/store/{merchant-slug}` format. These open within the site.
+- **External links**: Use full `https://` URLs. These open in a new tab.
+
+---
+
+## Supabase RPC Functions
+
 ```sql
--- Increment view count (upserts merchant_stats + inserts/updates merchant_monthly_views)
+-- Increment merchant view count (total + monthly)
 increment_view_count(merchant_slug TEXT) RETURNS void
+
+-- Increment article view count
+increment_article_view(article_slug TEXT) RETURNS void
 ```
 
 ---
@@ -201,49 +360,48 @@ increment_view_count(merchant_slug TEXT) RETURNS void
 ### Rendering Strategy
 - **ISR**: `export const revalidate = 300` — pages revalidate every 5 minutes
 - **Static Generation**: `generateStaticParams()` fetches all published merchants at build time
-- **SSR Fallback**: If merchant not in static params, renders on-demand (ISR handles it)
+- **SSR Fallback**: If merchant not in static params, renders on-demand
 
 ### Metadata Generation (`generateMetadata`)
 - Dynamic title: `{name} | {cuisine} Menu | BiteSite`
 - Dynamic description: truncated to 155 chars from `merchant.description`
 - OG image: `merchant.cover_image` (absolute URL)
 - Canonical URL: `https://bitesite-pied.vercel.app/store/{slug}`
-- Keywords: merchant name + cuisine + "menu" + "Kuala Lumpur"
 
 ### Schema.org JSON-LD
 Two structured data blocks injected via `<script type="application/ld+json">`:
-
 1. **Restaurant Schema** (`@type: "Restaurant"`)
-   - name, image, description, priceRange
-   - address (PostalAddress with streetAddress, addressLocality: "Kuala Lumpur", addressCountry: "MY")
-   - telephone, servesCuisine, openingHours (formatted as "Mo 9:00 AM - 10:00 PM")
-
 2. **BreadcrumbList Schema**
-   - Position 1: Home → `/`
-   - Position 2: Merchant name → `/store/{slug}`
 
-### Page Data Fetching (parallel)
-```
-Promise.all([
-  getCategoriesByMerchant(merchant.id),
-  getProductsByMerchant(merchant.id),
-  getVideosByMerchant(merchant.id),
-  getRelatedMerchants(slug, cuisine, tags, area, 3),
-  supabase.from("merchant_stats").select("view_count").eq("slug", slug).single()
-])
-```
+---
 
-### Components Rendered
-1. `<ViewTracker slug={...} />` — invisible, fires view count after 2s
-2. Schema.org scripts (Restaurant + BreadcrumbList)
-3. `<LayoutComponent />` — chosen by `merchant.layout` (classic/elegant/minimal/modern/rustic)
-4. `<RelatedMerchants />` — "You May Also Like" section at bottom
+## Stories Page (`/stories`)
 
-### Loading State
-`loading.tsx` provides a skeleton with:
-- Hero placeholder (h-64 to h-96)
-- Title + description lines (pulse animation)
-- 3 menu categories × 3 products each (image + text skeletons)
+### Features
+- **Dynamic category filters**: Categories are read from the database (`SELECT DISTINCT category`), so new categories automatically appear as filter buttons.
+- **Featured article**: The newest article gets a large featured card.
+- **Article list**: Remaining articles shown in a responsive grid.
+- **Empty state**: "No stories found" when no published articles exist.
+
+### Story Detail Page (`/stories/[slug]`)
+- **ISR 300s**: Revalidates every 5 minutes
+- **Markdown rendering**: Full GFM support via `react-markdown` + `remark-gfm`
+- **View tracking**: 2-second delay after page load, increments `view_count`
+- **Related stories**: Shows up to 3 related articles from the same category
+- **Merchant link**: If `merchant_slug` is set, shows a CTA button linking to the merchant page
+- **SEO**: Dynamic title, description, and OG image per article
+
+---
+
+## Homepage (`/`)
+
+### Sections (top to bottom)
+1. **Restaurant owner banner** — "Are you a restaurant owner? Join BiteSite"
+2. **Hero** — Search bar + tagline
+3. **Category Filter** — Sticky filter bar with smooth expand/collapse animation
+4. **Merchant Grid** — Filtered restaurant cards
+5. **Latest Stories** — Latest 3 published articles (hidden if no articles)
+6. **Footer** — Home / Stories / Join Us links + copyright
 
 ---
 
@@ -251,21 +409,13 @@ Promise.all([
 
 Each merchant picks ONE layout via `merchants.layout` column.
 
-| Layout | Vibe | Primary Colors | Hero Style |
-|--------|------|----------------|------------|
-| **classic** | Warm cafe / bakery | Amber-50 bg, amber-900 text, green accents | Full-bleed image with gradient overlay, sticky back nav |
-| **elegant** | Dark luxury fine-dining | Slate-950 bg, amber-300/gold accents, white text | Full-bleed image with dark gradient, **scroll nav** (Menu/Hours/Gallery/Reserve/Reviews/Events tabs) |
-| **minimal** | Clean zen / Japanese | Stone-50 bg, stone-800 text, minimal borders | 16:9 image above text, no overlay, "Back" only (short text) |
-| **modern** | Contemporary urban | White bg, slate-900 text, slate-100 accents | 2-column: text left, image right, rounded-2xl |
-| **rustic** | Earthy / farm-to-table | Orange-50 bg, orange-900 text, warm tones | Full-bleed image with white card overlapping bottom |
-
-### Layout Shared Features
-- **Sticky Back Nav**: All layouts have "Back to BiteSite" sticky header
-- **Scroll Nav** (Elegant only): Tab bar with smooth-scroll to sections
-- **ViewCount badge**: Inline eye icon next to cuisine tag in Hero (if > 0 views)
-- **Share buttons**: Inline row in Contact section (Copy Link + WhatsApp + FB + Twitter + Instagram)
-- **Payment Methods**: Icon pills (Cash/Cashless/Cards) in Contact section
-- **Related Merchants**: "You May Also Like" at bottom, auto-themed to match current layout
+| Layout | Vibe | Primary Colors |
+|--------|------|----------------|
+| **classic** | Warm cafe / bakery | Amber-50 bg, amber-900 text, green accents |
+| **elegant** | Dark luxury fine-dining | Slate-950 bg, amber-300/gold accents, white text |
+| **minimal** | Clean zen / Japanese | Stone-50 bg, stone-800 text, minimal borders |
+| **modern** | Contemporary urban | White bg, slate-900 text, slate-100 accents |
+| **rustic** | Earthy / farm-to-table | Orange-50 bg, orange-900 text, warm tones |
 
 ---
 
@@ -282,82 +432,35 @@ interface MerchantFeatures {
   gallery: boolean;        // default false
   reviews: boolean;        // default false
   appointment: boolean;    // default false
-  seasonal_popup: boolean;   // default false
+  seasonal_popup: boolean; // default false
   events: boolean;         // default false
 }
 ```
-
-| Tier | Description | Data Source | Layout Integration |
-|------|-------------|-------------|-------------------|
-| **Hero** | Cover image + name + cuisine + today hours | `cover_image`, `cuisine_type` | Layout-specific hero component |
-| **About** | Description paragraph | `description` | Layout-specific text block |
-| **Menu** | Categories → Products grid with images/prices | `categories` + `products` tables | Layout-specific menu rendering |
-| **Contact** | Hours table + address/phone/WhatsApp/email/IG + Payment Methods + Share | `operating_hours`, `address`, `phone`, etc. | Layout-specific contact section |
-| **Gallery** | Photo grid with lightbox (prev/next, counter, keyboard nav) | `cover_image` + all `product.image_url` | `<GallerySection>` |
-| **Reviews** | Display reviews + submit form (mock — pending approval) | Hardcoded empty array `[]` | `<ReviewsSection>` |
-| **Appointment** | Table booking form → sends WhatsApp message to BiteSite | Hardcoded WhatsApp: `60165660239` | `<AppointmentSection>` |
-| **Seasonal** | Featured products highlighted as "LIMITED TIME ONLY" | `products` where `is_featured = true` | `<SeasonalSection>` |
-| **Events** | Event cards with date badge (month + day) | Hardcoded empty array `[]` | `<EventsSection>` |
-
-### Tier Section Orchestration (`tier-sections.tsx`)
-- Gallery images = `cover_image` + all product images (deduplicated)
-- Seasonal items = featured products mapped to `{id, name, description, image, price, period}`
-- Reviews/Events currently use hardcoded empty arrays (future: connect to DB tables)
-
----
-
-## Homepage (`/`)
-
-### Search & Filter
-- **Search bar**: Real-time search by name, cuisine, description, tags
-- **Open Now**: Toggle to show only currently-open restaurants (timezone: Asia/Kuala_Lumpur)
-- **Cuisine filters**: Cafe, Western, Asian, Dessert, Japanese, Bakery (multi-select)
-- **Area filters**: Dynamically generated from `merchants.area` column (includes "All Areas")
-- **More filters**: Halal, Cash, Cashless, Cards (multi-select)
-- **Active filter count**: Shows "X filters active" badge + "Clear All" button
-- **Loading state**: Skeleton cards with staggered pulse animation
-
-### Merchant Cards
-- **Open Now badge**: Green (open) or dark (closed) pill, top-left of image
-- **Share Menu**: Top-right floating button — WhatsApp / Facebook / Twitter / Copy Link / Instagram (copy)
-- **View Count**: Bottom-right eye icon + formatted number (only if > 0)
-- **Tags**: Primary cuisine tag + up to 3 merchant tags
-- **Hours**: "Today: X:XX AM - X:XX PM"
-- **Hover effects**: Image zoom (scale-105), shadow lift
-
-### Related Merchants Algorithm (`getRelatedMerchants`)
-Scoring system (highest first):
-1. Currently open (+20 points)
-2. Same cuisine_type (+10)
-3. Overlapping tags (+3 per tag)
-4. Same area (+5)
-
-Returns top N (default 3) scored merchants.
 
 ---
 
 ## View Count System
 
-- **Tracking**: `<ViewTracker>` component ("use client") fires `POST /api/view` after 2-second delay
-- **API**: `app/api/view/route.ts` — validates slug, calls `increment_view_count()` RPC
-- **Database**: `increment_view_count()` upserts `merchant_stats` (total) + `merchant_monthly_views` (monthly)
+- **Merchant tracking**: `<ViewTracker>` fires `POST /api/view` after 2s delay
+- **Article tracking**: `<StoryViewTracker>` fires `POST /api/story-view` after 2s delay
+- **Database**: RPC functions upsert `merchant_stats` / `articles.view_count`
 - **Display locations**:
-  - Merchant page Hero: inline eye badge next to cuisine tag
-  - Homepage cards: bottom-right eye badge (only if viewCount > 0)
-  - Related merchants: not shown (keeps cards clean)
+  - Merchant page Hero: inline eye badge
+  - Homepage cards: bottom-right eye badge
+  - Stories list: eye icon + count per article
+  - Story detail: eye icon + count in hero meta
 
 ---
 
 ## SEO & Performance
 
-- **Meta tags**: Auto-generated per merchant (title, description, keywords, OG, Twitter)
-- **Canonical URLs**: `https://bitesite-pied.vercel.app/store/{slug}`
-- **Schema.org**: JSON-LD Restaurant + BreadcrumbList on every merchant page
+- **Meta tags**: Auto-generated per merchant and per article
+- **Canonical URLs**: `https://bitesite-pied.vercel.app/store/{slug}` and `/stories/{slug}`
+- **Schema.org**: JSON-LD Restaurant + BreadcrumbList on merchant pages
 - **Sitemap**: Auto-generated from all published merchants (`sitemap.ts`)
 - **Robots**: Allow all, sitemap linked (`robots.ts`)
 - **Google Search Console**: Verified
 - **Image optimization**: `unoptimized: true` in next.config.js (Vercel free tier)
-- **Lazy loading**: Images use `loading="lazy"` except hero (priority)
 
 ---
 
@@ -380,6 +483,20 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=     # Supabase anon/public key
 6. **Payment methods** stored as array: `["Cash", "Cashless", "Cards"]` — displayed with icons
 7. **Operating hours** stored as JSONB — supports single and split hours (comma-separated)
 8. **Tags** are free-text array — used for filtering (Halal, Pet Friendly, WiFi, etc.)
+9. **Articles are published via Supabase Table Editor** — zero code required
+10. **Article images use external URLs** — Google Drive, Unsplash, or any direct image link
+
+---
+
+## Pages Summary
+
+| Page | Path | Purpose |
+|------|------|---------|
+| Home | `/` | Browse all restaurants, search, filter |
+| Merchant | `/store/{slug}` | Individual restaurant menu & info |
+| Stories | `/stories` | Blog list — all articles |
+| Story | `/stories/{slug}` | Individual article (Markdown) |
+| Join Us | `/join-us` | Pricing & signup for restaurant owners |
 
 ---
 
