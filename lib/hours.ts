@@ -1,3 +1,5 @@
+/* bitesite/lib/hours.ts */
+
 /**
  * Get current day key: "monday", "tuesday", etc.
  */
