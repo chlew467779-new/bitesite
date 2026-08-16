@@ -1,3 +1,5 @@
+/* bitesite/types/index.ts */
+
 export type MerchantStyle = "fresh" | "luxury" | "japanese";
 
 export interface Merchant {
