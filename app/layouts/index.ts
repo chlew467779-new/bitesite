@@ -1,3 +1,5 @@
+/* bitesite/app/layouts/index.ts    */
+
 import { ClassicLayout } from "./classic-layout";
 import { ElegantLayout } from "./elegant-layout";
 import { MinimalLayout } from "./minimal-layout";
