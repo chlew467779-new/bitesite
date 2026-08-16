@@ -13,13 +13,14 @@ import {
   MapPin, Phone, Mail, Instagram, ArrowLeft, MessageSquare, Banknote, Smartphone, CreditCard,
 } from "lucide-react";
 import Link from "next/link";
+import { getTodayKey } from "@/lib/hours";
 
 export function ElegantLayout({
   merchant, categories, products, videos, features, viewCount,
 }: LayoutProps) {
   const resolvedFeatures = mergeFeatures(features);
 
-  const today = new Date().toLocaleDateString("en-MY", { weekday: "long" }).toLowerCase();
+  const today = getTodayKey();
   const hours = merchant.operating_hours as Record<string, string> | null;
 
   const navItems = [
