@@ -7,13 +7,23 @@ import {
   getCategoriesByMerchant,
   getProductsByMerchant,
   getVideosByMerchant,
+  getPublishedMerchants,
 } from "@/lib/supabase";
 import { layouts } from "@/app/layouts";
+
+// ISR: 每 5 分钟重新生成页面（数据更新后自动同步）
+export const revalidate = 300;
 
 // Next.js 15: params is a Promise
 type PageProps = {
   params: Promise<{ merchant: string }>;
 };
+
+// ── 静态生成：Build 时生成所有商家页面 ──
+export async function generateStaticParams() {
+  const merchants = await getPublishedMerchants();
+  return merchants.map((m) => ({ merchant: m.slug }));
+}
 
 // ── 动态 SEO ──
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
