@@ -8,8 +8,10 @@ import {
   getProductsByMerchant,
   getVideosByMerchant,
   getPublishedMerchants,
+  getRelatedMerchants,
 } from "@/lib/supabase";
 import { layouts } from "@/app/layouts";
+import { RelatedMerchants } from "@/components/sections/related-merchants";
 
 // ISR: 每 5 分钟后台自动刷新数据
 export const revalidate = 300;
@@ -50,7 +52,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       : merchant.description
     : `View the full menu, photos and opening hours for ${merchant.name} in Kuala Lumpur.`;
 
-  // 确保 OG 图片是绝对路径
   const ogImage = merchant.cover_image
     ? merchant.cover_image.startsWith("http")
       ? merchant.cover_image
@@ -104,10 +105,17 @@ export default async function MerchantPage({ params }: PageProps) {
     notFound();
   }
 
-  const [categories, products, videos] = await Promise.all([
+  const [categories, products, videos, relatedMerchants] = await Promise.all([
     getCategoriesByMerchant(merchant.id),
     getProductsByMerchant(merchant.id),
     getVideosByMerchant(merchant.id),
+    getRelatedMerchants(
+      merchant.slug,
+      merchant.cuisine_type,
+      merchant.tags,
+      merchant.area,
+      3
+    ),
   ]);
 
   const layoutKey = merchant.layout || "classic";
@@ -200,6 +208,7 @@ export default async function MerchantPage({ params }: PageProps) {
         videos={videos}
         features={merchant.features}
       />
+      <RelatedMerchants merchants={relatedMerchants} />
     </>
   );
 }
