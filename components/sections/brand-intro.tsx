@@ -1,3 +1,5 @@
+/* bitesite/components/sections/brand-intro.tsx */
+
 "use client";
 
 import { DiamondSeparator } from "@/components/ui/diamond-separator";
