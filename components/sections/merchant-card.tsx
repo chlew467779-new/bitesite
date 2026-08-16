@@ -1,3 +1,5 @@
+/* bitesite/components/sections/merchant-card.tsx */
+
 import { ArrowRight, Clock } from "lucide-react";
 import { SafeImage } from "@/app/components/safe-image";
 import { CuisineTag } from "@/components/ui/cuisine-tag";
