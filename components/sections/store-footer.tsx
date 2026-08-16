@@ -1,3 +1,5 @@
+/* bitesite/components/sections/store-footer.tsx */
+
 import { Phone, MessageCircle } from "lucide-react";
 import type { Merchant } from "@/types";
 import type { StyleConfig } from "@/lib/styles";
