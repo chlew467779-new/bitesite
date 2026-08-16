@@ -1,19 +1,60 @@
 /* bitesite/components/sections/latest-stories.tsx */
 
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
+import { supabase } from "@/lib/supabase";
+import type { Article } from "@/types";
 
-export async function LatestStories() {
-  const { data: articles } = await supabase
-    .from("articles")
-    .select("*")
-    .eq("published", true)
-    .order("created_at", { ascending: false })
-    .limit(3);
+export function LatestStories() {
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  if (!articles || articles.length === 0) return null;
+  useEffect(() => {
+    async function fetchArticles() {
+      const { data } = await supabase
+        .from("articles")
+        .select("*")
+        .eq("published", true)
+        .order("created_at", { ascending: false })
+        .limit(3);
+
+      setArticles(data || []);
+      setLoading(false);
+    }
+
+    fetchArticles();
+  }, []);
+
+  if (loading) {
+    return (
+      <section className="border-t border-[#DDE5DC] px-4 py-16 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-8 h-8 w-48 animate-pulse rounded bg-gray-100" />
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="overflow-hidden rounded-xl border border-[#DDE5DC] bg-white"
+              >
+                <div className="aspect-[16/9] animate-pulse bg-gray-100" />
+                <div className="p-4 space-y-2">
+                  <div className="h-4 w-16 animate-pulse rounded bg-gray-100" />
+                  <div className="h-5 w-3/4 animate-pulse rounded bg-gray-100" />
+                  <div className="h-3 w-24 animate-pulse rounded bg-gray-100" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (articles.length === 0) return null;
 
   return (
     <section className="border-t border-[#DDE5DC] px-4 py-16 sm:px-6 lg:px-8">
