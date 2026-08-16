@@ -1,9 +1,7 @@
-/* bitesite/components/sections/share-buttons.tsx */
-
 "use client";
 
 import { useState } from "react";
-import { Check, Copy, Link2, MessageCircle, Facebook, Twitter, Instagram } from "lucide-react";
+import { Check, Copy, Link2, MessageCircle, Facebook, Twitter, Instagram, Share2 } from "lucide-react";
 
 type LayoutVariant = "classic" | "elegant" | "minimal" | "modern" | "rustic";
 
@@ -35,6 +33,23 @@ export function ShareButtons({ slug, name, variant = "classic" }: ShareButtonsPr
     } catch {}
   };
 
+  const handleNativeShare = async () => {
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({
+          title: `${name} on BiteSite`,
+          text: `Check out ${name} on BiteSite!`,
+          url: url,
+        });
+      } catch {
+        // 用户取消，静默处理
+      }
+      return;
+    }
+    // 不支持原生分享，fallback 到复制链接
+    handleCopy();
+  };
+
   const links = [
     { icon: <MessageCircle className="h-3.5 w-3.5" />, href: `https://wa.me/?text=${encodedName}%20${encodedUrl}`, color: "text-green-600" },
     { icon: <Facebook className="h-3.5 w-3.5" />, href: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`, color: "text-blue-600" },
@@ -43,6 +58,15 @@ export function ShareButtons({ slug, name, variant = "classic" }: ShareButtonsPr
 
   return (
     <div className="flex flex-wrap items-center gap-2">
+      {/* 原生分享按钮（手机优先） */}
+      <button
+        onClick={handleNativeShare}
+        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all active:scale-95 ${buttonStyles[variant]}`}
+      >
+        <Share2 className="h-3.5 w-3.5" />
+        Share
+      </button>
+
       <button
         onClick={handleCopy}
         className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all active:scale-95 ${buttonStyles[variant]}`}
