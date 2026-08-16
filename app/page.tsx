@@ -15,6 +15,7 @@ import type { Merchant } from "@/types";
 
 export default function HomePage() {
   const [merchants, setMerchants] = useState<Merchant[]>([]);
+  const [merchantStats, setMerchantStats] = useState<Map<string, number>>(new Map());
   const [loading, setLoading] = useState(true);
   const [activeCuisines, setActiveCuisines] = useState<string[]>([]);
   const [activeArea, setActiveArea] = useState<string | null>(null);
@@ -23,18 +24,32 @@ export default function HomePage() {
   const [openNow, setOpenNow] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
 
-  // Fetch merchants on mount
+  // Fetch merchants + stats on mount
   useEffect(() => {
     async function fetchData() {
-      const { data, error } = await supabase
-        .from("merchants")
-        .select("*")
-        .eq("is_published", true)
-        .order("created_at", { ascending: false });
+      const [{ data: merchantsData, error: merchantsError }, { data: statsData }] = await Promise.all([
+        supabase
+          .from("merchants")
+          .select("*")
+          .eq("is_published", true)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("merchant_stats")
+          .select("slug, view_count"),
+      ]);
 
-      if (!error && data) {
-        setMerchants(data as Merchant[]);
+      if (!merchantsError && merchantsData) {
+        setMerchants(merchantsData as Merchant[]);
       }
+      
+      if (statsData) {
+        const map = new Map<string, number>();
+        statsData.forEach((s: { slug: string; view_count: number }) => {
+          map.set(s.slug, s.view_count || 0);
+        });
+        setMerchantStats(map);
+      }
+      
       setLoading(false);
     }
     fetchData();
@@ -52,7 +67,6 @@ export default function HomePage() {
   // Filter logic
   const filtered = useMemo(() => {
     return merchants.filter((m) => {
-      // Cuisine filter: 匹配 cuisine_type（逗号分隔）或 tags
       const matchesCuisine =
         activeCuisines.length === 0 ||
         activeCuisines.some((c) =>
@@ -60,10 +74,8 @@ export default function HomePage() {
           m.tags?.some((t) => t.toLowerCase() === c.toLowerCase())
         );
 
-      // Area filter
       const matchesArea = !activeArea || activeArea === "All Areas" || m.area === activeArea;
 
-      // More filter: tags 或 payment_methods
       const matchesMore =
         activeMore.length === 0 ||
         activeMore.some((item) => {
@@ -73,14 +85,12 @@ export default function HomePage() {
           return m.tags?.some((t) => t.toLowerCase() === item.toLowerCase());
         });
 
-      // Open Now filter
       const matchesOpenNow = !openNow || (() => {
         const todayKey = getTodayKey();
         const hours = m.operating_hours?.[todayKey];
         return hours ? isCurrentlyOpen(hours) : false;
       })();
 
-      // Search filter
       const q = searchQuery.toLowerCase().trim();
       const searchMatch =
         !q ||
@@ -224,7 +234,10 @@ export default function HomePage() {
                   duration={0.4}
                   direction="up"
                 >
-                  <MerchantCard merchant={merchant} />
+                  <MerchantCard 
+                    merchant={merchant} 
+                    viewCount={merchantStats.get(merchant.slug) || 0}
+                  />
                 </FadeIn>
               ))}
             </div>
