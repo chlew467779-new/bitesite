@@ -8,6 +8,7 @@ import { CategoryFilter } from "@/components/sections/category-filter";
 import { MerchantCard } from "@/components/sections/merchant-card";
 import { MerchantCardSkeleton } from "@/components/sections/merchant-card-skeleton";
 import { Footer } from "@/components/sections/footer";
+import { LatestStories } from "@/components/sections/latest-stories";
 import { supabase } from "@/lib/supabase";
 import { FadeIn } from "@/app/components/animations";
 import { isCurrentlyOpen, getTodayKey } from "@/lib/hours";
@@ -41,7 +42,7 @@ export default function HomePage() {
       if (!merchantsError && merchantsData) {
         setMerchants(merchantsData as Merchant[]);
       }
-      
+
       if (statsData) {
         const map = new Map<string, number>();
         statsData.forEach((s: { slug: string; view_count: number }) => {
@@ -49,7 +50,7 @@ export default function HomePage() {
         });
         setMerchantStats(map);
       }
-      
+
       setLoading(false);
     }
     fetchData();
@@ -257,6 +258,7 @@ export default function HomePage() {
         </div>
       </section>
 
+      <LatestStories />
       <Footer />
     </main>
   );
