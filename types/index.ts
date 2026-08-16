@@ -83,6 +83,23 @@ export interface MerchantVideo {
   created_at: string;
 }
 
+export interface Article {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string | null;
+  content: string;
+  cover_image: string | null;
+  category: string;
+  tags: string[] | null;
+  merchant_slug: string | null;
+  author: string;
+  published: boolean;
+  view_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface LayoutProps {
   merchant: Merchant;
   categories: Category[];
