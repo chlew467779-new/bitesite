@@ -1,3 +1,5 @@
+/* bitesite/components/ui/cuisine-tag.tsx */
+
 import { cn } from "@/lib/utils";
 
 interface CuisineTagProps {
