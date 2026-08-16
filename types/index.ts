@@ -46,6 +46,7 @@ export interface Merchant {
   status: string;
   area: string | null;
   tags: string[];
+  payment_methods: string[];
 }
 
 export interface Category {
