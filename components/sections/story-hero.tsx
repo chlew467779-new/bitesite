@@ -1,6 +1,8 @@
 /* bitesite/components/sections/story-hero.tsx */
 
 import { SafeImage } from "@/app/components/safe-image";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import type { Article } from "@/types";
 
 interface StoryHeroProps {
@@ -23,8 +25,17 @@ export function StoryHero({ article }: StoryHeroProps) {
       : `${article.view_count}`;
 
   return (
-    <section className="px-4 pt-8 pb-6 sm:px-6 lg:px-8">
+    <section className="px-4 pt-6 pb-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-3xl">
+        {/* Back button */}
+        <Link
+          href="/stories"
+          className="mb-4 inline-flex items-center gap-1.5 text-sm text-[#8A968B] transition-colors hover:text-[#5A8F6E]"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Stories
+        </Link>
+
         {/* Category & Tags */}
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <span className="rounded-full bg-[#5A8F6E]/10 px-3 py-1 text-xs font-medium uppercase tracking-wider text-[#5A8F6E]">
