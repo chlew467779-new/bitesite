@@ -208,7 +208,7 @@ export default async function MerchantPage({ params }: PageProps) {
         videos={videos}
         features={merchant.features}
       />
-      <RelatedMerchants merchants={relatedMerchants} />
+      <RelatedMerchants merchants={relatedMerchants} variant={layoutKey as "classic" | "elegant" | "minimal" | "modern" | "rustic"} />
     </>
   );
 }
