@@ -65,7 +65,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     openGraph: {
       title: `${merchant.name} — ${merchant.cuisine_type ?? "Restaurant"}`,
       description: merchant.description || `Menu & opening hours for ${merchant.name}`,
-      images: merchant.cover_image ? [{ url: merchant.cover_image }] : [],
+      images: merchant.cover_image
+      ? [{ url: merchant.cover_image.startsWith("http") ? merchant.cover_image : `https://bitesite-pied.vercel.app${merchant.cover_image}` }]
+      : [],
       type: "website",
       locale: "en_MY",
     },
