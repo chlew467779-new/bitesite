@@ -1,9 +1,7 @@
-/* bitesite/components/sections/share-menu.tsx */
-
 "use client";
 
 import { useState } from "react";
-import { Check, Copy, Link2, MessageCircle, Facebook, Twitter, Instagram, X } from "lucide-react";
+import { Check, Copy, Link2, MessageCircle, Facebook, Twitter, Instagram, X, Share2 } from "lucide-react";
 
 interface ShareMenuProps {
   slug: string;
@@ -25,6 +23,23 @@ export function ShareMenu({ slug, name }: ShareMenuProps) {
     } catch {}
   };
 
+  const handleNativeShare = async () => {
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({
+          title: `${name} on BiteSite`,
+          text: `Check out ${name} on BiteSite!`,
+          url: url,
+        });
+        return;
+      } catch {
+        // 用户取消或失败，继续 fallback
+      }
+    }
+    // 不支持原生分享，打开菜单
+    setOpen(!open);
+  };
+
   const links = [
     { icon: <MessageCircle className="h-3.5 w-3.5" />, href: `https://wa.me/?text=${encodedName}%20${encodedUrl}`, color: "text-green-600 hover:bg-green-50", label: "WhatsApp" },
     { icon: <Facebook className="h-3.5 w-3.5" />, href: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`, color: "text-blue-600 hover:bg-blue-50", label: "Facebook" },
@@ -36,12 +51,12 @@ export function ShareMenu({ slug, name }: ShareMenuProps) {
       <button
         onClick={(e) => {
           e.stopPropagation();
-          setOpen(!open);
+          handleNativeShare();
         }}
         className="flex h-8 w-8 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-sm border border-white/20 transition-all hover:bg-black/50 active:scale-90"
         style={{ WebkitTapHighlightColor: "transparent" }}
       >
-        {open ? <X className="h-3.5 w-3.5" /> : <Link2 className="h-3.5 w-3.5" />}
+        {open ? <X className="h-3.5 w-3.5" /> : <Share2 className="h-3.5 w-3.5" />}
       </button>
       
       {open && (
