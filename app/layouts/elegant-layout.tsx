@@ -5,6 +5,8 @@
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
 import { TierSections } from "@/app/components/sections/tier-sections";
+import { ViewCountInline } from "@/components/sections/view-count-inline";
+import { ShareButtons } from "@/components/sections/share-buttons";
 import { mergeFeatures } from "@/types";
 import type { LayoutProps } from "@/types";
 import {
@@ -13,7 +15,7 @@ import {
 import Link from "next/link";
 
 export function ElegantLayout({
-  merchant, categories, products, videos, features,
+  merchant, categories, products, videos, features, viewCount,
 }: LayoutProps) {
   const resolvedFeatures = mergeFeatures(features);
 
@@ -79,9 +81,14 @@ export function ElegantLayout({
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
             <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
               <div className="max-w-4xl mx-auto">
-                <span className="inline-block px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-semibold mb-3 border border-amber-500/30">
-                  {merchant.cuisine_type}
-                </span>
+                <div className="flex items-center gap-2 mb-3 flex-wrap">
+                  <span className="inline-block px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-semibold border border-amber-500/30">
+                    {merchant.cuisine_type}
+                  </span>
+                  {typeof viewCount !== "undefined" && viewCount > 0 && (
+                    <ViewCountInline count={viewCount} className="ml-0" />
+                  )}
+                </div>
                 <h1 className="text-3xl sm:text-5xl font-bold text-white mb-2">{merchant.name}</h1>
                 <p className="text-slate-400 text-sm sm:text-base max-w-xl">{merchant.description}</p>
               </div>
@@ -208,6 +215,14 @@ export function ElegantLayout({
                   </div>
                 </div>
               )}
+
+              {/* Share */}
+              <div className="mt-8 pt-6 border-t border-slate-800">
+                <p className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-3">
+                  Share
+                </p>
+                <ShareButtons slug={merchant.slug} name={merchant.name} variant="elegant" />
+              </div>
             </div>
           </section>
         </FadeIn>
