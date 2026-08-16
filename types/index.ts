@@ -2,6 +2,18 @@
 
 export type MerchantStyle = "fresh" | "luxury" | "japanese";
 
+export interface MerchantFeatures {
+  hero: boolean;
+  about: boolean;
+  menu: boolean;
+  contact: boolean;
+  gallery: boolean;
+  reviews: boolean;
+  appointment: boolean;
+  seasonal_popup: boolean;
+  events: boolean;
+}
+
 export interface Merchant {
   id: string;
   slug: string;
@@ -32,19 +44,7 @@ export interface Merchant {
   features: MerchantFeatures;
   settings: Record<string, unknown>;
   status: string;
-  tags: string[];  // ← 新增这一行
-}
-
-export interface MerchantFeatures {
-  hero: boolean;
-  about: boolean;
-  menu: boolean;
-  contact: boolean;
-  gallery: boolean;
-  reviews: boolean;
-  appointment: boolean;
-  seasonal_popup: boolean;
-  events: boolean;
+  tags: string[];
 }
 
 export interface Category {
@@ -87,22 +87,6 @@ export interface LayoutProps {
   products: Product[];
   videos?: MerchantVideo[];
   features?: MerchantFeatures;
-}
-
-// ============================================
-// Tier Features
-// ============================================
-
-export interface MerchantFeatures {
-  hero: boolean;
-  about: boolean;
-  menu: boolean;
-  contact: boolean;
-  gallery: boolean;
-  reviews: boolean;
-  appointment: boolean;
-  seasonal_popup: boolean;
-  events: boolean;
 }
 
 export const defaultFeatures: MerchantFeatures = {
