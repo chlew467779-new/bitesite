@@ -1,3 +1,5 @@
+/* bitesite/app/components/sections/seasonal-section.tsx */
+
 "use client";
 
 import { useState } from "react";
