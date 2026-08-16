@@ -1,53 +1,43 @@
 /* bitesite/app/stories/page.tsx */
 
-import type { Metadata } from "next";
+"use client";
+
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { StoryFilter } from "@/components/sections/story-filter";
 import { StoryList } from "@/components/sections/story-list";
 import { Footer } from "@/components/sections/footer";
 import { FadeIn } from "@/app/components/animations";
+import type { Article } from "@/types";
 
-export const metadata: Metadata = {
-  title: "Stories — Discover Local Restaurants & Hidden Gems",
-  description:
-    "Read the latest stories about new restaurant openings, promotions, and hidden gems in KL. BiteSite Stories.",
-  openGraph: {
-    title: "Stories — Discover Local Restaurants & Hidden Gems",
-    description:
-      "Read the latest stories about new restaurant openings, promotions, and hidden gems in KL.",
-    type: "website",
-  },
-};
+export default function StoriesPage() {
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-export default async function StoriesPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ category?: string }>;
-}) {
-  const { category } = await searchParams;
+  useEffect(() => {
+    async function fetchData() {
+      const { data } = await supabase
+        .from("articles")
+        .select("*")
+        .eq("published", true)
+        .order("created_at", { ascending: false });
 
-  // Fetch distinct categories dynamically
-  const { data: categoryData } = await supabase
-    .from("articles")
-    .select("category")
-    .eq("published", true);
+      const allArticles = data || [];
+      const cats = Array.from(new Set(allArticles.map((a) => a.category))).sort();
 
-  const categories = Array.from(
-    new Set(categoryData?.map((c) => c.category) || [])
-  ).sort();
+      setArticles(allArticles);
+      setCategories(cats);
+      setLoading(false);
+    }
 
-  // Fetch articles
-  let query = supabase
-    .from("articles")
-    .select("*")
-    .eq("published", true)
-    .order("created_at", { ascending: false });
+    fetchData();
+  }, []);
 
-  if (category) {
-    query = query.eq("category", category);
-  }
-
-  const { data: articles } = await query;
+  const filtered = activeCategory
+    ? articles.filter((a) => a.category === activeCategory)
+    : articles;
 
   return (
     <main style={{ backgroundColor: "#FAFBF7" }}>
@@ -67,14 +57,34 @@ export default async function StoriesPage({
       <div className="mx-auto max-w-4xl px-4">
         <StoryFilter
           categories={categories}
-          activeCategory={category || null}
+          activeCategory={activeCategory}
+          onCategoryChange={setActiveCategory}
         />
       </div>
 
       {/* Article List */}
       <section className="px-4 py-8 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl">
-          <StoryList articles={articles || []} />
+          {loading ? (
+            <div className="grid gap-6 sm:grid-cols-2">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="overflow-hidden rounded-xl border border-[#DDE5DC] bg-white"
+                >
+                  <div className="aspect-[16/9] animate-pulse bg-gray-100" />
+                  <div className="p-5 space-y-3">
+                    <div className="h-4 w-16 animate-pulse rounded-full bg-gray-100" />
+                    <div className="h-5 w-3/4 animate-pulse rounded bg-gray-100" />
+                    <div className="h-3 w-full animate-pulse rounded bg-gray-100" />
+                    <div className="h-3 w-20 animate-pulse rounded bg-gray-100" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <StoryList articles={filtered} />
+          )}
         </div>
       </section>
 
