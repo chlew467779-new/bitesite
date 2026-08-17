@@ -11,14 +11,11 @@ interface StoryContentProps {
 }
 
 export function StoryContent({ content }: StoryContentProps) {
-  // Fix: Supabase Table Editor sometimes stores 
- as literal "\n" string
-  // We convert literal "\n" to real newlines before rendering Markdown
-  const processedContent = content
-    .replace(/\\n/g, "
-")
-    .replace(/\n/g, "
-");
+  // Supabase Table Editor stores newlines as literal backslash-n characters.
+  // We convert them to actual newline characters for Markdown rendering.
+  const backslashN = "\" + "n";
+  const newline = String.fromCharCode(10);
+  const processedContent = content.split(backslashN).join(newline);
 
   return (
     <section className="px-4 py-8 sm:px-6 lg:px-8">
@@ -79,7 +76,6 @@ export function StoryContent({ content }: StoryContentProps) {
               ),
               img: ({ src, alt }) => (
                 <div className="my-6 overflow-hidden rounded-xl">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={src}
                     alt={alt || ""}
