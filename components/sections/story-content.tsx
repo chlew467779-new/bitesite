@@ -11,11 +11,12 @@ interface StoryContentProps {
 }
 
 export function StoryContent({ content }: StoryContentProps) {
-  // Supabase Table Editor stores newlines as literal backslash-n characters.
-  // We convert them to actual newline characters for Markdown rendering.
-  const backslashN = "\" + "n";
-  const newline = String.fromCharCode(10);
-  const processedContent = content.split(backslashN).join(newline);
+  // Supabase Table Editor sometimes stores newlines as literal backslash-n.
+  // We use String.fromCharCode to avoid backslash escape issues in source code.
+  // 92 = backslash, 110 = letter n. Together they make the pattern "\n".
+  const backslashN = String.fromCharCode(92, 110);
+  const realNewline = String.fromCharCode(10);
+  const processedContent = content.split(backslashN).join(realNewline);
 
   return (
     <section className="px-4 py-8 sm:px-6 lg:px-8">
