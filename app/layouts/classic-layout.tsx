@@ -242,7 +242,9 @@ export function ClassicLayout({
                   )}
                 </div>
               </div>
-
+              
+              <MapEmbed address={merchant.address} borderColor="#FCD34D" />
+  
               {/* Payment Methods */}
               {merchant.payment_methods && merchant.payment_methods.length > 0 && (
                 <div className="mt-8 pt-6 border-t border-amber-200">
