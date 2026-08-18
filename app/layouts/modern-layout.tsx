@@ -118,6 +118,9 @@ export function ModernLayout({
                 </div>
               </div>
 
+              {/* Map */}
+              <MapEmbed address={merchant.address} borderColor="#E2E8F0" />
+
               {/* Payment Methods */}
               {merchant.payment_methods && merchant.payment_methods.length > 0 && (
                 <div className="mt-8 pt-6 border-t border-slate-200">
