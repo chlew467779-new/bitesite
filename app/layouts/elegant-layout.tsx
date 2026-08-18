@@ -199,6 +199,9 @@ export function ElegantLayout({
                 )}
               </div>
 
+              {/* Map */}
+              <MapEmbed address={merchant.address} borderColor="#334155" />
+
               {/* Payment Methods */}
               {merchant.payment_methods && merchant.payment_methods.length > 0 && (
                 <div className="mt-8 pt-6 border-t border-slate-800">
