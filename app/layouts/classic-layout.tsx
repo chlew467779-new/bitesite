@@ -243,6 +243,7 @@ export function ClassicLayout({
                 </div>
               </div>
               
+              {/* Map */}
               <MapEmbed address={merchant.address} borderColor="#FCD34D" />
   
               {/* Payment Methods */}
