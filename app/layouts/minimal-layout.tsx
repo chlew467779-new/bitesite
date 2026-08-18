@@ -107,6 +107,9 @@ export function MinimalLayout({
                 {merchant.phone && <a href={`tel:${merchant.phone}`} className="flex items-center gap-2 text-stone-600"><Phone size={16} />{merchant.phone}</a>}
                 {merchant.whatsapp && <a href={`https://wa.me/${merchant.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-green-600"><MessageSquare size={16} />WhatsApp</a>}
               </div>
+              
+              {/* Map */}
+              <MapEmbed address={merchant.address} borderColor="#E7E5E4" />
 
               {/* Payment Methods */}
               {merchant.payment_methods && merchant.payment_methods.length > 0 && (
