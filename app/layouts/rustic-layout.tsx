@@ -122,6 +122,9 @@ export function RusticLayout({
                 </div>
               </div>
 
+              {/* Map */}
+              <MapEmbed address={merchant.address} borderColor="#FED7AA" />
+
               {/* Payment Methods */}
               {merchant.payment_methods && merchant.payment_methods.length > 0 && (
                 <div className="mt-8 pt-6 border-t border-orange-200">
