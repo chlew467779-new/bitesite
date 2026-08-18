@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { getTodayKey } from "@/lib/hours";
+import { MapEmbed } from "@/app/components/map-embed";
 
 export function ElegantLayout({
   merchant, categories, products, videos, features, viewCount,
