@@ -12,6 +12,7 @@ import type { LayoutProps } from "@/types";
 import { MapPin, Phone, Instagram, ArrowLeft, MessageSquare, Banknote, Smartphone, CreditCard } from "lucide-react";
 import Link from "next/link";
 import { getTodayKey } from "@/lib/hours";
+import { MapEmbed } from "@/app/components/map-embed";
 
 export function MinimalLayout({
   merchant, categories, products, videos, features, viewCount,
