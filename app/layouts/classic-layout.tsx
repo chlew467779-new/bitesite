@@ -10,6 +10,7 @@ import Link from "next/link";
 import type { LayoutProps } from "@/types";
 import { mergeFeatures } from "@/types";
 import { getTodayKey } from "@/lib/hours";
+import { MapEmbed } from "@/app/components/map-embed";
 
 export function ClassicLayout({
   merchant,
