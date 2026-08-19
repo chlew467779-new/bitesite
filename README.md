@@ -8,32 +8,19 @@ Beautiful Menus for Local Restaurants — Kuala Lumpur, Malaysia.
 
 ---
 
-## 📌 Code Convention — IMPORTANT
+## 📌 Important — How We Edit Code
 
-**Every new file MUST have a path comment at the very top:**
+**We edit code directly on GitHub.com. No local terminal, no bash commands.**
 
-```tsx
-/* bitesite/app/page.tsx */
+Every change is done through the GitHub web interface:
+1. Go to https://github.com/chlew467779-new/bitesite
+2. Click on the file you want to edit
+3. Click the **pencil icon** (Edit this file)
+4. Paste the new code
+5. Scroll down, write a commit message, click **Commit changes**
+6. Vercel will auto-deploy within 30–60 seconds
 
-"use client";
-// ... rest of the code
-```
-
-```ts
-/* bitesite/lib/supabase.ts */
-
-import { createClient } from "@supabase/supabase-js";
-// ... rest of the code
-```
-
-```css
-/* bitesite/app/globals.css */
-
-@import "tailwindcss";
-// ... rest of the code
-```
-
-This makes it easy to identify which file is which when copying code or debugging.
+> **Tip**: If you need to create a new file, click **"Add file" → "Create new file"** and type the full path (e.g. `app/our-partner/page.tsx`).
 
 ---
 
@@ -49,6 +36,7 @@ This makes it easy to identify which file is which when copying code or debuggin
 | Icons | Lucide React |
 | Fonts | Inter, Playfair Display, Noto Sans JP |
 | Markdown | react-markdown + remark-gfm |
+| Map | Leaflet + OpenStreetMap (free) |
 
 ---
 
@@ -69,6 +57,9 @@ app/
 │   ├── page.tsx                # Stories list page (articles grid + category filter)
 │   └── [slug]/
 │       └── page.tsx            # Story detail page (ISR 300s + Article Schema + Markdown render)
+├── our-partner/
+│   ├── layout.tsx              # Our Partner page SEO metadata
+│   └── page.tsx                # Interactive map showing all merchant locations
 ├── api/
 │   ├── view/
 │   │   └── route.ts            # POST /api/view — increment merchant view count
@@ -80,32 +71,38 @@ app/
 │       └── loading.tsx           # Merchant page skeleton
 ├── layouts/
 │   ├── index.ts                  # Layout registry (classic/elegant/minimal/modern/rustic)
-│   ├── classic-layout.tsx        # Warm amber cafe style (with map embed)
-│   ├── elegant-layout.tsx        # Dark luxury fine-dining style (with map embed)
-│   ├── minimal-layout.tsx        # Clean stone/zen style (with map embed)
-│   ├── modern-layout.tsx         # White slate contemporary style (with map embed)
-│   └── rustic-layout.tsx         # Orange earthy style (with map embed)
+│   ├── classic-layout.tsx        # Warm amber cafe style
+│   ├── elegant-layout.tsx        # Dark luxury fine-dining style
+│   ├── minimal-layout.tsx        # Clean stone/zen style
+│   ├── modern-layout.tsx         # White slate contemporary style
+│   └── rustic-layout.tsx         # Orange earthy style
 ├── components/
 │   ├── map-embed.tsx             # Google Maps iframe embed component
-│   └── safe-image.tsx            # Next/Image wrapper with error fallback + loading shimmer + auto optimization
+│   └── safe-image.tsx            # Next/Image wrapper with error fallback + loading shimmer
 └── components/
     ├── ui/
     │   ├── cuisine-tag.tsx           # Pill-shaped cuisine label
     │   └── diamond-separator.tsx     # Decorative divider (◆)
     └── sections/
-        ├── hero.tsx                  # Homepage hero with search bar (restaurants, cuisines, dishes)
+        ├── hero.tsx                  # Homepage hero with search bar
         ├── category-filter.tsx       # 3-row sticky filter bar with smooth animations
         ├── merchant-card.tsx         # Card: Open Now badge + ShareMenu + ViewCount + tags + hours
         ├── merchant-card-skeleton.tsx # Loading skeleton with pulse animation
-        ├── footer.tsx                # Site footer (Home / Stories / Join Us + copyright)
+        ├── footer.tsx                # Site footer (Home / Stories / Join Us / Our Partner + copyright)
+        ├── site-header.tsx           # Global nav bar (Home / Our Partner / Stories / Join Us)
+        │
+        ├── map-container.tsx         # Map page wrapper: filter + search logic
+        ├── map-section.tsx           # Leaflet map: markers with photos, user location pulse, recenter
+        ├── map-filter.tsx            # Map top filter pills + search input
+        │
         ├── brand-intro.tsx           # Merchant brand intro
         ├── discover-bitesite.tsx     # "Discover more" CTA link to homepage
         ├── info-accordion.tsx        # Location / Hours / Dress Code / Social accordion
         ├── menu-section.tsx          # Category-based menu grid
         ├── product-card.tsx          # Individual dish card with image, price, discount
         ├── related-merchants.tsx     # "You May Also Like" recommendations
-        ├── share-menu.tsx            # Floating share menu (WhatsApp/FB/Twitter/Copy/IG)
-        ├── share-buttons.tsx         # Inline share buttons
+        ├── share-menu.tsx            # Floating share menu (auto-close on outside click & scroll)
+        ├── share-buttons.tsx         # Inline share buttons (Share + Copy Link only)
         ├── view-tracker.tsx          # Client-side merchant view count tracker (2s delay)
         ├── view-count-inline.tsx     # Eye icon + formatted count badge
         ├── store-hero.tsx            # Full-bleed hero image
@@ -126,16 +123,15 @@ app/
         ├── story-content.tsx         # Markdown renderer for article body
         ├── story-related.tsx         # "More Stories" recommendations
         ├── story-view-tracker.tsx    # Client-side article view count tracker
-        ├── latest-stories.tsx        # Homepage "Latest Stories" section (latest 3 articles)
-        │
-        └── site-header.tsx           # Global nav bar (Home / Stories / Join Us)
+        └── latest-stories.tsx        # Homepage "Latest Stories" section (latest 3 articles)
 
 lib/
-├── supabase.ts                 # Supabase client + all DB queries + related merchant scoring
+├── supabase.ts                 # Supabase client + all DB queries + related merchant scoring + map query
 ├── hours.ts                    # Timezone-safe open/closed logic (Asia/Kuala_Lumpur)
 ├── utils.ts                    # cn() — clsx + tailwind-merge
 ├── styles.ts                   # OLD 3-style theme map (fresh/luxury/japanese) — DEPRECATED
-├── image-utils.ts              # Auto image URL optimization (Unsplash / Supabase Storage compression)
+├── map-colors.ts               # Cuisine type → marker color mapping for map
+├── image-utils.ts              # Auto image URL optimization (Unsplash / Supabase Storage)
 ├── whatsapp.ts                 # BiteSite WhatsApp link constant
 └── markdown.ts                 # Markdown rendering utilities (reserved)
 
@@ -162,7 +158,7 @@ types/
 | website | TEXT | External website URL |
 | instagram | TEXT | Instagram URL |
 | facebook | TEXT | Facebook URL |
-| cover_image | TEXT | Hero image URL (used for OG image) |
+| cover_image | TEXT | Hero image URL (used for OG image + map marker photo) |
 | logo_image | TEXT | Logo URL |
 | operating_hours | JSONB | `{monday: "9:00 AM - 10:00 PM", ...}` |
 | dress_code | TEXT | Optional dress code info |
@@ -178,8 +174,10 @@ types/
 | settings | JSONB | Misc merchant settings |
 | status | TEXT | e.g. "active" |
 | area | TEXT | District/area e.g. "Desa ParkCity", "Bangsar" |
-| tags | TEXT[] | Array of tags e.g. ["Halal", "Pet Friendly", "WiFi"] |
-| payment_methods | TEXT[] | ["Cash", "Cashless", "Cards"] |
+| tags | TEXT[] | Array of tags e.g. `["Halal", "Pet Friendly", "WiFi"]` |
+| payment_methods | TEXT[] | `["Cash", "Cashless", "Cards"]` |
+| **latitude** | **FLOAT8** | **NEW** Latitude for map marker (e.g. `3.1489`) |
+| **longitude** | **FLOAT8** | **NEW** Longitude for map marker (e.g. `101.7103`) |
 | is_published | BOOLEAN | Only published merchants appear on site |
 | created_at | TIMESTAMPTZ | |
 | updated_at | TIMESTAMPTZ | Used for sitemap lastModified |
@@ -254,6 +252,35 @@ types/
 | view_count | INT | Auto-incremented. Do NOT edit manually. |
 | created_at | TIMESTAMPTZ | Auto-generated. |
 | updated_at | TIMESTAMPTZ | Auto-generated. |
+
+---
+
+## 🗺️ How to Add Merchant Coordinates for the Map
+
+The **Our Partner** page (`/our-partner`) displays all merchants on an interactive map. To appear on the map, a merchant **must have** `latitude` and `longitude` values.
+
+### Step 1: Add columns to Supabase (run once)
+
+Go to **Supabase Dashboard → SQL Editor** and run:
+
+```sql
+ALTER TABLE merchants
+ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION,
+ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION;
+
+CREATE INDEX IF NOT EXISTS idx_merchants_lat_lng ON merchants(latitude, longitude);
+```
+
+### Step 2: Find coordinates for each merchant
+
+1. Open [Google Maps](https://maps.google.com)
+2. Search the restaurant address
+3. **Right-click** on the exact location on the map
+4. Select **"Copy coordinates"** (e.g. `3.1489, 101.7103`)
+5. Go to **Supabase → Table Editor → merchants**
+6. Paste the first number into `latitude`, the second into `longitude`
+
+> **Merchants without coordinates will NOT appear on the map.** This is intentional — we don't want markers floating in wrong locations.
 
 ---
 
@@ -354,64 +381,46 @@ increment_article_view(article_slug TEXT) RETURNS void
 
 ---
 
-## Merchant Detail Page (`/store/[merchant]`)
+## Pages Summary
 
-### Rendering Strategy
-- **ISR**: `export const revalidate = 300` — pages revalidate every 5 minutes
-- **Static Generation**: `generateStaticParams()` fetches all published merchants at build time
-- **SSR Fallback**: If merchant not in static params, renders on-demand
-
-### Metadata Generation (`generateMetadata`)
-- Dynamic title: `{name} | {cuisine} Menu | BiteSite`
-- Dynamic description: truncated to 155 chars from `merchant.description`
-- OG image: `merchant.cover_image` (absolute URL)
-- Canonical URL: `https://bitesite-pied.vercel.app/store/{slug}`
-
-### Schema.org JSON-LD (SEO)
-Three structured data blocks injected via `<script type="application/ld+json">`:
-1. **Restaurant Schema** (`@type: "Restaurant"`)
-2. **Menu Schema** (`hasMenu` linked to `#menu-section`)
-3. **BreadcrumbList Schema**
-
-### Embedded Map
-Each merchant page automatically displays a Google Maps embed in the Contact section if `address` is provided. Supports all 5 layout styles with matching border colors.
+| Page | Path | Purpose |
+|------|------|---------|
+| Home | `/` | Browse all restaurants, search (including dishes), filter |
+| Merchant | `/store/{slug}` | Individual restaurant menu, map, hours, SEO Schema |
+| **Our Partner** | **`/our-partner`** | **Interactive map showing all merchant locations with photos, filters, search, and navigation** |
+| Stories | `/stories` | Blog list — all articles |
+| Story | `/stories/{slug}` | Individual article (Markdown + Article Schema) |
+| Join Us | `/join-us` | Pricing & signup for restaurant owners (FAQ Schema) |
 
 ---
 
-## Stories Page (`/stories`)
+## Our Partner Map Page (`/our-partner`)
 
 ### Features
-- **Dynamic category filters**: Categories are read from the database automatically
-- **Featured article**: The newest article gets a large featured card
-- **Article list**: Remaining articles shown in a responsive grid
-- **SEO**: Dedicated layout with metadata + Article Schema on detail pages
+- **Interactive Leaflet map** with OpenStreetMap (completely free)
+- **Photo markers**: Each merchant shown as a circular photo with colored border
+- **Color-coded by cuisine type**:
+  - Cafe = Coffee `#8B4513`
+  - Western = Yellow `#F59E0B`
+  - Bakery = Orange `#F97316`
+  - Japanese / Asian = Red `#EF4444`
+  - Dessert = Pink `#EC4899`
+  - Other = Gray `#6B7280`
+- **User location**: Pulsing green dot with animation
+- **Recenter button**: Top-right corner, click to fly back to your location
+- **Type filters**: Top bar pills to show/hide cuisine types
+- **Search box**: Search by restaurant name, area, or cuisine
+- **Empty state**: "No restaurants found" message when filters return nothing
+- **Merchant card popup**: Photo, name, Open/Closed badge, cuisine type
+- **Two action buttons**:
+  - **Go to Merchant Page** → Opens the restaurant's detail page
+  - **Get Directions** → Opens Google Maps navigation directly
 
-### Story Detail Page (`/stories/[slug]`)
-- **ISR 300s**: Revalidates every 5 minutes
-- **Markdown rendering**: Full GFM support via `react-markdown` + `remark-gfm`
-- **View tracking**: 2-second delay after page load, increments `view_count`
-- **Related stories**: Shows up to 3 related articles from the same category
-- **Merchant link**: If `merchant_slug` is set, shows a CTA button linking to the merchant page
-- **SEO**: Dynamic title, description, OG image, **Article Schema** (datePublished, author, publisher)
-
----
-
-## Homepage (`/`)
-
-### Sections (top to bottom)
-1. **Restaurant owner banner** — "Are you a restaurant owner? Join BiteSite"
-2. **Hero** — Search bar (restaurants, cuisines, **dishes**)
-3. **Category Filter** — Sticky filter bar with smooth expand/collapse animation
-4. **Merchant Grid** — Filtered restaurant cards (supports dish-level search)
-5. **Latest Stories** — Latest 3 published articles
-6. **Footer** — Home / Stories / Join Us links + copyright
-
-### Dish Search
-The homepage search bar now searches across:
-- Restaurant names
-- Cuisine types
-- Descriptions & tags
-- **Individual dish names** (e.g. searching "burger" returns restaurants with burgers on their menu)
+### How it works
+1. Page fetches all published merchants that have `latitude` and `longitude`
+2. Map centers on KL by default, or flies to user's GPS location if permission granted
+3. Click any marker → bottom card slides up with merchant info
+4. Click outside marker or the X button → card closes
 
 ---
 
@@ -430,7 +439,7 @@ Each merchant picks ONE layout via `merchants.layout` column.
 All layouts include:
 - Google Maps embed in Contact section
 - Payment method badges
-- Share buttons (WhatsApp / Facebook / Twitter / Copy / Instagram)
+- Share buttons (Share + Copy Link)
 - "Discover more restaurants on BiteSite" footer link
 
 ---
@@ -528,18 +537,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=     # Supabase anon/public key
 10. **Article images use external URLs** — Google Drive, Unsplash, or any direct image link
 11. **Dish search** — homepage search queries all available product names per merchant
 12. **Embedded maps** — auto-rendered in Contact section if address exists
-
----
-
-## Pages Summary
-
-| Page | Path | Purpose |
-|------|------|---------|
-| Home | `/` | Browse all restaurants, search (including dishes), filter |
-| Merchant | `/store/{slug}` | Individual restaurant menu, map, hours, SEO Schema |
-| Stories | `/stories` | Blog list — all articles |
-| Story | `/stories/{slug}` | Individual article (Markdown + Article Schema) |
-| Join Us | `/join-us` | Pricing & signup for restaurant owners (FAQ Schema) |
+13. **Map page requires coordinates** — merchants without `latitude`/`longitude` are hidden from the map
 
 ---
 
