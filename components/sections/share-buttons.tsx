@@ -1,7 +1,9 @@
+/* bitesite/components/sections/share-buttons.tsx */
+
 "use client";
 
 import { useState } from "react";
-import { Check, Copy, Link2, MessageCircle, Facebook, Twitter, Instagram, Share2 } from "lucide-react";
+import { Check, Copy, Share2 } from "lucide-react";
 
 type LayoutVariant = "classic" | "elegant" | "minimal" | "modern" | "rustic";
 
@@ -22,8 +24,6 @@ const buttonStyles: Record<LayoutVariant, string> = {
 export function ShareButtons({ slug, name, variant = "classic" }: ShareButtonsProps) {
   const [copied, setCopied] = useState(false);
   const url = `https://bitesite-pied.vercel.app/store/${slug}`;
-  const encodedUrl = encodeURIComponent(url);
-  const encodedName = encodeURIComponent(`Check out ${name} on BiteSite!`);
 
   const handleCopy = async () => {
     try {
@@ -50,18 +50,13 @@ export function ShareButtons({ slug, name, variant = "classic" }: ShareButtonsPr
     handleCopy();
   };
 
-  const links = [
-    { icon: <MessageCircle className="h-3.5 w-3.5" />, href: `https://wa.me/?text=${encodedName}%20${encodedUrl}`, color: "text-green-600" },
-    { icon: <Facebook className="h-3.5 w-3.5" />, href: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`, color: "text-blue-600" },
-    { icon: <Twitter className="h-3.5 w-3.5" />, href: `https://twitter.com/intent/tweet?text=${encodedName}&url=${encodedUrl}`, color: "text-sky-500" },
-  ];
-
   return (
     <div className="flex flex-wrap items-center gap-2">
       {/* 原生分享按钮（手机优先） */}
       <button
         onClick={handleNativeShare}
         className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all active:scale-95 ${buttonStyles[variant]}`}
+        style={{ WebkitTapHighlightColor: "transparent" }}
       >
         <Share2 className="h-3.5 w-3.5" />
         Share
@@ -70,27 +65,10 @@ export function ShareButtons({ slug, name, variant = "classic" }: ShareButtonsPr
       <button
         onClick={handleCopy}
         className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all active:scale-95 ${buttonStyles[variant]}`}
+        style={{ WebkitTapHighlightColor: "transparent" }}
       >
         {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
         {copied ? "Copied!" : "Copy Link"}
-      </button>
-      {links.map((l, i) => (
-        <a
-          key={i}
-          href={l.href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={`inline-flex items-center justify-center rounded-full border w-8 h-8 transition-all active:scale-95 ${buttonStyles[variant]} ${l.color}`}
-        >
-          {l.icon}
-        </a>
-      ))}
-      <button
-        onClick={handleCopy}
-        className={`inline-flex items-center justify-center rounded-full border w-8 h-8 transition-all active:scale-95 ${buttonStyles[variant]} text-pink-600`}
-        title="Copy for Instagram"
-      >
-        <Instagram className="h-3.5 w-3.5" />
       </button>
     </div>
   );
