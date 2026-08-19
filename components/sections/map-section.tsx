@@ -6,17 +6,16 @@ import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import Link from "next/link";
-import { X, ArrowRight, Locate } from "lucide-react";
+import { X, ArrowRight, Locate, Search, MapPin } from "lucide-react";
 import type { Merchant } from "@/types";
 import { getTodayHours } from "@/lib/hours";
 import { getMarkerColor } from "@/lib/map-colors";
 
 interface MapSectionProps {
   merchants: Merchant[];
-  activeTypes: string[];
 }
 
-export function MapSection({ merchants, activeTypes }: MapSectionProps) {
+export function MapSection({ merchants }: MapSectionProps) {
   const mapRef = useRef<L.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
@@ -37,19 +36,16 @@ export function MapSection({ merchants, activeTypes }: MapSectionProps) {
     markersLayerRef.current = L.layerGroup().addTo(map);
     mapRef.current = map;
 
-    // 点击地图空白处关闭卡片
     map.on("click", () => {
       setSelected(null);
     });
 
-    // 获取用户位置
     if (typeof navigator !== "undefined" && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const { latitude, longitude } = pos.coords;
           userLocationRef.current = { lat: latitude, lng: longitude };
 
-          // 脉冲动画定位标记
           const pulseIcon = L.divIcon({
             className: "",
             html: `<div style="position:relative;width:20px;height:20px;">
@@ -66,9 +62,7 @@ export function MapSection({ merchants, activeTypes }: MapSectionProps) {
 
           map.flyTo([latitude, longitude], 14, { duration: 1.5 });
         },
-        () => {
-          // 用户拒绝或失败，保持默认 KL 视图
-        }
+        () => {}
       );
     }
 
@@ -78,7 +72,7 @@ export function MapSection({ merchants, activeTypes }: MapSectionProps) {
     };
   }, []);
 
-  // 根据筛选更新标记
+  // 更新标记
   useEffect(() => {
     const map = mapRef.current;
     const layer = markersLayerRef.current;
@@ -87,21 +81,13 @@ export function MapSection({ merchants, activeTypes }: MapSectionProps) {
     layer.clearLayers();
     setSelected(null);
 
-    const filtered = activeTypes.includes("All")
-      ? merchants
-      : merchants.filter((m) => {
-          const type = m.cuisine_type?.split(",")[0].trim();
-          return type && activeTypes.includes(type);
-        });
-
-    filtered.forEach((merchant) => {
+    merchants.forEach((merchant) => {
       if (!merchant.latitude || !merchant.longitude) return;
 
       const type = merchant.cuisine_type?.split(",")[0].trim() || "Other";
       const color = getMarkerColor(type);
       const img = merchant.cover_image || "";
 
-      // 圆形头像标记
       const icon = L.divIcon({
         className: "",
         html: `<div style="width:38px;height:38px;border-radius:50%;border:3px solid ${color};overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.35);background:${color};cursor:pointer;">
@@ -122,9 +108,8 @@ export function MapSection({ merchants, activeTypes }: MapSectionProps) {
 
       layer.addLayer(marker);
     });
-  }, [merchants, activeTypes]);
+  }, [merchants]);
 
-  // Recenter 按钮
   const handleRecenter = () => {
     const map = mapRef.current;
     if (!map) return;
@@ -141,9 +126,7 @@ export function MapSection({ merchants, activeTypes }: MapSectionProps) {
           userLocationRef.current = { lat: latitude, lng: longitude };
           map.flyTo([latitude, longitude], 14);
         },
-        () => {
-          // 定位失败，不做任何事
-        }
+        () => {}
       );
     }
   };
@@ -154,9 +137,12 @@ export function MapSection({ merchants, activeTypes }: MapSectionProps) {
     ? getTodayHours(selected.operating_hours)
     : { isOpen: false };
 
+  const directionsUrl = selected
+    ? `https://www.google.com/maps/dir/?api=1&destination=${selected.latitude},${selected.longitude}`
+    : "";
+
   return (
     <div ref={containerRef} className="h-full w-full relative z-0">
-      {/* 脉冲动画样式 */}
       <style>{`
         @keyframes mapPulse {
           0% { transform: scale(0.6); opacity: 0.7; }
@@ -182,6 +168,21 @@ export function MapSection({ merchants, activeTypes }: MapSectionProps) {
         <Locate className="h-5 w-5" />
       </button>
 
+      {/* 空状态：没有商家 */}
+      {merchants.length === 0 && (
+        <div className="absolute inset-0 z-[1000] flex items-center justify-center bg-[#FAFBF7]/80 backdrop-blur-sm">
+          <div className="text-center">
+            <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-[#F0F4EC]">
+              <Search className="h-7 w-7 text-[#8A968B]" />
+            </div>
+            <p className="text-lg font-medium text-[#2C3E2D]">No restaurants found</p>
+            <p className="mt-2 text-sm text-[#8A968B]">
+              Try adjusting your filters or search.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* 商家信息卡片 */}
       {selected && (
         <div className="absolute bottom-6 left-1/2 z-[1000] w-[92%] max-w-sm -translate-x-1/2">
@@ -194,7 +195,6 @@ export function MapSection({ merchants, activeTypes }: MapSectionProps) {
               <X className="h-4 w-4" />
             </button>
 
-            {/* 商家照片 */}
             {selected.cover_image && (
               <div className="mb-3 h-28 w-full overflow-hidden rounded-xl">
                 <img
@@ -228,14 +228,27 @@ export function MapSection({ merchants, activeTypes }: MapSectionProps) {
               </span>
             </div>
 
-            <Link
-              href={`/store/${selected.slug}`}
-              className="inline-flex items-center gap-2 rounded-full bg-[#5A8F6E] px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#4A7A5E] active:scale-[0.98]"
-              style={{ WebkitTapHighlightColor: "transparent" }}
-            >
-              Go to Merchant Page
-              <ArrowRight className="h-4 w-4" />
-            </Link>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href={`/store/${selected.slug}`}
+                className="inline-flex items-center gap-2 rounded-full bg-[#5A8F6E] px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#4A7A5E] active:scale-[0.98]"
+                style={{ WebkitTapHighlightColor: "transparent" }}
+              >
+                Go to Merchant Page
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+
+              <a
+                href={directionsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-full border border-[#5A8F6E] px-5 py-2.5 text-sm font-semibold text-[#5A8F6E] transition-all hover:bg-[#5A8F6E]/10 active:scale-[0.98]"
+                style={{ WebkitTapHighlightColor: "transparent" }}
+              >
+                <MapPin className="h-4 w-4" />
+                Get Directions
+              </a>
+            </div>
           </div>
         </div>
       )}
