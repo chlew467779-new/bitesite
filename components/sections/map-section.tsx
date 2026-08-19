@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import Link from "next/link";
-import { X, ArrowRight } from "lucide-react";
+import { X, ArrowRight, Locate } from "lucide-react";
 import type { Merchant } from "@/types";
 import { getTodayHours } from "@/lib/hours";
 import { getMarkerColor } from "@/lib/map-colors";
@@ -20,6 +20,7 @@ export function MapSection({ merchants, activeTypes }: MapSectionProps) {
   const mapRef = useRef<L.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
+  const userLocationRef = useRef<{ lat: number; lng: number } | null>(null);
   const [selected, setSelected] = useState<Merchant | null>(null);
 
   // 初始化地图
@@ -46,16 +47,23 @@ export function MapSection({ merchants, activeTypes }: MapSectionProps) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const { latitude, longitude } = pos.coords;
-          L.circleMarker([latitude, longitude], {
-            radius: 8,
-            fillColor: "#5A8F6E",
-            color: "#ffffff",
-            weight: 2,
-            opacity: 1,
-            fillOpacity: 0.9,
-          })
+          userLocationRef.current = { lat: latitude, lng: longitude };
+
+          // 脉冲动画定位标记
+          const pulseIcon = L.divIcon({
+            className: "",
+            html: `<div style="position:relative;width:20px;height:20px;">
+              <div class="map-pulse-ring"></div>
+              <div style="position:absolute;inset:0;border-radius:50%;background:#5A8F6E;border:2.5px solid white;box-shadow:0 1px 6px rgba(0,0,0,0.4);z-index:2;"></div>
+            </div>`,
+            iconSize: [20, 20],
+            iconAnchor: [10, 10],
+          });
+
+          L.marker([latitude, longitude], { icon: pulseIcon, zIndexOffset: 1000 })
             .addTo(map)
             .bindPopup("You are here");
+
           map.flyTo([latitude, longitude], 14, { duration: 1.5 });
         },
         () => {
@@ -91,27 +99,54 @@ export function MapSection({ merchants, activeTypes }: MapSectionProps) {
 
       const type = merchant.cuisine_type?.split(",")[0].trim() || "Other";
       const color = getMarkerColor(type);
+      const img = merchant.cover_image || "";
 
+      // 圆形头像标记
       const icon = L.divIcon({
         className: "",
-        html: `<div style="width:28px;height:28px;border-radius:50%;background:${color};border:2.5px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;cursor:pointer;">
-          <div style="width:7px;height:7px;background:white;border-radius:50%;"></div>
+        html: `<div style="width:38px;height:38px;border-radius:50%;border:3px solid ${color};overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.35);background:${color};cursor:pointer;">
+          <img src="${img}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.style.display='none'" />
         </div>`,
-        iconSize: [28, 28],
-        iconAnchor: [14, 14],
+        iconSize: [38, 38],
+        iconAnchor: [19, 19],
       });
 
       const marker = L.marker([merchant.latitude, merchant.longitude], {
         icon,
       });
 
-      marker.on("click", () => {
+      marker.on("click", (e) => {
+        e.originalEvent?.stopPropagation();
         setSelected(merchant);
       });
 
       layer.addLayer(marker);
     });
   }, [merchants, activeTypes]);
+
+  // Recenter 按钮
+  const handleRecenter = () => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    if (userLocationRef.current) {
+      map.flyTo([userLocationRef.current.lat, userLocationRef.current.lng], 14);
+      return;
+    }
+
+    if (typeof navigator !== "undefined" && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude, longitude } = pos.coords;
+          userLocationRef.current = { lat: latitude, lng: longitude };
+          map.flyTo([latitude, longitude], 14);
+        },
+        () => {
+          // 定位失败，不做任何事
+        }
+      );
+    }
+  };
 
   const selectedType = selected?.cuisine_type?.split(",")[0].trim() || "Other";
   const selectedColor = getMarkerColor(selectedType);
@@ -121,6 +156,33 @@ export function MapSection({ merchants, activeTypes }: MapSectionProps) {
 
   return (
     <div ref={containerRef} className="h-full w-full relative z-0">
+      {/* 脉冲动画样式 */}
+      <style>{`
+        @keyframes mapPulse {
+          0% { transform: scale(0.6); opacity: 0.7; }
+          100% { transform: scale(2.4); opacity: 0; }
+        }
+        .map-pulse-ring {
+          position: absolute;
+          inset: -6px;
+          border-radius: 50%;
+          background: rgba(90, 143, 110, 0.45);
+          animation: mapPulse 1.8s infinite;
+          z-index: 1;
+        }
+      `}</style>
+
+      {/* Recenter 按钮 */}
+      <button
+        onClick={handleRecenter}
+        className="absolute right-4 top-4 z-[1000] flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#2C3E2D] shadow-lg border border-[#DDE5DC] transition-all hover:bg-[#F0F4EC] active:scale-90"
+        style={{ WebkitTapHighlightColor: "transparent" }}
+        title="Go to my location"
+      >
+        <Locate className="h-5 w-5" />
+      </button>
+
+      {/* 商家信息卡片 */}
       {selected && (
         <div className="absolute bottom-6 left-1/2 z-[1000] w-[92%] max-w-sm -translate-x-1/2">
           <div className="relative rounded-2xl border border-[#DDE5DC] bg-white p-5 shadow-xl">
@@ -131,6 +193,17 @@ export function MapSection({ merchants, activeTypes }: MapSectionProps) {
             >
               <X className="h-4 w-4" />
             </button>
+
+            {/* 商家照片 */}
+            {selected.cover_image && (
+              <div className="mb-3 h-28 w-full overflow-hidden rounded-xl">
+                <img
+                  src={selected.cover_image}
+                  alt={selected.name}
+                  className="h-full w-full object-cover"
+                />
+              </div>
+            )}
 
             <h3 className="mb-2 pr-6 font-serif text-lg font-medium text-[#2C3E2D]">
               {selected.name}
