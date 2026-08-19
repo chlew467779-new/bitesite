@@ -47,6 +47,8 @@ export interface Merchant {
   area: string | null;
   tags: string[];
   payment_methods: string[];
+  latitude: number | null;
+  longitude: number | null;
 }
 
 export interface Category {
