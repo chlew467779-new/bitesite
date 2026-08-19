@@ -60,7 +60,7 @@ export function Hero({ searchQuery, onSearch }: HeroProps) {
               <Search className="ml-4 h-4 w-4 flex-shrink-0 text-[#8A968B]" />
               <input
                 type="text"
-                placeholder="Search restaurants, cuisines..."
+                placeholder="Search restaurants, cuisines, dishes..."
                 value={searchQuery}
                 onChange={handleChange}
                 onFocus={() => setIsFocused(true)}
