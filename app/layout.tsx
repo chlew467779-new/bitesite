@@ -66,11 +66,40 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const organizationSchema = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "BiteSite",
+    url: "https://bitesite-pied.vercel.app",
+    description: "Beautiful Menus for Local Restaurants in Kuala Lumpur.",
+  };
+
+  const websiteSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "BiteSite",
+    url: "https://bitesite-pied.vercel.app",
+  };
+
   return (
     <html
       lang="en"
       className={`${inter.variable} ${playfair.variable} ${notoSansJP.variable}`}
     >
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(organizationSchema),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(websiteSchema),
+          }}
+        />
+      </head>
       <body className="min-h-screen antialiased">
         <SiteHeader />
         {children}
