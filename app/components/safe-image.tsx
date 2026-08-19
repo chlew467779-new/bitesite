@@ -4,6 +4,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { getOptimizedImageUrl } from "@/lib/image-utils";
 
 interface SafeImageProps {
   src: string | null | undefined;
@@ -74,7 +75,7 @@ export function SafeImage({
         />
       )}
       <Image
-        src={src}
+        src={getOptimizedImageUrl(src, fill ? 800 : width)}
         alt={alt}
         {...imageProps}
         priority={priority}
