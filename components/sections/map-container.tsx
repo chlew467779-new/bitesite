@@ -2,10 +2,22 @@
 
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState } from "react";
-import { MapSection } from "./map-section";
 import { MapFilter } from "./map-filter";
 import type { Merchant } from "@/types";
+
+const MapSection = dynamic(
+  () => import("./map-section").then((mod) => mod.MapSection),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-full w-full flex items-center justify-center bg-[#F0F4EC]">
+        <div className="text-[#8A968B] text-sm">Loading map...</div>
+      </div>
+    ),
+  }
+);
 
 interface MapContainerProps {
   merchants: Merchant[];
