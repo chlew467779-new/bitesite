@@ -3,7 +3,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { MapFilter } from "./map-filter";
 import type { Merchant } from "@/types";
 
@@ -25,12 +25,40 @@ interface MapContainerProps {
 
 export function MapContainer({ merchants }: MapContainerProps) {
   const [activeTypes, setActiveTypes] = useState<string[]>(["All"]);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredMerchants = useMemo(() => {
+    let result = activeTypes.includes("All")
+      ? merchants
+      : merchants.filter((m) => {
+          const type = m.cuisine_type?.split(",")[0].trim();
+          return type && activeTypes.includes(type);
+        });
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(
+        (m) =>
+          m.name.toLowerCase().includes(q) ||
+          (m.cuisine_type || "").toLowerCase().includes(q) ||
+          (m.area || "").toLowerCase().includes(q) ||
+          (m.description || "").toLowerCase().includes(q)
+      );
+    }
+
+    return result;
+  }, [merchants, activeTypes, searchQuery]);
 
   return (
     <div className="flex flex-col h-full">
-      <MapFilter activeTypes={activeTypes} onChange={setActiveTypes} />
+      <MapFilter
+        activeTypes={activeTypes}
+        onChange={setActiveTypes}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+      />
       <div className="flex-1 relative">
-        <MapSection merchants={merchants} activeTypes={activeTypes} />
+        <MapSection merchants={filteredMerchants} />
       </div>
     </div>
   );
