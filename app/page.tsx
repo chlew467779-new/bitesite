@@ -24,11 +24,12 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [openNow, setOpenNow] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [productIndex, setProductIndex] = useState<Map<string, string[]>>(new Map());
 
-  // Fetch merchants + stats on mount
+  // Fetch merchants + stats + products on mount
   useEffect(() => {
     async function fetchData() {
-      const [{ data: merchantsData, error: merchantsError }, { data: statsData }] = await Promise.all([
+      const [{ data: merchantsData, error: merchantsError }, { data: statsData }, { data: productsData }] = await Promise.all([
         supabase
           .from("merchants")
           .select("*")
@@ -37,6 +38,10 @@ export default function HomePage() {
         supabase
           .from("merchant_stats")
           .select("slug, view_count"),
+        supabase
+          .from("products")
+          .select("merchant_id, name")
+          .eq("is_available", true),
       ]);
 
       if (!merchantsError && merchantsData) {
@@ -49,6 +54,16 @@ export default function HomePage() {
           map.set(s.slug, s.view_count || 0);
         });
         setMerchantStats(map);
+      }
+
+      if (productsData) {
+        const map = new Map<string, string[]>();
+        productsData.forEach((p: { merchant_id: string; name: string }) => {
+          const list = map.get(p.merchant_id) || [];
+          list.push(p.name.toLowerCase());
+          map.set(p.merchant_id, list);
+        });
+        setProductIndex(map);
       }
 
       setLoading(false);
@@ -93,16 +108,19 @@ export default function HomePage() {
       })();
 
       const q = searchQuery.toLowerCase().trim();
-      const searchMatch =
-        !q ||
-        m.name.toLowerCase().includes(q) ||
-        (m.cuisine_type || "").toLowerCase().includes(q) ||
-        (m.description || "").toLowerCase().includes(q) ||
-        m.tags?.some((t) => t.toLowerCase().includes(q));
+      const searchMatch = (() => {
+        if (!q) return true;
+        if (m.name.toLowerCase().includes(q)) return true;
+        if ((m.cuisine_type || "").toLowerCase().includes(q)) return true;
+        if ((m.description || "").toLowerCase().includes(q)) return true;
+        if (m.tags?.some((t) => t.toLowerCase().includes(q))) return true;
+        const merchantProducts = productIndex.get(m.id) || [];
+        return merchantProducts.some((name) => name.includes(q));
+      })();
 
       return matchesCuisine && matchesArea && matchesMore && matchesOpenNow && searchMatch;
     });
-  }, [activeCuisines, activeArea, activeMore, openNow, searchQuery, merchants]);
+  }, [activeCuisines, activeArea, activeMore, openNow, searchQuery, merchants, productIndex]);
 
   // Handle search with loading state
   const handleSearch = useCallback((query: string) => {
