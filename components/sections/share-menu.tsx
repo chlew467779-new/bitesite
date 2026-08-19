@@ -1,7 +1,9 @@
+/* bitesite/components/sections/share-menu.tsx */
+
 "use client";
 
-import { useState } from "react";
-import { Check, Copy, Link2, MessageCircle, Facebook, Twitter, Instagram, X, Share2 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Check, Copy, MessageCircle, Facebook, Twitter, Instagram, X, Share2 } from "lucide-react";
 
 interface ShareMenuProps {
   slug: string;
@@ -11,9 +13,43 @@ interface ShareMenuProps {
 export function ShareMenu({ slug, name }: ShareMenuProps) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
   const url = `https://bitesite-pied.vercel.app/store/${slug}`;
   const encodedUrl = encodeURIComponent(url);
   const encodedName = encodeURIComponent(`Check out ${name} on BiteSite!`);
+
+  // 点击外部或滚动时自动关闭菜单
+  useEffect(() => {
+    if (!open) return;
+
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setOpen(false);
+      }
+    };
+
+    const handleScroll = () => {
+      setOpen(false);
+    };
+
+    // 延迟绑定，避免点击 Share 按钮的瞬间就触发关闭
+    const timer = setTimeout(() => {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("touchstart", handleClickOutside);
+    }, 10);
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [open]);
 
   const handleCopy = async () => {
     try {
@@ -36,8 +72,8 @@ export function ShareMenu({ slug, name }: ShareMenuProps) {
         // 用户取消或失败，继续 fallback
       }
     }
-    // 不支持原生分享，打开菜单
-    setOpen(!open);
+    // 不支持原生分享，切换菜单开关
+    setOpen((prev) => !prev);
   };
 
   const links = [
@@ -47,7 +83,7 @@ export function ShareMenu({ slug, name }: ShareMenuProps) {
   ];
 
   return (
-    <div className="relative" onClick={(e) => e.preventDefault()}>
+    <div ref={containerRef} className="relative" onClick={(e) => e.preventDefault()}>
       <button
         onClick={(e) => {
           e.stopPropagation();
