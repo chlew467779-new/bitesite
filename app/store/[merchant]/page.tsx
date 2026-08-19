@@ -125,6 +125,13 @@ export default async function MerchantPage({ params }: PageProps) {
   }
   if (merchant.phone) schemaData.telephone = merchant.phone;
   if (merchant.cuisine_type) schemaData.servesCuisine = merchant.cuisine_type;
+  
+  schemaData.hasMenu = {
+    "@type": "Menu",
+    name: "Menu",
+    url: `${canonicalUrl}#menu-section`,
+  };
+  
   if (merchant.operating_hours && typeof merchant.operating_hours === "object") {
     schemaData.openingHours = Object.entries(merchant.operating_hours).map(
       ([day, time]) => `${dayMap[day] || day} ${time}`
