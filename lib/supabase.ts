@@ -117,3 +117,15 @@ export async function getRelatedMerchants(
   scored.sort((a, b) => b.score - a.score);
   return scored.slice(0, limit).map((s) => s.merchant);
 }
+
+export async function getMerchantsForMap(): Promise<Merchant[]> {
+  const { data, error } = await supabase
+    .from("merchants")
+    .select("*")
+    .eq("is_published", true)
+    .not("latitude", "is", null)
+    .not("longitude", "is", null);
+
+  if (error) throw error;
+  return data || [];
+}
