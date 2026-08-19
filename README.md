@@ -56,18 +56,19 @@ This makes it easy to identify which file is which when copying code or debuggin
 
 ```
 app/
-├── page.tsx                    # Homepage — merchant grid + filters + Latest Stories
-├── layout.tsx                  # Root layout (fonts + metadata + SEO + SiteHeader)
+├── page.tsx                    # Homepage — merchant grid + filters + dish search + Latest Stories
+├── layout.tsx                  # Root layout (fonts + metadata + SEO + SiteHeader + Organization Schema)
 ├── globals.css                 # Tailwind v4 + CSS custom properties
 ├── sitemap.ts                  # Auto-generated sitemap.xml
 ├── robots.ts                   # robots.txt
 ├── loading.tsx                 # Global loading fallback
 ├── join-us/
-│   └── page.tsx                # Join Us pricing page
+│   └── page.tsx                # Join Us pricing page (FAQPage Schema)
 ├── stories/
+│   ├── layout.tsx              # Stories list layout (SEO metadata)
 │   ├── page.tsx                # Stories list page (articles grid + category filter)
 │   └── [slug]/
-│       └── page.tsx            # Story detail page (ISR 300s + Markdown render)
+│       └── page.tsx            # Story detail page (ISR 300s + Article Schema + Markdown render)
 ├── api/
 │   ├── view/
 │   │   └── route.ts            # POST /api/view — increment merchant view count
@@ -75,66 +76,66 @@ app/
 │       └── route.ts            # POST /api/story-view — increment article view count
 ├── store/
 │   └── [merchant]/
-│       ├── page.tsx              # Merchant detail page (ISR + SSR + Schema.org)
+│       ├── page.tsx              # Merchant detail page (ISR + SSR + Restaurant/Menu/Breadcrumb Schema)
 │       └── loading.tsx           # Merchant page skeleton
 ├── layouts/
 │   ├── index.ts                  # Layout registry (classic/elegant/minimal/modern/rustic)
-│   ├── classic-layout.tsx        # Warm amber cafe style
-│   ├── elegant-layout.tsx        # Dark luxury fine-dining style
-│   ├── minimal-layout.tsx        # Clean stone/zen style
-│   ├── modern-layout.tsx         # White slate contemporary style
-│   └── rustic-layout.tsx         # Orange earthy style
+│   ├── classic-layout.tsx        # Warm amber cafe style (with map embed)
+│   ├── elegant-layout.tsx        # Dark luxury fine-dining style (with map embed)
+│   ├── minimal-layout.tsx        # Clean stone/zen style (with map embed)
+│   ├── modern-layout.tsx         # White slate contemporary style (with map embed)
+│   └── rustic-layout.tsx         # Orange earthy style (with map embed)
+├── components/
+│   ├── map-embed.tsx             # Google Maps iframe embed component
+│   └── safe-image.tsx            # Next/Image wrapper with error fallback + loading shimmer + auto optimization
 └── components/
-    ├── safe-image.tsx            # Next/Image wrapper with error fallback + loading shimmer
-    └── animations.tsx            # FadeIn (IntersectionObserver), StaggerContainer, StaggerItem
-
-components/
-├── ui/
-│   ├── cuisine-tag.tsx           # Pill-shaped cuisine label
-│   └── diamond-separator.tsx     # Decorative divider (◆)
-└── sections/
-    ├── hero.tsx                  # Homepage hero with search bar + pattern bg
-    ├── category-filter.tsx       # 3-row sticky filter bar with smooth animations
-    ├── merchant-card.tsx         # Card: Open Now badge + ShareMenu + ViewCount + tags + hours
-    ├── merchant-card-skeleton.tsx # Loading skeleton with pulse animation
-    ├── footer.tsx                # Site footer (Home / Stories / Join Us + copyright)
-    ├── brand-intro.tsx           # Merchant brand intro
-    ├── discover-bitesite.tsx     # "Discover more" CTA link to homepage
-    ├── info-accordion.tsx        # Location / Hours / Dress Code / Social accordion
-    ├── menu-section.tsx          # Category-based menu grid
-    ├── product-card.tsx          # Individual dish card with image, price, discount
-    ├── related-merchants.tsx     # "You May Also Like" recommendations
-    ├── share-menu.tsx            # Floating share menu (WhatsApp/FB/Twitter/Copy/IG)
-    ├── share-buttons.tsx         # Inline share buttons
-    ├── view-tracker.tsx          # Client-side merchant view count tracker (2s delay)
-    ├── view-count-inline.tsx     # Eye icon + formatted count badge
-    ├── store-hero.tsx            # Full-bleed hero image
-    ├── store-footer.tsx          # Merchant footer with WhatsApp CTA
-    ├── text-image-block.tsx      # Alternating text/image section
-    ├── video-section.tsx         # YouTube embed + self-hosted video player
-    │
-    ├── join-us-hero.tsx          # Join Us page hero
-    ├── how-it-works.tsx          # 3-step process (Shoot → Build → Share)
-    ├── pricing-card.tsx          # Pricing card (RM599 + RM149/mo)
-    ├── faq-accordion.tsx         # FAQ accordion (6 questions)
-    ├── join-us-cta.tsx           # Bottom WhatsApp CTA
-    │
-    ├── story-filter.tsx          # Stories category filter buttons
-    ├── story-card.tsx            # Article card (featured + list variants)
-    ├── story-list.tsx            # Article list with featured article on top
-    ├── story-hero.tsx            # Story detail hero (title + meta + cover image)
-    ├── story-content.tsx         # Markdown renderer for article body
-    ├── story-related.tsx         # "More Stories" recommendations
-    ├── story-view-tracker.tsx    # Client-side article view count tracker
-    ├── latest-stories.tsx        # Homepage "Latest Stories" section (latest 3 articles)
-    │
-    └── site-header.tsx           # Global nav bar (Home / Stories / Join Us)
+    ├── ui/
+    │   ├── cuisine-tag.tsx           # Pill-shaped cuisine label
+    │   └── diamond-separator.tsx     # Decorative divider (◆)
+    └── sections/
+        ├── hero.tsx                  # Homepage hero with search bar (restaurants, cuisines, dishes)
+        ├── category-filter.tsx       # 3-row sticky filter bar with smooth animations
+        ├── merchant-card.tsx         # Card: Open Now badge + ShareMenu + ViewCount + tags + hours
+        ├── merchant-card-skeleton.tsx # Loading skeleton with pulse animation
+        ├── footer.tsx                # Site footer (Home / Stories / Join Us + copyright)
+        ├── brand-intro.tsx           # Merchant brand intro
+        ├── discover-bitesite.tsx     # "Discover more" CTA link to homepage
+        ├── info-accordion.tsx        # Location / Hours / Dress Code / Social accordion
+        ├── menu-section.tsx          # Category-based menu grid
+        ├── product-card.tsx          # Individual dish card with image, price, discount
+        ├── related-merchants.tsx     # "You May Also Like" recommendations
+        ├── share-menu.tsx            # Floating share menu (WhatsApp/FB/Twitter/Copy/IG)
+        ├── share-buttons.tsx         # Inline share buttons
+        ├── view-tracker.tsx          # Client-side merchant view count tracker (2s delay)
+        ├── view-count-inline.tsx     # Eye icon + formatted count badge
+        ├── store-hero.tsx            # Full-bleed hero image
+        ├── store-footer.tsx          # Merchant footer with WhatsApp CTA
+        ├── text-image-block.tsx      # Alternating text/image section
+        ├── video-section.tsx         # YouTube embed + self-hosted video player
+        │
+        ├── join-us-hero.tsx          # Join Us page hero
+        ├── how-it-works.tsx          # 3-step process (Shoot → Build → Share)
+        ├── pricing-card.tsx          # Pricing card (RM599 + RM149/mo)
+        ├── faq-accordion.tsx         # FAQ accordion (6 questions)
+        ├── join-us-cta.tsx           # Bottom WhatsApp CTA
+        │
+        ├── story-filter.tsx          # Stories category filter buttons
+        ├── story-card.tsx            # Article card (featured + list variants)
+        ├── story-list.tsx            # Article list with featured article on top
+        ├── story-hero.tsx            # Story detail hero (title + meta + cover image)
+        ├── story-content.tsx         # Markdown renderer for article body
+        ├── story-related.tsx         # "More Stories" recommendations
+        ├── story-view-tracker.tsx    # Client-side article view count tracker
+        ├── latest-stories.tsx        # Homepage "Latest Stories" section (latest 3 articles)
+        │
+        └── site-header.tsx           # Global nav bar (Home / Stories / Join Us)
 
 lib/
 ├── supabase.ts                 # Supabase client + all DB queries + related merchant scoring
 ├── hours.ts                    # Timezone-safe open/closed logic (Asia/Kuala_Lumpur)
 ├── utils.ts                    # cn() — clsx + tailwind-merge
 ├── styles.ts                   # OLD 3-style theme map (fresh/luxury/japanese) — DEPRECATED
+├── image-utils.ts              # Auto image URL optimization (Unsplash / Supabase Storage compression)
 ├── whatsapp.ts                 # BiteSite WhatsApp link constant
 └── markdown.ts                 # Markdown rendering utilities (reserved)
 
@@ -240,16 +241,16 @@ types/
 | Column | Type | Notes |
 |--------|------|-------|
 | id | UUID | PK, auto-generated |
-| slug | TEXT | **Required.** URL-friendly identifier. Example: `the-hearth-bakery-opening`. Must be unique. |
-| title | TEXT | **Required.** Article headline. Example: `The Hearth Bakery Opens in Desa ParkCity` |
-| excerpt | TEXT | Short summary shown on the list page. ~1-2 sentences. |
-| content | TEXT | **Required.** Full article body in **Markdown** format. Supports headings, bold, links, images, lists, tables, blockquotes. |
-| cover_image | TEXT | URL to the featured image. Used as hero image on detail page and thumbnail on list page. **Recommended:** 16:9 ratio. |
-| category | TEXT | **Required.** Used for filtering on `/stories`. Examples: `New Opening`, `Promotion`, `Featured`. Dynamically appears as filter buttons. |
-| tags | TEXT[] | Array of tags. Example: `{bakery, desaparkcity}`. Displayed as pills on the article detail page. |
-| merchant_slug | TEXT | **Optional.** If set, links to a merchant page (`/store/{merchant_slug}`). Must match an existing merchant slug. |
-| author | TEXT | Defaults to `BiteSite Team`. Can be changed to any name. |
-| published | BOOLEAN | **Must be `true`** for the article to appear on the website. Drafts should be `false`. |
+| slug | TEXT | **Required.** URL-friendly identifier. |
+| title | TEXT | **Required.** Article headline. |
+| excerpt | TEXT | Short summary shown on the list page. |
+| content | TEXT | **Required.** Full article body in **Markdown**. |
+| cover_image | TEXT | URL to the featured image. **Recommended:** 16:9 ratio. |
+| category | TEXT | **Required.** Used for filtering on `/stories`. |
+| tags | TEXT[] | Array of tags. |
+| merchant_slug | TEXT | **Optional.** Links to a merchant page. |
+| author | TEXT | Defaults to `BiteSite Team`. |
+| published | BOOLEAN | **Must be `true`** to appear on the website. |
 | view_count | INT | Auto-incremented. Do NOT edit manually. |
 | created_at | TIMESTAMPTZ | Auto-generated. |
 | updated_at | TIMESTAMPTZ | Auto-generated. |
@@ -267,27 +268,27 @@ types/
 
 ### Step 3: Fill in the fields
 
-#### Required fields (must fill):
+#### Required fields:
 | Field | What to enter | Example |
 |-------|--------------|---------|
-| **slug** | URL-friendly ID, no spaces, use hyphens | `the-hearth-bakery-opening` |
+| **slug** | URL-friendly ID, no spaces | `the-hearth-bakery-opening` |
 | **title** | Article headline | `The Hearth Bakery Opens in Desa ParkCity` |
 | **content** | Full article in **Markdown** | See Markdown syntax below |
 | **category** | Filter category | `New Opening` |
 | **published** | Set to **true** | ✅ Check the box |
 
-#### Optional but recommended fields:
+#### Optional but recommended:
 | Field | What to enter | Example |
 |-------|--------------|---------|
-| **excerpt** | 1-2 sentence summary | `After months of anticipation, The Hearth Bakery has finally opened...` |
-| **cover_image** | Direct image URL | `https://images.unsplash.com/photo-xxx` or Google Drive direct link |
+| **excerpt** | 1-2 sentence summary | `After months of anticipation...` |
+| **cover_image** | Direct image URL | `https://images.unsplash.com/photo-xxx` |
 | **tags** | Array of keywords | `{bakery, desaparkcity, sourdough}` |
-| **merchant_slug** | Link to restaurant page | `the-hearth-bakery` (must exist in `merchants` table) |
+| **merchant_slug** | Link to restaurant page | `the-hearth-bakery` |
 | **author** | Author name | `BiteSite Team` |
 
 #### Do NOT touch:
 - `id` — auto-generated
-- `view_count` — auto-incremented by the website
+- `view_count` — auto-incremented
 - `created_at` / `updated_at` — auto-generated
 
 ### Step 4: Save
@@ -309,11 +310,10 @@ The `content` field supports full **GitHub Flavored Markdown**:
 
 **Bold text** for emphasis.
 
-Regular paragraph text. You can write multiple paragraphs.
+Regular paragraph text.
 
 - Bullet point 1
 - Bullet point 2
-- Bullet point 3
 
 1. Numbered item 1
 2. Numbered item 2
@@ -324,21 +324,20 @@ Regular paragraph text. You can write multiple paragraphs.
 
 ![Image description](https://your-image-url.jpg)
 
-> Blockquote: This is a highlighted quote or testimonial.
+> Blockquote: This is a highlighted quote.
 
 | Item | Price |
 |------|-------|
 | Country Sourdough | RM 18 |
-| Olive Ciabatta | RM 16 |
 
 ---
 
 Emoji work too! 🍞☕🎉
 ```
 
-### Important notes:
-- **Images**: Use direct image URLs. For Google Drive, you need a **public direct link** (ends in `.jpg` or similar, not the sharing page).
-- **Links to merchants**: Use `/store/{merchant-slug}` format. These open within the site.
+**Important notes:**
+- **Images**: Use direct image URLs.
+- **Links to merchants**: Use `/store/{merchant-slug}` format.
 - **External links**: Use full `https://` URLs. These open in a new tab.
 
 ---
@@ -368,20 +367,24 @@ increment_article_view(article_slug TEXT) RETURNS void
 - OG image: `merchant.cover_image` (absolute URL)
 - Canonical URL: `https://bitesite-pied.vercel.app/store/{slug}`
 
-### Schema.org JSON-LD
-Two structured data blocks injected via `<script type="application/ld+json">`:
+### Schema.org JSON-LD (SEO)
+Three structured data blocks injected via `<script type="application/ld+json">`:
 1. **Restaurant Schema** (`@type: "Restaurant"`)
-2. **BreadcrumbList Schema**
+2. **Menu Schema** (`hasMenu` linked to `#menu-section`)
+3. **BreadcrumbList Schema**
+
+### Embedded Map
+Each merchant page automatically displays a Google Maps embed in the Contact section if `address` is provided. Supports all 5 layout styles with matching border colors.
 
 ---
 
 ## Stories Page (`/stories`)
 
 ### Features
-- **Dynamic category filters**: Categories are read from the database (`SELECT DISTINCT category`), so new categories automatically appear as filter buttons.
-- **Featured article**: The newest article gets a large featured card.
-- **Article list**: Remaining articles shown in a responsive grid.
-- **Empty state**: "No stories found" when no published articles exist.
+- **Dynamic category filters**: Categories are read from the database automatically
+- **Featured article**: The newest article gets a large featured card
+- **Article list**: Remaining articles shown in a responsive grid
+- **SEO**: Dedicated layout with metadata + Article Schema on detail pages
 
 ### Story Detail Page (`/stories/[slug]`)
 - **ISR 300s**: Revalidates every 5 minutes
@@ -389,7 +392,7 @@ Two structured data blocks injected via `<script type="application/ld+json">`:
 - **View tracking**: 2-second delay after page load, increments `view_count`
 - **Related stories**: Shows up to 3 related articles from the same category
 - **Merchant link**: If `merchant_slug` is set, shows a CTA button linking to the merchant page
-- **SEO**: Dynamic title, description, and OG image per article
+- **SEO**: Dynamic title, description, OG image, **Article Schema** (datePublished, author, publisher)
 
 ---
 
@@ -397,11 +400,18 @@ Two structured data blocks injected via `<script type="application/ld+json">`:
 
 ### Sections (top to bottom)
 1. **Restaurant owner banner** — "Are you a restaurant owner? Join BiteSite"
-2. **Hero** — Search bar + tagline
+2. **Hero** — Search bar (restaurants, cuisines, **dishes**)
 3. **Category Filter** — Sticky filter bar with smooth expand/collapse animation
-4. **Merchant Grid** — Filtered restaurant cards
-5. **Latest Stories** — Latest 3 published articles (hidden if no articles)
+4. **Merchant Grid** — Filtered restaurant cards (supports dish-level search)
+5. **Latest Stories** — Latest 3 published articles
 6. **Footer** — Home / Stories / Join Us links + copyright
+
+### Dish Search
+The homepage search bar now searches across:
+- Restaurant names
+- Cuisine types
+- Descriptions & tags
+- **Individual dish names** (e.g. searching "burger" returns restaurants with burgers on their menu)
 
 ---
 
@@ -416,6 +426,12 @@ Each merchant picks ONE layout via `merchants.layout` column.
 | **minimal** | Clean zen / Japanese | Stone-50 bg, stone-800 text, minimal borders |
 | **modern** | Contemporary urban | White bg, slate-900 text, slate-100 accents |
 | **rustic** | Earthy / farm-to-table | Orange-50 bg, orange-900 text, warm tones |
+
+All layouts include:
+- Google Maps embed in Contact section
+- Payment method badges
+- Share buttons (WhatsApp / Facebook / Twitter / Copy / Instagram)
+- "Discover more restaurants on BiteSite" footer link
 
 ---
 
@@ -452,15 +468,40 @@ interface MerchantFeatures {
 
 ---
 
+## Image Optimization
+
+All images served through `SafeImage` are automatically optimized via `lib/image-utils.ts`:
+
+- **Unsplash**: Resized to 800px, quality 80, auto WebP format, crop fit
+- **Supabase Storage**: Compressed with width/quality parameters
+- **Fallback**: Local images and data URIs pass through unchanged
+
+This significantly reduces page load time and mobile data usage without requiring a paid image CDN.
+
+---
+
 ## SEO & Performance
 
+### On-Page SEO
 - **Meta tags**: Auto-generated per merchant and per article
-- **Canonical URLs**: `https://bitesite-pied.vercel.app/store/{slug}` and `/stories/{slug}`
-- **Schema.org**: JSON-LD Restaurant + BreadcrumbList on merchant pages
+- **Canonical URLs**: Every page has a canonical link
+- **Open Graph**: Title, description, and image for social sharing
+- **Twitter Cards**: Summary large image cards
+
+### Structured Data (Schema.org)
+- **Organization + WebSite Schema**: Injected on every page via root layout
+- **Restaurant Schema**: On every merchant page (`@type: Restaurant`)
+- **Menu Schema**: Linked to the menu section (`hasMenu`)
+- **BreadcrumbList**: On every merchant page
+- **Article Schema**: On every story detail page (datePublished, author, publisher)
+- **FAQPage Schema**: On Join Us page (6 questions with accepted answers)
+
+### Technical SEO
 - **Sitemap**: Auto-generated from all published merchants (`sitemap.ts`)
 - **Robots**: Allow all, sitemap linked (`robots.ts`)
 - **Google Search Console**: Verified
-- **Image optimization**: `unoptimized: true` in next.config.js (Vercel free tier)
+- **ISR**: 5-minute revalidation for fresh content without full rebuild
+- **Image optimization**: Automatic compression via URL parameters
 
 ---
 
@@ -485,6 +526,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=     # Supabase anon/public key
 8. **Tags** are free-text array — used for filtering (Halal, Pet Friendly, WiFi, etc.)
 9. **Articles are published via Supabase Table Editor** — zero code required
 10. **Article images use external URLs** — Google Drive, Unsplash, or any direct image link
+11. **Dish search** — homepage search queries all available product names per merchant
+12. **Embedded maps** — auto-rendered in Contact section if address exists
 
 ---
 
@@ -492,11 +535,11 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=     # Supabase anon/public key
 
 | Page | Path | Purpose |
 |------|------|---------|
-| Home | `/` | Browse all restaurants, search, filter |
-| Merchant | `/store/{slug}` | Individual restaurant menu & info |
+| Home | `/` | Browse all restaurants, search (including dishes), filter |
+| Merchant | `/store/{slug}` | Individual restaurant menu, map, hours, SEO Schema |
 | Stories | `/stories` | Blog list — all articles |
-| Story | `/stories/{slug}` | Individual article (Markdown) |
-| Join Us | `/join-us` | Pricing & signup for restaurant owners |
+| Story | `/stories/{slug}` | Individual article (Markdown + Article Schema) |
+| Join Us | `/join-us` | Pricing & signup for restaurant owners (FAQ Schema) |
 
 ---
 
