@@ -1,9 +1,12 @@
+/* bitesite/components/sections/site-header.tsx */
+
 "use client";
 
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
+import { BiteSiteLogo } from "@/components/ui/bitesite-logo";
 
 const navLinks = [
   { href: "/", label: "Home" },
@@ -23,11 +26,8 @@ export function SiteHeader() {
     <header className="sticky top-0 z-50 border-b border-[#DDE5DC] bg-[#FAFBF7]/95 backdrop-blur-sm">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         {/* Logo */}
-        <Link
-          href="/"
-          className="font-serif text-lg font-semibold tracking-wide text-[#2C3E2D]"
-        >
-          BiteSite
+        <Link href="/">
+          <BiteSiteLogo showTagline={false} size="small" />
         </Link>
 
         {/* Desktop Nav */}
