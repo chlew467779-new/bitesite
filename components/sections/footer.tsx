@@ -1,17 +1,14 @@
 /* bitesite/components/sections/footer.tsx */
 
+import { BiteSiteLogo } from "@/components/ui/bitesite-logo";
+
 export function Footer() {
   return (
     <footer className="border-t border-[#DDE5DC] bg-[#FAFBF7]">
       <div className="mx-auto max-w-6xl px-4 py-12">
         <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
           <div className="text-center md:text-left">
-            <h4 className="font-serif text-lg font-medium tracking-wide text-[#2C3E2D]">
-              BiteSite
-            </h4>
-            <p className="mt-1 text-sm leading-relaxed text-[#8A968B]">
-              Beautiful Menus for Local Restaurants
-            </p>
+            <BiteSiteLogo showTagline={true} size="default" />
           </div>
           <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-[#6B6560]">
             <a
