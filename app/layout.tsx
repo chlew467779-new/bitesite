@@ -24,27 +24,26 @@ const notoSansJP = Noto_Sans_JP({
   display: "swap",
 });
 
-export const metadata = {
-  title: "BiteSite | Beautiful Menus for Local Restaurants",
+export const metadata: Metadata = {
+  title: "BiteSite | Every Bite Tells a Story",
   description:
-    "Discover the best cafes, restaurants, and dessert shops in Kuala Lumpur. Browse menus, photos, opening hours, and book your table instantly.",
+    "Discover the best local restaurants, cafes, and hidden gems in Kuala Lumpur. Browse menus, photos, and stories — every bite tells a story.",
   keywords: [
-    "restaurant menu",
+    "restaurant",
     "KL cafe",
     "Kuala Lumpur food",
-    "online menu",
-    "restaurant website",
-    "cafe menu",
-    "food delivery",
+    "discover restaurants",
+    "local dining",
+    "food stories",
     "BiteSite",
   ],
   authors: [{ name: "BiteSite" }],
   creator: "BiteSite",
   metadataBase: new URL("https://bitesite-pied.vercel.app"),
   openGraph: {
-    title: "BiteSite | Beautiful Menus for Local Restaurants",
+    title: "BiteSite | Every Bite Tells a Story",
     description:
-      "Discover the best cafes, restaurants, and dessert shops in Kuala Lumpur.",
+      "Discover the best local restaurants, cafes, and hidden gems in Kuala Lumpur.",
     url: "https://bitesite-pied.vercel.app",
     siteName: "BiteSite",
     locale: "en_MY",
@@ -52,9 +51,9 @@ export const metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "BiteSite | Beautiful Menus for Local Restaurants",
+    title: "BiteSite | Every Bite Tells a Story",
     description:
-      "Discover the best cafes, restaurants, and dessert shops in Kuala Lumpur.",
+      "Discover the best local restaurants, cafes, and hidden gems in Kuala Lumpur.",
   },
   verification: {
     google: "uBOqQMI8xgJcUJVyR_mezk4PAY66QMUTrcenNUPcjWs",
@@ -71,7 +70,7 @@ export default function RootLayout({
     "@type": "Organization",
     name: "BiteSite",
     url: "https://bitesite-pied.vercel.app",
-    description: "Beautiful Menus for Local Restaurants in Kuala Lumpur.",
+    description: "Every Bite Tells a Story — Discover local restaurants in Kuala Lumpur.",
   };
 
   const websiteSchema = {
@@ -86,7 +85,9 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} ${playfair.variable} ${notoSansJP.variable}`}
     >
-      <head>
+      <body className="min-h-screen bg-[#FAFBF7] font-sans antialiased">
+        <SiteHeader />
+        <main>{children}</main>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -99,10 +100,6 @@ export default function RootLayout({
             __html: JSON.stringify(websiteSchema),
           }}
         />
-      </head>
-      <body className="min-h-screen antialiased">
-        <SiteHeader />
-        {children}
       </body>
     </html>
   );
