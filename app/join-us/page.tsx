@@ -9,13 +9,13 @@ import { JoinUsCta } from "@/components/sections/join-us-cta";
 import { Footer } from "@/components/sections/footer";
 
 export const metadata: Metadata = {
-  title: "Join BiteSite — Beautiful Menus for Local Restaurants",
+  title: "Join BiteSite — Every Bite Tells a Story",
   description:
-    "Join BiteSite and get a stunning digital menu page for your restaurant. No app downloads, no commissions. Setup RM599 + RM149/month.",
+    "Join BiteSite and let your restaurant's story be discovered. Get a stunning digital page for your restaurant. No app downloads, no commissions. Setup RM599 + RM149/month.",
   openGraph: {
-    title: "Join BiteSite — Beautiful Menus for Local Restaurants",
+    title: "Join BiteSite — Every Bite Tells a Story",
     description:
-      "Join BiteSite and get a stunning digital menu page for your restaurant. No app downloads, no commissions. Setup RM599 + RM149/month.",
+      "Join BiteSite and let your restaurant's story be discovered. Get a stunning digital page for your restaurant. No app downloads, no commissions.",
     type: "website",
   },
 };
