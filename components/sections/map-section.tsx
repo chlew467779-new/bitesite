@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import Link from "next/link";
@@ -13,14 +13,19 @@ import { getMarkerColor } from "@/lib/map-colors";
 
 interface MapSectionProps {
   merchants: Merchant[];
+  selectedMerchant: Merchant | null;
+  onSelect: (merchant: Merchant | null) => void;
 }
 
-export function MapSection({ merchants }: MapSectionProps) {
+export function MapSection({ merchants, selectedMerchant, onSelect }: MapSectionProps) {
   const mapRef = useRef<L.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
   const userLocationRef = useRef<{ lat: number; lng: number } | null>(null);
-  const [selected, setSelected] = useState<Merchant | null>(null);
+  const onSelectRef = useRef(onSelect);
+
+  // 保持 ref 最新，避免 useEffect 依赖问题
+  onSelectRef.current = onSelect;
 
   // 初始化地图
   useEffect(() => {
@@ -37,7 +42,7 @@ export function MapSection({ merchants }: MapSectionProps) {
     mapRef.current = map;
 
     map.on("click", () => {
-      setSelected(null);
+      onSelectRef.current(null);
     });
 
     if (typeof navigator !== "undefined" && navigator.geolocation) {
@@ -79,7 +84,7 @@ export function MapSection({ merchants }: MapSectionProps) {
     if (!map || !layer) return;
 
     layer.clearLayers();
-    setSelected(null);
+    onSelectRef.current(null);
 
     merchants.forEach((merchant) => {
       if (!merchant.latitude || !merchant.longitude) return;
@@ -103,12 +108,26 @@ export function MapSection({ merchants }: MapSectionProps) {
 
       marker.on("click", (e) => {
         e.originalEvent?.stopPropagation();
-        setSelected(merchant);
+        onSelectRef.current(merchant);
       });
 
       layer.addLayer(marker);
     });
   }, [merchants]);
+
+  // 监听选中商家变化，flyTo 对应位置
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !selectedMerchant) return;
+
+    if (selectedMerchant.latitude && selectedMerchant.longitude) {
+      map.flyTo(
+        [selectedMerchant.latitude, selectedMerchant.longitude],
+        15,
+        { duration: 1 }
+      );
+    }
+  }, [selectedMerchant]);
 
   const handleRecenter = () => {
     const map = mapRef.current;
@@ -131,14 +150,14 @@ export function MapSection({ merchants }: MapSectionProps) {
     }
   };
 
-  const selectedType = selected?.cuisine_type?.split(",")[0].trim() || "Other";
+  const selectedType = selectedMerchant?.cuisine_type?.split(",")[0].trim() || "Other";
   const selectedColor = getMarkerColor(selectedType);
-  const { isOpen } = selected
-    ? getTodayHours(selected.operating_hours)
+  const { isOpen } = selectedMerchant
+    ? getTodayHours(selectedMerchant.operating_hours)
     : { isOpen: false };
 
-  const directionsUrl = selected
-    ? `https://www.google.com/maps/dir/?api=1&destination=${selected.latitude},${selected.longitude}`
+  const directionsUrl = selectedMerchant
+    ? `https://www.google.com/maps/dir/?api=1&destination=${selectedMerchant.latitude},${selectedMerchant.longitude}`
     : "";
 
   return (
@@ -184,29 +203,29 @@ export function MapSection({ merchants }: MapSectionProps) {
       )}
 
       {/* 商家信息卡片 */}
-      {selected && (
+      {selectedMerchant && (
         <div className="absolute bottom-6 left-1/2 z-[1000] w-[92%] max-w-sm -translate-x-1/2">
           <div className="relative rounded-2xl border border-[#DDE5DC] bg-white p-5 shadow-xl">
             <button
-              onClick={() => setSelected(null)}
+              onClick={() => onSelect(null)}
               className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full text-[#8A968B] transition-colors hover:bg-[#F0F4EC] hover:text-[#2C3E2D]"
               style={{ WebkitTapHighlightColor: "transparent" }}
             >
               <X className="h-4 w-4" />
             </button>
 
-            {selected.cover_image && (
+            {selectedMerchant.cover_image && (
               <div className="mb-3 h-28 w-full overflow-hidden rounded-xl">
                 <img
-                  src={selected.cover_image}
-                  alt={selected.name}
+                  src={selectedMerchant.cover_image}
+                  alt={selectedMerchant.name}
                   className="h-full w-full object-cover"
                 />
               </div>
             )}
 
             <h3 className="mb-2 pr-6 font-serif text-lg font-medium text-[#2C3E2D]">
-              {selected.name}
+              {selectedMerchant.name}
             </h3>
 
             <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -230,7 +249,7 @@ export function MapSection({ merchants }: MapSectionProps) {
 
             <div className="flex flex-wrap gap-2">
               <Link
-                href={`/store/${selected.slug}`}
+                href={`/store/${selectedMerchant.slug}`}
                 className="inline-flex items-center gap-2 rounded-full bg-[#5A8F6E] px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#4A7A5E] active:scale-[0.98]"
                 style={{ WebkitTapHighlightColor: "transparent" }}
               >
