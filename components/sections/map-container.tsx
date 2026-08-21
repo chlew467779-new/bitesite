@@ -5,6 +5,7 @@
 import dynamic from "next/dynamic";
 import { useState, useMemo } from "react";
 import { MapFilter } from "./map-filter";
+import { MapSidebar } from "./map-sidebar";
 import type { Merchant } from "@/types";
 
 const MapSection = dynamic(
@@ -26,6 +27,7 @@ interface MapContainerProps {
 export function MapContainer({ merchants }: MapContainerProps) {
   const [activeTypes, setActiveTypes] = useState<string[]>(["All"]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedMerchant, setSelectedMerchant] = useState<Merchant | null>(null);
 
   const filteredMerchants = useMemo(() => {
     let result = activeTypes.includes("All")
@@ -57,8 +59,23 @@ export function MapContainer({ merchants }: MapContainerProps) {
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
       />
-      <div className="flex-1 relative">
-        <MapSection merchants={filteredMerchants} />
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar - desktop only */}
+        <div className="hidden lg:block w-80 xl:w-96 border-r border-[#DDE5DC] bg-white flex-shrink-0">
+          <MapSidebar
+            merchants={filteredMerchants}
+            selected={selectedMerchant}
+            onSelect={setSelectedMerchant}
+          />
+        </div>
+        {/* Map */}
+        <div className="flex-1 relative">
+          <MapSection
+            merchants={filteredMerchants}
+            selectedMerchant={selectedMerchant}
+            onSelect={setSelectedMerchant}
+          />
+        </div>
       </div>
     </div>
   );
