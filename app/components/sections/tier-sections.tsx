@@ -62,7 +62,7 @@ export function TierSections({
       )}
 
       {resolved.reviews && (
-        <ReviewsSection reviews={[]} variant={variant} id="reviews-section" />
+        <ReviewsSection reviews={merchant.reviews || []} variant={variant} id="reviews-section" />
       )}
 
       {resolved.appointment && (
