@@ -14,6 +14,13 @@ export interface MerchantFeatures {
   events: boolean;
 }
 
+export interface Review {
+  author: string;
+  rating: number;
+  text: string;
+  date: string;
+}
+
 export interface Merchant {
   id: string;
   slug: string;
@@ -49,6 +56,7 @@ export interface Merchant {
   payment_methods: string[];
   latitude: number | null;
   longitude: number | null;
+  reviews?: Review[] | null;
 }
 
 export interface Category {
