@@ -8,7 +8,7 @@ import { AppointmentSection } from "./appointment-section";
 import { SeasonalSection } from "./seasonal-section";
 import { EventsSection } from "./events-section";
 import { mergeFeatures, type MerchantFeatures } from "@/types";
-import type { Merchant, Product } from "@/types";
+import type { Merchant, Product, EventItem } from "@/types";
 import type { LayoutVariant } from "./gallery-section";
 
 interface TierSectionsProps {
@@ -16,6 +16,7 @@ interface TierSectionsProps {
   products: Product[];
   features?: Partial<MerchantFeatures>;
   variant: LayoutVariant;
+  events?: EventItem[];
 }
 
 export function TierSections({
@@ -23,6 +24,7 @@ export function TierSections({
   products,
   features,
   variant,
+  events,
 }: TierSectionsProps) {
   const resolved = mergeFeatures(features);
 
@@ -58,7 +60,7 @@ export function TierSections({
       )}
 
       {resolved.events && (
-        <EventsSection events={[]} variant={variant} id="events-section" />
+        <EventsSection events={events || []} variant={variant} id="events-section" />
       )}
 
       {resolved.reviews && (
