@@ -18,6 +18,7 @@ export function ClassicLayout({
   products,
   videos,
   features,
+  events,
 }: LayoutProps) {
   const resolvedFeatures = mergeFeatures(features);
 
@@ -159,6 +160,7 @@ export function ClassicLayout({
         products={products}
         features={features}
         variant="classic"
+        events={events}
       />
 
       {/* Contact / Hours */}
