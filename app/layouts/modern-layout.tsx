@@ -15,7 +15,7 @@ import { getTodayKey } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
 
 export function ModernLayout({
-  merchant, categories, products, videos, features, viewCount,
+  merchant, categories, products, videos, features, viewCount, events,
 }: LayoutProps) {
   const resolvedFeatures = mergeFeatures(features);
   const today = getTodayKey();
@@ -95,7 +95,7 @@ export function ModernLayout({
         </FadeIn>
       )}
 
-      <TierSections merchant={merchant} products={products} features={features} variant="modern" />
+      <TierSections merchant={merchant} products={products} features={features} variant="modern" events={events} />
 
       {resolvedFeatures.contact && (
         <FadeIn>
