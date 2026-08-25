@@ -21,6 +21,16 @@ export interface Review {
   date: string;
 }
 
+export interface EventItem {
+  id: string;
+  title: string;
+  description?: string;
+  date: string;
+  time?: string;
+  location?: string;
+  image?: string;
+}
+
 export interface Merchant {
   id: string;
   slug: string;
@@ -117,6 +127,7 @@ export interface LayoutProps {
   videos?: MerchantVideo[];
   features?: MerchantFeatures;
   viewCount?: number;
+  events?: EventItem[];
 }
 
 export const defaultFeatures: MerchantFeatures = {
