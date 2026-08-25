@@ -6,16 +6,7 @@ import { FadeIn } from "@/app/components/animations";
 import { SafeImage } from "@/app/components/safe-image";
 import { Calendar, MapPin, Clock, Ticket } from "lucide-react";
 import type { LayoutVariant } from "./gallery-section";
-
-export interface EventItem {
-  id: string;
-  title: string;
-  description?: string;
-  date: string;
-  time?: string;
-  location?: string;
-  image?: string;
-}
+import type { EventItem } from "@/types";
 
 interface EventsSectionProps {
   events: EventItem[];
