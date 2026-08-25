@@ -2,7 +2,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { isCurrentlyOpen, getTodayKey } from "@/lib/hours";   // ← 新增
-import type { Merchant, Category, Product, MerchantVideo } from "@/types";
+import type { Merchant, Category, Product, MerchantVideo, EventItem } from "@/types";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -128,4 +128,15 @@ export async function getMerchantsForMap(): Promise<Merchant[]> {
 
   if (error) throw error;
   return data || [];
+}
+
+export async function getEventsByMerchant(merchantId: string): Promise<EventItem[]> {
+  const { data, error } = await supabase
+    .from("events")
+    .select("*")
+    .eq("merchant_id", merchantId)
+    .order("date", { ascending: true });
+
+  if (error) throw error;
+  return (data || []) as EventItem[];
 }
