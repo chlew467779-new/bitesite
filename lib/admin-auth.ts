@@ -1,3 +1,6 @@
+/* bitesite/lib/admin-auth.ts */
+
+
 import { createHmac, timingSafeEqual } from 'crypto';
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
