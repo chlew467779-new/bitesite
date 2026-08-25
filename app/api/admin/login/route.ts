@@ -1,3 +1,5 @@
+/* bitesite/app/api/admin/login/route.ts */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { generateAdminToken } from '@/lib/admin-auth';
