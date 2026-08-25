@@ -9,6 +9,7 @@ import {
   getVideosByMerchant,
   getPublishedMerchants,
   getRelatedMerchants,
+  getEventsByMerchant,
 } from "@/lib/supabase";
 import { supabase } from "@/lib/supabase";
 import { layouts } from "@/app/layouts";
@@ -88,12 +89,13 @@ export default async function MerchantPage({ params }: PageProps) {
   const merchant = await getMerchantBySlug(slug);
   if (!merchant) notFound();
 
-  const [categories, products, videos, relatedMerchants, statsRes] = await Promise.all([
+  const [categories, products, videos, relatedMerchants, statsRes, events] = await Promise.all([
     getCategoriesByMerchant(merchant.id),
     getProductsByMerchant(merchant.id),
     getVideosByMerchant(merchant.id),
     getRelatedMerchants(merchant.slug, merchant.cuisine_type, merchant.tags, merchant.area, 3),
     supabase.from("merchant_stats").select("view_count").eq("slug", slug).single(),
+    getEventsByMerchant(merchant.id),
   ]);
 
   const viewCount = statsRes.data?.view_count || 0;
@@ -158,6 +160,7 @@ export default async function MerchantPage({ params }: PageProps) {
         videos={videos}
         features={merchant.features}
         viewCount={viewCount}
+        events={events}
       />
       <RelatedMerchants
         merchants={relatedMerchants}
