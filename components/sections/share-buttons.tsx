@@ -4,6 +4,7 @@
 
 import { useState } from "react";
 import { Check, Copy, Share2 } from "lucide-react";
+import { trackEvent } from '@/lib/analytics';
 
 type LayoutVariant = "classic" | "elegant" | "minimal" | "modern" | "rustic";
 
@@ -29,6 +30,7 @@ export function ShareButtons({ slug, name, variant = "classic" }: ShareButtonsPr
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
+      trackEvent('share', { pageType: 'merchant', slug, detail: 'copy_link' });
       setTimeout(() => setCopied(false), 2000);
     } catch {}
   };
@@ -41,18 +43,17 @@ export function ShareButtons({ slug, name, variant = "classic" }: ShareButtonsPr
           text: `Check out ${name} on BiteSite!`,
           url: url,
         });
+        trackEvent('share', { pageType: 'merchant', slug, detail: 'native' });
       } catch {
         // 用户取消，静默处理
       }
       return;
     }
-    // 不支持原生分享，fallback 到复制链接
     handleCopy();
   };
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {/* 原生分享按钮（手机优先） */}
       <button
         onClick={handleNativeShare}
         className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all active:scale-95 ${buttonStyles[variant]}`}
