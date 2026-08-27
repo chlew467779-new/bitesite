@@ -1,6 +1,8 @@
+/* bitesite/app/api/track/route.ts */
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { detectDevice, classifyReferrer } from '@/lib/device-detect';
+import { detectDevice } from '@/lib/device-detect';
+import { classifyReferrer } from '@/lib/analytics';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
