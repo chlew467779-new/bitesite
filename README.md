@@ -37,6 +37,7 @@ Every change is done through the GitHub web interface:
 | Fonts | Inter, Playfair Display, Noto Sans JP |
 | Markdown | react-markdown + remark-gfm |
 | Map | Leaflet + OpenStreetMap (free) |
+| Charts | Recharts |
 
 ---
 
@@ -62,9 +63,40 @@ app/
 │   └── page.tsx                # Interactive map showing all merchant locations
 ├── api/
 │   ├── view/
-│   │   └── route.ts            # POST /api/view — increment merchant view count
-│   └── story-view/
-│       └── route.ts            # POST /api/story-view — increment article view count
+│   │   └── route.ts            # POST /api/view — increment merchant view count (legacy)
+│   ├── story-view/
+│   │   └── route.ts            # POST /api/story-view — increment article view count (legacy)
+│   ├── track/
+│   │   └── route.ts            # POST /api/track — NEW universal tracking API (all events)
+│   └── admin/
+│       ├── login/
+│       │   └── route.ts        # POST /api/admin/login — password auth + brute-force lockout
+│       ├── overview/
+│       │   └── route.ts        # GET /api/admin/overview?range=7d — dashboard KPI cards
+│       ├── trends/
+│       │   └── route.ts        # GET /api/admin/trends?range=7d — trend line chart data
+│       ├── merchants/
+│       │   └── route.ts        # GET /api/admin/merchants?range=7d — merchant ranking table
+│       ├── devices/
+│       │   └── route.ts        # GET /api/admin/devices?range=7d — device/OS/browser breakdown
+│       ├── locations/
+│       │   └── route.ts        # GET /api/admin/locations?range=7d — country + city distribution
+│       ├── referrers/
+│       │   └── route.ts        # GET /api/admin/referrers?range=7d — traffic source pie chart
+│       ├── search-keywords/
+│       │   └── route.ts        # GET /api/admin/search-keywords?range=7d — search terms ranking
+│       ├── events/
+│       │   └── route.ts        # GET /api/admin/events?range=7d — WhatsApp/Booking/Share stats
+│       ├── stories/
+│       │   └── route.ts        # GET /api/admin/stories?range=7d — Stories views + conversion
+│       ├── map/
+│       │   └── route.ts        # GET /api/admin/map?range=7d — Map page analytics
+│       ├── hourly/
+│       │   └── route.ts        # GET /api/admin/hourly?range=7d — 24h peak hours
+│       ├── realtime/
+│       │   └── route.ts        # GET /api/admin/realtime — current online users (5-min window)
+│       └── export/
+│           └── route.ts        # GET /api/admin/export?range=7d&format=csv — CSV download
 ├── store/
 │   └── [merchant]/
 │       ├── page.tsx              # Merchant detail page (ISR + SSR + Restaurant/Menu/Breadcrumb Schema)
@@ -76,6 +108,30 @@ app/
 │   ├── minimal-layout.tsx        # Clean stone/zen style
 │   ├── modern-layout.tsx         # White slate contemporary style
 │   └── rustic-layout.tsx         # Orange earthy style
+├── admin/                        # NEW — Admin Analytics Dashboard (dark theme)
+│   ├── page.tsx                  # Admin entry: login form or dashboard
+│   ├── layout.tsx                # Admin layout (dark mode, no SiteHeader)
+│   ├── loading.tsx               # Dashboard skeleton loader
+│   ├── login-form.tsx            # Password input component
+│   └── components/               # Dashboard UI components (pending)
+│       ├── admin-shell.tsx
+│       ├── auth-context.tsx
+│       ├── nav-sidebar.tsx
+│       ├── stat-cards.tsx
+│       ├── trend-chart.tsx
+│       ├── merchant-table.tsx
+│       ├── device-chart.tsx
+│       ├── os-browser-table.tsx
+│       ├── location-chart.tsx
+│       ├── referrer-chart.tsx
+│       ├── search-keywords-table.tsx
+│       ├── events-chart.tsx
+│       ├── stories-chart.tsx
+│       ├── map-stats.tsx
+│       ├── hourly-chart.tsx
+│       ├── realtime-badge.tsx
+│       ├── export-button.tsx
+│       └── date-range-picker.tsx
 ├── components/
 │   ├── map-embed.tsx             # Google Maps iframe embed component
 │   └── safe-image.tsx            # Next/Image wrapper with error fallback + loading shimmer
@@ -133,7 +189,10 @@ lib/
 ├── map-colors.ts               # Cuisine type → marker color mapping for map
 ├── image-utils.ts              # Auto image URL optimization (Unsplash / Supabase Storage)
 ├── whatsapp.ts                 # BiteSite WhatsApp link constant
-└── markdown.ts                 # Markdown rendering utilities (reserved)
+├── markdown.ts                 # Markdown rendering utilities (reserved)
+├── analytics.ts                # NEW — EventTypes + classifyReferrer + trackEvent()
+├── device-detect.ts            # NEW — User-Agent parser (device / OS / browser)
+└── admin-auth.ts               # NEW — generateAdminToken() + verifyAdminToken() (HMAC signed)
 
 types/
 └── index.ts                    # All TypeScript interfaces + defaultFeatures + mergeFeatures
@@ -176,8 +235,8 @@ types/
 | area | TEXT | District/area e.g. "Desa ParkCity", "Bangsar" |
 | tags | TEXT[] | Array of tags e.g. `["Halal", "Pet Friendly", "WiFi"]` |
 | payment_methods | TEXT[] | `["Cash", "Cashless", "Cards"]` |
-| **latitude** | **FLOAT8** | **NEW** Latitude for map marker (e.g. `3.1489`) |
-| **longitude** | **FLOAT8** | **NEW** Longitude for map marker (e.g. `101.7103`) |
+| latitude | FLOAT8 | Latitude for map marker |
+| longitude | FLOAT8 | Longitude for map marker |
 | is_published | BOOLEAN | Only published merchants appear on site |
 | created_at | TIMESTAMPTZ | |
 | updated_at | TIMESTAMPTZ | Used for sitemap lastModified |
@@ -219,7 +278,7 @@ types/
 | sort_order | INT | Display order |
 | created_at | TIMESTAMPTZ |
 
-### `merchant_stats` (view count analytics)
+### `merchant_stats` (legacy view count — retained for compatibility)
 | Column | Type |
 |--------|------|
 | slug | TEXT PK | Same as merchants.slug |
@@ -252,6 +311,64 @@ types/
 | view_count | INT | Auto-incremented. Do NOT edit manually. |
 | created_at | TIMESTAMPTZ | Auto-generated. |
 | updated_at | TIMESTAMPTZ | Auto-generated. |
+
+### `page_views` (NEW — raw analytics log)
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID PK | gen_random_uuid() |
+| slug | TEXT | Merchant slug (null for non-merchant pages) |
+| path | TEXT NOT NULL | e.g. `/store/abc`, `/stories/xyz` |
+| page_type | TEXT | merchant / story / home / join_us / our_partner / story_list / other |
+| event_type | TEXT NOT NULL DEFAULT 'page_view' | page_view / whatsapp_click / booking_submit / share / search / map_marker_click / story_to_merchant |
+| event_detail | TEXT | Search keyword, share platform, etc. |
+| ip | TEXT | Visitor IP |
+| country | TEXT | From Vercel `x-vercel-ip-country` |
+| city | TEXT | From Vercel `x-vercel-ip-city` |
+| device_type | TEXT | mobile / desktop / tablet |
+| os | TEXT | iOS / Android / Windows / macOS / Linux / Other |
+| browser | TEXT | Chrome / Safari / Samsung Internet / Firefox / Edge / Other |
+| user_agent | TEXT | Raw User-Agent string |
+| referrer | TEXT | document.referrer |
+| referrer_type | TEXT | google / instagram / facebook / whatsapp / direct / internal / other |
+| metadata | JSONB DEFAULT '{}' | Reserved for future expansion |
+| created_at | TIMESTAMPTZ DEFAULT now() | |
+
+**Indexes**: `created_at`, `slug`, `event_type`, `path`, `device_type`, `country+city`, `page_type`, `referrer_type`
+
+### `merchant_daily_views` (NEW — daily aggregated analytics)
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID PK | |
+| slug | TEXT | null = non-merchant pages |
+| page_type | TEXT NOT NULL | |
+| view_date | DATE NOT NULL | |
+| device_type | TEXT | |
+| country | TEXT | |
+| city | TEXT | |
+| os | TEXT | |
+| browser | TEXT | |
+| referrer_type | TEXT | |
+| event_type | TEXT DEFAULT 'page_view' | |
+| count | INT DEFAULT 0 | |
+| unique_ips | INT DEFAULT 0 | |
+| created_at | TIMESTAMPTZ DEFAULT now() | |
+| updated_at | TIMESTAMPTZ DEFAULT now() | |
+| **UNIQUE** | | (slug, page_type, view_date, device_type, country, city, os, browser, referrer_type, event_type) |
+
+**Indexes**: `view_date`, `slug`, `page_type`, `event_type`
+
+### `login_attempts` (NEW — brute-force protection)
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID PK | |
+| ip | TEXT NOT NULL | |
+| attempt_count | INT DEFAULT 1 | |
+| last_attempt_at | TIMESTAMPTZ DEFAULT now() | |
+| locked_until | TIMESTAMPTZ | null = not locked |
+| created_at | TIMESTAMPTZ DEFAULT now() | |
+| **UNIQUE** | | (ip) |
+
+**Indexes**: `ip`, `locked_until`
 
 ---
 
@@ -369,6 +486,49 @@ Emoji work too! 🍞☕🎉
 
 ---
 
+## 🔐 Admin Dashboard (/admin)
+
+### Authentication
+- **Password**: Stored in Vercel Environment Variable `ADMIN_PASSWORD`
+- **Brute-force protection**: 3 failed attempts → lock IP for 15 minutes
+- **Session**: HMAC-signed token, expires after 30 minutes
+- **Token storage**: localStorage (`admin_session`)
+
+### Security Features
+| Feature | Implementation |
+|---------|---------------|
+| Password storage | Vercel Environment Variable (Secret type) |
+| Brute-force lockout | `login_attempts` table — 3 strikes = 15 min lock |
+| Session token | HMAC-SHA256 signed, tamper-proof |
+| Token expiry | 30 minutes |
+| API auth | Every admin API checks `x-admin-token` header |
+
+### Analytics Coverage
+| Metric | Source |
+|--------|--------|
+| Page views | All pages (home, merchant, stories, join-us, our-partner) |
+| Events | WhatsApp clicks, Booking submits, Shares, Searches, Map marker clicks, Story-to-merchant conversions |
+| Device | Mobile / Desktop / Tablet + OS + Browser |
+| Location | Country + City (via Vercel Geo headers) |
+| Referrer | Google / Instagram / Facebook / WhatsApp / Direct / Internal / Other |
+| Real-time | Active users in last 5 minutes |
+| Export | CSV download per date range |
+
+### Event Tracking (lib/analytics.ts)
+```typescript
+EventTypes = {
+  PAGE_VIEW: 'page_view',
+  WHATSAPP_CLICK: 'whatsapp_click',
+  BOOKING_SUBMIT: 'booking_submit',
+  SHARE: 'share',
+  SEARCH: 'search',
+  MAP_MARKER_CLICK: 'map_marker_click',
+  STORY_TO_MERCHANT: 'story_to_merchant',
+}
+```
+
+---
+
 ## Supabase RPC Functions
 
 ```sql
@@ -387,10 +547,11 @@ increment_article_view(article_slug TEXT) RETURNS void
 |------|------|---------|
 | Home | `/` | Browse all restaurants, search (including dishes), filter |
 | Merchant | `/store/{slug}` | Individual restaurant menu, map, hours, SEO Schema |
-| **Our Partner** | **`/our-partner`** | **Interactive map showing all merchant locations with photos, filters, search, and navigation** |
+| Our Partner | `/our-partner` | Interactive map showing all merchant locations |
 | Stories | `/stories` | Blog list — all articles |
 | Story | `/stories/{slug}` | Individual article (Markdown + Article Schema) |
 | Join Us | `/join-us` | Pricing & signup for restaurant owners (FAQ Schema) |
+| **Admin** | **`/admin`** | **Analytics Dashboard — password protected** |
 
 ---
 
@@ -466,9 +627,9 @@ interface MerchantFeatures {
 
 ## View Count System
 
-- **Merchant tracking**: `<ViewTracker>` fires `POST /api/view` after 2s delay
-- **Article tracking**: `<StoryViewTracker>` fires `POST /api/story-view` after 2s delay
-- **Database**: RPC functions upsert `merchant_stats` / `articles.view_count`
+- **Legacy merchant tracking**: `<ViewTracker>` fires `POST /api/view` after 2s delay → `merchant_stats`
+- **Legacy article tracking**: `<StoryViewTracker>` fires `POST /api/story-view` after 2s delay → `articles.view_count`
+- **NEW universal tracking**: `trackEvent()` fires `POST /api/track` → `page_views` raw log → aggregated into `merchant_daily_views`
 - **Display locations**:
   - Merchant page Hero: inline eye badge
   - Homepage cards: bottom-right eye badge
@@ -517,9 +678,15 @@ This significantly reduces page load time and mobile data usage without requirin
 ## Environment Variables
 
 ```bash
-NEXT_PUBLIC_SUPABASE_URL=          # Supabase project URL
-NEXT_PUBLIC_SUPABASE_ANON_KEY=     # Supabase anon/public key
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+
+# Admin Dashboard (server-side only, no NEXT_PUBLIC_ prefix)
+ADMIN_PASSWORD=your-secure-password
 ```
+
+> **Security**: `ADMIN_PASSWORD` must be set in **Vercel Dashboard → Environment Variables** with type **Secret**. Never commit it to Git.
 
 ---
 
@@ -538,6 +705,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=     # Supabase anon/public key
 11. **Dish search** — homepage search queries all available product names per merchant
 12. **Embedded maps** — auto-rendered in Contact section if address exists
 13. **Map page requires coordinates** — merchants without `latitude`/`longitude` are hidden from the map
+14. **Admin Dashboard is password-only** — no user accounts, no registration
+15. **Analytics are self-hosted** — no Google Analytics, all data stays in Supabase
 
 ---
 
