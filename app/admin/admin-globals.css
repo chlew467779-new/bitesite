@@ -1,0 +1,36 @@
+/* bitesite/app/admin/admin-globals.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --admin-bg: #020617;
+    --admin-card: #0f172a;
+    --admin-border: #1e293b;
+    --admin-text: #f1f5f9;
+    --admin-muted: #94a3b8;
+    --admin-accent: #f59e0b;
+  }
+
+  body {
+    background-color: var(--admin-bg);
+    color: var(--admin-text);
+  }
+
+  /* Scrollbar styling for dark theme */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0f172a;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+  }
+}
