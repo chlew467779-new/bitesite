@@ -10,6 +10,7 @@ import { ShareButtons } from "@/components/sections/share-buttons";
 import { mergeFeatures } from "@/types";
 import type { LayoutProps } from "@/types";
 import { MapPin, Phone, Instagram, ArrowLeft, MessageSquare, Banknote, Smartphone, CreditCard } from "lucide-react";
+import { trackEvent } from "@/lib/analytics";
 import Link from "next/link";
 import { getTodayKey } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
@@ -105,7 +106,17 @@ export function MinimalLayout({
               <div className="mt-6 space-y-3 text-sm">
                 {merchant.address && <a href={`https://maps.google.com/?q=${encodeURIComponent(merchant.address)}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-stone-600"><MapPin size={16} />{merchant.address}</a>}
                 {merchant.phone && <a href={`tel:${merchant.phone}`} className="flex items-center gap-2 text-stone-600"><Phone size={16} />{merchant.phone}</a>}
-                {merchant.whatsapp && <a href={`https://wa.me/${merchant.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-green-600"><MessageSquare size={16} />WhatsApp</a>}
+                {merchant.whatsapp && (
+                  <a
+                    href={`https://wa.me/${merchant.whatsapp.replace(/\D/g, "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => trackEvent('whatsapp_click', { slug: merchant.slug, pageType: 'merchant' })}
+                    className="flex items-center gap-2 text-green-600"
+                  >
+                    <MessageSquare size={16} />WhatsApp
+                  </a>
+                )}
               </div>
               
               {/* Map */}
