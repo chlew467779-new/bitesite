@@ -8,6 +8,7 @@ import { StoryFilter } from "@/components/sections/story-filter";
 import { StoryList } from "@/components/sections/story-list";
 import { Footer } from "@/components/sections/footer";
 import { FadeIn } from "@/app/components/animations";
+import { PageViewTracker } from "@/app/components/page-view-tracker";
 import type { Article } from "@/types";
 
 export default function StoriesPage() {
@@ -41,6 +42,7 @@ export default function StoriesPage() {
 
   return (
     <main style={{ backgroundColor: "#FAFBF7" }}>
+      <PageViewTracker pageType="story_list" />
       {/* Hero */}
       <section className="px-4 py-16 text-center sm:px-6 lg:px-8">
         <FadeIn direction="up" duration={0.6}>
