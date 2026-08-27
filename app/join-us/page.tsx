@@ -79,9 +79,9 @@ export default function JoinUsPage() {
 
   return (
     <>
+      <PageViewTracker pageType="join_us" />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       <main>
-        <PageViewTracker pageType="join_us" />
         <JoinUsHero />
         <HowItWorks />
 
