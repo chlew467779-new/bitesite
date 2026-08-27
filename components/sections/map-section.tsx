@@ -10,6 +10,7 @@ import { X, ArrowRight, Locate, Search, MapPin } from "lucide-react";
 import type { Merchant } from "@/types";
 import { getTodayHours } from "@/lib/hours";
 import { getMarkerColor } from "@/lib/map-colors";
+import { trackEvent } from '@/lib/analytics';
 
 interface MapSectionProps {
   merchants: Merchant[];
@@ -24,10 +25,8 @@ export function MapSection({ merchants, selectedMerchant, onSelect }: MapSection
   const userLocationRef = useRef<{ lat: number; lng: number } | null>(null);
   const onSelectRef = useRef(onSelect);
 
-  // 保持 ref 最新，避免 useEffect 依赖问题
   onSelectRef.current = onSelect;
 
-  // 初始化地图
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
@@ -77,7 +76,6 @@ export function MapSection({ merchants, selectedMerchant, onSelect }: MapSection
     };
   }, []);
 
-  // 更新标记
   useEffect(() => {
     const map = mapRef.current;
     const layer = markersLayerRef.current;
@@ -109,13 +107,13 @@ export function MapSection({ merchants, selectedMerchant, onSelect }: MapSection
       marker.on("click", (e) => {
         e.originalEvent?.stopPropagation();
         onSelectRef.current(merchant);
+        trackEvent('map_marker_click', { slug: merchant.slug, pageType: 'our_partner' });
       });
 
       layer.addLayer(marker);
     });
   }, [merchants]);
 
-  // 监听选中商家变化，flyTo 对应位置
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !selectedMerchant) return;
@@ -177,7 +175,6 @@ export function MapSection({ merchants, selectedMerchant, onSelect }: MapSection
         }
       `}</style>
 
-      {/* Recenter 按钮 */}
       <button
         onClick={handleRecenter}
         className="absolute right-4 top-4 z-[1000] flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#2C3E2D] shadow-lg border border-[#DDE5DC] transition-all hover:bg-[#F0F4EC] active:scale-90"
@@ -187,7 +184,6 @@ export function MapSection({ merchants, selectedMerchant, onSelect }: MapSection
         <Locate className="h-5 w-5" />
       </button>
 
-      {/* 空状态：没有商家 */}
       {merchants.length === 0 && (
         <div className="absolute inset-0 z-[1000] flex items-center justify-center bg-[#FAFBF7]/80 backdrop-blur-sm">
           <div className="text-center">
@@ -202,7 +198,6 @@ export function MapSection({ merchants, selectedMerchant, onSelect }: MapSection
         </div>
       )}
 
-      {/* 商家信息卡片 */}
       {selectedMerchant && (
         <div className="absolute bottom-6 left-1/2 z-[1000] w-[92%] max-w-sm -translate-x-1/2">
           <div className="relative rounded-2xl border border-[#DDE5DC] bg-white p-5 shadow-xl">
