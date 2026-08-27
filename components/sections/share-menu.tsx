@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Check, Copy, MessageCircle, Facebook, Twitter, Instagram, X, Share2 } from "lucide-react";
+import { trackEvent } from '@/lib/analytics';
 
 interface ShareMenuProps {
   slug: string;
@@ -18,7 +19,6 @@ export function ShareMenu({ slug, name }: ShareMenuProps) {
   const encodedUrl = encodeURIComponent(url);
   const encodedName = encodeURIComponent(`Check out ${name} on BiteSite!`);
 
-  // 点击外部或滚动时自动关闭菜单
   useEffect(() => {
     if (!open) return;
 
@@ -35,7 +35,6 @@ export function ShareMenu({ slug, name }: ShareMenuProps) {
       setOpen(false);
     };
 
-    // 延迟绑定，避免点击 Share 按钮的瞬间就触发关闭
     const timer = setTimeout(() => {
       document.addEventListener("mousedown", handleClickOutside);
       document.addEventListener("touchstart", handleClickOutside);
@@ -55,6 +54,7 @@ export function ShareMenu({ slug, name }: ShareMenuProps) {
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
+      trackEvent('share', { pageType: 'merchant', slug, detail: 'copy_link' });
       setTimeout(() => setCopied(false), 2000);
     } catch {}
   };
@@ -67,19 +67,23 @@ export function ShareMenu({ slug, name }: ShareMenuProps) {
           text: `Check out ${name} on BiteSite!`,
           url: url,
         });
+        trackEvent('share', { pageType: 'merchant', slug, detail: 'native' });
         return;
       } catch {
         // 用户取消或失败，继续 fallback
       }
     }
-    // 不支持原生分享，切换菜单开关
     setOpen((prev) => !prev);
   };
 
+  const handlePlatformShare = (platform: string) => {
+    trackEvent('share', { pageType: 'merchant', slug, detail: platform });
+  };
+
   const links = [
-    { icon: <MessageCircle className="h-3.5 w-3.5" />, href: `https://wa.me/?text=${encodedName}%20${encodedUrl}`, color: "text-green-600 hover:bg-green-50", label: "WhatsApp" },
-    { icon: <Facebook className="h-3.5 w-3.5" />, href: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`, color: "text-blue-600 hover:bg-blue-50", label: "Facebook" },
-    { icon: <Twitter className="h-3.5 w-3.5" />, href: `https://twitter.com/intent/tweet?text=${encodedName}&url=${encodedUrl}`, color: "text-sky-500 hover:bg-sky-50", label: "Twitter" },
+    { icon: <MessageCircle className="h-3.5 w-3.5" />, href: `https://wa.me/?text=${encodedName}%20${encodedUrl}`, color: "text-green-600 hover:bg-green-50", label: "whatsapp" },
+    { icon: <Facebook className="h-3.5 w-3.5" />, href: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`, color: "text-blue-600 hover:bg-blue-50", label: "facebook" },
+    { icon: <Twitter className="h-3.5 w-3.5" />, href: `https://twitter.com/intent/tweet?text=${encodedName}&url=${encodedUrl}`, color: "text-sky-500 hover:bg-sky-50", label: "twitter" },
   ];
 
   return (
@@ -111,14 +115,14 @@ export function ShareMenu({ slug, name }: ShareMenuProps) {
               target="_blank"
               rel="noopener noreferrer"
               className={`flex h-7 w-7 items-center justify-center rounded-full transition-colors ${l.color}`}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => { e.stopPropagation(); handlePlatformShare(l.label); }}
               title={l.label}
             >
               {l.icon}
             </a>
           ))}
           <button
-            onClick={(e) => { e.stopPropagation(); handleCopy(); }}
+            onClick={(e) => { e.stopPropagation(); handleCopy(); handlePlatformShare('instagram'); }}
             className="flex h-7 w-7 items-center justify-center rounded-full text-pink-600 hover:bg-pink-50 transition-colors"
             title="Copy for Instagram"
           >
