@@ -7,6 +7,7 @@ import { PricingCard } from "@/components/sections/pricing-card";
 import { FaqAccordion } from "@/components/sections/faq-accordion";
 import { JoinUsCta } from "@/components/sections/join-us-cta";
 import { Footer } from "@/components/sections/footer";
+import { PageViewTracker } from "@/app/components/page-view-tracker";
 
 export const metadata: Metadata = {
   title: "Join BiteSite — Every Bite Tells a Story",
@@ -80,6 +81,7 @@ export default function JoinUsPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       <main>
+        <PageViewTracker pageType="join_us" />
         <JoinUsHero />
         <HowItWorks />
 
