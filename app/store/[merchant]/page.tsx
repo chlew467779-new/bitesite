@@ -15,6 +15,7 @@ import { supabase } from "@/lib/supabase";
 import { layouts } from "@/app/layouts";
 import { RelatedMerchants } from "@/components/sections/related-merchants";
 import { ViewTracker } from "@/components/sections/view-tracker";
+import { PageViewTracker } from "@/app/components/page-view-tracker";
 
 export const revalidate = 300;
 
@@ -150,6 +151,7 @@ export default async function MerchantPage({ params }: PageProps) {
 
   return (
     <>
+      <PageViewTracker pageType="merchant" slug={merchant.slug} />
       <ViewTracker slug={merchant.slug} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaData) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
