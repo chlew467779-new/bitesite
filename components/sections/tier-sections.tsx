@@ -9,7 +9,8 @@ import { SeasonalSection } from "./seasonal-section";
 import { EventsSection } from "./events-section";
 import { mergeFeatures, type MerchantFeatures } from "@/types";
 import type { Merchant, Product, EventItem } from "@/types";
-import type { LayoutVariant } from "./gallery-section";
+
+type LayoutVariant = "classic" | "elegant" | "minimal" | "modern" | "rustic";
 
 interface TierSectionsProps {
   merchant: Merchant;
