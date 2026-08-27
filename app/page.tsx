@@ -1,8 +1,8 @@
-/* bitesite/app/page.tsx  */
+/* bitesite/app/page.tsx */
 
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Hero } from "@/components/sections/hero";
 import { CategoryFilter } from "@/components/sections/category-filter";
 import { MerchantCard } from "@/components/sections/merchant-card";
@@ -12,6 +12,7 @@ import { LatestStories } from "@/components/sections/latest-stories";
 import { supabase } from "@/lib/supabase";
 import { FadeIn } from "@/app/components/animations";
 import { isCurrentlyOpen, getTodayKey } from "@/lib/hours";
+import { trackEvent } from "@/lib/analytics";
 import type { Merchant } from "@/types";
 
 export default function HomePage() {
@@ -25,6 +26,7 @@ export default function HomePage() {
   const [openNow, setOpenNow] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [productIndex, setProductIndex] = useState<Map<string, string[]>>(new Map());
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch merchants + stats + products on mount
   useEffect(() => {
@@ -69,7 +71,23 @@ export default function HomePage() {
       setLoading(false);
     }
     fetchData();
+
+    // Track homepage view
+    trackEvent('page_view', { pageType: 'home' });
   }, []);
+
+  // Track search events with debounce
+  useEffect(() => {
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    if (searchQuery.trim()) {
+      searchTimeoutRef.current = setTimeout(() => {
+        trackEvent('search', { pageType: 'home', detail: searchQuery.trim() });
+      }, 1000);
+    }
+    return () => {
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    };
+  }, [searchQuery]);
 
   // 动态提取所有 area
   const availableAreas = useMemo(() => {
