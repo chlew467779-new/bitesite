@@ -2,11 +2,11 @@
 
 "use client";
 
-import { GallerySection } from "./gallery-section";
-import { ReviewsSection } from "./reviews-section";
+import { GallerySection } from "@/app/components/sections/gallery-section";
+import { ReviewsSection } from "@/app/components/sections/reviews-section";
 import { AppointmentSection } from "./appointment-section";
-import { SeasonalSection } from "./seasonal-section";
-import { EventsSection } from "./events-section";
+import { SeasonalSection } from "@/app/components/sections/seasonal-section";
+import { EventsSection } from "@/app/components/sections/events-section";
 import { mergeFeatures, type MerchantFeatures } from "@/types";
 import type { Merchant, Product, EventItem } from "@/types";
 
