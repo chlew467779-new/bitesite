@@ -11,6 +11,7 @@ import type { LayoutProps } from "@/types";
 import { mergeFeatures } from "@/types";
 import { getTodayKey } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
+import { trackEvent } from "@/lib/analytics";
 
 export function ClassicLayout({
   merchant,
@@ -213,6 +214,7 @@ export function ClassicLayout({
                       href={`https://wa.me/${merchant.whatsapp.replace(/\D/g, "")}`}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={() => trackEvent('whatsapp_click', { slug: merchant.slug, pageType: 'merchant' })}
                       className="flex items-center gap-3 text-green-700 active:scale-[0.98] transition-transform"
                       style={{ WebkitTapHighlightColor: "transparent" }}
                     >
