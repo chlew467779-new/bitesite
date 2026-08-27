@@ -63,14 +63,14 @@ app/
 │   └── page.tsx                # Interactive map showing all merchant locations
 ├── api/
 │   ├── view/
-│   │   └── route.ts            # POST /api/view — increment merchant view count (legacy)
+│   │   └── route.ts            # POST /api/view — legacy merchant view count (retained)
 │   ├── story-view/
-│   │   └── route.ts            # POST /api/story-view — increment article view count (legacy)
+│   │   └── route.ts            # POST /api/story-view — legacy article view count (retained)
 │   ├── track/
 │   │   └── route.ts            # POST /api/track — NEW universal tracking API (all events)
 │   └── admin/
 │       ├── login/
-│       │   └── route.ts        # POST /api/admin/login — password auth + brute-force lockout
+│       │   └── route.ts        # POST /api/admin/login — password auth + 3-strike lockout
 │       ├── overview/
 │       │   └── route.ts        # GET /api/admin/overview?range=7d — dashboard KPI cards
 │       ├── trends/
@@ -109,32 +109,31 @@ app/
 │   ├── modern-layout.tsx         # White slate contemporary style
 │   └── rustic-layout.tsx         # Orange earthy style
 ├── admin/                        # NEW — Admin Analytics Dashboard (dark theme)
-│   ├── page.tsx                  # Admin entry: login form or dashboard
+│   ├── page.tsx                  # Admin entry: login form or dashboard shell
 │   ├── layout.tsx                # Admin layout (dark mode, no SiteHeader)
-│   ├── loading.tsx               # Dashboard skeleton loader
+│   ├── admin-globals.css         # Admin-specific dark theme styles
 │   ├── login-form.tsx            # Password input component
-│   └── components/               # Dashboard UI components (pending)
-│       ├── admin-shell.tsx
-│       ├── auth-context.tsx
-│       ├── nav-sidebar.tsx
-│       ├── stat-cards.tsx
-│       ├── trend-chart.tsx
-│       ├── merchant-table.tsx
-│       ├── device-chart.tsx
-│       ├── os-browser-table.tsx
-│       ├── location-chart.tsx
-│       ├── referrer-chart.tsx
-│       ├── search-keywords-table.tsx
-│       ├── events-chart.tsx
-│       ├── stories-chart.tsx
-│       ├── map-stats.tsx
-│       ├── hourly-chart.tsx
-│       ├── realtime-badge.tsx
-│       ├── export-button.tsx
-│       └── date-range-picker.tsx
+│   └── components/
+│       ├── auth-context.tsx      # Login state management (React Context + localStorage)
+│       ├── admin-shell.tsx       # Sidebar + main content layout
+│       ├── date-range-picker.tsx # Time range selector (today/7d/30d/90d/365d)
+│       ├── realtime-badge.tsx    # Live online user counter (30s auto-refresh)
+│       ├── stat-cards.tsx        # Top 4 KPI cards (views/unique/events/merchants)
+│       ├── trend-chart.tsx       # Traffic trend line chart
+│       ├── merchant-table.tsx    # Merchant ranking table (sortable)
+│       ├── device-chart.tsx      # Device distribution donut chart
+│       ├── location-chart.tsx    # Top cities bar chart
+│       ├── referrer-chart.tsx    # Traffic source pie chart
+│       ├── search-keywords-table.tsx # Search terms ranking
+│       ├── events-chart.tsx      # WhatsApp/Booking/Share stacked bar chart
+│       ├── stories-chart.tsx     # Stories views + conversion rate
+│       ├── map-stats.tsx         # Map page views + marker clicks
+│       ├── hourly-chart.tsx      # 24-hour peak hours bar chart
+│       └── export-button.tsx     # CSV export trigger
 ├── components/
 │   ├── map-embed.tsx             # Google Maps iframe embed component
 │   └── safe-image.tsx            # Next/Image wrapper with error fallback + loading shimmer
+│   └── page-view-tracker.tsx     # NEW — Universal page view tracker (Client Component)
 └── components/
     ├── ui/
     │   ├── cuisine-tag.tsx           # Pill-shaped cuisine label
@@ -192,7 +191,7 @@ lib/
 ├── markdown.ts                 # Markdown rendering utilities (reserved)
 ├── analytics.ts                # NEW — EventTypes + classifyReferrer + trackEvent()
 ├── device-detect.ts            # NEW — User-Agent parser (device / OS / browser)
-└── admin-auth.ts               # NEW — generateAdminToken() + verifyAdminToken() (HMAC signed)
+└── admin-auth.ts               # NEW — generateAdminToken() + verifyAdminToken() (HMAC-SHA256)
 
 types/
 └── index.ts                    # All TypeScript interfaces + defaultFeatures + mergeFeatures
@@ -323,7 +322,7 @@ types/
 | event_detail | TEXT | Search keyword, share platform, etc. |
 | ip | TEXT | Visitor IP |
 | country | TEXT | From Vercel `x-vercel-ip-country` |
-| city | TEXT | From Vercel `x-vercel-ip-city` |
+| city | Text | From Vercel `x-vercel-ip-city` |
 | device_type | TEXT | mobile / desktop / tablet |
 | os | TEXT | iOS / Android / Windows / macOS / Linux / Other |
 | browser | TEXT | Chrome / Safari / Samsung Internet / Firefox / Edge / Other |
@@ -491,7 +490,7 @@ Emoji work too! 🍞☕🎉
 ### Authentication
 - **Password**: Stored in Vercel Environment Variable `ADMIN_PASSWORD`
 - **Brute-force protection**: 3 failed attempts → lock IP for 15 minutes
-- **Session**: HMAC-signed token, expires after 30 minutes
+- **Session**: HMAC-SHA256 signed token, expires after 30 minutes
 - **Token storage**: localStorage (`admin_session`)
 
 ### Security Features
@@ -625,16 +624,34 @@ interface MerchantFeatures {
 
 ---
 
-## View Count System
+## View Count & Analytics System
 
-- **Legacy merchant tracking**: `<ViewTracker>` fires `POST /api/view` after 2s delay → `merchant_stats`
-- **Legacy article tracking**: `<StoryViewTracker>` fires `POST /api/story-view` after 2s delay → `articles.view_count`
-- **NEW universal tracking**: `trackEvent()` fires `POST /api/track` → `page_views` raw log → aggregated into `merchant_daily_views`
-- **Display locations**:
-  - Merchant page Hero: inline eye badge
-  - Homepage cards: bottom-right eye badge
-  - Stories list: eye icon + count per article
-  - Story detail: eye icon + count in hero meta
+### Legacy System (Retained)
+- **Merchant tracking**: `<ViewTracker>` fires `POST /api/view` after 2s delay → `merchant_stats`
+- **Article tracking**: `<StoryViewTracker>` fires `POST /api/story-view` after 2s delay → `articles.view_count`
+
+### NEW Universal Tracking System
+- **Client function**: `trackEvent()` in `lib/analytics.ts`
+- **API endpoint**: `POST /api/track` → inserts into `page_views`
+- **Aggregation**: `merchant_daily_views` table holds daily summaries
+- **Dashboard**: `/admin` displays all metrics in real-time
+
+### Tracked Events
+| Event | Trigger Location |
+|-------|-----------------|
+| `page_view` | All pages (via `<PageViewTracker>`) |
+| `search` | Homepage search box (debounced 1s) |
+| `whatsapp_click` | Merchant page WhatsApp buttons |
+| `booking_submit` | Appointment form submission |
+| `share` | Share buttons (WhatsApp/Facebook/Copy) |
+| `map_marker_click` | Map page marker clicks |
+| `story_to_merchant` | Stories article merchant links |
+
+### Display Locations
+- Merchant page Hero: inline eye badge
+- Homepage cards: bottom-right eye badge
+- Stories list: eye icon + count per article
+- Story detail: eye icon + count in hero meta
 
 ---
 
@@ -707,6 +724,7 @@ ADMIN_PASSWORD=your-secure-password
 13. **Map page requires coordinates** — merchants without `latitude`/`longitude` are hidden from the map
 14. **Admin Dashboard is password-only** — no user accounts, no registration
 15. **Analytics are self-hosted** — no Google Analytics, all data stays in Supabase
+16. **Legacy APIs are preserved** — `api/view` and `api/story-view` continue working alongside new `api/track`
 
 ---
 
