@@ -8,7 +8,8 @@ import {
   Calendar, Clock, Users, MessageSquare, Phone, User, CheckCircle2, Send,
 } from "lucide-react";
 import { trackEvent } from '@/lib/analytics';
-import type { LayoutVariant } from "./gallery-section";
+
+type LayoutVariant = "classic" | "elegant" | "minimal" | "modern" | "rustic";
 
 interface AppointmentSectionProps {
   merchantName: string;
