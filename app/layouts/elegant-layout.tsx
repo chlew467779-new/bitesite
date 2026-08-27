@@ -12,6 +12,7 @@ import type { LayoutProps } from "@/types";
 import {
   MapPin, Phone, Mail, Instagram, ArrowLeft, MessageSquare, Banknote, Smartphone, CreditCard,
 } from "lucide-react";
+import { trackEvent } from "@/lib/analytics";
 import Link from "next/link";
 import { getTodayKey } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
@@ -193,7 +194,13 @@ export function ElegantLayout({
                   </a>
                 )}
                 {merchant.whatsapp && (
-                  <a href={`https://wa.me/${merchant.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-green-400 hover:text-green-300 transition-colors">
+                  <a
+                    href={`https://wa.me/${merchant.whatsapp.replace(/\D/g, "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => trackEvent('whatsapp_click', { slug: merchant.slug, pageType: 'merchant' })}
+                    className="flex items-center gap-3 text-green-400 hover:text-green-300 transition-colors"
+                  >
                     <MessageSquare size={18} /><span className="text-sm font-medium">WhatsApp</span>
                   </a>
                 )}
