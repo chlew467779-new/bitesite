@@ -67,30 +67,30 @@ app/
 │   ├── story-view/
 │   │   └── route.ts            # POST /api/story-view — legacy article view count (retained)
 │   ├── track/
-│   │   └── route.ts            # POST /api/track — NEW universal tracking API (all events)
+│   │   └── route.ts            # POST /api/track — universal tracking API (all events, sendBeacon compatible)
 │   └── admin/
 │       ├── login/
 │       │   └── route.ts        # POST /api/admin/login — password auth + 3-strike lockout
 │       ├── overview/
-│       │   └── route.ts        # GET /api/admin/overview?range=7d — dashboard KPI cards
+│       │   └── route.ts        # GET /api/admin/overview?range=7d — dashboard KPI cards (raw table query)
 │       ├── trends/
 │       │   └── route.ts        # GET /api/admin/trends?range=7d — trend line chart data
 │       ├── merchants/
 │       │   └── route.ts        # GET /api/admin/merchants?range=7d — merchant ranking table
 │       ├── devices/
-│       │   └── route.ts        # GET /api/admin/devices?range=7d — device/OS/browser breakdown
+│       │   └── route.ts        # GET /api/admin/devices?range=7d — device/OS/browser breakdown (raw table query)
 │       ├── locations/
 │       │   └── route.ts        # GET /api/admin/locations?range=7d — country + city distribution
 │       ├── referrers/
-│       │   └── route.ts        # GET /api/admin/referrers?range=7d — traffic source pie chart
+│       │   └── route.ts        # GET /api/admin/referrers?range=7d — traffic source pie chart (raw table query)
 │       ├── search-keywords/
 │       │   └── route.ts        # GET /api/admin/search-keywords?range=7d — search terms ranking
 │       ├── events/
-│       │   └── route.ts        # GET /api/admin/events?range=7d — WhatsApp/Booking/Share stats
+│       │   └── route.ts        # GET /api/admin/events?range=7d — WhatsApp/Booking/Share stats (raw table query)
 │       ├── stories/
-│       │   └── route.ts        # GET /api/admin/stories?range=7d — Stories views + conversion
+│       │   └── route.ts        # GET /api/admin/stories?range=7d — Stories views + conversion (raw table query)
 │       ├── map/
-│       │   └── route.ts        # GET /api/admin/map?range=7d — Map page analytics
+│       │   └── route.ts        # GET /api/admin/map?range=7d — Map page analytics (raw table query)
 │       ├── hourly/
 │       │   └── route.ts        # GET /api/admin/hourly?range=7d — 24h peak hours
 │       ├── realtime/
@@ -108,7 +108,7 @@ app/
 │   ├── minimal-layout.tsx        # Clean stone/zen style
 │   ├── modern-layout.tsx         # White slate contemporary style
 │   └── rustic-layout.tsx         # Orange earthy style
-├── admin/                        # NEW — Admin Analytics Dashboard (dark theme)
+├── admin/                        # Admin Analytics Dashboard (dark theme)
 │   ├── page.tsx                  # Admin entry: login form or dashboard shell
 │   ├── layout.tsx                # Admin layout (dark mode, no SiteHeader)
 │   ├── admin-globals.css         # Admin-specific dark theme styles
@@ -133,7 +133,7 @@ app/
 ├── components/
 │   ├── map-embed.tsx             # Google Maps iframe embed component
 │   └── safe-image.tsx            # Next/Image wrapper with error fallback + loading shimmer
-│   └── page-view-tracker.tsx     # NEW — Universal page view tracker (Client Component)
+│   └── page-view-tracker.tsx     # Universal page view tracker (Client Component)
 └── components/
     ├── ui/
     │   ├── cuisine-tag.tsx           # Pill-shaped cuisine label
@@ -175,7 +175,7 @@ app/
         ├── story-card.tsx            # Article card (featured + list variants)
         ├── story-list.tsx            # Article list with featured article on top
         ├── story-hero.tsx            # Story detail hero (title + meta + cover image)
-        ├── story-content.tsx         # Markdown renderer for article body
+        ├── story-content.tsx         # Markdown renderer for article body (with /store/ link tracking)
         ├── story-related.tsx         # "More Stories" recommendations
         ├── story-view-tracker.tsx    # Client-side article view count tracker
         └── latest-stories.tsx        # Homepage "Latest Stories" section (latest 3 articles)
@@ -189,9 +189,9 @@ lib/
 ├── image-utils.ts              # Auto image URL optimization (Unsplash / Supabase Storage)
 ├── whatsapp.ts                 # BiteSite WhatsApp link constant
 ├── markdown.ts                 # Markdown rendering utilities (reserved)
-├── analytics.ts                # NEW — EventTypes + classifyReferrer + trackEvent()
-├── device-detect.ts            # NEW — User-Agent parser (device / OS / browser)
-└── admin-auth.ts               # NEW — generateAdminToken() + verifyAdminToken() (HMAC-SHA256)
+├── analytics.ts                # EventTypes + classifyReferrer + trackEvent() (sendBeacon priority)
+├── device-detect.ts            # User-Agent parser (device / OS / browser) — enhanced with iPad/ChromeOS/Opera
+└── admin-auth.ts               # generateAdminToken() + verifyAdminToken() (HMAC-SHA256)
 
 types/
 └── index.ts                    # All TypeScript interfaces + defaultFeatures + mergeFeatures
@@ -311,7 +311,7 @@ types/
 | created_at | TIMESTAMPTZ | Auto-generated. |
 | updated_at | TIMESTAMPTZ | Auto-generated. |
 
-### `page_views` (NEW — raw analytics log)
+### `page_views` (raw analytics log — primary data source)
 | Column | Type | Notes |
 |--------|------|-------|
 | id | UUID PK | gen_random_uuid() |
@@ -334,7 +334,7 @@ types/
 
 **Indexes**: `created_at`, `slug`, `event_type`, `path`, `device_type`, `country+city`, `page_type`, `referrer_type`
 
-### `merchant_daily_views` (NEW — daily aggregated analytics)
+### `merchant_daily_views` (daily aggregated analytics — cron rollup)
 | Column | Type | Notes |
 |--------|------|-------|
 | id | UUID PK | |
@@ -356,7 +356,7 @@ types/
 
 **Indexes**: `view_date`, `slug`, `page_type`, `event_type`
 
-### `login_attempts` (NEW — brute-force protection)
+### `login_attempts` (brute-force protection)
 | Column | Type | Notes |
 |--------|------|-------|
 | id | UUID PK | |
@@ -502,38 +502,40 @@ Emoji work too! 🍞☕🎉
 | Token expiry | 30 minutes |
 | API auth | Every admin API checks `x-admin-token` header |
 
-### Current Status (as of 2026-08-27)
+### Current Status (as of 2026-08-28)
 | Component | Status | Notes |
 |-----------|--------|-------|
 | Login & Auth | ✅ Working | Password + brute-force protection |
-| Real-time Badge | ✅ Working | Shows online users (3 online confirmed) |
-| Traffic Trends | ✅ Working | 8/25 peak visible |
-| Merchant Performance | ✅ Working | Views data showing (34, 22, 15...) |
-| Location Analytics | ✅ Working | Kuala Lumpur 98 views confirmed |
-| Peak Hours | ✅ Working | 21:00/22:00 bars visible |
-| **Unique Visitors** | ❌ Bug | Overview card shows 0 (needs fix) |
-| **Device Distribution** | ❌ Bug | Shows 100% "unknown" (needs fix) |
-| **Traffic Sources** | ❌ Bug | Shows 100% "other" (needs fix) |
-| **Events Analytics** | ⏳ Pending | Waiting for event triggers (WhatsApp/Booking/Share) |
-| **Stories Analytics** | ⏳ Pending | Waiting for story page views |
-| **Map Stats** | ⏳ Pending | Waiting for map visits |
-| **Search Keywords** | ⏳ Pending | Waiting for search events |
+| Real-time Badge | ✅ Working | Shows online users |
+| Traffic Trends | ✅ Working | Daily trend visible |
+| Merchant Performance | ✅ Working | Views data showing |
+| Location Analytics | ✅ Working | City distribution visible |
+| Peak Hours | ✅ Working | 24h peak hours visible |
+| **Unique Visitors** | ✅ Fixed | Now queries `DISTINCT ip` from raw `page_views` table |
+| **Device Distribution** | ✅ Fixed | Queries raw table; null → `desktop`; enhanced UA parser |
+| **Traffic Sources** | ✅ Fixed | Queries raw table; null → `direct`; enhanced referrer classification |
+| **Events Analytics** | ✅ Working | All 6 event types tracked and displayed |
+| **Stories Analytics** | ✅ Working | Story views + list page views displayed |
+| **Map Stats** | ✅ Working | Map page views + marker clicks displayed |
+| **Search Keywords** | ✅ Working | Search terms ranked by frequency |
+| Chart Tooltips | ✅ Fixed | All Recharts tooltips now have white text on dark background |
 
 ### Data Aggregation
-- **Raw table**: `page_views` — receives all tracking events via `POST /api/track`
+- **Raw table**: `page_views` — receives all tracking events via `POST /api/track` (primary, real-time)
 - **Aggregated table**: `merchant_daily_views` — hourly rollup via Supabase Cron (`aggregate_daily_views()`)
 - **Cron job**: `aggregate-views-hourly` runs every hour at :00
+- **Dashboard APIs**: Overview, Devices, Referrers, Events, Stories, Map now query raw `page_views` table for real-time data. Trends, Merchants, Locations, Hourly still use aggregated table for performance.
 
 ### Analytics Coverage
-| Metric | Source |
-|--------|--------|
-| Page views | All pages (home, merchant, stories, join-us, our-partner) |
-| Events | WhatsApp clicks, Booking submits, Shares, Searches, Map marker clicks, Story-to-merchant conversions |
-| Device | Mobile / Desktop / Tablet + OS + Browser |
-| Location | Country + City (via Vercel Geo headers) |
-| Referrer | Google / Instagram / Facebook / WhatsApp / Direct / Internal / Other |
-| Real-time | Active users in last 5 minutes |
-| Export | CSV download per date range |
+| Metric | Source | Status |
+|--------|--------|--------|
+| Page views | All pages (home, merchant, stories, join-us, our-partner) | ✅ |
+| Events | WhatsApp clicks, Booking submits, Shares, Searches, Map marker clicks, Story-to-merchant conversions | ✅ |
+| Device | Mobile / Desktop / Tablet + OS + Browser | ✅ |
+| Location | Country + City (via Vercel Geo headers) | ✅ |
+| Referrer | Google / Instagram / Facebook / WhatsApp / Direct / Internal / Other / Bing / Yahoo / LinkedIn / YouTube | ✅ |
+| Real-time | Active users in last 5 minutes | ✅ |
+| Export | CSV download per date range | ⏳ Untested |
 
 ### Event Tracking (lib/analytics.ts)
 ```typescript
@@ -547,6 +549,8 @@ EventTypes = {
   STORY_TO_MERCHANT: 'story_to_merchant',
 }
 ```
+
+**Tracking reliability**: `trackEvent()` uses `navigator.sendBeacon` as primary transport (browser-guaranteed delivery even on page navigation), with `fetch(keepalive)` as fallback. The `/api/track` endpoint accepts both JSON and Blob bodies.
 
 ---
 
@@ -653,8 +657,8 @@ interface MerchantFeatures {
 - **Article tracking**: `<StoryViewTracker>` fires `POST /api/story-view` after 2s delay → `articles.view_count`
 
 ### NEW Universal Tracking System
-- **Client function**: `trackEvent()` in `lib/analytics.ts`
-- **API endpoint**: `POST /api/track` → inserts into `page_views`
+- **Client function**: `trackEvent()` in `lib/analytics.ts` — uses `navigator.sendBeacon` (guaranteed delivery)
+- **API endpoint**: `POST /api/track` → inserts into `page_views` (accepts JSON and Blob bodies)
 - **Aggregation**: `merchant_daily_views` table holds daily summaries
 - **Cron job**: `aggregate_daily_views()` runs hourly via `pg_cron`
 - **Dashboard**: `/admin` displays all metrics in real-time
@@ -685,15 +689,15 @@ SELECT cron.schedule('aggregate-views-hourly', '0 * * * *', 'SELECT aggregate_da
 ```
 
 ### Tracked Events
-| Event | Trigger Location |
-|-------|-----------------|
-| `page_view` | All pages (via `<PageViewTracker>`) |
-| `search` | Homepage search box (debounced 1s) |
-| `whatsapp_click` | Merchant page WhatsApp buttons |
-| `booking_submit` | Appointment form submission |
-| `share` | Share buttons (WhatsApp/Facebook/Copy) |
-| `map_marker_click` | Map page marker clicks |
-| `story_to_merchant` | Stories article merchant links |
+| Event | Trigger Location | Status |
+|-------|-----------------|--------|
+| `page_view` | All pages (via `<PageViewTracker>`) | ✅ Verified |
+| `search` | Homepage search box (debounced 1s) | ✅ Verified |
+| `whatsapp_click` | Merchant page WhatsApp buttons (all 5 layouts) | ✅ Verified |
+| `booking_submit` | Appointment form submission | ✅ Verified |
+| `share` | Share buttons (WhatsApp/Facebook/Copy) | ✅ Verified |
+| `map_marker_click` | Map page marker clicks | ✅ Verified |
+| `story_to_merchant` | Stories article `/store/` links | ✅ Verified |
 
 ### Display Locations
 - Merchant page Hero: inline eye badge
@@ -776,25 +780,18 @@ ADMIN_PASSWORD=your-secure-password
 
 ---
 
-## License
+## ⚠️ Known Issues (as of 2026-08-28)
 
-Private — BiteSite by CH.
-
-
----
-
-## ⚠️ Known Issues (as of 2026-08-27)
+### P0: Performance
+1. **Vercel deploy time increasing** — Build is getting slower. Likely causes: duplicate files between `components/` and `app/components/`, unused dependencies, or ISR static page generation overhead. Needs investigation.
 
 ### P1: Data Accuracy
-1. **Unique Visitors shows 0** — Overview card displays 0 despite Merchant Performance having views data. Likely a calculation bug in `app/api/admin/overview/route.ts`.
-2. **Device Distribution 100% "unknown"** — `lib/device-detect.ts` is not correctly parsing User-Agent strings. Needs investigation.
-3. **Referrer 100% "other"** — `classifyReferrer()` in `lib/analytics.ts` may be too strict or not receiving referrer data.
+2. **Stories Conversions shows 0** — `story_to_merchant` events are tracked (verified in `page_views`), but the Dashboard Stories tab shows 0 conversions. Root cause: `story_to_merchant` uses merchant `slug` while story views use article `slug` — mismatch in `app/api/admin/stories/route.ts` matching logic.
+3. **Location city names URL-encoded** — `San%20Jose` should display as `San Jose`. Need `decodeURIComponent()` in API or frontend.
 
 ### P2: Pending Verification
-4. **Events tab is empty** — Need to manually test WhatsApp click, Share, Booking submit, Map marker click to verify events are being tracked.
-5. **Stories analytics shows 0** — Need to verify story page views are being recorded in `page_views`.
-6. **Map Stats shows 0** — Need to verify `/our-partner` page visits and marker clicks.
-7. **Search Keywords empty** — Need to verify homepage search triggers `trackEvent('search', ...)`.
+4. **CSV Export** — Feature implemented but not end-to-end tested.
+5. **Stories Conversions rate** — After fixing slug matching, verify conversion rate calculation is correct.
 
 ### How to Debug
 ```sql
@@ -809,6 +806,9 @@ SELECT * FROM merchant_daily_views ORDER BY view_date DESC LIMIT 20;
 
 -- Manually trigger aggregation
 SELECT aggregate_daily_views();
+
+-- Check cron jobs
+SELECT * FROM cron.job;
 ```
 
 ---
@@ -830,9 +830,49 @@ SELECT aggregate_daily_views();
 - CSV export
 - **Data aggregation via Supabase Cron**
 
-### Phase 3: Analytics & Bug Fixes (In Progress)
-- ✅ All page view tracking implemented
-- ✅ All event tracking implemented (WhatsApp, Share, Booking, Map, Story)
-- ✅ Supabase aggregation cron job deployed
-- ⏳ Fixing data accuracy issues (Unique Visitors, Device, Referrer)
-- ⏳ Verifying event tracking end-to-end
+### Phase 3: Analytics & Bug Fixes (Completed 2026-08-28)
+- ✅ All page view tracking implemented and verified
+- ✅ All 7 event tracking types implemented and verified (WhatsApp, Share, Booking, Search, Map, Story)
+- ✅ Supabase aggregation cron job deployed and running
+- ✅ Unique Visitors calculation fixed (raw table DISTINCT ip)
+- ✅ Device Distribution fixed (raw table query + enhanced UA parser)
+- ✅ Traffic Sources fixed (raw table query + enhanced referrer classification)
+- ✅ Chart tooltips text color fixed (all Recharts components)
+- ✅ `trackEvent()` upgraded to `navigator.sendBeacon` for guaranteed delivery
+- ✅ Dashboard APIs real-time化 (Overview, Devices, Referrers, Events, Stories, Map)
+
+### Phase 4: Optimization (In Progress)
+- ⏳ Investigate and fix Vercel deploy slowness
+- ⏳ Fix Stories Conversions slug matching
+- ⏳ Fix Location city name URL decoding
+- ⏳ Test CSV Export end-to-end
+- ⏳ Code cleanup: remove duplicate files, dead code, unused dependencies
+
+---
+
+## 🛠️ Developer Notes
+
+### File Path Trap (Important!)
+The project has **two parallel component directories**:
+- `components/sections/` — legacy / potentially unused
+- `app/components/sections/` — **actively used** (imported by `tier-sections.tsx` via relative path `./appointment-section`)
+
+**Rule**: Before modifying any component, check which directory it's actually imported from. The `app/components/sections/` versions take priority for TierSections and most admin components.
+
+### Analytics Tracking Best Practices
+- **For page navigation after tracking**: Use regular `<a>` tags, NOT Next.js `<Link>`. Client-side navigation interrupts `sendBeacon`/`fetch` requests.
+- **For WhatsApp/booking opens**: `trackEvent()` is fire-and-forget with `sendBeacon` — no need to `await` before `window.open()`.
+- **Testing**: Always verify via Supabase SQL Editor (`SELECT event_type, COUNT(*) FROM page_views GROUP BY event_type`) — don't wait for Dashboard aggregation.
+
+### Supabase Timezone
+All `created_at` timestamps are UTC. For Malaysia Time queries, append `+08:00`:
+```sql
+SELECT * FROM page_views 
+WHERE created_at >= '2026-08-28T00:00:00+08:00';
+```
+
+---
+
+## License
+
+Private — BiteSite by CH.
