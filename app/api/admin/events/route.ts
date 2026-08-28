@@ -1,6 +1,5 @@
 /* bitesite/app/api/admin/events/route.ts */
 
-
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { verifyAdminToken } from '@/lib/admin-auth';
@@ -11,19 +10,19 @@ const supabase = createClient(
 );
 
 function getDateRange(range: string) {
-  const end = new Date().toISOString().split('T')[0];
+  const end = new Date();
   const start = new Date();
   
   switch (range) {
     case 'today': start.setHours(0,0,0,0); break;
-    case '7d': start.setDate(start.getDate() - 7); break;
-    case '30d': start.setDate(start.getDate() - 30); break;
-    case '90d': start.setDate(start.getDate() - 90); break;
-    case '365d': start.setDate(start.getDate() - 365); break;
-    default: start.setDate(start.getDate() - 7);
+    case '7d': start.setDate(end.getDate() - 7); break;
+    case '30d': start.setDate(end.getDate() - 30); break;
+    case '90d': start.setDate(end.getDate() - 90); break;
+    case '365d': start.setDate(end.getDate() - 365); break;
+    default: start.setDate(end.getDate() - 7);
   }
   
-  return { start: start.toISOString().split('T')[0], end };
+  return { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0] };
 }
 
 export async function GET(request: NextRequest) {
@@ -37,39 +36,38 @@ export async function GET(request: NextRequest) {
   const { start, end } = getDateRange(range);
 
   try {
-    // 按 event_type 汇总（排除 page_view）
-    const { data } = await supabase
-      .from('merchant_daily_views')
-      .select('event_type, count')
-      .neq('event_type', 'page_view')
-      .gte('view_date', start)
-      .lte('view_date', end);
+    const startDateTime = `${start}T00:00:00+08:00`;
+    const endDateTime = `${end}T23:59:59+08:00`;
 
+    // FIX: 从 page_views 原始表实时查询（不需要等聚合）
+    const { data: rawData } = await supabase
+      .from('page_views')
+      .select('event_type, created_at')
+      .neq('event_type', 'page_view')
+      .gte('created_at', startDateTime)
+      .lte('created_at', endDateTime);
+
+    // 汇总统计
     const eventMap = new Map<string, number>();
-    data?.forEach(row => {
-      const key = row.event_type || 'other';
-      eventMap.set(key, (eventMap.get(key) || 0) + (row.count || 0));
-    });
-
-    // 按天汇总趋势
-    const { data: dailyData } = await supabase
-      .from('merchant_daily_views')
-      .select('view_date, event_type, count')
-      .neq('event_type', 'page_view')
-      .gte('view_date', start)
-      .lte('view_date', end);
-
     const dailyMap = new Map<string, Map<string, number>>();
-    dailyData?.forEach(row => {
-      const date = row.view_date;
-      const type = row.event_type;
-      if (!dailyMap.has(date)) dailyMap.set(date, new Map());
-      const typeMap = dailyMap.get(date)!;
-      typeMap.set(type, (typeMap.get(type) || 0) + (row.count || 0));
+    const eventTypes = ['whatsapp_click', 'booking_submit', 'share', 'search', 'map_marker_click', 'story_to_merchant'];
+
+    rawData?.forEach(row => {
+      const type = row.event_type || 'other';
+      const date = row.created_at ? row.created_at.split('T')[0] : '';
+      
+      // Summary
+      eventMap.set(type, (eventMap.get(type) || 0) + 1);
+      
+      // Daily trend
+      if (date) {
+        if (!dailyMap.has(date)) dailyMap.set(date, new Map());
+        const typeMap = dailyMap.get(date)!;
+        typeMap.set(type, (typeMap.get(type) || 0) + 1);
+      }
     });
 
     const dates = Array.from(dailyMap.keys()).sort();
-    const eventTypes = ['whatsapp_click', 'booking_submit', 'share', 'search', 'map_marker_click', 'story_to_merchant'];
     const dailyTrend = dates.map(date => {
       const typeMap = dailyMap.get(date)!;
       return {
