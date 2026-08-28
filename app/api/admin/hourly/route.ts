@@ -1,6 +1,5 @@
 /* bitesite/app/api/admin/hourly/route.ts */
 
-
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { verifyAdminToken } from '@/lib/admin-auth';
@@ -11,19 +10,19 @@ const supabase = createClient(
 );
 
 function getDateRange(range: string) {
-  const end = new Date().toISOString().split('T')[0];
+  const end = new Date();
   const start = new Date();
   
   switch (range) {
     case 'today': start.setHours(0,0,0,0); break;
-    case '7d': start.setDate(start.getDate() - 7); break;
-    case '30d': start.setDate(start.getDate() - 30); break;
-    case '90d': start.setDate(start.getDate() - 90); break;
-    case '365d': start.setDate(start.getDate() - 365); break;
-    default: start.setDate(start.getDate() - 7);
+    case '7d': start.setDate(end.getDate() - 7); break;
+    case '30d': start.setDate(end.getDate() - 30); break;
+    case '90d': start.setDate(end.getDate() - 90); break;
+    case '365d': start.setDate(end.getDate() - 365); break;
+    default: start.setDate(end.getDate() - 7);
   }
   
-  return { start: start.toISOString().split('T')[0], end };
+  return { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0] };
 }
 
 export async function GET(request: NextRequest) {
