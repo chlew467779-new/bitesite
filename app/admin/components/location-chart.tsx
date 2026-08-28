@@ -72,6 +72,7 @@ export default function LocationChart({ range }: LocationChartProps) {
                 borderRadius: '8px',
                 color: '#f1f5f9',
               }}
+              itemStyle={{ color: '#f1f5f9' }}
               formatter={(value: number) => [value.toLocaleString(), 'Views']}
             />
             <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} />
