@@ -74,6 +74,7 @@ export function TierSections({
           whatsapp={merchant.whatsapp ?? undefined}
           variant={variant}
           id="reserve-section"
+          slug={merchant.slug}
         />
       )}
     </>
