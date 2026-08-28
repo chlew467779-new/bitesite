@@ -11,14 +11,32 @@ export const EventTypes = {
 export type EventType = typeof EventTypes[keyof typeof EventTypes];
 
 export function classifyReferrer(referrer: string): string {
-  if (!referrer) return 'direct';
+  if (!referrer || referrer === 'null' || referrer === 'undefined') return 'direct';
   const r = referrer.toLowerCase();
+  
+  // Search engines
   if (r.includes('google')) return 'google';
+  if (r.includes('bing')) return 'bing';
+  if (r.includes('yahoo')) return 'yahoo';
+  if (r.includes('duckduckgo')) return 'duckduckgo';
+  if (r.includes('baidu')) return 'baidu';
+  
+  // Social media
   if (r.includes('instagram')) return 'instagram';
   if (r.includes('facebook')) return 'facebook';
   if (r.includes('whatsapp')) return 'whatsapp';
   if (r.includes('twitter') || r.includes('x.com')) return 'twitter';
+  if (r.includes('linkedin')) return 'linkedin';
+  if (r.includes('youtube')) return 'youtube';
+  if (r.includes('reddit')) return 'reddit';
+  if (r.includes('pinterest')) return 'pinterest';
+  if (r.includes('tiktok')) return 'tiktok';
+  if (r.includes('telegram')) return 'telegram';
+  if (r.includes('discord')) return 'discord';
+  
+  // Internal
   if (r.includes('bitesite')) return 'internal';
+  
   return 'other';
 }
 
