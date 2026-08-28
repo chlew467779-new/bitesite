@@ -77,6 +77,7 @@ export default function ReferrerChart({ range }: ReferrerChartProps) {
                 borderRadius: '8px',
                 color: '#f1f5f9',
               }}
+              itemStyle={{ color: '#f1f5f9' }}
               formatter={(value: number) => [value.toLocaleString(), 'Views']}
             />
           </PieChart>
