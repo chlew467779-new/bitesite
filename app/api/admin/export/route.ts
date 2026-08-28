@@ -25,6 +25,15 @@ function getDateRange(range: string) {
   return { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0] };
 }
 
+function decodeCity(rawCity: string): string {
+  if (!rawCity || rawCity === '-') return '-';
+  try {
+    return rawCity.includes('%') ? decodeURIComponent(rawCity) : rawCity;
+  } catch {
+    return rawCity;
+  }
+}
+
 export async function GET(request: NextRequest) {
   const token = request.headers.get('x-admin-token');
   if (!token || !verifyAdminToken(token)) {
@@ -54,7 +63,7 @@ export async function GET(request: NextRequest) {
         row.page_type,
         row.device_type || '-',
         row.country || '-',
-        row.city || '-',
+        decodeCity(row.city || '-'),
         row.event_type,
         row.count,
         row.unique_ips,
