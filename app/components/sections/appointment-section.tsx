@@ -7,6 +7,7 @@ import { FadeIn } from "@/app/components/animations";
 import {
   Calendar, Clock, Users, MessageSquare, Phone, User, CheckCircle2, Send,
 } from "lucide-react";
+import { trackEvent } from '@/lib/analytics';
 import type { LayoutVariant } from "./gallery-section";
 
 interface AppointmentSectionProps {
@@ -16,6 +17,7 @@ interface AppointmentSectionProps {
   title?: string;
   variant?: LayoutVariant;
   id?: string;
+  slug?: string;
 }
 
 const sectionBg: Record<LayoutVariant, string> = {
@@ -59,7 +61,6 @@ const btnPrimary: Record<LayoutVariant, string> = {
   rustic:  "bg-orange-700 hover:bg-orange-800",
 };
 
-// 你的号码
 const BITESITE_WHATSAPP = "60165660239";
 
 export function AppointmentSection({
@@ -67,6 +68,7 @@ export function AppointmentSection({
   title = "Book a Table",
   variant = "classic",
   id,
+  slug,
 }: AppointmentSectionProps) {
   const [formData, setFormData] = useState({
     name: "",
@@ -83,7 +85,6 @@ export function AppointmentSection({
     e.preventDefault();
     setSubmitting(true);
 
-    // 拼接 WhatsApp 消息
     const message = [
       `*New Reservation Request via BiteSite*`,
       ``,
@@ -99,12 +100,17 @@ export function AppointmentSection({
     const encoded = encodeURIComponent(message);
     const waUrl = `https://wa.me/${BITESITE_WHATSAPP}?text=${encoded}`;
 
-    // 模拟网络延迟
     await new Promise((r) => setTimeout(r, 600));
     setSubmitting(false);
     setSubmitted(true);
 
-    // 自动打开 WhatsApp
+    // FIX: 发送 booking_submit 事件
+    trackEvent('booking_submit', {
+      pageType: 'merchant',
+      slug,
+      detail: merchantName,
+    });
+
     window.open(waUrl, "_blank");
   };
 
