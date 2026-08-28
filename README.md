@@ -502,6 +502,28 @@ Emoji work too! 🍞☕🎉
 | Token expiry | 30 minutes |
 | API auth | Every admin API checks `x-admin-token` header |
 
+### Current Status (as of 2026-08-27)
+| Component | Status | Notes |
+|-----------|--------|-------|
+| Login & Auth | ✅ Working | Password + brute-force protection |
+| Real-time Badge | ✅ Working | Shows online users (3 online confirmed) |
+| Traffic Trends | ✅ Working | 8/25 peak visible |
+| Merchant Performance | ✅ Working | Views data showing (34, 22, 15...) |
+| Location Analytics | ✅ Working | Kuala Lumpur 98 views confirmed |
+| Peak Hours | ✅ Working | 21:00/22:00 bars visible |
+| **Unique Visitors** | ❌ Bug | Overview card shows 0 (needs fix) |
+| **Device Distribution** | ❌ Bug | Shows 100% "unknown" (needs fix) |
+| **Traffic Sources** | ❌ Bug | Shows 100% "other" (needs fix) |
+| **Events Analytics** | ⏳ Pending | Waiting for event triggers (WhatsApp/Booking/Share) |
+| **Stories Analytics** | ⏳ Pending | Waiting for story page views |
+| **Map Stats** | ⏳ Pending | Waiting for map visits |
+| **Search Keywords** | ⏳ Pending | Waiting for search events |
+
+### Data Aggregation
+- **Raw table**: `page_views` — receives all tracking events via `POST /api/track`
+- **Aggregated table**: `merchant_daily_views` — hourly rollup via Supabase Cron (`aggregate_daily_views()`)
+- **Cron job**: `aggregate-views-hourly` runs every hour at :00
+
 ### Analytics Coverage
 | Metric | Source |
 |--------|--------|
@@ -634,7 +656,33 @@ interface MerchantFeatures {
 - **Client function**: `trackEvent()` in `lib/analytics.ts`
 - **API endpoint**: `POST /api/track` → inserts into `page_views`
 - **Aggregation**: `merchant_daily_views` table holds daily summaries
+- **Cron job**: `aggregate_daily_views()` runs hourly via `pg_cron`
 - **Dashboard**: `/admin` displays all metrics in real-time
+
+### Aggregation Setup (One-time)
+Run in Supabase SQL Editor:
+```sql
+CREATE OR REPLACE FUNCTION aggregate_daily_views()
+RETURNS void AS $$
+BEGIN
+  INSERT INTO merchant_daily_views (
+    slug, page_type, view_date, device_type, country, city, os, browser, referrer_type, event_type, count, unique_ips
+  )
+  SELECT 
+    slug, page_type, DATE(created_at) as view_date,
+    device_type, country, city, os, browser, referrer_type, event_type,
+    COUNT(*) as count, COUNT(DISTINCT ip) as unique_ips
+  FROM page_views
+  WHERE created_at >= CURRENT_DATE - INTERVAL '2 days'
+  GROUP BY slug, page_type, DATE(created_at), device_type, country, city, os, browser, referrer_type, event_type
+  ON CONFLICT (slug, page_type, view_date, device_type, country, city, os, browser, referrer_type, event_type)
+  DO UPDATE SET count = EXCLUDED.count, unique_ips = EXCLUDED.unique_ips, updated_at = now();
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE EXTENSION IF NOT EXISTS pg_cron;
+SELECT cron.schedule('aggregate-views-hourly', '0 * * * *', 'SELECT aggregate_daily_views()');
+```
 
 ### Tracked Events
 | Event | Trigger Location |
@@ -731,3 +779,60 @@ ADMIN_PASSWORD=your-secure-password
 ## License
 
 Private — BiteSite by CH.
+
+
+---
+
+## ⚠️ Known Issues (as of 2026-08-27)
+
+### P1: Data Accuracy
+1. **Unique Visitors shows 0** — Overview card displays 0 despite Merchant Performance having views data. Likely a calculation bug in `app/api/admin/overview/route.ts`.
+2. **Device Distribution 100% "unknown"** — `lib/device-detect.ts` is not correctly parsing User-Agent strings. Needs investigation.
+3. **Referrer 100% "other"** — `classifyReferrer()` in `lib/analytics.ts` may be too strict or not receiving referrer data.
+
+### P2: Pending Verification
+4. **Events tab is empty** — Need to manually test WhatsApp click, Share, Booking submit, Map marker click to verify events are being tracked.
+5. **Stories analytics shows 0** — Need to verify story page views are being recorded in `page_views`.
+6. **Map Stats shows 0** — Need to verify `/our-partner` page visits and marker clicks.
+7. **Search Keywords empty** — Need to verify homepage search triggers `trackEvent('search', ...)`.
+
+### How to Debug
+```sql
+-- Check if events are being recorded
+SELECT event_type, COUNT(*) FROM page_views GROUP BY event_type;
+
+-- Check recent raw data
+SELECT * FROM page_views ORDER BY created_at DESC LIMIT 20;
+
+-- Check aggregated data
+SELECT * FROM merchant_daily_views ORDER BY view_date DESC LIMIT 20;
+
+-- Manually trigger aggregation
+SELECT aggregate_daily_views();
+```
+
+---
+
+## 🗂️ Project History
+
+### Phase 1: Core Platform (Completed)
+- Merchant pages with 5 layouts
+- Menu system with categories & products
+- Stories/blog system
+- Our Partner map page
+- Join Us pricing page
+
+### Phase 2: Admin Dashboard (Completed 2026-08-27)
+- Dark theme analytics dashboard
+- Password-protected login
+- Real-time online users
+- Traffic trends, merchant ranking, device/location/referrer breakdown
+- CSV export
+- **Data aggregation via Supabase Cron**
+
+### Phase 3: Analytics & Bug Fixes (In Progress)
+- ✅ All page view tracking implemented
+- ✅ All event tracking implemented (WhatsApp, Share, Booking, Map, Story)
+- ✅ Supabase aggregation cron job deployed
+- ⏳ Fixing data accuracy issues (Unique Visitors, Device, Referrer)
+- ⏳ Verifying event tracking end-to-end
