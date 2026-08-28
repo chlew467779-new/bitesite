@@ -4,16 +4,13 @@
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import Link from "next/link";
+import { trackEvent } from '@/lib/analytics';
 
 interface StoryContentProps {
   content: string;
 }
 
 export function StoryContent({ content }: StoryContentProps) {
-  // Supabase Table Editor sometimes stores newlines as literal backslash-n.
-  // We use String.fromCharCode to avoid backslash escape issues in source code.
-  // 92 = backslash, 110 = letter n. Together they make the pattern "\n".
   const backslashN = String.fromCharCode(92, 110);
   const realNewline = String.fromCharCode(10);
   const processedContent = content.split(backslashN).join(realNewline);
@@ -42,13 +39,17 @@ export function StoryContent({ content }: StoryContentProps) {
               ),
               a: ({ href, children }) => {
                 if (href?.startsWith("/store/")) {
+                  const slug = href.replace("/store/", "");
                   return (
-                    <Link
+                    <a
                       href={href}
+                      onClick={() => {
+                        trackEvent('story_to_merchant', { pageType: 'story', slug });
+                      }}
                       className="font-medium text-[#5A8F6E] underline underline-offset-2 transition-colors hover:text-[#4A7A5E]"
                     >
                       {children}
-                    </Link>
+                    </a>
                   );
                 }
                 return (
