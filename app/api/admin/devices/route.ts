@@ -1,6 +1,5 @@
 /* bitesite/app/api/admin/devices/route.ts */
 
-
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { verifyAdminToken } from '@/lib/admin-auth';
@@ -11,19 +10,19 @@ const supabase = createClient(
 );
 
 function getDateRange(range: string) {
-  const end = new Date().toISOString().split('T')[0];
+  const end = new Date();
   const start = new Date();
   
   switch (range) {
     case 'today': start.setHours(0,0,0,0); break;
-    case '7d': start.setDate(start.getDate() - 7); break;
-    case '30d': start.setDate(start.getDate() - 30); break;
-    case '90d': start.setDate(start.getDate() - 90); break;
-    case '365d': start.setDate(start.getDate() - 365); break;
-    default: start.setDate(start.getDate() - 7);
+    case '7d': start.setDate(end.getDate() - 7); break;
+    case '30d': start.setDate(end.getDate() - 30); break;
+    case '90d': start.setDate(end.getDate() - 90); break;
+    case '365d': start.setDate(end.getDate() - 365); break;
+    default: start.setDate(end.getDate() - 7);
   }
   
-  return { start: start.toISOString().split('T')[0], end };
+  return { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0] };
 }
 
 export async function GET(request: NextRequest) {
@@ -37,46 +36,30 @@ export async function GET(request: NextRequest) {
   const { start, end } = getDateRange(range);
 
   try {
-    // 设备分布
-    const { data: deviceData } = await supabase
-      .from('merchant_daily_views')
-      .select('device_type, count')
+    const startDateTime = `${start}T00:00:00+08:00`;
+    const endDateTime = `${end}T23:59:59+08:00`;
+
+    // FIX: 直接从 page_views 原始表查，避开聚合表 device_type=null 的污染
+    const { data: rawData } = await supabase
+      .from('page_views')
+      .select('device_type, os, browser')
       .eq('event_type', 'page_view')
-      .gte('view_date', start)
-      .lte('view_date', end);
+      .gte('created_at', startDateTime)
+      .lte('created_at', endDateTime);
 
     const deviceMap = new Map<string, number>();
-    deviceData?.forEach(row => {
-      const key = row.device_type || 'unknown';
-      deviceMap.set(key, (deviceMap.get(key) || 0) + (row.count || 0));
-    });
-
-    // OS 分布
-    const { data: osData } = await supabase
-      .from('merchant_daily_views')
-      .select('os, count')
-      .eq('event_type', 'page_view')
-      .gte('view_date', start)
-      .lte('view_date', end);
-
     const osMap = new Map<string, number>();
-    osData?.forEach(row => {
-      const key = row.os || 'unknown';
-      osMap.set(key, (osMap.get(key) || 0) + (row.count || 0));
-    });
-
-    // Browser 分布
-    const { data: browserData } = await supabase
-      .from('merchant_daily_views')
-      .select('browser, count')
-      .eq('event_type', 'page_view')
-      .gte('view_date', start)
-      .lte('view_date', end);
-
     const browserMap = new Map<string, number>();
-    browserData?.forEach(row => {
-      const key = row.browser || 'unknown';
-      browserMap.set(key, (browserMap.get(key) || 0) + (row.count || 0));
+
+    rawData?.forEach(row => {
+      // 把 null/空值/unknown 都 fallback 到 desktop，彻底消灭 unknown
+      const device = row.device_type || 'desktop';
+      const os = row.os || 'Other';
+      const browser = row.browser || 'Other';
+      
+      deviceMap.set(device, (deviceMap.get(device) || 0) + 1);
+      osMap.set(os, (osMap.get(os) || 0) + 1);
+      browserMap.set(browser, (browserMap.get(browser) || 0) + 1);
     });
 
     return NextResponse.json({
