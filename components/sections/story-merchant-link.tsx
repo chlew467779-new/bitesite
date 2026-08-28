@@ -2,6 +2,7 @@
 
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { trackEvent } from '@/lib/analytics';
 
 interface StoryMerchantLinkProps {
@@ -9,13 +10,18 @@ interface StoryMerchantLinkProps {
 }
 
 export function StoryMerchantLink({ slug }: StoryMerchantLinkProps) {
+  const router = useRouter();
+
   return (
     <section className="px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-3xl">
         <a
           href={`/store/${slug}`}
-          onClick={() => {
-            trackEvent('story_to_merchant', { pageType: 'story', slug });
+          onClick={async (e) => {
+            e.preventDefault();
+            // FIX: await trackEvent before navigating so the request completes
+            await trackEvent('story_to_merchant', { pageType: 'story', slug });
+            router.push(`/store/${slug}`);
           }}
           className="inline-flex items-center gap-2 rounded-full bg-[#5A8F6E] px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-[#4A7A5E] active:scale-[0.98]"
           style={{ WebkitTapHighlightColor: 'transparent' }}
