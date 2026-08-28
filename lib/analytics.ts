@@ -44,18 +44,30 @@ export async function trackEvent(
   eventType: EventType,
   data: { slug?: string; path?: string; pageType?: string; detail?: string }
 ) {
+  const payload = {
+    eventType,
+    slug: data.slug,
+    path: data.path || (typeof window !== 'undefined' ? window.location.pathname : ''),
+    pageType: data.pageType,
+    eventDetail: data.detail,
+    referrer: typeof document !== 'undefined' ? document.referrer : '',
+  };
+  
+  const json = JSON.stringify(payload);
+  
+  // FIX: 优先使用 navigator.sendBeacon —— 浏览器保证请求一定发出，不受页面跳转影响
+  if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+    const blob = new Blob([json], { type: 'application/json' });
+    const sent = navigator.sendBeacon('/api/track', blob);
+    if (sent) return; // 成功加入发送队列，直接返回
+  }
+  
+  // fallback: fetch with keepalive（旧浏览器）
   try {
     await fetch('/api/track', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        eventType,
-        slug: data.slug,
-        path: data.path || (typeof window !== 'undefined' ? window.location.pathname : ''),
-        pageType: data.pageType,
-        eventDetail: data.detail,
-        referrer: typeof document !== 'undefined' ? document.referrer : '',
-      }),
+      body: json,
       keepalive: true,
     });
   } catch {
