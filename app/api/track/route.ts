@@ -11,7 +11,15 @@ const supabase = createClient(
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    // FIX: 兼容 sendBeacon 发送的 Blob 和 fetch 发送的 JSON
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      const text = await request.text();
+      body = text ? JSON.parse(text) : {};
+    }
+
     const {
       eventType,
       slug,
