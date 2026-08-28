@@ -57,17 +57,18 @@ export async function GET(request: NextRequest) {
     });
 
     // FIX: 从 page_views 原始表实时查询 story_to_merchant 转化
+    // event_detail 存储的是文章 slug，用于匹配 story views 的 slug
     const { data: conversions } = await supabase
       .from('page_views')
-      .select('slug')
+      .select('event_detail')
       .eq('event_type', 'story_to_merchant')
       .gte('created_at', startDateTime)
       .lte('created_at', endDateTime);
 
     const conversionMap = new Map<string, number>();
     conversions?.forEach(row => {
-      const slug = row.slug || 'unknown';
-      conversionMap.set(slug, (conversionMap.get(slug) || 0) + 1);
+      const articleSlug = row.event_detail || 'unknown';
+      conversionMap.set(articleSlug, (conversionMap.get(articleSlug) || 0) + 1);
     });
 
     const result = Array.from(storyMap.values())
