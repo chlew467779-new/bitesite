@@ -104,7 +104,7 @@ export default async function StoryPage({ params }: PageProps) {
       <main style={{ backgroundColor: "#FAFBF7" }}>
         <StoryViewTracker slug={slug} />
         <StoryHero article={article as Article} />
-        <StoryContent content={article.content} />
+        <StoryContent content={article.content} articleSlug={slug} />
 
         {article.merchant_slug && (
           <StoryMerchantLink slug={article.merchant_slug} />
