@@ -9,6 +9,49 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+const COUNTRY_MAP: Record<string, string> = {
+  'MY': 'Malaysia',
+  'US': 'United States',
+  'SG': 'Singapore',
+  'GB': 'United Kingdom',
+  'AU': 'Australia',
+  'CA': 'Canada',
+  'IN': 'India',
+  'ID': 'Indonesia',
+  'TH': 'Thailand',
+  'PH': 'Philippines',
+  'VN': 'Vietnam',
+  'CN': 'China',
+  'JP': 'Japan',
+  'KR': 'South Korea',
+  'TW': 'Taiwan',
+  'HK': 'Hong Kong',
+  'DE': 'Germany',
+  'FR': 'France',
+  'IT': 'Italy',
+  'ES': 'Spain',
+  'NL': 'Netherlands',
+  'BR': 'Brazil',
+  'MX': 'Mexico',
+  'RU': 'Russia',
+  'ZA': 'South Africa',
+  'AE': 'United Arab Emirates',
+  'SA': 'Saudi Arabia',
+  'TR': 'Turkey',
+  'PL': 'Poland',
+  'SE': 'Sweden',
+  'NO': 'Norway',
+  'DK': 'Denmark',
+  'FI': 'Finland',
+  'BE': 'Belgium',
+  'AT': 'Austria',
+  'CH': 'Switzerland',
+  'PT': 'Portugal',
+  'GR': 'Greece',
+  'IE': 'Ireland',
+  'NZ': 'New Zealand',
+};
+
 function getDateRange(range: string) {
   const end = new Date();
   const start = new Date();
@@ -37,7 +80,12 @@ function normalizeCity(rawCity: string | null): string {
 
 function normalizeCountry(rawCountry: string | null): string {
   if (!rawCountry || rawCountry === 'Unknown') return 'Unknown';
-  return rawCountry.trim();
+  const trimmed = rawCountry.trim();
+  // 如果是 2 位 ISO 代码，映射为全称
+  if (trimmed.length === 2) {
+    return COUNTRY_MAP[trimmed.toUpperCase()] || trimmed;
+  }
+  return trimmed;
 }
 
 export async function GET(request: NextRequest) {
@@ -65,7 +113,7 @@ export async function GET(request: NextRequest) {
       countryMap.set(key, (countryMap.get(key) || 0) + (row.count || 0));
     });
 
-    // 城市分布（Top 20）— 用 normalize 后的名字做 key，合并重复
+    // 城市分布（Top 20）
     const { data: cityData } = await supabase
       .from('merchant_daily_views')
       .select('city, country, count')
@@ -77,7 +125,7 @@ export async function GET(request: NextRequest) {
     cityData?.forEach(row => {
       const city = normalizeCity(row.city);
       const country = normalizeCountry(row.country);
-      const key = `${city.toLowerCase()}|${country.toLowerCase()}`; // 小写 key 合并大小写差异
+      const key = `${city.toLowerCase()}|${country.toLowerCase()}`;
       
       const existing = cityMap.get(key);
       if (existing) {
