@@ -9,6 +9,21 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+function normalizeCity(rawCity: string): string {
+  if (!rawCity || rawCity === 'Unknown') return 'Unknown';
+  try {
+    const decoded = rawCity.includes('%') ? decodeURIComponent(rawCity) : rawCity;
+    return decoded.trim();
+  } catch {
+    return rawCity.trim();
+  }
+}
+
+function normalizeCountry(rawCountry: string): string {
+  if (!rawCountry || rawCountry === 'Unknown') return 'Unknown';
+  return rawCountry.trim().toUpperCase();
+}
+
 export async function POST(request: NextRequest) {
   try {
     // FIX: 兼容 sendBeacon 发送的 Blob 和 fetch 发送的 JSON
@@ -31,8 +46,11 @@ export async function POST(request: NextRequest) {
 
     // 获取 IP 和地理位置（Vercel headers）
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
-    const country = request.headers.get('x-vercel-ip-country') || 'Unknown';
-    const city = request.headers.get('x-vercel-ip-city') || 'Unknown';
+    const rawCountry = request.headers.get('x-vercel-ip-country') || 'Unknown';
+    const rawCity = request.headers.get('x-vercel-ip-city') || 'Unknown';
+    
+    const country = normalizeCountry(rawCountry);
+    const city = normalizeCity(rawCity);
 
     // 设备检测
     const userAgent = request.headers.get('user-agent') || '';
