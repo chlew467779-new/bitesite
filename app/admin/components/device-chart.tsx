@@ -77,6 +77,7 @@ export default function DeviceChart({ range }: DeviceChartProps) {
                 borderRadius: '8px',
                 color: '#f1f5f9',
               }}
+              itemStyle={{ color: '#f1f5f9' }}
             />
             <Legend
               verticalAlign="bottom"
