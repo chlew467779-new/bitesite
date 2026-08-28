@@ -105,7 +105,8 @@ export function AppointmentSection({
     setSubmitting(false);
     setSubmitted(true);
 
-    trackEvent('booking_submit', {
+    // FIX: await trackEvent before opening WhatsApp so the request completes
+    await trackEvent('booking_submit', {
       pageType: 'merchant',
       slug,
       detail: merchantName,
