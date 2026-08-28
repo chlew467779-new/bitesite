@@ -91,6 +91,7 @@ export default function TrendChart({ range, fullWidth }: TrendChartProps) {
                 color: '#f1f5f9',
               }}
               labelStyle={{ color: '#94a3b8' }}
+              itemStyle={{ color: '#f1f5f9' }}
               formatter={(value: number) => [value.toLocaleString(), 'Views']}
             />
             <Line
