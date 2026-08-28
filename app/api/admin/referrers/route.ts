@@ -1,6 +1,5 @@
 /* bitesite/app/api/admin/referrers/route.ts */
 
-
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { verifyAdminToken } from '@/lib/admin-auth';
@@ -11,19 +10,19 @@ const supabase = createClient(
 );
 
 function getDateRange(range: string) {
-  const end = new Date().toISOString().split('T')[0];
+  const end = new Date();
   const start = new Date();
   
   switch (range) {
     case 'today': start.setHours(0,0,0,0); break;
-    case '7d': start.setDate(start.getDate() - 7); break;
-    case '30d': start.setDate(start.getDate() - 30); break;
-    case '90d': start.setDate(start.getDate() - 90); break;
-    case '365d': start.setDate(start.getDate() - 365); break;
-    default: start.setDate(start.getDate() - 7);
+    case '7d': start.setDate(end.getDate() - 7); break;
+    case '30d': start.setDate(end.getDate() - 30); break;
+    case '90d': start.setDate(end.getDate() - 90); break;
+    case '365d': start.setDate(end.getDate() - 365); break;
+    default: start.setDate(end.getDate() - 7);
   }
   
-  return { start: start.toISOString().split('T')[0], end };
+  return { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0] };
 }
 
 export async function GET(request: NextRequest) {
@@ -37,17 +36,22 @@ export async function GET(request: NextRequest) {
   const { start, end } = getDateRange(range);
 
   try {
+    const startDateTime = `${start}T00:00:00+08:00`;
+    const endDateTime = `${end}T23:59:59+08:00`;
+
+    // FIX: 从 page_views 原始表查，null/空 referrer 显示为 direct 而不是 other
     const { data } = await supabase
-      .from('merchant_daily_views')
-      .select('referrer_type, count')
+      .from('page_views')
+      .select('referrer_type')
       .eq('event_type', 'page_view')
-      .gte('view_date', start)
-      .lte('view_date', end);
+      .gte('created_at', startDateTime)
+      .lte('created_at', endDateTime);
 
     const referrerMap = new Map<string, number>();
     data?.forEach(row => {
-      const key = row.referrer_type || 'other';
-      referrerMap.set(key, (referrerMap.get(key) || 0) + (row.count || 0));
+      // 关键修复：null/空值 fallback 到 direct，不是 other
+      const key = row.referrer_type || 'direct';
+      referrerMap.set(key, (referrerMap.get(key) || 0) + 1);
     });
 
     const result = Array.from(referrerMap.entries())
