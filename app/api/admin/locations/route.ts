@@ -61,15 +61,18 @@ export async function GET(request: NextRequest) {
     const cityMap = new Map<string, { city: string; country: string; value: number }>();
     cityData?.forEach(row => {
       const rawCity = row.city || 'Unknown';
-      const city = rawCity.includes('%') ? decodeURIComponent(rawCity) : rawCity;
-      const key = `${city}|${row.country || 'Unknown'}`;
+      const decodedCity = rawCity.includes('%') ? decodeURIComponent(rawCity) : rawCity;
+      const city = decodedCity.trim();  // ← 去掉首尾空格
+      const country = (row.country || 'Unknown').trim();
+      const key = `${city.toLowerCase()}|${country.toLowerCase()}`;  // ← 用小写做 key，合并大小写差异
+      
       const existing = cityMap.get(key);
       if (existing) {
         existing.value += row.count || 0;
       } else {
         cityMap.set(key, {
-          city: city,
-          country: row.country || 'Unknown',
+          city: city,  // 显示用原始格式（首字母大写）
+          country: country,
           value: row.count || 0,
         });
       }
