@@ -74,6 +74,7 @@ export default function HourlyChart({ range }: HourlyChartProps) {
                 borderRadius: '8px',
                 color: '#f1f5f9',
               }}
+              itemStyle={{ color: '#f1f5f9' }}
               formatter={(value: number) => [value.toLocaleString(), 'Views']}
             />
             <Bar dataKey="count" fill="#f59e0b" radius={[4, 4, 0, 0]} />
