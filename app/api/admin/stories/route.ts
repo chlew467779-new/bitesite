@@ -1,6 +1,5 @@
 /* bitesite/app/api/admin/stories/route.ts */
 
-
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { verifyAdminToken } from '@/lib/admin-auth';
@@ -11,19 +10,19 @@ const supabase = createClient(
 );
 
 function getDateRange(range: string) {
-  const end = new Date().toISOString().split('T')[0];
+  const end = new Date();
   const start = new Date();
   
   switch (range) {
     case 'today': start.setHours(0,0,0,0); break;
-    case '7d': start.setDate(start.getDate() - 7); break;
-    case '30d': start.setDate(start.getDate() - 30); break;
-    case '90d': start.setDate(start.getDate() - 90); break;
-    case '365d': start.setDate(start.getDate() - 365); break;
-    default: start.setDate(start.getDate() - 7);
+    case '7d': start.setDate(end.getDate() - 7); break;
+    case '30d': start.setDate(end.getDate() - 30); break;
+    case '90d': start.setDate(end.getDate() - 90); break;
+    case '365d': start.setDate(end.getDate() - 365); break;
+    default: start.setDate(end.getDate() - 7);
   }
   
-  return { start: start.toISOString().split('T')[0], end };
+  return { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0] };
 }
 
 export async function GET(request: NextRequest) {
@@ -37,34 +36,38 @@ export async function GET(request: NextRequest) {
   const { start, end } = getDateRange(range);
 
   try {
-    // Stories 页面浏览（story_list + story）
+    const startDateTime = `${start}T00:00:00+08:00`;
+    const endDateTime = `${end}T23:59:59+08:00`;
+
+    // FIX: 从 page_views 原始表实时查询 story 页面浏览
     const { data: storyViews } = await supabase
-      .from('merchant_daily_views')
-      .select('page_type, slug, count')
+      .from('page_views')
+      .select('slug, page_type')
       .in('page_type', ['story', 'story_list'])
-      .gte('view_date', start)
-      .lte('view_date', end);
+      .eq('event_type', 'page_view')
+      .gte('created_at', startDateTime)
+      .lte('created_at', endDateTime);
 
     const storyMap = new Map<string, { slug: string; views: number }>();
     storyViews?.forEach(row => {
       const slug = row.slug || 'story-list';
       const existing = storyMap.get(slug) || { slug, views: 0 };
-      existing.views += row.count || 0;
+      existing.views += 1;
       storyMap.set(slug, existing);
     });
 
-    // story_to_merchant 转化
+    // FIX: 从 page_views 原始表实时查询 story_to_merchant 转化
     const { data: conversions } = await supabase
-      .from('merchant_daily_views')
-      .select('slug, count')
+      .from('page_views')
+      .select('slug')
       .eq('event_type', 'story_to_merchant')
-      .gte('view_date', start)
-      .lte('view_date', end);
+      .gte('created_at', startDateTime)
+      .lte('created_at', endDateTime);
 
     const conversionMap = new Map<string, number>();
     conversions?.forEach(row => {
       const slug = row.slug || 'unknown';
-      conversionMap.set(slug, (conversionMap.get(slug) || 0) + (row.count || 0));
+      conversionMap.set(slug, (conversionMap.get(slug) || 0) + 1);
     });
 
     const result = Array.from(storyMap.values())
