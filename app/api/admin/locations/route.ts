@@ -1,6 +1,5 @@
 /* bitesite/app/api/admin/locations/route.ts */
 
-
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { verifyAdminToken } from '@/lib/admin-auth';
@@ -11,19 +10,19 @@ const supabase = createClient(
 );
 
 function getDateRange(range: string) {
-  const end = new Date().toISOString().split('T')[0];
+  const end = new Date();
   const start = new Date();
   
   switch (range) {
     case 'today': start.setHours(0,0,0,0); break;
-    case '7d': start.setDate(start.getDate() - 7); break;
-    case '30d': start.setDate(start.getDate() - 30); break;
-    case '90d': start.setDate(start.getDate() - 90); break;
-    case '365d': start.setDate(start.getDate() - 365); break;
-    default: start.setDate(start.getDate() - 7);
+    case '7d': start.setDate(end.getDate() - 7); break;
+    case '30d': start.setDate(end.getDate() - 30); break;
+    case '90d': start.setDate(end.getDate() - 90); break;
+    case '365d': start.setDate(end.getDate() - 365); break;
+    default: start.setDate(end.getDate() - 7);
   }
   
-  return { start: start.toISOString().split('T')[0], end };
+  return { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0] };
 }
 
 export async function GET(request: NextRequest) {
@@ -61,13 +60,15 @@ export async function GET(request: NextRequest) {
 
     const cityMap = new Map<string, { city: string; country: string; value: number }>();
     cityData?.forEach(row => {
-      const key = `${row.city || 'Unknown'}|${row.country || 'Unknown'}`;
+      const rawCity = row.city || 'Unknown';
+      const city = rawCity.includes('%') ? decodeURIComponent(rawCity) : rawCity;
+      const key = `${city}|${row.country || 'Unknown'}`;
       const existing = cityMap.get(key);
       if (existing) {
         existing.value += row.count || 0;
       } else {
         cityMap.set(key, {
-          city: row.city || 'Unknown',
+          city: city,
           country: row.country || 'Unknown',
           value: row.count || 0,
         });
