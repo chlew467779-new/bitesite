@@ -25,6 +25,21 @@ function getDateRange(range: string) {
   return { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0] };
 }
 
+function normalizeCity(rawCity: string | null): string {
+  if (!rawCity || rawCity === 'Unknown') return 'Unknown';
+  try {
+    const decoded = rawCity.includes('%') ? decodeURIComponent(rawCity) : rawCity;
+    return decoded.trim();
+  } catch {
+    return rawCity.trim();
+  }
+}
+
+function normalizeCountry(rawCountry: string | null): string {
+  if (!rawCountry || rawCountry === 'Unknown') return 'Unknown';
+  return rawCountry.trim();
+}
+
 export async function GET(request: NextRequest) {
   const token = request.headers.get('x-admin-token');
   if (!token || !verifyAdminToken(token)) {
@@ -46,11 +61,11 @@ export async function GET(request: NextRequest) {
 
     const countryMap = new Map<string, number>();
     countryData?.forEach(row => {
-      const key = row.country || 'Unknown';
+      const key = normalizeCountry(row.country);
       countryMap.set(key, (countryMap.get(key) || 0) + (row.count || 0));
     });
 
-    // 城市分布（Top 20）
+    // 城市分布（Top 20）— 用 normalize 后的名字做 key，合并重复
     const { data: cityData } = await supabase
       .from('merchant_daily_views')
       .select('city, country, count')
@@ -60,21 +75,15 @@ export async function GET(request: NextRequest) {
 
     const cityMap = new Map<string, { city: string; country: string; value: number }>();
     cityData?.forEach(row => {
-      const rawCity = row.city || 'Unknown';
-      const decodedCity = rawCity.includes('%') ? decodeURIComponent(rawCity) : rawCity;
-      const city = decodedCity.trim();  // ← 去掉首尾空格
-      const country = (row.country || 'Unknown').trim();
-      const key = `${city.toLowerCase()}|${country.toLowerCase()}`;  // ← 用小写做 key，合并大小写差异
+      const city = normalizeCity(row.city);
+      const country = normalizeCountry(row.country);
+      const key = `${city.toLowerCase()}|${country.toLowerCase()}`; // 小写 key 合并大小写差异
       
       const existing = cityMap.get(key);
       if (existing) {
         existing.value += row.count || 0;
       } else {
-        cityMap.set(key, {
-          city: city,  // 显示用原始格式（首字母大写）
-          country: country,
-          value: row.count || 0,
-        });
+        cityMap.set(key, { city, country, value: row.count || 0 });
       }
     });
 
