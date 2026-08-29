@@ -15,7 +15,7 @@ import {
   BookOpen,
   Map,
   Clock,
-  Users,
+  Settings,
   Download,
   LogOut,
   Menu,
@@ -116,11 +116,32 @@ export default function AdminShell({ activeTab, onTabChange, children }: AdminSh
           {/* Footer */}
           <div className="p-3 border-t border-slate-800 space-y-2">
             <button
+              onClick={() => onTabChange('settings')}
+              className={`
+                w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all
+                ${activeTab === 'settings'
+                  ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                }
+              `}
+            >
+              <Settings className="w-4 h-4" />
+              <span className="flex-1 text-left">Settings</span>
+              {activeTab === 'settings' && <ChevronRight className="w-3.5 h-3.5" />}
+            </button>
+            <button
               onClick={() => onTabChange('export')}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all"
+              className={`
+                w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all
+                ${activeTab === 'export'
+                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                  : 'text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10'
+                }
+              `}
             >
               <Download className="w-4 h-4" />
-              Export CSV
+              <span className="flex-1 text-left">Export CSV</span>
+              {activeTab === 'export' && <ChevronRight className="w-3.5 h-3.5" />}
             </button>
             <button
               onClick={logout}
