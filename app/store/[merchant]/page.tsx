@@ -7,7 +7,6 @@ import {
   getCategoriesByMerchant,
   getProductsByMerchant,
   getVideosByMerchant,
-  getPublishedMerchants,
   getRelatedMerchants,
   getEventsByMerchant,
 } from "@/lib/supabase";
@@ -17,16 +16,9 @@ import { RelatedMerchants } from "@/components/sections/related-merchants";
 import { ViewTracker } from "@/components/sections/view-tracker";
 import { PageViewTracker } from "@/app/components/page-view-tracker";
 
-export const revalidate = 300;
-
 type PageProps = {
   params: Promise<{ merchant: string }>;
 };
-
-export async function generateStaticParams() {
-  const merchants = await getPublishedMerchants();
-  return merchants.map((m) => ({ merchant: m.slug }));
-}
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { merchant: slug } = await params;
