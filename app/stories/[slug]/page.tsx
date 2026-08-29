@@ -12,20 +12,9 @@ import { PageViewTracker } from "@/app/components/page-view-tracker";
 import { Footer } from "@/components/sections/footer";
 import type { Article } from "@/types";
 
-export const revalidate = 300;
-
 type PageProps = {
   params: Promise<{ slug: string }>;
 };
-
-export async function generateStaticParams() {
-  const { data: articles } = await supabase
-    .from("articles")
-    .select("slug")
-    .eq("published", true);
-
-  return (articles || []).map((a) => ({ slug: a.slug }));
-}
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
