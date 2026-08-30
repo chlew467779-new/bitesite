@@ -182,9 +182,9 @@ export default function StoriesManager({ onEdit, onNew }: StoriesManagerProps) {
                     <td className="py-3 px-4">
                       <div className="font-medium text-slate-200">{article.title}</div>
                       <div className="text-xs text-slate-500">/{article.slug}</div>
-                      {article.tags.length > 0 && (
+                      {(article.tags || []).length > 0 && (
                         <div className="flex gap-1 mt-1 flex-wrap">
-                          {article.tags.map(tag => (
+                          {(article.tags || []).map(tag => (
                             <span key={tag} className="text-xs px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">
                               #{tag}
                             </span>
