@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from './auth-context';
 import { 
   ArrowLeft, 
@@ -21,6 +21,8 @@ import {
   EyeOff,
   Send
 } from 'lucide-react';
+import { StoryHero } from '@/components/sections/story-hero';
+import { StoryContent } from '@/components/sections/story-content';
 import type { Article } from '@/types';
 
 interface MerchantOption {
@@ -29,7 +31,7 @@ interface MerchantOption {
 }
 
 interface StoryEditorProps {
-  slug?: string | null; // null = new story
+  slug?: string | null;
   onBack: () => void;
   onSaved: () => void;
 }
@@ -55,7 +57,6 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
   const [error, setError] = useState('');
   const [merchants, setMerchants] = useState<MerchantOption[]>([]);
   const [showEmoji, setShowEmoji] = useState(false);
-  const [showPreview, setShowPreview] = useState(true);
   
   // Form state
   const [form, setForm] = useState({
@@ -132,19 +133,20 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
     setSaved(false);
   };
 
-  // Auto-generate slug from title
+  // Auto-generate slug from title (supports Chinese and other characters)
   useEffect(() => {
     if (!slug && form.title && !form.slug) {
       const base = form.title
         .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '')
         .replace(/\s+/g, '-')
         .replace(/-+/g, '-')
         .substring(0, 50)
         .replace(/^-|-$/g, '');
-      if (base) setForm(prev => ({ ...prev, slug: base }));
+      if (base) {
+        setForm(prev => ({ ...prev, slug: base }));
+      }
     }
-  }, [form.title, slug]);
+  }, [form.title, slug, form.slug]);
 
   const insertMarkdown = (before: string, after: string = '') => {
     const textarea = textareaRef.current;
@@ -228,11 +230,11 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
   };
 
   // Build preview article object
-  const previewArticle = {
+  const previewArticle: Article = {
     id: 'preview',
     slug: form.slug || 'preview',
     title: form.title || 'Untitled Story',
-    excerpt: form.excerpt || '',
+    excerpt: form.excerpt || null,
     content: form.content,
     cover_image: form.cover_image || null,
     category: form.category || 'Uncategorized',
@@ -257,9 +259,9 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col h-[calc(100vh-6rem)]">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 shrink-0">
         <button
           onClick={onBack}
           className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-200 transition-colors"
@@ -293,16 +295,16 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
       </div>
 
       {error && (
-        <div className="rounded-xl border border-red-800 bg-red-950/50 p-3 text-red-400 text-sm flex items-center gap-2">
+        <div className="rounded-xl border border-red-800 bg-red-950/50 p-3 text-red-400 text-sm flex items-center gap-2 mb-4 shrink-0">
           <AlertCircle className="w-4 h-4" />
           {error}
         </div>
       )}
 
-      {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left: Editor Form */}
-        <div className="space-y-4">
+      {/* Main Editor + Preview */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1 min-h-0">
+        {/* Left: Editor Form (scrollable) */}
+        <div className="overflow-y-auto pr-2 space-y-4 pb-4">
           {/* Title */}
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-1.5">Title *</label>
@@ -325,7 +327,7 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
               placeholder="url-friendly-name"
               className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-200 placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors font-mono"
             />
-            <p className="text-xs text-slate-500 mt-1">Auto-generated from title. Edit if needed.</p>
+            <p className="text-xs text-slate-500 mt-1">Auto-generated from title. Edit if needed. Supports Chinese characters.</p>
           </div>
 
           {/* Excerpt */}
@@ -525,99 +527,29 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
 [Link to merchant](/store/merchant-slug)
 
 ![Image description](https://...)"
-              rows={20}
+              rows={16}
               className="w-full rounded-b-lg border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-slate-200 placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors resize-y font-mono leading-relaxed"
             />
           </div>
         </div>
 
-        {/* Right: Live Preview */}
-        <div className="lg:sticky lg:top-4 space-y-3">
-          <div className="flex items-center justify-between">
+        {/* Right: Live Preview (sticky) */}
+        <div className="hidden lg:block lg:sticky lg:top-0 h-fit max-h-full overflow-hidden">
+          <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-slate-300">Live Preview</h3>
-            <button
-              onClick={() => setShowPreview(!showPreview)}
-              className="text-xs text-slate-500 hover:text-slate-300 transition-colors"
-            >
-              {showPreview ? 'Hide' : 'Show'}
-            </button>
+            <span className="text-xs text-slate-500">100% same as real page</span>
           </div>
-          
-          {showPreview && (
-            <div 
-              className="rounded-xl border border-slate-800 overflow-hidden"
-              style={{ backgroundColor: theme.bg }}
-            >
-              <div className="max-h-[80vh] overflow-y-auto">
-                {/* Inline preview - simplified hero + content */}
-                <div className="px-4 pt-6 pb-6 sm:px-6 lg:px-8">
-                  <div className="mx-auto max-w-3xl">
-                    {/* Category */}
-                    <div className="mb-4 flex flex-wrap items-center gap-2">
-                      <span 
-                        className="rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wider"
-                        style={{ 
-                          backgroundColor: theme.value === 'dark' ? 'rgba(212,168,83,0.2)' : 'rgba(90,143,110,0.1)',
-                          color: theme.value === 'dark' ? '#D4A853' : '#5A8F6E'
-                        }}
-                      >
-                        {previewArticle.category}
-                      </span>
-                    </div>
-
-                    {/* Title */}
-                    <h1 
-                      className="mb-4 font-serif text-3xl font-medium leading-tight sm:text-4xl md:text-5xl"
-                      style={{ color: theme.text }}
-                    >
-                      {previewArticle.title}
-                    </h1>
-
-                    {/* Meta */}
-                    <div className="mb-8 flex flex-wrap items-center gap-3 text-sm" style={{ color: theme.value === 'dark' ? '#888' : '#8A968B' }}>
-                      <span style={{ color: theme.value === 'dark' ? '#B0B0B0' : '#6B6560' }}>{previewArticle.author}</span>
-                      <span>·</span>
-                      <span>{new Date().toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                    </div>
-
-                    {/* Cover */}
-                    {previewArticle.cover_image && (
-                      <div className="relative aspect-[16/9] overflow-hidden rounded-2xl mb-8">
-                        <img
-                          src={previewArticle.cover_image}
-                          alt={previewArticle.title}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    )}
-
-                    {/* Content Preview - simple markdown render */}
-                    <div className="prose prose-sm max-w-none" style={{ color: theme.text }}>
-                      {form.content ? (
-                        <div dangerouslySetInnerHTML={{ 
-                          __html: form.content
-                            .replace(/^### (.*$)/gim, '<h3 style="color:' + theme.text + ';font-size:1.25rem;font-weight:600;margin:1.5rem 0 0.75rem;">$1</h3>')
-                            .replace(/^## (.*$)/gim, '<h2 style="color:' + theme.text + ';font-size:1.5rem;font-weight:600;margin:2rem 0 1rem;">$1</h2>')
-                            .replace(/^# (.*$)/gim, '<h1 style="color:' + theme.text + ';font-size:2rem;font-weight:600;margin:2rem 0 1rem;">$1</h1>')
-                            .replace(/\*\*(.*?)\*\*/g, '<strong style="color:' + theme.text + ';">$1</strong>')
-                            .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                            .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" style="color:' + (theme.value === 'dark' ? '#D4A853' : '#5A8F6E') + ';text-decoration:underline;">$1</a>')
-                            .replace(/!\[(.*?)\]\((.*?)\)/g, '<div class="my-4"><img src="$2" alt="$1" class="w-full rounded-xl" /></div>')
-                            .replace(/^- (.*$)/gim, '<li style="margin:0.25rem 0;color:' + (theme.value === 'dark' ? '#B0B0B0' : '#6B6560') + ';">$1</li>')
-                            .replace(/^> (.*$)/gim, '<blockquote style="border-left:3px solid ' + (theme.value === 'dark' ? '#D4A853' : '#5A8F6E') + ';padding-left:1rem;margin:1rem 0;font-style:italic;color:' + (theme.value === 'dark' ? '#B0B0B0' : '#6B6560') + ';">$1</blockquote>')
-                            .replace(/\n/g, '<br />')
-                        }} />
-                      ) : (
-                        <p style={{ color: theme.value === 'dark' ? '#888' : '#8A968B' }} className="italic">
-                          Start typing to see preview...
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          <div 
+            className="rounded-xl border border-slate-800 overflow-hidden max-h-[calc(100vh-10rem)] overflow-y-auto"
+            style={{ backgroundColor: theme.bg }}
+          >
+            <StoryHero article={previewArticle} theme={form.background_style} />
+            <StoryContent 
+              content={form.content} 
+              articleSlug={form.slug || 'preview'} 
+              theme={form.background_style} 
+            />
+          </div>
         </div>
       </div>
     </div>
