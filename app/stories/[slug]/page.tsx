@@ -46,10 +46,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const description =
     article.excerpt || `Read ${article.title} on BiteSite Stories.`;
   const ogImage = article.cover_image || undefined;
+  const keywords = [
+    "restaurant",
+    "KL cafe",
+    "Kuala Lumpur food",
+    article.title,
+    article.category,
+    ...(article.tags || []),
+  ];
 
   return {
     title: `${article.title} | BiteSite Stories`,
     description,
+    keywords,
     openGraph: {
       title: article.title,
       description,
@@ -111,6 +120,18 @@ export default async function StoryPage({ params }: PageProps) {
         )}
 
         <StoryRelated currentSlug={slug} category={article.category} />
+
+        {/* Hashtags */}
+        {article.tags && article.tags.length > 0 && (
+          <section className="px-4 py-6 sm:px-6 lg:px-8 border-t border-[#DDE5DC]">
+            <div className="mx-auto max-w-3xl">
+              <p className="text-sm text-[#8A968B]">
+                {article.tags.map((tag: string) => `#${tag.replace(/\s+/g, "")}`).join(" ")}
+              </p>
+            </div>
+          </section>
+        )}
+
         <Footer />
       </main>
     </>
