@@ -24,11 +24,11 @@ function generateSlug(title: string, existingSlugs: string[]): string {
     .replace(/-+/g, '-')
     .substring(0, 50)
     .replace(/^-|-$/g, '');
-  
+
   if (!base) base = 'story';
-  
+
   if (!existingSlugs.includes(base)) return base;
-  
+
   let counter = 1;
   while (existingSlugs.includes(`${base}-${counter}`)) {
     counter++;
@@ -36,7 +36,7 @@ function generateSlug(title: string, existingSlugs: string[]): string {
   return `${base}-${counter}`;
 }
 
-// GET — 列表或单个
+// GET
 export async function GET(request: NextRequest) {
   const authError = verifyRequest(request);
   if (authError) return authError;
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST — 新建
+// POST
 export async function POST(request: Request) {
   const authError = verifyRequest(request);
   if (authError) return authError;
@@ -128,7 +128,7 @@ export async function POST(request: Request) {
   }
 }
 
-// PUT — 更新
+// PUT
 export async function PUT(request: Request) {
   const authError = verifyRequest(request);
   if (authError) return authError;
@@ -161,7 +161,7 @@ export async function PUT(request: Request) {
     }
 
     let query = supabase.from('articles').update(updateData);
-    
+
     if (id) {
       query = query.eq('id', id);
     } else {
@@ -181,7 +181,7 @@ export async function PUT(request: Request) {
   }
 }
 
-// DELETE — 删除
+// DELETE
 export async function DELETE(request: NextRequest) {
   const authError = verifyRequest(request);
   if (authError) return authError;
