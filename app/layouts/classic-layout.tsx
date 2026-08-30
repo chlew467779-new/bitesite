@@ -20,6 +20,8 @@ export function ClassicLayout({
   videos,
   features,
   events,
+  footerText,
+  whatsappNumber,
 }: LayoutProps) {
   const resolvedFeatures = mergeFeatures(features);
 
@@ -162,6 +164,7 @@ export function ClassicLayout({
         features={features}
         variant="classic"
         events={events}
+        bookingWhatsapp={whatsappNumber}
       />
 
       {/* Contact / Hours */}
@@ -279,7 +282,7 @@ export function ClassicLayout({
           href="/"
           className="text-sm text-amber-700 hover:text-amber-900 transition-colors"
         >
-          Discover more restaurants on BiteSite
+          {footerText || "Discover more restaurants on BiteSite"}
         </Link>
       </footer>
     </div>
