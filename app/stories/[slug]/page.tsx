@@ -68,6 +68,24 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
+const bgColors: Record<string, string> = {
+  default: '#FAFBF7',
+  warm: '#FDF8F3',
+  cool: '#F5F7FA',
+  dark: '#1A1A1A',
+  nature: '#F4F7F0',
+  minimal: '#FFFFFF',
+};
+
+const hashtagColors: Record<string, { border: string; text: string }> = {
+  default: { border: '#DDE5DC', text: '#8A968B' },
+  warm: { border: '#E8DDD0', text: '#9A8B7D' },
+  cool: { border: '#E2E8F0', text: '#718096' },
+  dark: { border: '#333333', text: '#888888' },
+  nature: { border: '#D0DDC8', text: '#7A8F7B' },
+  minimal: { border: '#E5E5E5', text: '#888888' },
+};
+
 export default async function StoryPage({ params }: PageProps) {
   const { slug } = await params;
 
@@ -79,6 +97,10 @@ export default async function StoryPage({ params }: PageProps) {
     .single();
 
   if (!article) notFound();
+
+  const theme = (article.background_style as string) || 'default';
+  const bgColor = bgColors[theme] || bgColors.default;
+  const hashColors = hashtagColors[theme] || hashtagColors.default;
 
   const articleSchema = {
     "@context": "https://schema.org",
@@ -110,10 +132,10 @@ export default async function StoryPage({ params }: PageProps) {
     <>
       <PageViewTracker pageType="story" slug={slug} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
-      <main style={{ backgroundColor: "#FAFBF7" }}>
+      <main style={{ backgroundColor: bgColor }}>
         <StoryViewTracker slug={slug} />
-        <StoryHero article={article as Article} />
-        <StoryContent content={article.content} articleSlug={slug} />
+        <StoryHero article={article as Article} theme={theme} />
+        <StoryContent content={article.content} articleSlug={slug} theme={theme} />
 
         {article.merchant_slug && (
           <StoryMerchantLink slug={article.merchant_slug} />
@@ -123,9 +145,9 @@ export default async function StoryPage({ params }: PageProps) {
 
         {/* Hashtags */}
         {article.tags && article.tags.length > 0 && (
-          <section className="px-4 py-6 sm:px-6 lg:px-8 border-t border-[#DDE5DC]">
+          <section className="px-4 py-6 sm:px-6 lg:px-8 border-t" style={{ borderColor: hashColors.border }}>
             <div className="mx-auto max-w-3xl">
-              <p className="text-sm text-[#8A968B]">
+              <p className="text-sm" style={{ color: hashColors.text }}>
                 {article.tags.map((tag: string) => `#${tag.replace(/\s+/g, "")}`).join(" ")}
               </p>
             </div>
