@@ -18,7 +18,6 @@ interface AppointmentSectionProps {
   variant?: LayoutVariant;
   id?: string;
   slug?: string;
-  bookingWhatsapp?: string;
 }
 
 const sectionBg: Record<LayoutVariant, string> = {
@@ -64,11 +63,12 @@ const btnPrimary: Record<LayoutVariant, string> = {
 
 export function AppointmentSection({
   merchantName,
+  phone,
+  whatsapp,
   title = "Book a Table",
   variant = "classic",
   id,
   slug,
-  bookingWhatsapp,
 }: AppointmentSectionProps) {
   const [formData, setFormData] = useState({
     name: "",
@@ -81,7 +81,8 @@ export function AppointmentSection({
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const waNumber = (bookingWhatsapp || "60165660239").replace(/\D/g, "");
+  // 优先用商家自己的 WhatsApp，没有才用 BiteSite 默认号码
+  const waNumber = (whatsapp || "60165660239").replace(/\D/g, "");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
