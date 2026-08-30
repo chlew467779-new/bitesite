@@ -247,7 +247,6 @@ export default async function MerchantPage({ params }: PageProps) {
         viewCount={viewCount}
         events={events}
         footerText={settings.footer_text}
-        whatsappNumber={settings.whatsapp_number}
       />
       <RelatedMerchants
         merchants={relatedMerchants}
