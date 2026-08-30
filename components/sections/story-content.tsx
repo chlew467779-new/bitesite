@@ -66,10 +66,11 @@ const themeColors = {
 
 export function StoryContent({ content, articleSlug, theme = 'default' }: StoryContentProps) {
   const colors = themeColors[(theme as keyof typeof themeColors) || 'default'] || themeColors.default;
-  
-  const backslashN = String.fromCharCode(92, 110);
-  const realNewline = String.fromCharCode(10);
-  const processedContent = content.split(backslashN).join(realNewline);
+
+  // Handle both real newlines and escaped backslash-n from database/storage
+  const processedContent = content
+    .replace(/\\n/g, '\n')  // escaped backslash-n → real newline
+    .replace(/\n/g, '\n');     // literal backslash-n → real newline (fallback)
 
   const cssVars = {
     '--sc-heading': colors.heading,
