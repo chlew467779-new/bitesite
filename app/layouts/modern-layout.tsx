@@ -16,7 +16,7 @@ import { getTodayKey } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
 
 export function ModernLayout({
-  merchant, categories, products, videos, features, viewCount, events,
+  merchant, categories, products, videos, features, viewCount, events,footerText,whatsappNumber,
 }: LayoutProps) {
   const resolvedFeatures = mergeFeatures(features);
   const today = getTodayKey();
@@ -96,7 +96,7 @@ export function ModernLayout({
         </FadeIn>
       )}
 
-      <TierSections merchant={merchant} products={products} features={features} variant="modern" events={events} />
+      <TierSections merchant={merchant} products={products} features={features} variant="modern" events={events} bookingWhatsapp={whatsappNumber} />
 
       {resolvedFeatures.contact && (
         <FadeIn>
@@ -164,7 +164,7 @@ export function ModernLayout({
       )}
 
       <footer className="py-8 px-4 text-center border-t border-slate-100">
-        <Link href="/" className="text-sm text-slate-400 hover:text-slate-600 transition-colors">Discover more restaurants on BiteSite</Link>
+        <Link href="/" className="text-sm text-slate-400 hover:text-slate-600 transition-colors">{footerText || "Discover more restaurants on BiteSite"}</Link>
       </footer>
     </div>
   );
