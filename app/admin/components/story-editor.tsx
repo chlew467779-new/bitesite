@@ -19,7 +19,8 @@ import {
   Smile,
   Eye,
   EyeOff,
-  Send
+  Send,
+  RotateCcw
 } from 'lucide-react';
 import { StoryHero } from '@/components/sections/story-hero';
 import { StoryContent } from '@/components/sections/story-content';
@@ -47,18 +48,32 @@ const bgThemes = [
 
 const emojis = ['🍕','🍔','🍟','🌭','🍿','🧂','🥓','🥚','🥞','🧇','🥐','🥨','🥯','🥖','🧀','🥗','🥙','🥪','🌮','🌯','🫔','🥫','🍖','🍗','🥩','🍠','🥟','🥠','🥡','🍱','🍘','🍙','🍚','🍛','🍜','🍝','🍠','🍢','🍣','🍤','🍥','🍡','🍦','🍧','🍨','🍩','🍪','🎂','🍰','🧁','🥧','🍫','🍬','🍭','🍮','🍯','☕','🍵','🧃','🥤','🍶','🍷','🍸','🍹','🍺','🍻','🥂','🥃','🫗','🍽️','🍴','🥄','🔪','🧋','🧉','🧊','🥢','🥡','🍽️','🌶️','🧄','🧅','🍄','🥦','🥬','🥒','🌽','🥕','🫒','🧄','🧅','🥔','🍠','🫘','🌰','🥜','🫚','🫛','🍞','🥐','🥖','🫓','🥨','🥯','🥞','🧇','🧀','🍖','🍗','🥩','🍠','🥓','🍔','🍟','🍕','🌭','🥪','🌮','🌯','🫔','🥙','🧆','🥚','🍳','🥘','🍲','🫕','🥣','🥗','🍿','🧈','🧂','🥫','🍱','🍘','🍙','🍚','🍛','🍜','🍝','🍠','🍢','🍣','🍤','🍥','🍡','🍦','🍧','🍨','🍩','🍪','🎂','🍰','🧁','🥧','🍫','🍬','🍭','🍮','🍯','☕','🍵','🧃','🥤','🍶','🍷','🍸','🍹','🍺','🍻','🥂','🥃','🫗','🍽️','🍴','🥄','🔪','🧋','🧉','🧊','🥢','🥡'];
 
+function getDraftKey(slug: string | null | undefined) {
+  return `bitesite_story_draft_${slug || 'new'}`;
+}
+
+function countWords(text: string) {
+  const chineseChars = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
+  const englishWords = (text.match(/[a-zA-Z]+/g) || []).length;
+  return chineseChars + englishWords;
+}
+
 export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps) {
   const { token } = useAuth();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+
   const [loading, setLoading] = useState(!!slug);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
   const [merchants, setMerchants] = useState<MerchantOption[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [showEmoji, setShowEmoji] = useState(false);
-  
-  // Form state
+  const [showDraftRestore, setShowDraftRestore] = useState(false);
+  const [draftData, setDraftData] = useState<Record<string, unknown> | null>(null);
+  const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
+
   const [form, setForm] = useState({
     title: '',
     slug: '',
@@ -73,27 +88,54 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
     published: false,
   });
 
-  // Load existing article or merchants
+  // Load categories from existing articles
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch('/api/admin/stories', {
+          headers: { 'x-admin-token': token || '' },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const cats = Array.from(new Set((data.articles || []).map((a: Article) => a.category))).filter(Boolean) as string[];
+          setCategories(cats.sort());
+        }
+      } catch (err) {
+        console.error('Failed to load categories:', err);
+      }
+    };
+    if (token) fetchCategories();
+  }, [token]);
+
+  // Load article, merchants, check draft
   useEffect(() => {
     const fetchData = async () => {
-      // Fetch merchants for dropdown
       try {
         const res = await fetch('/api/admin/merchants-list', {
           headers: { 'x-admin-token': token || '' },
         });
         if (res.ok) {
           const data = await res.json();
-          const merchantList = (data.data || []).map((m: { slug: string; name: string }) => ({
-            slug: m.slug,
-            name: m.name,
-          }));
-          setMerchants(merchantList);
+          setMerchants(data.merchants || []);
         }
       } catch (err) {
         console.error('Failed to load merchants:', err);
       }
 
-      // Fetch existing article
+      const draftKey = getDraftKey(slug);
+      const savedDraft = localStorage.getItem(draftKey);
+      if (savedDraft) {
+        try {
+          const parsed = JSON.parse(savedDraft);
+          if (parsed.form && parsed.timestamp) {
+            setDraftData(parsed);
+            setShowDraftRestore(true);
+          }
+        } catch {
+          localStorage.removeItem(draftKey);
+        }
+      }
+
       if (slug) {
         try {
           const res = await fetch(`/api/admin/stories?slug=${slug}`, {
@@ -128,44 +170,75 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
     fetchData();
   }, [slug, token]);
 
+  // Auto-save every 30s
+  useEffect(() => {
+    if (loading) return;
+    if (autoSaveTimerRef.current) clearInterval(autoSaveTimerRef.current);
+    autoSaveTimerRef.current = setInterval(() => {
+      if (form.title || form.content) {
+        localStorage.setItem(getDraftKey(slug), JSON.stringify({
+          form,
+          timestamp: new Date().toISOString(),
+        }));
+        setLastSavedAt(new Date().toLocaleTimeString());
+      }
+    }, 30000);
+    return () => {
+      if (autoSaveTimerRef.current) clearInterval(autoSaveTimerRef.current);
+    };
+  }, [form, slug, loading]);
+
   const updateField = (field: string, value: string | boolean) => {
     setForm(prev => ({ ...prev, [field]: value }));
     setSaved(false);
   };
 
-  // Auto-generate slug from title (supports Chinese and other characters)
+  // Auto-generate slug (consistent with backend, no toLowerCase)
   useEffect(() => {
     if (!slug && form.title && !form.slug) {
       const base = form.title
-        .toLowerCase()
+        .trim()
         .replace(/\s+/g, '-')
         .replace(/-+/g, '-')
         .substring(0, 50)
         .replace(/^-|-$/g, '');
-      if (base) {
-        setForm(prev => ({ ...prev, slug: base }));
-      }
+      if (base) setForm(prev => ({ ...prev, slug: base }));
     }
   }, [form.title, slug, form.slug]);
+
+  const restoreDraft = () => {
+    if (draftData?.form) {
+      setForm(draftData.form as typeof form);
+      setShowDraftRestore(false);
+    }
+  };
+
+  const discardDraft = () => {
+    localStorage.removeItem(getDraftKey(slug));
+    setShowDraftRestore(false);
+    setDraftData(null);
+  };
 
   const insertMarkdown = (before: string, after: string = '') => {
     const textarea = textareaRef.current;
     if (!textarea) return;
-    
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const text = form.content;
     const selected = text.substring(start, end);
     const replacement = before + selected + after;
-    
     const newContent = text.substring(0, start) + replacement + text.substring(end);
     setForm(prev => ({ ...prev, content: newContent }));
-    
     setTimeout(() => {
       textarea.focus();
       const newCursor = start + before.length + selected.length;
       textarea.setSelectionRange(newCursor, newCursor);
     }, 0);
+  };
+
+  const insertEmoji = (emoji: string) => {
+    insertMarkdown(emoji);
+    setShowEmoji(false);
   };
 
   const insertLink = () => {
@@ -186,11 +259,6 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
       const alt = prompt('Enter image description:', '');
       insertMarkdown(`![${alt || 'image'}](${url})`, '');
     }
-  };
-
-  const insertEmoji = (emoji: string) => {
-    insertMarkdown(emoji);
-    setShowEmoji(false);
   };
 
   const handleSave = async (publish: boolean) => {
@@ -220,6 +288,7 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Save failed');
 
+      localStorage.removeItem(getDraftKey(slug));
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
       onSaved();
@@ -230,7 +299,6 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
     }
   };
 
-  // Build preview article object
   const previewArticle: Article = {
     id: 'preview',
     slug: form.slug || 'preview',
@@ -250,6 +318,7 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
   };
 
   const theme = bgThemes.find(t => t.value === form.background_style) || bgThemes[0];
+  const wordCount = countWords(form.content);
 
   if (loading) {
     return (
@@ -271,6 +340,11 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
           Back to List
         </button>
         <div className="flex items-center gap-3">
+          {lastSavedAt && (
+            <span className="text-xs text-slate-600">
+              Auto-saved at {lastSavedAt}
+            </span>
+          )}
           {saved && (
             <span className="flex items-center gap-1 text-xs text-green-400">
               <CheckCircle2 className="w-3.5 h-3.5" /> Saved
@@ -295,6 +369,20 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
         </div>
       </div>
 
+      {/* Draft Restore Banner */}
+      {showDraftRestore && draftData && (
+        <div className="rounded-xl border border-amber-800/50 bg-amber-950/30 p-3 text-amber-400 text-sm flex items-center justify-between gap-2 mb-4 shrink-0">
+          <div className="flex items-center gap-2">
+            <RotateCcw className="w-4 h-4" />
+            <span>Found unsaved draft from {new Date(draftData.timestamp as string).toLocaleString()}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={restoreDraft} className="px-3 py-1 rounded text-xs bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 transition-colors">Restore</button>
+            <button onClick={discardDraft} className="px-3 py-1 rounded text-xs hover:bg-slate-800 text-slate-400 transition-colors">Discard</button>
+          </div>
+        </div>
+      )}
+
       {error && (
         <div className="rounded-xl border border-red-800 bg-red-950/50 p-3 text-red-400 text-sm flex items-center gap-2 mb-4 shrink-0">
           <AlertCircle className="w-4 h-4" />
@@ -304,7 +392,7 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
 
       {/* Main Editor + Preview */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1 min-h-0">
-        {/* Left: Editor Form (scrollable) */}
+        {/* Left: Editor */}
         <div className="overflow-y-auto pr-2 space-y-4 pb-4">
           {/* Title */}
           <div>
@@ -328,7 +416,7 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
               placeholder="url-friendly-name"
               className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-200 placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors font-mono"
             />
-            <p className="text-xs text-slate-500 mt-1">Auto-generated from title. Edit if needed. Supports Chinese characters.</p>
+            <p className="text-xs text-slate-500 mt-1">Auto-generated from title. Supports Chinese characters.</p>
           </div>
 
           {/* Excerpt */}
@@ -343,7 +431,7 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
             />
           </div>
 
-          {/* Cover Image */}
+          {/* Cover Image with Preview */}
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-1.5">Cover Image URL</label>
             <input
@@ -353,9 +441,24 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
               placeholder="https://..."
               className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-200 placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors"
             />
+            {form.cover_image && (
+              <div className="mt-2">
+                <img
+                  src={form.cover_image}
+                  alt="Cover preview"
+                  className="w-full max-h-40 object-cover rounded-lg border border-slate-800"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                    const next = (e.target as HTMLImageElement).nextElementSibling;
+                    if (next) next.classList.remove('hidden');
+                  }}
+                />
+                <p className="hidden text-xs text-red-400 mt-1">Failed to load image. Check the URL.</p>
+              </div>
+            )}
           </div>
 
-          {/* Category & Author */}
+          {/* Category (with datalist) & Author */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1.5">Category *</label>
@@ -364,8 +467,15 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
                 value={form.category}
                 onChange={(e) => updateField('category', e.target.value)}
                 placeholder="e.g. Food, Cafe, Review"
+                list="category-options"
                 className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-200 placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors"
               />
+              <datalist id="category-options">
+                {categories.map((cat) => (
+                  <option key={cat} value={cat} />
+                ))}
+              </datalist>
+              <p className="text-xs text-slate-500 mt-1">Type or select existing</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1.5">Author</label>
@@ -421,9 +531,7 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
                   }`}
                   style={{ backgroundColor: t.bg }}
                 >
-                  <span style={{ color: t.text }} className="font-medium block text-center">
-                    {t.label}
-                  </span>
+                  <span style={{ color: t.text }} className="font-medium block text-center">{t.label}</span>
                   {form.background_style === t.value && (
                     <span className="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full border-2 border-slate-900" />
                   )}
@@ -440,11 +548,9 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
                 form.published ? 'bg-amber-500' : 'bg-slate-700'
               }`}
             >
-              <span
-                className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                  form.published ? 'translate-x-5' : 'translate-x-1'
-                }`}
-              />
+              <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                form.published ? 'translate-x-5' : 'translate-x-1'
+              }`} />
             </button>
             <span className="text-sm text-slate-300">
               {form.published ? (
@@ -462,7 +568,7 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
           {/* Content with Toolbar */}
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-1.5">Content (Markdown) *</label>
-            
+
             {/* Markdown Cheat Sheet */}
             <div className="mb-2 rounded-lg border border-slate-800 bg-slate-900/30 px-3 py-2">
               <p className="text-xs text-slate-500 leading-relaxed">
@@ -507,22 +613,14 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
               </button>
               <div className="w-px h-4 bg-slate-700 mx-1" />
               <div className="relative">
-                <button 
-                  onClick={() => setShowEmoji(!showEmoji)} 
-                  className="p-1.5 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200"
-                  title="Emoji"
-                >
+                <button onClick={() => setShowEmoji(!showEmoji)} className="p-1.5 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200" title="Emoji">
                   <Smile className="w-4 h-4" />
                 </button>
                 {showEmoji && (
                   <div className="absolute left-0 top-8 z-50 w-64 p-2 rounded-lg border border-slate-700 bg-slate-900 shadow-xl">
                     <div className="grid grid-cols-8 gap-1">
                       {emojis.slice(0, 64).map((emoji) => (
-                        <button
-                          key={emoji}
-                          onClick={() => insertEmoji(emoji)}
-                          className="p-1 text-lg hover:bg-slate-800 rounded transition-colors"
-                        >
+                        <button key={emoji} onClick={() => insertEmoji(emoji)} className="p-1 text-lg hover:bg-slate-800 rounded transition-colors">
                           {emoji}
                         </button>
                       ))}
@@ -536,23 +634,21 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
               ref={textareaRef}
               value={form.content}
               onChange={(e) => updateField('content', e.target.value)}
-              placeholder="Write your story in Markdown...
-
-# Main Heading
-
-**Bold text** for emphasis.
-
-- Bullet point 1
-- Bullet point 2
-
-[Link to merchant](/store/merchant-slug)
-"              rows={16}
+              placeholder="Write your story in Markdown..."
+              rows={16}
               className="w-full rounded-b-lg border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-slate-200 placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors resize-y font-mono leading-relaxed"
             />
+
+            {/* Word Count */}
+            <div className="flex justify-end mt-1">
+              <span className="text-xs text-slate-600">
+                {wordCount} words · {form.content.length} characters
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Right: Live Preview (sticky) */}
+        {/* Right: Live Preview */}
         <div className="hidden lg:block lg:sticky lg:top-0 h-fit max-h-full overflow-hidden">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-slate-300">Live Preview</h3>
