@@ -81,7 +81,7 @@ export default function StoriesManager({ onEdit, onNew }: StoriesManagerProps) {
     const matchesSearch = 
       a.title.toLowerCase().includes(search.toLowerCase()) ||
       a.category.toLowerCase().includes(search.toLowerCase()) ||
-      a.tags.some(t => t.toLowerCase().includes(search.toLowerCase()));
+      (a.tags || []).some(t => t.toLowerCase().includes(search.toLowerCase()));
     const matchesFilter = 
       filter === 'all' ? true :
       filter === 'published' ? a.published :
