@@ -78,7 +78,7 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
     const fetchData = async () => {
       // Fetch merchants for dropdown
       try {
-        const res = await fetch('/api/admin/merchants?range=365d', {
+        const res = await fetch('/api/admin/merchants-list', {
           headers: { 'x-admin-token': token || '' },
         });
         if (res.ok) {
