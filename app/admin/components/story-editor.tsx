@@ -204,6 +204,7 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
         ...form,
         published: publish,
         tags: form.tags.split(',').map(t => t.trim()).filter(Boolean),
+        merchant_slug: form.merchant_slug || null,
       };
 
       const isNew = !slug;
