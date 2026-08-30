@@ -39,7 +39,7 @@ Every change is done through the GitHub web interface:
 | Deployment | Vercel |
 | Icons | Lucide React |
 | Fonts | Inter, Playfair Display, Noto Sans JP |
-| Markdown | react-markdown + remark-gfm |
+| Markdown | react-markdown + remark-gfm + remark-breaks |
 | Map | Leaflet + OpenStreetMap (free) |
 | Charts | Recharts |
 
@@ -81,6 +81,8 @@ app/
 │       │   └── route.ts        # GET /api/admin/trends?range=7d — trend line chart data
 │       ├── merchants/
 │       │   └── route.ts        # GET /api/admin/merchants?range=7d — merchant ranking table
+│       ├── merchants-list/
+│       │   └── route.ts        # GET /api/admin/merchants-list — simple merchant list for dropdowns
 │       ├── devices/
 │       │   └── route.ts        # GET /api/admin/devices?range=7d — device/OS/browser breakdown
 │       ├── locations/
@@ -92,9 +94,9 @@ app/
 │       ├── events/
 │       │   └── route.ts        # GET /api/admin/events?range=7d — WhatsApp/Booking/Share stats
 │       ├── stories/
-│       │   └── route.ts        # GET/POST/PUT/DELETE /api/admin/stories — Stories CRUD
+│       │   └── route.ts        # GET/POST/PUT/DELETE /api/admin/stories — Stories CRUD (supports Chinese slug)
 │       ├── stories-analytics/
-│       │   └── route.ts        # GET /api/admin/stories-analytics — Article views + conversion rate
+│       │   └── route.ts        # GET /api/admin/stories-analytics — Article views + conversion rate (shows titles)
 │       ├── map/
 │       │   └── route.ts        # GET /api/admin/map?range=7d — Map page analytics
 │       ├── hourly/
@@ -134,13 +136,13 @@ app/
 │       ├── referrer-chart.tsx    # Traffic source pie chart
 │       ├── search-keywords-table.tsx # Search terms ranking
 │       ├── events-chart.tsx      # WhatsApp/Booking/Share stacked bar chart
-│       ├── stories-chart.tsx     # Stories views + conversion rate
+│       ├── stories-chart.tsx     # Stories views + conversion rate (shows article titles)
 │       ├── map-stats.tsx         # Map page views + marker clicks
 │       ├── hourly-chart.tsx      # 24-hour peak hours bar chart
 │       ├── export-button.tsx     # CSV export trigger
 │       ├── settings-panel.tsx    # Site settings editor (title, description, footer text)
-│       ├── stories-manager.tsx   # Stories list with search, filter, delete
-│       ├── story-editor.tsx      # Markdown editor + live preview + 6 background themes
+│       ├── stories-manager.tsx   # Stories list with search, filter, delete, updated_at column
+│       ├── story-editor.tsx      # Markdown editor + live preview + 6 background themes + auto-save + category dropdown + cover preview + word count + Markdown syntax hint
 │       ├── merchant-manager.tsx  # ⏳ P2 — Merchant list with status/actions
 │       ├── merchant-form.tsx     # ⏳ P2 — 5-tab merchant create/edit form
 │       └── menu-manager.tsx      # ⏳ P2 — Category & product management
@@ -181,7 +183,7 @@ app/
 │       ├── story-card.tsx            # Article card (featured + list variants)
 │       ├── story-list.tsx            # Article list with featured article on top
 │       ├── story-hero.tsx            # Story detail hero (6 theme support)
-│       ├── story-content.tsx         # Markdown renderer (6 theme support + /store/ link tracking)
+│       ├── story-content.tsx         # Markdown renderer (6 theme support + /store/ link tracking + single-line-break support via remark-breaks)
 │       ├── story-related.tsx         # "More Stories" recommendations
 │       ├── story-view-tracker.tsx    # Client-side article view count tracker
 │       └── latest-stories.tsx        # Homepage "Latest Stories" section (latest 3 articles)
@@ -304,17 +306,17 @@ types/
 | Column | Type | Notes |
 |--------|------|-------|
 | id | UUID | PK, auto-generated |
-| slug | TEXT | **Required.** URL-friendly identifier. Unique, indexed. |
+| slug | TEXT | **Required.** URL-friendly identifier. Unique, indexed. Supports Chinese characters. |
 | title | TEXT | **Required.** Article headline. |
 | excerpt | TEXT | Short summary shown on the list page. |
-| content | TEXT | **Required.** Full article body in **Markdown**. |
+| content | TEXT | **Required.** Full article body in **Markdown**. Single line breaks preserved. |
 | cover_image | TEXT | URL to the featured image. **Recommended:** 16:9 ratio. |
 | category | TEXT | **Required.** Used for filtering on `/stories`. |
 | tags | TEXT[] | Array of tags. |
 | merchant_slug | TEXT | **Optional.** Links to a merchant page. |
 | author | TEXT | Defaults to `BiteSite Team`. |
 | published | BOOLEAN | **Must be `true`** to appear on the website. |
-| view_count | INT | Auto-incremented. Do NOT edit manually. |
+| view_count | INT | Auto-incremented. Legacy total views. Do NOT edit manually. |
 | background_style | TEXT | `default`/`warm`/`cool`/`dark`/`nature`/`minimal` |
 | created_at | TIMESTAMPTZ | Auto-generated. |
 | updated_at | TIMESTAMPTZ | Auto-generated. |
@@ -342,7 +344,7 @@ types/
 | event_detail | TEXT | Search keyword, share platform, etc. |
 | ip | TEXT | Visitor IP |
 | country | TEXT | From Vercel `x-vercel-ip-country` |
-| city | TEXT | From Vercel `x-vercel-ip-city` (URL decoded) |
+| city | Text | From Vercel `x-vercel-ip-city` (URL decoded) |
 | device_type | TEXT | mobile / desktop / tablet |
 | os | TEXT | iOS / Android / Windows / macOS / Linux / Other |
 | browser | TEXT | Chrome / Safari / Samsung Internet / Firefox / Edge / Other |
@@ -480,8 +482,8 @@ SELECT cron.schedule('aggregate-views-hourly', '0 * * * *', 'SELECT aggregate_da
 | **Referrers** | Direct / Google / Bing / Social / Other pie chart | `page_views` raw table | ✅ |
 | **Search Keywords** | What users searched on the homepage | `page_views` raw table (event_type='search') | ✅ |
 | **Events** | WhatsApp clicks, bookings, shares, map clicks | `page_views` raw table | ✅ |
-| **Stories Analytics** | Article views + conversion rate (story → merchant clicks) | `page_views` raw table | ✅ |
-| **Stories Editor** | Create/edit/delete articles with Markdown editor + live preview + 6 background themes | `articles` table (CRUD API) | ✅ |
+| **Stories Analytics** | Article views + conversion rate (story → merchant clicks) + article titles | `articles` + `page_views` | ✅ |
+| **Stories Editor** | Create/edit/delete articles with Markdown editor + live preview + 6 background themes + auto-save + category dropdown + cover image preview + word count + Markdown syntax hint | `articles` table (CRUD API) | ✅ |
 | **Map Stats** | Map page views + marker click counts | `page_views` raw table | ✅ |
 | **Hourly** | 24-hour peak hours bar chart | `page_views` raw table | ✅ |
 | **Export CSV** | Download all analytics data as CSV | `page_views` raw table | ✅ |
@@ -498,14 +500,15 @@ All admin APIs require `x-admin-token` header (HMAC-SHA256).
 | `/api/admin/login` | POST | Password auth, returns admin token |
 | `/api/admin/overview` | GET | Dashboard KPI cards |
 | `/api/admin/trends` | GET | Daily traffic trend |
-| `/api/admin/merchants` | GET | Merchant ranking |
+| `/api/admin/merchants` | GET | Merchant ranking (analytics data) |
+| `/api/admin/merchants-list` | GET | Simple merchant list `{slug, name}` for dropdowns |
 | `/api/admin/devices` | GET | Device breakdown |
 | `/api/admin/locations` | GET | Geo distribution |
 | `/api/admin/referrers` | GET | Traffic sources |
 | `/api/admin/search-keywords` | GET | Search terms |
 | `/api/admin/events` | GET | Event stats |
 | `/api/admin/stories` | GET/POST/PUT/DELETE | Stories CRUD — list, create, update, delete articles |
-| `/api/admin/stories-analytics` | GET | Article views + conversion rate |
+| `/api/admin/stories-analytics` | GET | Article views + conversion rate (shows article titles) |
 | `/api/admin/map` | GET | Map page stats |
 | `/api/admin/hourly` | GET | 24h peak hours |
 | `/api/admin/realtime` | GET | Current online users |
@@ -523,18 +526,20 @@ All admin APIs require `x-admin-token` header (HMAC-SHA256).
 3. Click **"+ New Story"**
 4. Fill in the form:
    - **Title** — Article headline (supports Chinese)
-   - **Slug** — Auto-generated from title, editable (URL-friendly name)
+   - **Slug** — Auto-generated from title, editable (URL-friendly name, supports Chinese)
    - **Excerpt** — Short summary for list page and SEO
-   - **Cover Image URL** — Full image URL (e.g. Unsplash)
-   - **Category** — e.g. "Food", "Cafe", "New Opening"
+   - **Cover Image URL** — Full image URL (e.g. Unsplash). Preview appears below the input.
+   - **Category** — Type or select from existing categories (prevents typos)
    - **Author** — Default "BiteSite Team"
    - **Tags** — Comma-separated, e.g. "cafe, coffee, brunch"
    - **Linked Merchant** — Optional: link to a merchant page
    - **Background Style** — Choose from 6 themes: Default / Warm / Cool / Dark / Nature / Minimal
    - **Published** — Toggle on to make visible on site
-   - **Content** — Write in Markdown with toolbar (Bold, Italic, H1, H2, Link, Image, Emoji)
+   - **Content** — Write in Markdown with toolbar (Bold, Italic, H1, H2, Link, Image, Emoji). **Single line breaks are preserved.** Word count shown below.
 5. **Live Preview** updates in real-time on the right side
 6. Click **"Publish"** to save and go live
+
+> 💡 **Auto-save**: Content is auto-saved to browser storage every 30 seconds. If you accidentally refresh, a "Restore Draft" banner will appear.
 
 ### Method 2: Direct Database (Fallback)
 
@@ -548,7 +553,10 @@ VALUES (
   'Short summary...',
   '# Heading
 
-Your **markdown** content here.',
+Your **markdown** content here.
+
+Single line breaks
+are preserved.',
   'https://images.unsplash.com/...',
   'Food',
   ARRAY['cafe', 'brunch'],
@@ -562,7 +570,7 @@ Your **markdown** content here.',
 ### Method 3: Edit Existing Article
 
 1. Go to `/admin` → **Stories Editor**
-2. Find the article in the list
+2. Find the article in the list (shows last updated time)
 3. Click the **Edit** (pencil) icon
 4. Make changes in the editor
 5. Click **"Update"** to save
@@ -661,6 +669,8 @@ All events are sent to `/api/track` via `navigator.sendBeacon` (fires even if us
 - **Aggregated**: `merchant_daily_views` table updated hourly via cron job
 - **Dashboard**: Overview/Devices/Referrers/Events/Stories/Map/Hourly read from `page_views` (real-time)
 - **Dashboard**: Trends/Merchants/Locations read from `merchant_daily_views` (cached, efficient)
+- **Legacy**: `articles.view_count` — total accumulated views (shown in Stories Analytics as "Total Views")
+- **Period**: `page_views` count within selected time range (shown in Stories Analytics as "Period Views")
 
 ### Legacy System (Retained)
 - **Merchant tracking**: `<ViewTracker>` fires `POST /api/view` after 2s delay → `merchant_stats`
@@ -795,7 +805,7 @@ Changes are saved instantly to the database and take effect within 5 minutes (IS
 
 ## 📝 Markdown Syntax for Articles
 
-The `content` field supports full **GitHub Flavored Markdown**:
+The `content` field supports full **GitHub Flavored Markdown** with **single line breaks preserved**:
 
 ```markdown
 # Main Heading (H1)
@@ -803,8 +813,11 @@ The `content` field supports full **GitHub Flavored Markdown**:
 ## Subheading (H2)
 
 **Bold text** for emphasis.
+*Italic text* for lighter emphasis.
 
 Regular paragraph text.
+Single line breaks
+are preserved automatically.
 
 - Bullet point 1
 - Bullet point 2
@@ -832,6 +845,9 @@ Emoji work too! 🍞☕🎉
 - **Links to merchants**: Use `/store/{merchant-slug}` format.
 - **External links**: Use full `https://` URLs. These open in a new tab.
 - **Hashtags**: Article `tags` are automatically displayed as `#hashtag` at the bottom of each story.
+- **Line breaks**: Press Enter once for a new line, twice for a new paragraph.
+- **Bold**: Use `**text**` (双星号). Use `*text*` for italic.
+- **Horizontal rule**: Use `---` for a divider line.
 
 ---
 
@@ -871,8 +887,19 @@ Emoji work too! 🍞☕🎉
 - ✅ Admin nav renamed "Stories" → "Stories Analytics"
 - ✅ Settings panel only shows relevant fields (removed contact/phone/whatsapp)
 - ✅ Stories Editor with Markdown toolbar + live preview + 6 background themes
-- ✅ Stories CRUD API (GET/POST/PUT/DELETE)
+- ✅ Stories CRUD API (GET/POST/PUT/DELETE) with Chinese slug support
 - ✅ Sidebar is collapsible on desktop
+- ✅ Single line breaks preserved in story content (remark-breaks)
+- ✅ Stories Analytics shows article titles instead of slugs
+- ✅ Stories Analytics displays both Total Views (legacy) and Period Views
+- ✅ Category input has datalist dropdown to prevent typos
+- ✅ Cover Image URL shows live preview
+- ✅ Auto-save to localStorage every 30 seconds with restore prompt
+- ✅ Word count displayed below content editor
+- ✅ Markdown syntax hint banner in editor
+- ✅ Stories Manager shows last updated time
+- ✅ Merchants dropdown uses dedicated `/api/admin/merchants-list` API
+- ✅ Save button refreshes stories list automatically
 
 ---
 
@@ -925,6 +952,12 @@ SELECT * FROM settings;
 
 -- Check merchant status
 SELECT slug, name, status, is_published FROM merchants;
+
+-- Check articles
+SELECT slug, title, published, view_count, updated_at FROM articles ORDER BY updated_at DESC;
+
+-- Check stories analytics data
+SELECT slug, title, view_count FROM articles WHERE published = true ORDER BY view_count DESC;
 ```
 
 ### Supabase Timezone
@@ -951,13 +984,16 @@ WHERE created_at >= '2026-08-30T00:00:00+08:00';
 - ✅ Settings system (site title, description, footer text)
 
 ### Phase 1 — Stories CMS (Completed 2026-08-30)
-- ✅ **Stories Analytics API** moved to `/api/admin/stories-analytics`
-- ✅ **Stories CRUD API** — full REST API (GET/POST/PUT/DELETE) at `/api/admin/stories`
+- ✅ **Stories Analytics API** moved to `/api/admin/stories-analytics` (shows article titles, legacy + period views)
+- ✅ **Stories CRUD API** — full REST API (GET/POST/PUT/DELETE) at `/api/admin/stories` with Chinese slug support
+- ✅ **Merchants List API** — `/api/admin/merchants-list` for dropdowns
 - ✅ **6 background themes** for articles (default/warm/cool/dark/nature/minimal)
-- ✅ **Admin Stories Editor** — Markdown editor with toolbar + live preview
-- ✅ **Admin Stories Manager** — list page with search, filter, delete
-- ✅ Settings API now requires admin authentication
-- ✅ Sidebar is collapsible on desktop
+- ✅ **Admin Stories Editor** — Markdown editor with toolbar + live preview + auto-save + category dropdown + cover preview + word count + syntax hint
+- ✅ **Admin Stories Manager** — list page with search, filter, delete, updated_at column
+- ✅ **Settings API** now requires admin authentication
+- ✅ **Sidebar** is collapsible on desktop
+- ✅ **Single line breaks** preserved via remark-breaks
+- ✅ **Save refreshes** stories list automatically
 
 ### Phase 2 — Merchant CMS (Planned)
 - ⏳ Merchant Manager — list all merchants with status/actions
