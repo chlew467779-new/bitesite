@@ -1,4 +1,5 @@
 /* bitesite/app/admin/components/stories-chart.tsx */
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -27,7 +28,7 @@ export default function StoriesChart({ range }: StoriesChartProps) {
       if (!token) return;
       setLoading(true);
       try {
-        const res = await fetch(`/api/admin/stories?range=${range}`, {
+        const res = await fetch(`/api/admin/stories-analytics?range=${range}`, {
           headers: { 'x-admin-token': token },
         });
         if (res.ok) {
