@@ -21,7 +21,6 @@ export function ClassicLayout({
   features,
   events,
   footerText,
-  whatsappNumber,
 }: LayoutProps) {
   const resolvedFeatures = mergeFeatures(features);
 
@@ -164,7 +163,6 @@ export function ClassicLayout({
         features={features}
         variant="classic"
         events={events}
-        bookingWhatsapp={whatsappNumber}
       />
 
       {/* Contact / Hours */}
