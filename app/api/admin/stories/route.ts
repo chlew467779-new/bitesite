@@ -9,84 +9,205 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-function getDateRange(range: string) {
-  const end = new Date();
-  const start = new Date();
-  
-  switch (range) {
-    case 'today': start.setHours(0,0,0,0); break;
-    case '7d': start.setDate(end.getDate() - 7); break;
-    case '30d': start.setDate(end.getDate() - 30); break;
-    case '90d': start.setDate(end.getDate() - 90); break;
-    case '365d': start.setDate(end.getDate() - 365); break;
-    default: start.setDate(end.getDate() - 7);
-  }
-  
-  return { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0] };
-}
-
-export async function GET(request: NextRequest) {
+function verifyRequest(request: Request) {
   const token = request.headers.get('x-admin-token');
   if (!token || !verifyAdminToken(token)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+  return null;
+}
+
+function generateSlug(title: string, existingSlugs: string[]): string {
+  let base = title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .substring(0, 50)
+    .replace(/^-|-$/g, '');
+  
+  if (!base) base = 'story';
+  
+  if (!existingSlugs.includes(base)) return base;
+  
+  let counter = 1;
+  while (existingSlugs.includes(`${base}-${counter}`)) {
+    counter++;
+  }
+  return `${base}-${counter}`;
+}
+
+// GET — 列表或单个
+export async function GET(request: NextRequest) {
+  const authError = verifyRequest(request);
+  if (authError) return authError;
 
   const { searchParams } = new URL(request.url);
-  const range = searchParams.get('range') || '7d';
-  const { start, end } = getDateRange(range);
+  const slug = searchParams.get('slug');
 
   try {
-    const startDateTime = `${start}T00:00:00+08:00`;
-    const endDateTime = `${end}T23:59:59+08:00`;
+    if (slug) {
+      // 查单个
+      const { data, error } = await supabase
+        .from('articles')
+        .select('*')
+        .eq('slug', slug)
+        .single();
 
-    // FIX: 从 page_views 原始表实时查询 story 页面浏览
-    const { data: storyViews } = await supabase
-      .from('page_views')
-      .select('slug, page_type')
-      .in('page_type', ['story', 'story_list'])
-      .eq('event_type', 'page_view')
-      .gte('created_at', startDateTime)
-      .lte('created_at', endDateTime);
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 404 });
+      }
+      return NextResponse.json({ article: data });
+    }
 
-    const storyMap = new Map<string, { slug: string; views: number }>();
-    storyViews?.forEach(row => {
-      const slug = row.slug || 'story-list';
-      const existing = storyMap.get(slug) || { slug, views: 0 };
-      existing.views += 1;
-      storyMap.set(slug, existing);
-    });
+    // 查列表
+    const { data, error } = await supabase
+      .from('articles')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-    // FIX: 从 page_views 原始表实时查询 story_to_merchant 转化
-    // event_detail 存储的是文章 slug，用于匹配 story views 的 slug
-    const { data: conversions } = await supabase
-      .from('page_views')
-      .select('event_detail')
-      .eq('event_type', 'story_to_merchant')
-      .gte('created_at', startDateTime)
-      .lte('created_at', endDateTime);
-
-    const conversionMap = new Map<string, number>();
-    conversions?.forEach(row => {
-      const articleSlug = row.event_detail || 'unknown';
-      conversionMap.set(articleSlug, (conversionMap.get(articleSlug) || 0) + 1);
-    });
-
-    const result = Array.from(storyMap.values())
-      .map(s => ({
-        ...s,
-        conversions: conversionMap.get(s.slug) || 0,
-        conversionRate: s.views > 0 ? ((conversionMap.get(s.slug) || 0) / s.views * 100).toFixed(2) : '0.00',
-      }))
-      .sort((a, b) => b.views - a.views);
-
-    return NextResponse.json({
-      data: result,
-      totalStoryViews: result.reduce((sum, r) => sum + r.views, 0),
-      totalConversions: result.reduce((sum, r) => sum + r.conversions, 0),
-      range,
-    });
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ articles: data });
   } catch (err) {
-    console.error('Stories API error:', err);
+    console.error('Stories GET error:', err);
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+  }
+}
+
+// POST — 新建
+export async function POST(request: Request) {
+  const authError = verifyRequest(request);
+  if (authError) return authError;
+
+  try {
+    const body = await request.json();
+
+    // 检查必填字段
+    if (!body.title || !body.content || !body.category) {
+      return NextResponse.json(
+        { error: 'title, content, and category are required' },
+        { status: 400 }
+      );
+    }
+
+    // 获取所有现有 slug 防止冲突
+    const { data: existing } = await supabase
+      .from('articles')
+      .select('slug');
+
+    const existingSlugs = (existing || []).map((a) => a.slug);
+    const slug = body.slug || generateSlug(body.title, existingSlugs);
+
+    const now = new Date().toISOString();
+
+    const { data, error } = await supabase
+      .from('articles')
+      .insert({
+        slug,
+        title: body.title,
+        excerpt: body.excerpt || null,
+        content: body.content,
+        cover_image: body.cover_image || null,
+        category: body.category,
+        tags: body.tags || [],
+        merchant_slug: body.merchant_slug || null,
+        author: body.author || 'BiteSite Team',
+        published: body.published ?? false,
+        background_style: body.background_style || 'default',
+        created_at: now,
+        updated_at: now,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ article: data, success: true }, { status: 201 });
+  } catch (err) {
+    console.error('Stories POST error:', err);
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+  }
+}
+
+// PUT — 更新
+export async function PUT(request: Request) {
+  const authError = verifyRequest(request);
+  if (authError) return authError;
+
+  try {
+    const body = await request.json();
+    const { id, slug, ...updates } = body;
+
+    if (!id && !slug) {
+      return NextResponse.json(
+        { error: 'id or slug required for update' },
+        { status: 400 }
+      );
+    }
+
+    const updateData: Record<string, unknown> = {
+      ...updates,
+      updated_at: new Date().toISOString(),
+    };
+
+    // 如果 tags 是字符串，转成数组
+    if (typeof updateData.tags === 'string') {
+      updateData.tags = updateData.tags
+        .split(',')
+        .map((t: string) => t.trim())
+        .filter(Boolean);
+    }
+
+    let query = supabase.from('articles').update(updateData);
+    
+    if (id) {
+      query = query.eq('id', id);
+    } else {
+      query = query.eq('slug', slug);
+    }
+
+    const { data, error } = await query.select().single();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ article: data, success: true });
+  } catch (err) {
+    console.error('Stories PUT error:', err);
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+  }
+}
+
+// DELETE — 删除
+export async function DELETE(request: NextRequest) {
+  const authError = verifyRequest(request);
+  if (authError) return authError;
+
+  const { searchParams } = new URL(request.url);
+  const slug = searchParams.get('slug');
+
+  if (!slug) {
+    return NextResponse.json({ error: 'slug required' }, { status: 400 });
+  }
+
+  try {
+    const { error } = await supabase
+      .from('articles')
+      .delete()
+      .eq('slug', slug);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error('Stories DELETE error:', err);
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }
