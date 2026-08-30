@@ -48,7 +48,7 @@ const helpTexts: Record<string, string> = {
   export:
     '导出数据允许你将分析数据下载为 CSV 文件。包含日期、商家、页面类型、设备、国家、城市、事件类型等字段。方便离线分析或制作月度报告给商家看。',
   settings:
-    '设置页面允许你修改网站全局配置，无需改代码。包括网站标题、SEO 描述、联系信息、WhatsApp 预订号码等。修改后自动保存到数据库，后续将接入网站各处。',
+    '设置页面允许你修改网站全局配置，无需改代码。包括网站标题（浏览器标签和SEO）、网站描述（分享卡片和搜索引擎）、商家页面底部文案。修改后自动保存到数据库，立即生效。',
 };
 
 function TabHeader({
@@ -230,7 +230,7 @@ function DashboardContent() {
           <div className="space-y-6">
             <TabHeader
               title="Stories Performance"
-              tabKey="stories"
+              tabKey="stories-analytics"
               activeHelp={activeHelp}
               setActiveHelp={setActiveHelp}
             />
