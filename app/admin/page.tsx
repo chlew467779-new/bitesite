@@ -23,6 +23,7 @@ import ExportButton from './components/export-button';
 import DateRangePicker from './components/date-range-picker';
 import { SettingsPanel } from './components/settings-panel';
 import StoriesManager from './components/stories-manager';
+import StoryEditor from './components/story-editor';
 
 const helpTexts: Record<string, string> = {
   overview:
@@ -102,6 +103,7 @@ function DashboardContent() {
   const [dateRange, setDateRange] = useState('7d');
   const [activeHelp, setActiveHelp] = useState<string | null>(null);
   const [editingSlug, setEditingSlug] = useState<string | null>(null);
+  const [showEditor, setShowEditor] = useState(false);
 
   if (isLoading) {
     return (
@@ -251,18 +253,26 @@ function DashboardContent() {
               activeHelp={activeHelp}
               setActiveHelp={setActiveHelp}
             />
-            <StoriesManager
-              onEdit={(slug) => {
-                setEditingSlug(slug);
-                // TODO: open editor
-                alert('Editor coming in next step! Slug: ' + slug);
-              }}
-              onNew={() => {
-                setEditingSlug(null);
-                // TODO: open editor
-                alert('New story editor coming in next step!');
-              }}
-            />
+            {showEditor ? (
+              <StoryEditor
+                slug={editingSlug}
+                onBack={() => setShowEditor(false)}
+                onSaved={() => {
+                  setShowEditor(false);
+                }}
+              />
+            ) : (
+              <StoriesManager
+                onEdit={(slug) => {
+                  setEditingSlug(slug);
+                  setShowEditor(true);
+                }}
+                onNew={() => {
+                  setEditingSlug(null);
+                  setShowEditor(true);
+                }}
+              />
+            )}
           </div>
         );
       case 'map':
