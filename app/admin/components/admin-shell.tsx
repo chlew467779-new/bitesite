@@ -1,4 +1,5 @@
 /* bitesite/app/admin/components/admin-shell.tsx */
+
 'use client';
 
 import { useState } from 'react';
@@ -21,6 +22,8 @@ import {
   Menu,
   X,
   ChevronRight,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 
 const navItems = [
@@ -46,6 +49,7 @@ interface AdminShellProps {
 export default function AdminShell({ activeTab, onTabChange, children }: AdminShellProps) {
   const { logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return (
     <div className="flex h-screen bg-slate-950 overflow-hidden">
@@ -60,28 +64,48 @@ export default function AdminShell({ activeTab, onTabChange, children }: AdminSh
       {/* Sidebar */}
       <aside
         className={`
-          fixed lg:static inset-y-0 left-0 z-50 w-64 bg-slate-900 border-r border-slate-800
-          transform transition-transform duration-200 ease-in-out
+          fixed lg:static inset-y-0 left-0 z-50 bg-slate-900 border-r border-slate-800
+          transform transition-all duration-200 ease-in-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+          ${sidebarCollapsed ? 'lg:w-16' : 'w-64'}
         `}
       >
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center">
+            {!sidebarCollapsed && (
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center">
+                  <span className="text-slate-950 font-bold text-sm">B</span>
+                </div>
+                <div>
+                  <h2 className="text-white font-semibold text-sm leading-tight">BiteSite</h2>
+                  <p className="text-slate-500 text-xs leading-tight">Admin</p>
+                </div>
+              </div>
+            )}
+            {sidebarCollapsed && (
+              <div className="w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center mx-auto">
                 <span className="text-slate-950 font-bold text-sm">B</span>
               </div>
-              <div>
-                <h2 className="text-white font-semibold text-sm leading-tight">BiteSite</h2>
-                <p className="text-slate-500 text-xs leading-tight">Admin</p>
-              </div>
-            </div>
+            )}
             <button
               onClick={() => setSidebarOpen(false)}
               className="lg:hidden text-slate-400 hover:text-white"
             >
               <X className="w-5 h-5" />
+            </button>
+            {/* Desktop collapse toggle */}
+            <button
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className="hidden lg:block text-slate-500 hover:text-slate-300 transition-colors"
+              title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              {sidebarCollapsed ? (
+                <PanelLeftOpen className="w-4 h-4" />
+              ) : (
+                <PanelLeftClose className="w-4 h-4" />
+              )}
             </button>
           </div>
 
@@ -103,18 +127,24 @@ export default function AdminShell({ activeTab, onTabChange, children }: AdminSh
                       ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                       : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
                     }
+                    ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}
                   `}
+                  title={sidebarCollapsed ? item.label : undefined}
                 >
                   <Icon className="w-4 h-4 shrink-0" />
-                  <span className="flex-1 text-left">{item.label}</span>
-                  {isActive && <ChevronRight className="w-3.5 h-3.5" />}
+                  {!sidebarCollapsed && (
+                    <>
+                      <span className="flex-1 text-left">{item.label}</span>
+                      {isActive && <ChevronRight className="w-3.5 h-3.5" />}
+                    </>
+                  )}
                 </button>
               );
             })}
           </nav>
 
           {/* Footer */}
-          <div className="p-3 border-t border-slate-800 space-y-2">
+          <div className={`p-3 border-t border-slate-800 space-y-2 ${sidebarCollapsed ? 'lg:px-2' : ''}`}>
             <button
               onClick={() => onTabChange('settings')}
               className={`
@@ -123,11 +153,17 @@ export default function AdminShell({ activeTab, onTabChange, children }: AdminSh
                   ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
                 }
+                ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}
               `}
+              title={sidebarCollapsed ? 'Settings' : undefined}
             >
               <Settings className="w-4 h-4" />
-              <span className="flex-1 text-left">Settings</span>
-              {activeTab === 'settings' && <ChevronRight className="w-3.5 h-3.5" />}
+              {!sidebarCollapsed && (
+                <>
+                  <span className="flex-1 text-left">Settings</span>
+                  {activeTab === 'settings' && <ChevronRight className="w-3.5 h-3.5" />}
+                </>
+              )}
             </button>
             <button
               onClick={() => onTabChange('export')}
@@ -137,18 +173,28 @@ export default function AdminShell({ activeTab, onTabChange, children }: AdminSh
                   ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                   : 'text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10'
                 }
+                ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}
               `}
+              title={sidebarCollapsed ? 'Export CSV' : undefined}
             >
               <Download className="w-4 h-4" />
-              <span className="flex-1 text-left">Export CSV</span>
-              {activeTab === 'export' && <ChevronRight className="w-3.5 h-3.5" />}
+              {!sidebarCollapsed && (
+                <>
+                  <span className="flex-1 text-left">Export CSV</span>
+                  {activeTab === 'export' && <ChevronRight className="w-3.5 h-3.5" />}
+                </>
+              )}
             </button>
             <button
               onClick={logout}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all"
+              className={`
+                w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all
+                ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}
+              `}
+              title={sidebarCollapsed ? 'Sign Out' : undefined}
             >
               <LogOut className="w-4 h-4" />
-              Sign Out
+              {!sidebarCollapsed && <span className="flex-1 text-left">Sign Out</span>}
             </button>
           </div>
         </div>
@@ -165,7 +211,7 @@ export default function AdminShell({ activeTab, onTabChange, children }: AdminSh
             <Menu className="w-6 h-6" />
           </button>
           <span className="text-white font-medium text-sm">BiteSite Admin</span>
-          <div className="w-6" /> {/* Spacer */}
+          <div className="w-6" />
         </header>
 
         {/* Scrollable Content */}
