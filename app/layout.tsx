@@ -3,6 +3,7 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display, Noto_Sans_JP } from "next/font/google";
 import { SiteHeader } from "@/components/sections/site-header";
+import { getSettings } from "@/lib/settings";
 import "./globals.css";
 
 const inter = Inter({
@@ -24,59 +25,62 @@ const notoSansJP = Noto_Sans_JP({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: "BiteSite | Every Bite Tells a Story",
-  description:
-    "Discover the best local restaurants, cafes, and hidden gems in Kuala Lumpur. Browse menus, photos, and stories — every bite tells a story.",
-  keywords: [
-    "restaurant",
-    "KL cafe",
-    "Kuala Lumpur food",
-    "discover restaurants",
-    "local dining",
-    "food stories",
-    "BiteSite",
-  ],
-  authors: [{ name: "BiteSite" }],
-  creator: "BiteSite",
-  metadataBase: new URL("https://bitesite-pied.vercel.app"),
-  openGraph: {
-    title: "BiteSite | Every Bite Tells a Story",
-    description:
-      "Discover the best local restaurants, cafes, and hidden gems in Kuala Lumpur.",
-    url: "https://bitesite-pied.vercel.app",
-    siteName: "BiteSite",
-    locale: "en_MY",
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "BiteSite | Every Bite Tells a Story",
-    description:
-      "Discover the best local restaurants, cafes, and hidden gems in Kuala Lumpur.",
-  },
-  verification: {
-    google: "uBOqQMI8xgJcUJVyR_mezk4PAY66QMUTrcenNUPcjWs",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSettings();
 
-export default function RootLayout({
+  return {
+    title: `${settings.site_title} | Every Bite Tells a Story`,
+    description: settings.site_description,
+    keywords: [
+      "restaurant",
+      "KL cafe",
+      "Kuala Lumpur food",
+      "discover restaurants",
+      "local dining",
+      "food stories",
+      settings.site_title,
+    ],
+    authors: [{ name: settings.site_title }],
+    creator: settings.site_title,
+    metadataBase: new URL("https://bitesite-pied.vercel.app"),
+    openGraph: {
+      title: `${settings.site_title} | Every Bite Tells a Story`,
+      description: settings.site_description,
+      url: "https://bitesite-pied.vercel.app",
+      siteName: settings.site_title,
+      locale: "en_MY",
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${settings.site_title} | Every Bite Tells a Story`,
+      description: settings.site_description,
+    },
+    verification: {
+      google: "uBOqQMI8xgJcUJVyR_mezk4PAY66QMUTrcenNUPcjWs",
+    },
+  };
+}
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const settings = await getSettings();
+
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "BiteSite",
+    name: settings.site_title,
     url: "https://bitesite-pied.vercel.app",
-    description: "Every Bite Tells a Story — Discover local restaurants in Kuala Lumpur.",
+    description: settings.site_description,
   };
 
   const websiteSchema = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name: "BiteSite",
+    name: settings.site_title,
     url: "https://bitesite-pied.vercel.app",
   };
 
