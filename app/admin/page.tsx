@@ -39,7 +39,7 @@ const helpTexts: Record<string, string> = {
     '搜索关键词记录用户在首页搜索框输入的内容。帮助你了解用户想找什么类型的餐厅（如 "cafe"、"japanese"、"klcc" 等），可用于优化首页推荐或引导商家入驻。',
   events:
     '事件分析追踪用户的关键行为。包括：page_view（页面浏览）、whatsapp_click（点击 WhatsApp 联系商家）、share（分享页面）、booking_submit（提交预订）、map_marker_click（点击地图标记）、story_to_merchant（从 Story 文章跳转到商家）。',
-  stories:
+  'stories-analytics':
     'Stories 表现展示每篇文章的浏览量和转化率。Views = 文章被阅读的次数；Conversions = 读者点击 "View their full menu" 跳转到商家页面的次数。Conversion Rate 越高，说明文章引流效果越好。',
   map:
     '地图页面统计展示 Our Partner 地图页面的访问数据。包括地图页面总浏览量和地图标记点击次数。标记点击高说明用户对地理位置和附近餐厅感兴趣。',
@@ -225,7 +225,7 @@ function DashboardContent() {
             <EventsChart range={dateRange} />
           </div>
         );
-      case 'stories':
+      case 'stories-analytics':
         return (
           <div className="space-y-6">
             <TabHeader
