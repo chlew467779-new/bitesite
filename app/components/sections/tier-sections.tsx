@@ -17,6 +17,7 @@ interface TierSectionsProps {
   features?: Partial<MerchantFeatures>;
   variant: LayoutVariant;
   events?: EventItem[];
+  bookingWhatsapp?: string;
 }
 
 export function TierSections({
@@ -25,6 +26,7 @@ export function TierSections({
   features,
   variant,
   events,
+  bookingWhatsapp,
 }: TierSectionsProps) {
   const resolved = mergeFeatures(features);
 
@@ -75,6 +77,7 @@ export function TierSections({
           variant={variant}
           id="reserve-section"
           slug={merchant.slug}
+          bookingWhatsapp={bookingWhatsapp}
         />
       )}
     </>
