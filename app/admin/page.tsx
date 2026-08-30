@@ -22,14 +22,32 @@ import DateRangePicker from './components/date-range-picker';
 import { SettingsPanel } from './components/settings-panel';
 import StoriesManager from './components/stories-manager';
 import StoryEditor from './components/story-editor';
+import { Lock, Loader2 } from 'lucide-react';
 
 export default function AdminPage() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, login } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [dateRange, setDateRange] = useState('7d');
   const [showEditor, setShowEditor] = useState(false);
   const [editingSlug, setEditingSlug] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+
+  // Login form state
+  const [password, setPassword] = useState('');
+  const [loggingIn, setLoggingIn] = useState(false);
+  const [loginError, setLoginError] = useState('');
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!password.trim()) return;
+    setLoggingIn(true);
+    setLoginError('');
+    const result = await login(password);
+    setLoggingIn(false);
+    if (!result.success) {
+      setLoginError(result.error || 'Login failed');
+    }
+  };
 
   if (isLoading) {
     return (
@@ -41,10 +59,44 @@ export default function AdminPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-950">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-white mb-4">Admin Access Required</h1>
-          <p className="text-slate-400">Please log in to access the admin dashboard.</p>
+      <div className="flex items-center justify-center min-h-screen bg-slate-950 px-4">
+        <div className="w-full max-w-sm">
+          <div className="text-center mb-8">
+            <div className="w-12 h-12 rounded-xl bg-amber-500 flex items-center justify-center mx-auto mb-4">
+              <Lock className="w-6 h-6 text-slate-950" />
+            </div>
+            <h1 className="text-2xl font-bold text-white mb-2">Admin Access</h1>
+            <p className="text-slate-400 text-sm">Enter your password to access the dashboard</p>
+          </div>
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Password"
+                autoFocus
+                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors"
+              />
+            </div>
+            {loginError && (
+              <p className="text-sm text-red-400 text-center">{loginError}</p>
+            )}
+            <button
+              type="submit"
+              disabled={loggingIn || !password.trim()}
+              className="w-full rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-medium py-2.5 text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loggingIn ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" /> Signing in...
+                </span>
+              ) : (
+                'Sign In'
+              )}
+            </button>
+          </form>
         </div>
       </div>
     );
