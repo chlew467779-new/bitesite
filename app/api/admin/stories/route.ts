@@ -19,8 +19,7 @@ function verifyRequest(request: Request) {
 
 function generateSlug(title: string, existingSlugs: string[]): string {
   let base = title
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
     .substring(0, 50)
@@ -47,7 +46,6 @@ export async function GET(request: NextRequest) {
 
   try {
     if (slug) {
-      // 查单个
       const { data, error } = await supabase
         .from('articles')
         .select('*')
@@ -60,7 +58,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ article: data });
     }
 
-    // 查列表
     const { data, error } = await supabase
       .from('articles')
       .select('*')
@@ -84,7 +81,6 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    // 检查必填字段
     if (!body.title || !body.content || !body.category) {
       return NextResponse.json(
         { error: 'title, content, and category are required' },
@@ -92,7 +88,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // 获取所有现有 slug 防止冲突
     const { data: existing } = await supabase
       .from('articles')
       .select('slug');
@@ -154,7 +149,6 @@ export async function PUT(request: Request) {
       updated_at: new Date().toISOString(),
     };
 
-    // 如果 tags 是字符串，转成数组
     if (typeof updateData.tags === 'string') {
       updateData.tags = updateData.tags
         .split(',')
@@ -162,7 +156,6 @@ export async function PUT(request: Request) {
         .filter(Boolean);
     }
 
-    // 空字符串 merchant_slug 转成 null，避免外键约束错误
     if (updateData.merchant_slug === '') {
       updateData.merchant_slug = null;
     }
