@@ -14,18 +14,12 @@ interface Setting {
 const settingLabels: Record<string, string> = {
   site_title: '网站标题',
   site_description: '网站描述（SEO）',
-  contact_email: '联系邮箱',
-  contact_phone: '联系电话',
-  whatsapp_number: '预订 WhatsApp 号码',
   footer_text: '商家页面底部文案',
 };
 
 const settingPlaceholders: Record<string, string> = {
   site_title: 'BiteSite',
   site_description: 'Discover the best restaurants in Kuala Lumpur',
-  contact_email: 'hello@bitesite.my',
-  contact_phone: '+60 16-566 0239',
-  whatsapp_number: '60165660239',
   footer_text: 'Discover more restaurants on BiteSite',
 };
 
@@ -45,7 +39,11 @@ export function SettingsPanel() {
       const res = await fetch('/api/admin/settings');
       const data = await res.json();
       if (data.error) throw new Error(data.error);
-      setSettings(data.settings || []);
+      // 只显示有用的 3 个字段
+      const filtered = (data.settings || []).filter((s: Setting) => 
+        ['site_title', 'site_description', 'footer_text'].includes(s.key)
+      );
+      setSettings(filtered);
     } catch (err) {
       setError(err instanceof Error ? err.message : '加载失败');
     } finally {
@@ -141,7 +139,7 @@ export function SettingsPanel() {
 
       <div className="rounded-xl border border-amber-900/30 bg-amber-950/20 p-4">
         <p className="text-xs text-amber-400/80 leading-relaxed">
-          💡 提示：修改后按 Enter 或点击外部区域自动保存。目前设置保存在数据库中，后续将接入网站各处（如 footer、页面标题、WhatsApp 预订号码等）。
+          💡 提示：修改后按 Enter 或点击外部区域自动保存。site_title 控制网站标题，site_description 控制 SEO 和分享描述，footer_text 控制商家页面底部文案。
         </p>
       </div>
     </div>
