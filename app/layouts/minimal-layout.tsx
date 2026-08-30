@@ -16,7 +16,7 @@ import { getTodayKey } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
 
 export function MinimalLayout({
-  merchant, categories, products, videos, features, viewCount, events,
+  merchant, categories, products, videos, features, viewCount, events,footerText,whatsappNumber,
 }: LayoutProps) {
   const resolvedFeatures = mergeFeatures(features);
   const today = getTodayKey();
@@ -89,7 +89,7 @@ export function MinimalLayout({
         </FadeIn>
       )}
 
-      <TierSections merchant={merchant} products={products} features={features} variant="minimal" events={events} />
+      <TierSections merchant={merchant} products={products} features={features} variant="minimal" events={events} bookingWhatsapp={whatsappNumber} />
 
       {resolvedFeatures.contact && (
         <FadeIn>
@@ -154,7 +154,7 @@ export function MinimalLayout({
       )}
 
       <footer className="py-6 px-4 text-center border-t border-stone-200">
-        <Link href="/" className="text-xs text-stone-400 hover:text-stone-600 transition-colors">Discover more on BiteSite</Link>
+        <Link href="/" className="text-xs text-stone-400 hover:text-stone-600 transition-colors">{footerText || "Discover more on BiteSite"}</Link>
       </footer>
     </div>
   );
