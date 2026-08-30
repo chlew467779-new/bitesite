@@ -1,8 +1,10 @@
 /* bitesite/app/admin/components/settings-panel.tsx */
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { Save, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { useAuth } from './auth-context';
 
 interface Setting {
   id: number;
@@ -24,6 +26,7 @@ const settingPlaceholders: Record<string, string> = {
 };
 
 export function SettingsPanel() {
+  const { token } = useAuth();
   const [settings, setSettings] = useState<Setting[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
@@ -36,10 +39,11 @@ export function SettingsPanel() {
 
   const fetchSettings = async () => {
     try {
-      const res = await fetch('/api/admin/settings');
+      const res = await fetch('/api/admin/settings', {
+        headers: { 'x-admin-token': token || '' },
+      });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
-      // 只显示有用的 3 个字段
       const filtered = (data.settings || []).filter((s: Setting) => 
         ['site_title', 'site_description', 'footer_text'].includes(s.key)
       );
@@ -58,7 +62,10 @@ export function SettingsPanel() {
     try {
       const res = await fetch('/api/admin/settings', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-admin-token': token || '',
+        },
         body: JSON.stringify({ key, value }),
       });
       const data = await res.json();
