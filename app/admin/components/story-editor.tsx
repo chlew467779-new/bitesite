@@ -463,6 +463,26 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-1.5">Content (Markdown) *</label>
             
+            {/* Markdown Cheat Sheet */}
+            <div className="mb-2 rounded-lg border border-slate-800 bg-slate-900/30 px-3 py-2">
+              <p className="text-xs text-slate-500 leading-relaxed">
+                <span className="text-amber-500/80 font-medium">💡 语法提示：</span>
+                <code className="mx-1 rounded bg-slate-800 px-1 py-0.5 text-slate-300">**文字**</code> 粗体
+                <code className="mx-1 rounded bg-slate-800 px-1 py-0.5 text-slate-300">*文字*</code> 斜体
+                <code className="mx-1 rounded bg-slate-800 px-1 py-0.5 text-slate-300"># 标题</code>
+                <code className="mx-1 rounded bg-slate-800 px-1 py-0.5 text-slate-300">## 小标题</code>
+                <code className="mx-1 rounded bg-slate-800 px-1 py-0.5 text-slate-300">- 项目</code> 列表
+                <code className="mx-1 rounded bg-slate-800 px-1 py-0.5 text-slate-300">---</code> 分割线
+                <br className="hidden sm:block" />
+                <span className="sm:ml-0 ml-1">
+                  <code className="mx-1 rounded bg-slate-800 px-1 py-0.5 text-slate-300">[文字](链接)</code> 链接
+                  <code className="mx-1 rounded bg-slate-800 px-1 py-0.5 text-slate-300">![描述](图片URL)</code> 图片
+                  <code className="mx-1 rounded bg-slate-800 px-1 py-0.5 text-slate-300">`代码`</code>
+                  <span className="text-slate-600 ml-1">按 Enter 换行，空行分段</span>
+                </span>
+              </p>
+            </div>
+
             {/* Toolbar */}
             <div className="flex items-center gap-1 p-2 border border-slate-700 border-b-0 rounded-t-lg bg-slate-900/50">
               <button onClick={() => insertMarkdown('**', '**')} className="p-1.5 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200" title="Bold">
@@ -526,9 +546,7 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
 - Bullet point 2
 
 [Link to merchant](/store/merchant-slug)
-
-![Image description](https://...)"
-              rows={16}
+"              rows={16}
               className="w-full rounded-b-lg border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-slate-200 placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors resize-y font-mono leading-relaxed"
             />
           </div>
