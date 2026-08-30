@@ -116,6 +116,7 @@ export interface Article {
   author: string;
   published: boolean;
   view_count: number;
+  background_style?: string;  // ← 加这一行
   created_at: string;
   updated_at: string;
 }
