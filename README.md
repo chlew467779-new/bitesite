@@ -20,9 +20,11 @@ Every change is done through the GitHub web interface:
 5. Scroll down, write a commit message, click **Commit changes**
 6. Vercel will auto-deploy within 30–60 seconds
 
-> **Tip**: If you need to create a new file, click **"Add file" → "Create new file"** and type the full path (e.g. `app/our-partner/page.tsx`).
+> **Tip**: If you need to create a new file, click **"Add file" → "Create new file"** and type the full path.
 
 > **Tip**: Don't edit too many files in one commit. Vercel queues deployments. Wait 30–60 seconds between commits.
+
+> **Tip**: After changing database data, you need to **Redeploy Vercel** (without build cache) to see changes immediately, because pages are cached for 5 minutes (ISR).
 
 ---
 
@@ -65,7 +67,7 @@ app/
 │   └── page.tsx                # Interactive map showing all merchant locations
 ├── api/
 │   ├── view/
-│   │   └── route.ts            # POST /api/view — legacy merchant view count (retained)
+│   │   └── route.ts            # POST /api/view — legacy merchant view count (retained for compatibility)
 │   ├── story-view/
 │   │   └── route.ts            # POST /api/story-view — legacy article view count (retained)
 │   ├── track/
@@ -74,25 +76,27 @@ app/
 │       ├── login/
 │       │   └── route.ts        # POST /api/admin/login — password auth + 3-strike lockout
 │       ├── overview/
-│       │   └── route.ts        # GET /api/admin/overview?range=7d — dashboard KPI cards (raw table query)
+│       │   └── route.ts        # GET /api/admin/overview?range=7d — dashboard KPI cards
 │       ├── trends/
 │       │   └── route.ts        # GET /api/admin/trends?range=7d — trend line chart data
 │       ├── merchants/
 │       │   └── route.ts        # GET /api/admin/merchants?range=7d — merchant ranking table
 │       ├── devices/
-│       │   └── route.ts        # GET /api/admin/devices?range=7d — device/OS/browser breakdown (raw table query)
+│       │   └── route.ts        # GET /api/admin/devices?range=7d — device/OS/browser breakdown
 │       ├── locations/
 │       │   └── route.ts        # GET /api/admin/locations?range=7d — country + city distribution
 │       ├── referrers/
-│       │   └── route.ts        # GET /api/admin/referrers?range=7d — traffic source pie chart (raw table query)
+│       │   └── route.ts        # GET /api/admin/referrers?range=7d — traffic source pie chart
 │       ├── search-keywords/
 │       │   └── route.ts        # GET /api/admin/search-keywords?range=7d — search terms ranking
 │       ├── events/
-│       │   └── route.ts        # GET /api/admin/events?range=7d — WhatsApp/Booking/Share stats (raw table query)
+│       │   └── route.ts        # GET /api/admin/events?range=7d — WhatsApp/Booking/Share stats
 │       ├── stories/
-│       │   └── route.ts        # GET /api/admin/stories?range=7d — Stories views + conversion (raw table query)
+│       │   └── route.ts        # GET/POST/PUT/DELETE /api/admin/stories — Stories CRUD
+│       ├── stories-analytics/
+│       │   └── route.ts        # GET /api/admin/stories-analytics — Article views + conversion rate
 │       ├── map/
-│       │   └── route.ts        # GET /api/admin/map?range=7d — Map page analytics (raw table query)
+│       │   └── route.ts        # GET /api/admin/map?range=7d — Map page analytics
 │       ├── hourly/
 │       │   └── route.ts        # GET /api/admin/hourly?range=7d — 24h peak hours
 │       ├── realtime/
@@ -100,10 +104,10 @@ app/
 │       ├── export/
 │       │   └── route.ts        # GET /api/admin/export?range=7d&format=csv — CSV download
 │       └── settings/
-│           └── route.ts        # GET/PUT /api/admin/settings — read/write site config
+│           └── route.ts        # GET/PUT /api/admin/settings — read/write site config (auth protected)
 ├── store/
 │   └── [merchant]/
-│       ├── page.tsx              # Merchant detail page (ISR + SSR + Restaurant/Menu/Breadcrumb Schema + inactive handling)
+│       ├── page.tsx              # Merchant detail page (ISR + SSR + Restaurant/Menu/Breadcrumb Schema)
 │       └── loading.tsx           # Merchant page skeleton
 ├── layouts/
 │   ├── index.ts                  # Layout registry (classic/elegant/minimal/modern/rustic)
@@ -112,14 +116,14 @@ app/
 │   ├── minimal-layout.tsx        # Clean stone/zen style
 │   ├── modern-layout.tsx         # White slate contemporary style
 │   └── rustic-layout.tsx         # Orange earthy style
-├── admin/                        # Admin Analytics Dashboard (dark theme)
+├── admin/                        # Admin Analytics Dashboard + CMS (dark theme)
 │   ├── page.tsx                  # Admin entry: login form or dashboard shell
 │   ├── layout.tsx                # Admin layout (dark mode, no SiteHeader)
 │   ├── admin-globals.css         # Admin-specific dark theme styles
 │   ├── login-form.tsx            # Password input component
 │   └── components/
 │       ├── auth-context.tsx      # Login state management (React Context + localStorage)
-│       ├── admin-shell.tsx       # Sidebar + main content layout
+│       ├── admin-shell.tsx       # Sidebar + main content layout (collapsible on desktop)
 │       ├── date-range-picker.tsx # Time range selector (today/7d/30d/90d/365d)
 │       ├── realtime-badge.tsx    # Live online user counter (30s auto-refresh)
 │       ├── stat-cards.tsx        # Top 4 KPI cards (views/unique/events/merchants)
@@ -134,56 +138,53 @@ app/
 │       ├── map-stats.tsx         # Map page views + marker clicks
 │       ├── hourly-chart.tsx      # 24-hour peak hours bar chart
 │       ├── export-button.tsx     # CSV export trigger
-│       └── settings-panel.tsx    # Site settings editor (title, description, footer text)
+│       ├── settings-panel.tsx    # Site settings editor (title, description, footer text)
+│       ├── stories-manager.tsx   # Stories list with search, filter, delete
+│       ├── story-editor.tsx      # Markdown editor + live preview + 6 background themes
+│       ├── merchant-manager.tsx  # ⏳ P2 — Merchant list with status/actions
+│       ├── merchant-form.tsx     # ⏳ P2 — 5-tab merchant create/edit form
+│       └── menu-manager.tsx      # ⏳ P2 — Category & product management
 ├── components/
 │   ├── map-embed.tsx             # Google Maps iframe embed component
-│   └── safe-image.tsx            # Next/Image wrapper with error fallback + loading shimmer
-│   └── page-view-tracker.tsx     # Universal page view tracker (Client Component)
-└── components/
-    ├── ui/
-    │   ├── cuisine-tag.tsx           # Pill-shaped cuisine label
-    │   └── diamond-separator.tsx     # Decorative divider (◆)
-    └── sections/
-        ├── hero.tsx                  # Homepage hero with search bar
-        ├── category-filter.tsx       # 3-row sticky filter bar with smooth animations
-        ├── merchant-card.tsx         # Card: Open Now badge + ShareMenu + ViewCount + tags + hours
-        ├── merchant-card-skeleton.tsx # Loading skeleton with pulse animation
-        ├── footer.tsx                # Site footer (Home / Stories / Join Us / Our Partner + copyright)
-        ├── site-header.tsx           # Global nav bar (Home / Our Partner / Stories / Join Us)
-        │
-        ├── map-container.tsx         # Map page wrapper: filter + search logic
-        ├── map-section.tsx           # Leaflet map: markers with photos, user location pulse, recenter
-        ├── map-filter.tsx            # Map top filter pills + search input
-        │
-        ├── brand-intro.tsx           # Merchant brand intro
-        ├── discover-bitesite.tsx     # "Discover more" CTA link to homepage
-        ├── info-accordion.tsx        # Location / Hours / Dress Code / Social accordion
-        ├── menu-section.tsx          # Category-based menu grid
-        ├── product-card.tsx          # Individual dish card with image, price, discount
-        ├── related-merchants.tsx     # "You May Also Like" recommendations
-        ├── share-menu.tsx            # Floating share menu (auto-close on outside click & scroll)
-        ├── share-buttons.tsx         # Inline share buttons (Share + Copy Link only)
-        ├── view-tracker.tsx          # Client-side merchant view count tracker (2s delay)
-        ├── view-count-inline.tsx     # Eye icon + formatted count badge
-        ├── store-hero.tsx            # Full-bleed hero image
-        ├── store-footer.tsx          # Merchant footer with WhatsApp CTA
-        ├── text-image-block.tsx      # Alternating text/image section
-        ├── video-section.tsx         # YouTube embed + self-hosted video player
-        │
-        ├── join-us-hero.tsx          # Join Us page hero
-        ├── how-it-works.tsx          # 3-step process (Shoot → Build → Share)
-        ├── pricing-card.tsx          # Pricing card (RM599 + RM149/mo)
-        ├── faq-accordion.tsx         # FAQ accordion (6 questions)
-        ├── join-us-cta.tsx           # Bottom WhatsApp CTA
-        │
-        ├── story-filter.tsx          # Stories category filter buttons
-        ├── story-card.tsx            # Article card (featured + list variants)
-        ├── story-list.tsx            # Article list with featured article on top
-        ├── story-hero.tsx            # Story detail hero (title + meta + cover image)
-        ├── story-content.tsx         # Markdown renderer for article body (with /store/ link tracking)
-        ├── story-related.tsx         # "More Stories" recommendations
-        ├── story-view-tracker.tsx    # Client-side article view count tracker
-        └── latest-stories.tsx        # Homepage "Latest Stories" section (latest 3 articles)
+│   ├── safe-image.tsx            # Next/Image wrapper with error fallback + loading shimmer
+│   ├── page-view-tracker.tsx     # Universal page view tracker (Client Component)
+│   └── sections/
+│       ├── hero.tsx                  # Homepage hero with search bar
+│       ├── category-filter.tsx       # 3-row sticky filter bar with smooth animations
+│       ├── merchant-card.tsx         # Card: Open Now badge + ShareMenu + ViewCount + tags + hours
+│       ├── merchant-card-skeleton.tsx # Loading skeleton with pulse animation
+│       ├── footer.tsx                # Site footer (Home / Stories / Join Us / Our Partner)
+│       ├── site-header.tsx           # Global nav bar (Home / Our Partner / Stories / Join Us)
+│       ├── map-container.tsx         # Map page wrapper: filter + search logic
+│       ├── map-section.tsx           # Leaflet map: markers with photos, user location pulse, recenter
+│       ├── map-filter.tsx            # Map top filter pills + search input
+│       ├── brand-intro.tsx           # Merchant brand intro
+│       ├── discover-bitesite.tsx     # "Discover more" CTA link to homepage
+│       ├── info-accordion.tsx        # Location / Hours / Dress Code / Social accordion
+│       ├── menu-section.tsx          # Category-based menu grid
+│       ├── product-card.tsx          # Individual dish card with image, price, discount
+│       ├── related-merchants.tsx     # "You May Also Like" recommendations
+│       ├── share-menu.tsx            # Floating share menu (auto-close on outside click & scroll)
+│       ├── share-buttons.tsx         # Inline share buttons (Share + Copy Link only)
+│       ├── view-tracker.tsx          # Client-side merchant view count tracker (2s delay)
+│       ├── view-count-inline.tsx     # Eye icon + formatted count badge
+│       ├── store-hero.tsx            # Full-bleed hero image
+│       ├── store-footer.tsx          # Merchant footer with WhatsApp CTA
+│       ├── text-image-block.tsx      # Alternating text/image section
+│       ├── video-section.tsx         # YouTube embed + self-hosted video player
+│       ├── join-us-hero.tsx          # Join Us page hero
+│       ├── how-it-works.tsx          # 3-step process (Shoot → Build → Share)
+│       ├── pricing-card.tsx          # Pricing card (RM599 + RM149/mo)
+│       ├── faq-accordion.tsx         # FAQ accordion (6 questions)
+│       ├── join-us-cta.tsx           # Bottom WhatsApp CTA
+│       ├── story-filter.tsx          # Stories category filter buttons
+│       ├── story-card.tsx            # Article card (featured + list variants)
+│       ├── story-list.tsx            # Article list with featured article on top
+│       ├── story-hero.tsx            # Story detail hero (6 theme support)
+│       ├── story-content.tsx         # Markdown renderer (6 theme support + /store/ link tracking)
+│       ├── story-related.tsx         # "More Stories" recommendations
+│       ├── story-view-tracker.tsx    # Client-side article view count tracker
+│       └── latest-stories.tsx        # Homepage "Latest Stories" section (latest 3 articles)
 
 lib/
 ├── supabase.ts                 # Supabase client + all DB queries + related merchant scoring + map query
@@ -195,13 +196,15 @@ lib/
 ├── whatsapp.ts                 # BiteSite WhatsApp link constant
 ├── markdown.ts                 # Markdown rendering utilities (reserved)
 ├── analytics.ts                # EventTypes + classifyReferrer + trackEvent() (sendBeacon priority)
-├── device-detect.ts            # User-Agent parser (device / OS / browser) — enhanced with iPad/ChromeOS/Opera
+├── device-detect.ts            # User-Agent parser (device / OS / browser)
 ├── admin-auth.ts               # generateAdminToken() + verifyAdminToken() (HMAC-SHA256)
 └── settings.ts                 # Read site config from Supabase settings table with fallback defaults
 
 types/
 └── index.ts                    # All TypeScript interfaces + defaultFeatures + mergeFeatures
 ```
+
+> ⚠️ **File Path Trap**: The project has two parallel component directories — `components/sections/` (legacy, used by stories page) and `app/components/sections/` (actively used by tier-sections). Before modifying any component, check which directory it's actually imported from.
 
 ---
 
@@ -297,6 +300,82 @@ types/
 | sort_order | INT | Display order |
 | created_at | TIMESTAMPTZ |
 
+### `articles` (Stories)
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID | PK, auto-generated |
+| slug | TEXT | **Required.** URL-friendly identifier. Unique, indexed. |
+| title | TEXT | **Required.** Article headline. |
+| excerpt | TEXT | Short summary shown on the list page. |
+| content | TEXT | **Required.** Full article body in **Markdown**. |
+| cover_image | TEXT | URL to the featured image. **Recommended:** 16:9 ratio. |
+| category | TEXT | **Required.** Used for filtering on `/stories`. |
+| tags | TEXT[] | Array of tags. |
+| merchant_slug | TEXT | **Optional.** Links to a merchant page. |
+| author | TEXT | Defaults to `BiteSite Team`. |
+| published | BOOLEAN | **Must be `true`** to appear on the website. |
+| view_count | INT | Auto-incremented. Do NOT edit manually. |
+| background_style | TEXT | `default`/`warm`/`cool`/`dark`/`nature`/`minimal` |
+| created_at | TIMESTAMPTZ | Auto-generated. |
+| updated_at | TIMESTAMPTZ | Auto-generated. |
+
+### `events`
+| Column | Type |
+|--------|------|
+| id | UUID PK |
+| merchant_id | UUID → merchants |
+| title | TEXT | Event name |
+| description | TEXT | Event details |
+| event_date | DATE | Event date |
+| event_time | TEXT | e.g. "7:00 PM - 10:00 PM" |
+| image_url | TEXT | Event photo |
+| created_at | TIMESTAMPTZ |
+
+### `page_views` (raw analytics log — primary data source)
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID PK | gen_random_uuid() |
+| slug | TEXT | Merchant slug (null for non-merchant pages) |
+| path | TEXT NOT NULL | e.g. `/store/abc`, `/stories/xyz` |
+| page_type | TEXT | merchant / story / home / join_us / our_partner / story_list / other |
+| event_type | TEXT NOT NULL DEFAULT 'page_view' | page_view / whatsapp_click / booking_submit / share / search / map_marker_click / story_to_merchant |
+| event_detail | TEXT | Search keyword, share platform, etc. |
+| ip | TEXT | Visitor IP |
+| country | TEXT | From Vercel `x-vercel-ip-country` |
+| city | TEXT | From Vercel `x-vercel-ip-city` (URL decoded) |
+| device_type | TEXT | mobile / desktop / tablet |
+| os | TEXT | iOS / Android / Windows / macOS / Linux / Other |
+| browser | TEXT | Chrome / Safari / Samsung Internet / Firefox / Edge / Other |
+| user_agent | TEXT | Raw User-Agent string |
+| referrer | TEXT | document.referrer |
+| referrer_type | TEXT | google / instagram / facebook / whatsapp / direct / internal / other |
+| metadata | JSONB DEFAULT '{}' | Reserved for future expansion |
+| created_at | TIMESTAMPTZ DEFAULT now() | |
+
+**Indexes**: `created_at`, `slug`, `event_type`, `path`, `device_type`, `country+city`, `page_type`, `referrer_type`
+
+### `merchant_daily_views` (daily aggregated analytics — cron rollup)
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID PK | |
+| slug | TEXT | null = non-merchant pages |
+| page_type | TEXT NOT NULL | |
+| view_date | DATE NOT NULL | |
+| device_type | TEXT | |
+| country | TEXT | |
+| city | TEXT | |
+| os | TEXT | |
+| browser | TEXT | |
+| referrer_type | TEXT | |
+| event_type | TEXT DEFAULT 'page_view' | |
+| count | INT DEFAULT 0 | |
+| unique_ips | INT DEFAULT 0 | |
+| created_at | TIMESTAMPTZ DEFAULT now() | |
+| updated_at | TIMESTAMPTZ DEFAULT now() | |
+| **UNIQUE** | | (slug, page_type, view_date, device_type, country, city, os, browser, referrer_type, event_type) |
+
+**Indexes**: `view_date`, `slug`, `page_type`, `event_type`
+
 ### `merchant_stats` (legacy view count — retained for compatibility)
 | Column | Type |
 |--------|------|
@@ -313,75 +392,11 @@ types/
 | view_count | INT DEFAULT 0 | Views for that month |
 | UNIQUE(slug, year_month) | Composite unique constraint |
 
-### `articles` (blog / stories)
-| Column | Type | Notes |
-|--------|------|-------|
-| id | UUID | PK, auto-generated |
-| slug | TEXT | **Required.** URL-friendly identifier. |
-| title | TEXT | **Required.** Article headline. |
-| excerpt | TEXT | Short summary shown on the list page. |
-| content | TEXT | **Required.** Full article body in **Markdown**. |
-| cover_image | TEXT | URL to the featured image. **Recommended:** 16:9 ratio. |
-| category | TEXT | **Required.** Used for filtering on `/stories`. |
-| tags | TEXT[] | Array of tags. |
-| merchant_slug | TEXT | **Optional.** Links to a merchant page. |
-| author | TEXT | Defaults to `BiteSite Team`. |
-| published | BOOLEAN | **Must be `true`** to appear on the website. |
-| view_count | INT | Auto-incremented. Do NOT edit manually. |
-| background_style | TEXT | `default`/`warm`/`cool`/`dark`/`nature`/`minimal` |
-| created_at | TIMESTAMPTZ | Auto-generated. |
-| updated_at | TIMESTAMPTZ | Auto-generated. |
-
-### `page_views` (raw analytics log — primary data source)
-| Column | Type | Notes |
-|--------|------|-------|
-| id | UUID PK | gen_random_uuid() |
-| slug | TEXT | Merchant slug (null for non-merchant pages) |
-| path | TEXT NOT NULL | e.g. `/store/abc`, `/stories/xyz` |
-| page_type | TEXT | merchant / story / home / join_us / our_partner / story_list / other |
-| event_type | TEXT NOT NULL DEFAULT 'page_view' | page_view / whatsapp_click / booking_submit / share / search / map_marker_click / story_to_merchant |
-| event_detail | TEXT | Search keyword, share platform, etc. |
-| ip | TEXT | Visitor IP |
-| country | Text | From Vercel `x-vercel-ip-country` |
-| city | Text | From Vercel `x-vercel-ip-city` (URL decoded) |
-| device_type | TEXT | mobile / desktop / tablet |
-| os | TEXT | iOS / Android / Windows / macOS / Linux / Other |
-| browser | TEXT | Chrome / Safari / Samsung Internet / Firefox / Edge / Other |
-| user_agent | Text | Raw User-Agent string |
-| referrer | Text | document.referrer |
-| referrer_type | Text | google / instagram / facebook / whatsapp / direct / internal / other |
-| metadata | JSONB DEFAULT '{}' | Reserved for future expansion |
-| created_at | TIMESTAMPTZ DEFAULT now() | |
-
-**Indexes**: `created_at`, `slug`, `event_type`, `path`, `device_type`, `country+city`, `page_type`, `referrer_type`
-
-### `merchant_daily_views` (daily aggregated analytics — cron rollup)
-| Column | Type | Notes |
-|--------|------|-------|
-| id | UUID PK | |
-| slug | TEXT | null = non-merchant pages |
-| page_type | Text NOT NULL | |
-| view_date | DATE NOT NULL | |
-| device_type | Text | |
-| country | Text | |
-| city | Text | |
-| os | Text | |
-| browser | Text | |
-| referrer_type | Text | |
-| event_type | Text DEFAULT 'page_view' | |
-| count | INT DEFAULT 0 | |
-| unique_ips | INT DEFAULT 0 | |
-| created_at | TIMESTAMPTZ DEFAULT now() | |
-| updated_at | TIMESTAMPTZ DEFAULT now() | |
-| **UNIQUE** | | (slug, page_type, view_date, device_type, country, city, os, browser, referrer_type, event_type) |
-
-**Indexes**: `view_date`, `slug`, `page_type`, `event_type`
-
 ### `login_attempts` (brute-force protection)
 | Column | Type | Notes |
 |--------|------|-------|
 | id | UUID PK | |
-| ip | Text NOT NULL | |
+| ip | TEXT NOT NULL | |
 | attempt_count | INT DEFAULT 1 | |
 | last_attempt_at | TIMESTAMPTZ DEFAULT now() | |
 | locked_until | TIMESTAMPTZ | null = not locked |
@@ -389,195 +404,6 @@ types/
 | **UNIQUE** | | (ip) |
 
 **Indexes**: `ip`, `locked_until`
-
----
-
-## 🗺️ How to Add Merchant Coordinates for the Map
-
-The **Our Partner** page (`/our-partner`) displays all merchants on an interactive map. To appear on the map, a merchant **must have** `latitude` and `longitude` values.
-
-### Step 1: Add columns to Supabase (run once)
-
-Go to **Supabase Dashboard → SQL Editor** and run:
-
-```sql
-ALTER TABLE merchants
-ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION,
-ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION;
-
-CREATE INDEX IF NOT EXISTS idx_merchants_lat_lng ON merchants(latitude, longitude);
-```
-
-### Step 2: Find coordinates for each merchant
-
-1. Open [Google Maps](https://maps.google.com)
-2. Search the restaurant address
-3. **Right-click** on the exact location on the map
-4. Select **"Copy coordinates"** (e.g. `3.1489, 101.7103`)
-5. Go to **Supabase → Table Editor → merchants**
-6. Paste the first number into `latitude`, the second into `longitude`
-
-> **Merchants without coordinates will NOT appear on the map.** This is intentional — we don't want markers floating in wrong locations.
-
----
-
-## 📝 How to Publish an Article (Two Methods)
-
-### Method 1: Via Supabase Table Editor (Current)
-1. Go to https://supabase.com/dashboard → Table Editor → `articles`
-2. Click "Insert row"
-3. Fill in required fields: **slug**, **title**, **content** (Markdown), **category**, **published** = true
-4. Optional: excerpt, cover_image, tags, merchant_slug, author
-5. Click Save → article appears immediately
-
-### Method 2: Via Admin Dashboard (Coming Soon — Stories Editor)
-1. Go to `/admin` → "Stories Editor" tab
-2. Click "+ New Story"
-3. Fill in the form with live preview
-4. Click "Publish"
-
----
-
-## 🖊️ Markdown Syntax for Articles
-
-The `content` field supports full **GitHub Flavored Markdown**:
-
-```markdown
-# Main Heading (H1)
-
-## Subheading (H2)
-
-**Bold text** for emphasis.
-
-Regular paragraph text.
-
-- Bullet point 1
-- Bullet point 2
-
-1. Numbered item 1
-2. Numbered item 2
-
-[Link to merchant page](/store/the-hearth-bakery)
-
-[External link](https://example.com)
-> Blockquote: This is a highlighted quote.
-
-| Item | Price |
-|------|-------|
-| Country Sourdough | RM 18 |
-
----
-
-Emoji work too! 🍞☕🎉
-```
-
-**Important notes:**
-- **Images**: Use direct image URLs.
-- **Links to merchants**: Use `/store/{merchant-slug}` format.
-- **External links**: Use full `https://` URLs. These open in a new tab.
-- **Hashtags**: Article `tags` are automatically displayed as `#hashtag` at the bottom of each story.
-
----
-
-## 🔐 Admin Dashboard (/admin)
-
-### Authentication
-- **Password**: Stored in Vercel Environment Variable `ADMIN_PASSWORD`
-- **Brute-force protection**: 3 failed attempts → lock IP for 15 minutes
-- **Session**: HMAC-SHA256 signed token, expires after 30 minutes
-- **Token storage**: localStorage (`admin_session`)
-
-### Security Features
-| Feature | Implementation |
-|---------|---------------|
-| Password storage | Vercel Environment Variable (Secret type) |
-| Brute-force lockout | `login_attempts` table — 3 strikes = 15 min lock |
-| Session token | HMAC-SHA256 signed, tamper-proof |
-| Token expiry | 30 minutes |
-| API auth | Every admin API checks `x-admin-token` header |
-
-### Dashboard Tabs
-| Tab | Content | Status |
-|-----|---------|--------|
-| Overview | KPI cards + traffic trend + device chart + merchant ranking | ✅ |
-| Trends | Daily traffic line chart | ✅ |
-| Merchants | Merchant performance ranking table | ✅ |
-| Devices | Device/OS/browser breakdown | ✅ |
-| Locations | Country + city distribution | ✅ |
-| Referrers | Traffic source pie chart | ✅ |
-| Search Keywords | User search terms ranking | ✅ |
-| Events | WhatsApp/Booking/Share/Search/Map/Story events | ✅ |
-| Stories Analytics | Story views + conversion rate | ✅ |
-| Map Stats | Map page views + marker clicks | ✅ |
-| Hourly | 24-hour peak hours | ✅ |
-| Settings | Site title, description, footer text | ✅ |
-| Export CSV | Download analytics data | ✅ |
-| **Stories Editor** | **Create/edit articles** | ⏳ **Coming in P1** |
-| **Merchant Manager** | **Create/edit merchants** | ⏳ **Coming in P2** |
-| **Menu Manager** | **Manage categories & dishes** | ⏳ **Coming in P2** |
-
-### Data Aggregation
-- **Raw table**: `page_views` — receives all tracking events via `POST /api/track` (primary, real-time)
-- **Aggregated table**: `merchant_daily_views` — hourly rollup via Supabase Cron (`aggregate_daily_views()`)
-- **Cron job**: `aggregate-views-hourly` runs every hour at :00
-- **Dashboard APIs**: Overview, Devices, Referrers, Events, Stories, Map now query raw `page_views` table for real-time data. Trends, Merchants, Locations, Hourly still use aggregated table for performance.
-
-### Analytics Coverage
-| Metric | Source | Status |
-|--------|--------|--------|
-| Page views | All pages (home, merchant, stories, join-us, our-partner) | ✅ |
-| Events | WhatsApp clicks, Booking submits, Shares, Searches, Map marker clicks, Story-to-merchant conversions | ✅ |
-| Device | Mobile / Desktop / Tablet + OS + Browser | ✅ |
-| Location | Country + City (via Vercel Geo headers, URL decoded) | ✅ |
-| Referrer | Google / Instagram / Facebook / WhatsApp / Direct / Internal / Other / Bing / Yahoo / LinkedIn / YouTube | ✅ |
-| Real-time | Active users in last 5 minutes | ✅ |
-| Export | CSV download per date range | ✅ |
-
-### Event Tracking (lib/analytics.ts)
-```typescript
-EventTypes = {
-  PAGE_VIEW: 'page_view',
-  WHATSAPP_CLICK: 'whatsapp_click',
-  BOOKING_SUBMIT: 'booking_submit',
-  SHARE: 'share',
-  SEARCH: 'search',
-  MAP_MARKER_CLICK: 'map_marker_click',
-  STORY_TO_MERCHANT: 'story_to_merchant',
-}
-```
-
-**Tracking reliability**: `trackEvent()` uses `navigator.sendBeacon` as primary transport (browser-guaranteed delivery even on page navigation), with `fetch(keepalive)` as fallback. The `/api/track` endpoint accepts both JSON and Blob bodies.
-
----
-
-## ⚙️ Site Settings (Admin Dashboard)
-
-Go to `/admin` → **Settings** tab to modify:
-
-| Setting | What It Controls | Example |
-|---------|-----------------|---------|
-| **Site Title** | Browser tab title, SEO meta, Schema.org, social sharing | `BiteSite` |
-| **Site Description** | Meta description, Open Graph, Twitter Cards | `Discover the best restaurants in KL` |
-| **Footer Text** | Bottom link text on every merchant page | `Discover more restaurants on BiteSite` |
-
-Changes are saved instantly to the database and take effect within 5 minutes (ISR cache).
-
----
-
-## 🏪 Merchant Status
-
-Merchants have a `status` field with two values:
-
-| Status | Meaning | Website Behavior |
-|--------|---------|------------------|
-| `active` | Normal operation | Full merchant page displayed |
-| `inactive` | Temporarily closed / ended partnership | Friendly "Unavailable" page with related merchant recommendations |
-
-Inactive merchants:
-- Return HTTP 200 (not 404) for SEO
-- Include `<meta name="robots" content="noindex">`
-- Still track page views for analytics
-- Show 3 related active merchants as alternatives
 
 ---
 
@@ -593,105 +419,6 @@ increment_article_view(article_slug TEXT) RETURNS void
 -- Aggregate daily views (run by cron hourly)
 aggregate_daily_views() RETURNS void
 ```
-
----
-
-## Pages Summary
-
-| Page | Path | Purpose |
-|------|------|---------|
-| Home | `/` | Browse all restaurants, search (including dishes), filter |
-| Merchant | `/store/{slug}` | Individual restaurant menu, map, hours, SEO Schema |
-| Our Partner | `/our-partner` | Interactive map showing all merchant locations |
-| Stories | `/stories` | Blog list — all articles |
-| Story | `/stories/{slug}` | Individual article (Markdown + Article Schema + hashtags) |
-| Join Us | `/join-us` | Pricing & signup for restaurant owners (FAQ Schema) |
-| **Admin** | **`/admin`** | **Analytics Dashboard + Settings — password protected** |
-
----
-
-## Our Partner Map Page (`/our-partner`)
-
-### Features
-- **Interactive Leaflet map** with OpenStreetMap (completely free)
-- **Photo markers**: Each merchant shown as a circular photo with colored border
-- **Color-coded by cuisine type**:
-  - Cafe = Coffee `#8B4513`
-  - Western = Yellow `#F59E0B`
-  - Bakery = Orange `#F97316`
-  - Japanese / Asian = Red `#EF4444`
-  - Dessert = Pink `#EC4899`
-  - Other = Gray `#6B7280`
-- **User location**: Pulsing green dot with animation
-- **Recenter button**: Top-right corner, click to fly back to your location
-- **Type filters**: Top bar pills to show/hide cuisine types
-- **Search box**: Search by restaurant name, area, or cuisine
-- **Empty state**: "No restaurants found" message when filters return nothing
-- **Merchant card popup**: Photo, name, Open/Closed badge, cuisine type
-- **Two action buttons**:
-  - **Go to Merchant Page** → Opens the restaurant's detail page
-  - **Get Directions** → Opens Google Maps navigation directly
-
-### How it works
-1. Page fetches all published merchants that have `latitude` and `longitude`
-2. Map centers on KL by default, or flies to user's GPS location if permission granted
-3. Click any marker → bottom card slides up with merchant info
-4. Click outside marker or the X button → card closes
-
----
-
-## 5 Merchant Layouts
-
-Each merchant picks ONE layout via `merchants.layout` column.
-
-| Layout | Vibe | Primary Colors |
-|--------|------|----------------|
-| **classic** | Warm cafe / bakery | Amber-50 bg, amber-900 text, green accents |
-| **elegant** | Dark luxury fine-dining | Slate-950 bg, amber-300/gold accents, white text |
-| **minimal** | Clean zen / Japanese | Stone-50 bg, stone-800 text, minimal borders |
-| **modern** | Contemporary urban | White bg, slate-900 text, slate-100 accents |
-| **rustic** | Earthy / farm-to-table | Orange-50 bg, orange-900 text, warm tones |
-
-All layouts include:
-- Google Maps embed in Contact section
-- Payment method badges
-- Share buttons (Share + Copy Link)
-- Dynamic footer link (from Settings)
-
----
-
-## 9 Tier Features (Optional Per Merchant)
-
-Controlled via `merchants.features` JSONB.
-
-```typescript
-interface MerchantFeatures {
-  hero: boolean;           // default true
-  about: boolean;          // default true
-  menu: boolean;           // default true
-  contact: boolean;        // default true
-  gallery: boolean;        // default false
-  reviews: boolean;        // default false
-  appointment: boolean;    // default false
-  seasonal_popup: boolean; // default false
-  events: boolean;         // default false
-}
-```
-
----
-
-## View Count & Analytics System
-
-### Legacy System (Retained)
-- **Merchant tracking**: `<ViewTracker>` fires `POST /api/view` after 2s delay → `merchant_stats`
-- **Article tracking**: `<StoryViewTracker>` fires `POST /api/story-view` after 2s delay → `articles.view_count`
-
-### NEW Universal Tracking System
-- **Client function**: `trackEvent()` in `lib/analytics.ts` — uses `navigator.sendBeacon` (guaranteed delivery)
-- **API endpoint**: `POST /api/track` → inserts into `page_views` (accepts JSON and Blob bodies)
-- **Aggregation**: `merchant_daily_views` table holds daily summaries
-- **Cron job**: `aggregate_daily_views()` runs hourly via `pg_cron`
-- **Dashboard**: `/admin` displays all metrics in real-time
 
 ### Aggregation Setup (One-time)
 Run in Supabase SQL Editor:
@@ -718,22 +445,310 @@ CREATE EXTENSION IF NOT EXISTS pg_cron;
 SELECT cron.schedule('aggregate-views-hourly', '0 * * * *', 'SELECT aggregate_daily_views()');
 ```
 
-### Tracked Events
-| Event | Trigger Location | Status |
-|-------|-----------------|--------|
-| `page_view` | All pages (via `<PageViewTracker>`) | ✅ Verified |
-| `search` | Homepage search box (debounced 1s) | ✅ Verified |
-| `whatsapp_click` | Merchant page WhatsApp buttons (all 5 layouts) | ✅ Verified |
-| `booking_submit` | Appointment form submission | ✅ Verified |
-| `share` | Share buttons (WhatsApp/Facebook/Copy) | ✅ Verified |
-| `map_marker_click` | Map page marker clicks | ✅ Verified |
-| `story_to_merchant` | Stories article `/store/` links | ✅ Verified |
+---
 
-### Display Locations
-- Merchant page Hero: inline eye badge
-- Homepage cards: bottom-right eye badge
-- Stories list: eye icon + count per article
-- Story detail: eye icon + count in hero meta
+## Admin Dashboard
+
+**URL**: `/admin`  
+**Login**: Password-protected (HMAC-SHA256 token, stored in localStorage)  
+**Theme**: Dark mode (slate-950 background, amber-500 accents)
+
+### Authentication
+- **Password**: Stored in Vercel Environment Variable `ADMIN_PASSWORD`
+- **Brute-force protection**: 3 failed attempts → lock IP for 15 minutes
+- **Session**: HMAC-SHA256 signed token, expires after 30 minutes
+- **Token storage**: localStorage (`admin_session`)
+
+### Security Features
+| Feature | Implementation |
+|---------|---------------|
+| Password storage | Vercel Environment Variable (Secret type) |
+| Brute-force lockout | `login_attempts` table — 3 strikes = 15 min lock |
+| Session token | HMAC-SHA256 signed, tamper-proof |
+| Token expiry | 30 minutes |
+| API auth | Every admin API checks `x-admin-token` header |
+
+### Dashboard Tabs
+
+| Tab | What It Shows | Data Source | Status |
+|-----|--------------|-------------|--------|
+| **Overview** | Total Views, Unique Visitors, Total Events, Active Merchants + trend chart + device chart + merchant ranking | `page_views` raw table | ✅ |
+| **Trends** | Daily traffic line chart (last 7/30/90/365 days) | `page_views` raw table | ✅ |
+| **Merchants** | Merchant ranking table (total views, today views, avg time) | `merchant_daily_views` aggregate table | ✅ |
+| **Devices** | Desktop / Mobile / Tablet donut chart + OS/browser breakdown | `page_views` raw table | ✅ |
+| **Locations** | Top cities and countries bar chart | `page_views` raw table | ✅ |
+| **Referrers** | Direct / Google / Bing / Social / Other pie chart | `page_views` raw table | ✅ |
+| **Search Keywords** | What users searched on the homepage | `page_views` raw table (event_type='search') | ✅ |
+| **Events** | WhatsApp clicks, bookings, shares, map clicks | `page_views` raw table | ✅ |
+| **Stories Analytics** | Article views + conversion rate (story → merchant clicks) | `page_views` raw table | ✅ |
+| **Stories Editor** | Create/edit/delete articles with Markdown editor + live preview + 6 background themes | `articles` table (CRUD API) | ✅ |
+| **Map Stats** | Map page views + marker click counts | `page_views` raw table | ✅ |
+| **Hourly** | 24-hour peak hours bar chart | `page_views` raw table | ✅ |
+| **Export CSV** | Download all analytics data as CSV | `page_views` raw table | ✅ |
+| **Settings** | Edit `site_title`, `site_description`, `footer_text` | `settings` table | ✅ |
+| **Merchant Manager** | List all merchants with status/actions | `merchants` table | ⏳ P2 |
+| **Menu Manager** | Manage categories and products per merchant | `categories` + `products` | ⏳ P2 |
+
+### Admin API Endpoints
+
+All admin APIs require `x-admin-token` header (HMAC-SHA256).
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/admin/login` | POST | Password auth, returns admin token |
+| `/api/admin/overview` | GET | Dashboard KPI cards |
+| `/api/admin/trends` | GET | Daily traffic trend |
+| `/api/admin/merchants` | GET | Merchant ranking |
+| `/api/admin/devices` | GET | Device breakdown |
+| `/api/admin/locations` | GET | Geo distribution |
+| `/api/admin/referrers` | GET | Traffic sources |
+| `/api/admin/search-keywords` | GET | Search terms |
+| `/api/admin/events` | GET | Event stats |
+| `/api/admin/stories` | GET/POST/PUT/DELETE | Stories CRUD — list, create, update, delete articles |
+| `/api/admin/stories-analytics` | GET | Article views + conversion rate |
+| `/api/admin/map` | GET | Map page stats |
+| `/api/admin/hourly` | GET | 24h peak hours |
+| `/api/admin/realtime` | GET | Current online users |
+| `/api/admin/export` | GET | CSV download |
+| `/api/admin/settings` | GET/PUT | Site config (auth protected) |
+
+---
+
+## How to Publish an Article
+
+### Method 1: Admin Editor (Recommended)
+
+1. Go to `/admin` and log in
+2. Click **"Stories Editor"** in the left sidebar
+3. Click **"+ New Story"**
+4. Fill in the form:
+   - **Title** — Article headline (supports Chinese)
+   - **Slug** — Auto-generated from title, editable (URL-friendly name)
+   - **Excerpt** — Short summary for list page and SEO
+   - **Cover Image URL** — Full image URL (e.g. Unsplash)
+   - **Category** — e.g. "Food", "Cafe", "New Opening"
+   - **Author** — Default "BiteSite Team"
+   - **Tags** — Comma-separated, e.g. "cafe, coffee, brunch"
+   - **Linked Merchant** — Optional: link to a merchant page
+   - **Background Style** — Choose from 6 themes: Default / Warm / Cool / Dark / Nature / Minimal
+   - **Published** — Toggle on to make visible on site
+   - **Content** — Write in Markdown with toolbar (Bold, Italic, H1, H2, Link, Image, Emoji)
+5. **Live Preview** updates in real-time on the right side
+6. Click **"Publish"** to save and go live
+
+### Method 2: Direct Database (Fallback)
+
+If the editor has issues, insert directly in Supabase SQL Editor:
+
+```sql
+INSERT INTO articles (slug, title, excerpt, content, cover_image, category, tags, merchant_slug, author, published, background_style)
+VALUES (
+  'your-article-slug',
+  'Your Article Title',
+  'Short summary...',
+  '# Heading
+
+Your **markdown** content here.',
+  'https://images.unsplash.com/...',
+  'Food',
+  ARRAY['cafe', 'brunch'],
+  NULL, -- or a merchant slug
+  'BiteSite Team',
+  true,
+  'default' -- or warm/cool/dark/nature/minimal
+);
+```
+
+### Method 3: Edit Existing Article
+
+1. Go to `/admin` → **Stories Editor**
+2. Find the article in the list
+3. Click the **Edit** (pencil) icon
+4. Make changes in the editor
+5. Click **"Update"** to save
+
+---
+
+## 6 Story Background Themes
+
+Each article can have its own visual theme. Set via Admin Editor or Supabase `background_style` column.
+
+| Theme | Background | Text Color | Accent | Best For |
+|-------|-----------|------------|--------|----------|
+| **default** | `#FAFBF7` 米白 | `#2C3E2D` 深绿 | `#5A8F6E` 绿 | General purpose |
+| **warm** | `#FDF8F3` 暖杏 | `#4A3728` 深棕 | `#B87333` 铜 | Bakery, cozy cafes |
+| **cool** | `#F5F7FA` 冷灰蓝 | `#2D3748` 深蓝灰 | `#4A90A4` 蓝 | Modern, tech-forward |
+| **dark** | `#1A1A1A` 深灰 | `#E8E8E8` 浅灰 | `#D4A853` 金 | Fine dining, bars |
+| **nature** | `#F4F7F0` 浅绿 | `#2C3E2D` 深绿 | `#5A8F6E` 绿 | Healthy, vegetarian |
+| **minimal** | `#FFFFFF` 纯白 | `#1A1A1A` 纯黑 | `#1A1A1A` 黑 | Clean, editorial |
+
+> **Note**: After changing `background_style` in Supabase, **Redeploy Vercel** (without build cache) to see changes immediately.
+
+---
+
+## Merchant Layout System
+
+Each merchant can choose from 5 visual layouts. Set via `layout` column in `merchants` table.
+
+| Layout | Style | Primary Colors | Best For |
+|--------|-------|----------------|----------|
+| **classic** | Warm cafe / bakery | Amber-50 bg, amber-900 text, green accents | Traditional cafes, heritage restaurants |
+| **elegant** | Dark luxury fine-dining | Slate-950 bg, amber-300/gold accents, white text | Fine dining, upscale bars |
+| **minimal** | Clean zen / Japanese | Stone-50 bg, stone-800 text, minimal borders | Modern cafes, minimalist concepts |
+| **modern** | Contemporary urban | White bg, slate-900 text, slate-100 accents | New openings, trendy spots |
+| **rustic** | Earthy / farm-to-table | Orange-50 bg, orange-900 text, warm tones | Casual dining, neighborhood joints |
+
+All layouts include:
+- Google Maps embed in Contact section
+- Payment method badges
+- Share buttons (Share + Copy Link)
+- Dynamic footer link (from Settings)
+
+### Feature Tiers (per-merchant config)
+
+Controlled via `merchants.features` JSONB column. Each layout shows/hides sections based on these toggles:
+
+| Feature | Default | Description |
+|---------|---------|-------------|
+| `hero` | ✅ | Full-bleed cover image |
+| `about` | ✅ | Brand story text |
+| `menu` | ✅ | Menu section with categories |
+| `contact` | ✅ | Contact info + WhatsApp CTA |
+| `related` | ✅ | "You May Also Like" merchants |
+| `events` | ❌ | Events/promotions carousel |
+| `video` | ❌ | Video player section |
+| `gallery` | ❌ | Photo gallery |
+| `testimonials` | ❌ | Customer reviews |
+
+---
+
+## 🏪 Merchant Status
+
+Merchants have a `status` field with two values:
+
+| Status | Meaning | Website Behavior |
+|--------|---------|------------------|
+| `active` | Normal operation | Full merchant page displayed |
+| `inactive` | Temporarily closed / ended partnership | Friendly "Unavailable" page with related merchant recommendations |
+
+Inactive merchants:
+- Return HTTP 200 (not 404) for SEO
+- Include `<meta name="robots" content="noindex">`
+- Still track page views for analytics
+- Show 3 related active merchants as alternatives
+
+---
+
+## Analytics & Tracking
+
+### Tracked Events
+
+All events are sent to `/api/track` via `navigator.sendBeacon` (fires even if user navigates away).
+
+| Event | When It Fires | Detail Field |
+|-------|--------------|--------------|
+| `page_view` | Any page load | — |
+| `whatsapp_click` | User clicks WhatsApp button | — |
+| `share` | User shares page | `"copy_link"` / `"facebook"` / `"twitter"` |
+| `booking_submit` | Booking form submitted | Merchant name |
+| `map_marker_click` | Map marker clicked | Merchant slug |
+| `story_to_merchant` | Story → merchant link clicked | Article slug |
+| `search` | Homepage search submitted | Search query |
+
+### View Count System
+
+- **Real-time**: `page_views` table records every visit with full metadata (device, location, referrer)
+- **Aggregated**: `merchant_daily_views` table updated hourly via cron job
+- **Dashboard**: Overview/Devices/Referrers/Events/Stories/Map/Hourly read from `page_views` (real-time)
+- **Dashboard**: Trends/Merchants/Locations read from `merchant_daily_views` (cached, efficient)
+
+### Legacy System (Retained)
+- **Merchant tracking**: `<ViewTracker>` fires `POST /api/view` after 2s delay → `merchant_stats`
+- **Article tracking**: `<StoryViewTracker>` fires `POST /api/story-view` after 2s delay → `articles.view_count`
+
+### How to Test Tracking
+
+1. Trigger an event (e.g. click WhatsApp on a merchant page)
+2. Immediately go to Supabase → SQL Editor
+3. Run: `SELECT * FROM page_views ORDER BY created_at DESC LIMIT 5;`
+4. You should see the new record within seconds
+
+### Tracking Best Practices
+- **For page navigation after tracking**: Use regular `<a>` tags, NOT Next.js `<Link>`. Client-side navigation interrupts `sendBeacon`/`fetch` requests.
+- **For WhatsApp/booking opens**: `trackEvent()` is fire-and-forget with `sendBeacon` — no need to `await` before `window.open()`.
+
+---
+
+## 🗺️ Our Partner Map Page (`/our-partner`)
+
+### Features
+- **Interactive Leaflet map** with OpenStreetMap (completely free)
+- **Photo markers**: Each merchant shown as a circular photo with colored border
+- **Color-coded by cuisine type**:
+  - Cafe = Coffee `#8B4513`
+  - Western = Yellow `#F59E0B`
+  - Bakery = Orange `#F97316`
+  - Japanese / Asian = Red `#EF4444`
+  - Dessert = Pink `#EC4899`
+  - Other = Gray `#6B7280`
+- **User location**: Pulsing green dot with animation
+- **Recenter button**: Top-right corner, click to fly back to your location
+- **Type filters**: Top bar pills to show/hide cuisine types
+- **Search box**: Search by restaurant name, area, or cuisine
+- **Empty state**: "No restaurants found" message when filters return nothing
+- **Merchant card popup**: Photo, name, Open/Closed badge, cuisine type
+- **Two action buttons**:
+  - **Go to Merchant Page** → Opens the restaurant's detail page
+  - **Get Directions** → Opens Google Maps navigation directly
+
+### How to Add Merchant Coordinates
+
+The map requires `latitude` and `longitude`. Merchants without coordinates will NOT appear on the map.
+
+**Step 1**: Add columns to Supabase (run once):
+```sql
+ALTER TABLE merchants
+ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION,
+ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION;
+CREATE INDEX IF NOT EXISTS idx_merchants_lat_lng ON merchants(latitude, longitude);
+```
+
+**Step 2**: Find coordinates for each merchant:
+1. Open [Google Maps](https://maps.google.com)
+2. Search the restaurant address
+3. **Right-click** on the exact location on the map
+4. Select **"Copy coordinates"** (e.g. `3.1489, 101.7103`)
+5. Go to **Supabase → Table Editor → merchants**
+6. Paste the first number into `latitude`, the second into `longitude`
+
+---
+
+## SEO & Schema.org
+
+### On-Page SEO
+- **Meta tags**: Auto-generated per merchant and per article
+- **Canonical URLs**: Every page has a canonical link
+- **Open Graph**: Title, description, and image for social sharing
+- **Twitter Cards**: Summary large image cards
+- **Keywords**: Article pages include tags as meta keywords
+
+### Structured Data (Schema.org)
+
+| Page | Schema Type |
+|------|-------------|
+| Homepage | `WebSite` + `Organization` |
+| Merchant | `Restaurant` + `Menu` + `BreadcrumbList` |
+| Story | `Article` + `WebPage` |
+| Stories List | `ItemList` |
+| Join Us | `FAQPage` |
+| Our Partner | `WebPage` |
+
+### Technical SEO
+- **Sitemap**: Auto-generated from all published merchants (`sitemap.ts`)
+- **Robots**: Allow all, sitemap linked (`robots.ts`)
+- **Google Search Console**: Verified
+- **ISR**: 5-minute revalidation for fresh content without full rebuild
+- **Image optimization**: Automatic compression via URL parameters
 
 ---
 
@@ -746,32 +761,6 @@ All images served through `SafeImage` are automatically optimized via `lib/image
 - **Fallback**: Local images and data URIs pass through unchanged
 
 This significantly reduces page load time and mobile data usage without requiring a paid image CDN.
-
----
-
-## SEO & Performance
-
-### On-Page SEO
-- **Meta tags**: Auto-generated per merchant and per article
-- **Canonical URLs**: Every page has a canonical link
-- **Open Graph**: Title, description, and image for social sharing
-- **Twitter Cards**: Summary large image cards
-- **Keywords**: Article pages include tags as meta keywords
-
-### Structured Data (Schema.org)
-- **Organization + WebSite Schema**: Injected on every page via root layout
-- **Restaurant Schema**: On every merchant page (`@type: Restaurant`)
-- **Menu Schema**: Linked to the menu section (`hasMenu`)
-- **BreadcrumbList**: On every merchant page
-- **Article Schema**: On every story detail page (datePublished, author, publisher)
-- **FAQPage Schema**: On Join Us page (6 questions with accepted answers)
-
-### Technical SEO
-- **Sitemap**: Auto-generated from all published merchants (`sitemap.ts`)
-- **Robots**: Allow all, sitemap linked (`robots.ts`)
-- **Google Search Console**: Verified
-- **ISR**: 5-minute revalidation for fresh content without full rebuild
-- **Image optimization**: Automatic compression via URL parameters
 
 ---
 
@@ -790,6 +779,62 @@ ADMIN_PASSWORD=your-secure-password
 
 ---
 
+## ⚙️ Site Settings (Admin Dashboard)
+
+Go to `/admin` → **Settings** tab to modify:
+
+| Setting | What It Controls | Example |
+|---------|-----------------|---------|
+| **Site Title** | Browser tab title, SEO meta, Schema.org, social sharing | `BiteSite` |
+| **Site Description** | Meta description, Open Graph, Twitter Cards | `Discover the best restaurants in KL` |
+| **Footer Text** | Bottom link text on every merchant page | `Discover more restaurants on BiteSite` |
+
+Changes are saved instantly to the database and take effect within 5 minutes (ISR cache).
+
+---
+
+## 📝 Markdown Syntax for Articles
+
+The `content` field supports full **GitHub Flavored Markdown**:
+
+```markdown
+# Main Heading (H1)
+
+## Subheading (H2)
+
+**Bold text** for emphasis.
+
+Regular paragraph text.
+
+- Bullet point 1
+- Bullet point 2
+
+1. Numbered item 1
+2. Numbered item 2
+
+[Link to merchant page](/store/the-hearth-bakery)
+
+[External link](https://example.com)
+
+> Blockquote: This is a highlighted quote.
+
+| Item | Price |
+|------|-------|
+| Country Sourdough | RM 18 |
+
+---
+
+Emoji work too! 🍞☕🎉
+```
+
+**Important notes:**
+- **Images**: Use direct image URLs.
+- **Links to merchants**: Use `/store/{merchant-slug}` format.
+- **External links**: Use full `https://` URLs. These open in a new tab.
+- **Hashtags**: Article `tags` are automatically displayed as `#hashtag` at the bottom of each story.
+
+---
+
 ## Key Business Rules
 
 1. **No cart, no checkout, no auth** — pure showcase platform
@@ -801,7 +846,7 @@ ADMIN_PASSWORD=your-secure-password
 7. **Payment methods** stored as array: `["Cash", "Cashless", "Cards"]` — displayed with icons
 8. **Operating hours** stored as JSONB — supports single and split hours (comma-separated)
 9. **Tags** are free-text array — used for filtering (Halal, Pet Friendly, WiFi, etc.)
-10. **Articles are published via Supabase Table Editor** — zero code required (Stories Editor coming in P1)
+10. **Articles are published via Admin Editor or Supabase** — zero code required
 11. **Article images use external URLs** — Google Drive, Unsplash, or any direct image link
 12. **Dish search** — homepage search queries all available product names per merchant
 13. **Embedded maps** — auto-rendered in Contact section if address exists
@@ -825,8 +870,40 @@ ADMIN_PASSWORD=your-secure-password
 - ✅ Stories display hashtags and meta keywords from article tags
 - ✅ Admin nav renamed "Stories" → "Stories Analytics"
 - ✅ Settings panel only shows relevant fields (removed contact/phone/whatsapp)
+- ✅ Stories Editor with Markdown toolbar + live preview + 6 background themes
+- ✅ Stories CRUD API (GET/POST/PUT/DELETE)
+- ✅ Sidebar is collapsible on desktop
 
-### How to Debug
+---
+
+## Common Issues & Solutions
+
+### "Build failed" email from Vercel
+- Check the error in Vercel dashboard → Deployments → click the failed deployment
+- Common causes: missing import, TypeScript type error, syntax error
+- Fix the file and commit again
+
+### Changes not showing after database edit
+- Pages are cached for 5 minutes (ISR)
+- **Solution**: Go to Vercel dashboard → Deployments → click latest → ⋮ → Redeploy → **uncheck "Use existing Build Cache"**
+- Wait 30 seconds, then refresh
+
+### Admin token expired
+- Token expires after 30 minutes
+- **Solution**: Log out and log back in at `/admin`
+
+### Sidebar won't close on mobile
+- Click the **X** button at the top of the sidebar
+- Or click outside the sidebar area
+
+### Story preview doesn't match real page
+- Make sure you've **Redeployed Vercel** after saving
+- Check that `background_style` is set correctly in Supabase
+
+---
+
+## How to Debug
+
 ```sql
 -- Check if events are being recorded
 SELECT event_type, COUNT(*) FROM page_views GROUP BY event_type;
@@ -850,76 +927,71 @@ SELECT * FROM settings;
 SELECT slug, name, status, is_published FROM merchants;
 ```
 
----
-
-## 🗂️ Project History
-
-### Phase 1: Core Platform (Completed)
-- Merchant pages with 5 layouts
-- Menu system with categories & products
-- Stories/blog system
-- Our Partner map page
-- Join Us pricing page
-
-### Phase 2: Admin Dashboard (Completed 2026-08-27)
-- Dark theme analytics dashboard
-- Password-protected login
-- Real-time online users
-- Traffic trends, merchant ranking, device/location/referrer breakdown
-- CSV export
-- **Data aggregation via Supabase Cron**
-
-### Phase 3: Analytics & Bug Fixes (Completed 2026-08-28)
-- ✅ All page view tracking implemented and verified
-- ✅ All 7 event tracking types implemented and verified
-- ✅ Supabase aggregation cron job deployed and running
-- ✅ Unique Visitors calculation fixed (raw table DISTINCT ip)
-- ✅ Device Distribution fixed (raw table query + enhanced UA parser)
-- ✅ Traffic Sources fixed (raw table query + enhanced referrer classification)
-- ✅ Chart tooltips text color fixed (all Recharts components)
-- ✅ `trackEvent()` upgraded to `navigator.sendBeacon`
-- ✅ Dashboard APIs real-time化
-
-### Phase 4: Settings Integration (Completed 2026-08-30)
-- ✅ Site title, description, footer text editable via Admin
-- ✅ Metadata dynamically generated from settings table
-- ✅ Inactive merchant friendly page
-- ✅ Booking uses merchant's own WhatsApp
-- ✅ Stories hashtags and meta keywords
-
-### Phase 5: CMS Development (In Progress)
-- ⏳ **P1: Stories Editor** — Article CRUD with Markdown editor + live preview + background styles
-- ⏳ **P2: Merchant Manager** — Merchant CRUD with 5-tab form
-- ⏳ **P2: Menu Manager** — Category & product management
-
----
-
-## 🛠️ Developer Notes
-
-### File Path Trap (Important!)
-The project has **two parallel component directories**:
-- `components/sections/` — legacy / used by stories page
-- `app/components/sections/` — **actively used** (imported by `tier-sections.tsx` via relative path `./appointment-section`)
-
-**Rule**: Before modifying any component, check which directory it's actually imported from.
-
-### Analytics Tracking Best Practices
-- **For page navigation after tracking**: Use regular `<a>` tags, NOT Next.js `<Link>`. Client-side navigation interrupts `sendBeacon`/`fetch` requests.
-- **For WhatsApp/booking opens**: `trackEvent()` is fire-and-forget with `sendBeacon` — no need to `await` before `window.open()`.
-- **Testing**: Always verify via Supabase SQL Editor — don't wait for Dashboard aggregation.
-
 ### Supabase Timezone
 All `created_at` timestamps are UTC. For Malaysia Time queries, append `+08:00`:
 ```sql
 SELECT * FROM page_views 
-WHERE created_at >= '2026-08-28T00:00:00+08:00';
+WHERE created_at >= '2026-08-30T00:00:00+08:00';
 ```
-
-### ISR Cache
-Pages use `export const revalidate = 300` (5 minutes). Database changes may take up to 5 minutes to reflect, or trigger a manual Vercel redeploy.
 
 ---
 
-## License
+## Project History
 
-Private — BiteSite by CH.
+### Phase 0 — Foundation (Completed)
+- ✅ Homepage with merchant grid, category filters, dish search
+- ✅ 5 merchant layouts (classic/elegant/minimal/modern/rustic)
+- ✅ Merchant detail pages with menu, events, videos, contact
+- ✅ Stories system with Markdown rendering
+- ✅ Interactive map with Leaflet
+- ✅ Join Us pricing page
+- ✅ Admin analytics dashboard (dark theme)
+- ✅ Real-time tracking + view counts
+- ✅ SEO + Schema.org structured data
+- ✅ Settings system (site title, description, footer text)
+
+### Phase 1 — Stories CMS (Completed 2026-08-30)
+- ✅ **Stories Analytics API** moved to `/api/admin/stories-analytics`
+- ✅ **Stories CRUD API** — full REST API (GET/POST/PUT/DELETE) at `/api/admin/stories`
+- ✅ **6 background themes** for articles (default/warm/cool/dark/nature/minimal)
+- ✅ **Admin Stories Editor** — Markdown editor with toolbar + live preview
+- ✅ **Admin Stories Manager** — list page with search, filter, delete
+- ✅ Settings API now requires admin authentication
+- ✅ Sidebar is collapsible on desktop
+
+### Phase 2 — Merchant CMS (Planned)
+- ⏳ Merchant Manager — list all merchants with status/actions
+- ⏳ Merchant Form (5 tabs) — create/edit merchant info, contact, hours, layout, images
+- ⏳ Menu Manager — manage categories and products per merchant
+- ⏳ Category CRUD API
+- ⏳ Product CRUD API
+
+### Phase 3 — Polish (Planned)
+- ⏳ Image upload (Supabase Storage) instead of URL pasting
+- ⏳ Rich text editor (replace Markdown with WYSIWYG)
+- ⏳ Multi-language support (EN / 中文 / BM)
+- ⏳ Email notifications for new bookings
+- ⏳ Social media auto-sharing
+
+---
+
+## Pages Summary
+
+| Page | Path | Purpose |
+|------|------|---------|
+| Home | `/` | Browse all restaurants, search (including dishes), filter |
+| Merchant | `/store/{slug}` | Individual restaurant menu, map, hours, SEO Schema |
+| Our Partner | `/our-partner` | Interactive map showing all merchant locations |
+| Stories | `/stories` | Blog list — all articles |
+| Story | `/stories/{slug}` | Individual article (Markdown + Article Schema + hashtags) |
+| Join Us | `/join-us` | Pricing & signup for restaurant owners (FAQ Schema) |
+| **Admin** | **`/admin`** | **Analytics Dashboard + CMS — password protected** |
+
+---
+
+## Contact
+
+**BiteSite** — Beautiful Menus for Local Restaurants  
+Kuala Lumpur, Malaysia
+
+> Built with Next.js + Tailwind + Supabase + Vercel
