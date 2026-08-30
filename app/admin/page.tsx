@@ -1,4 +1,5 @@
 /* bitesite/app/admin/page.tsx */
+
 'use client';
 
 import { useState } from 'react';
@@ -21,6 +22,7 @@ import RealtimeBadge from './components/realtime-badge';
 import ExportButton from './components/export-button';
 import DateRangePicker from './components/date-range-picker';
 import { SettingsPanel } from './components/settings-panel';
+import StoriesManager from './components/stories-manager';
 
 const helpTexts: Record<string, string> = {
   overview:
@@ -41,6 +43,8 @@ const helpTexts: Record<string, string> = {
     '事件分析追踪用户的关键行为。包括：page_view（页面浏览）、whatsapp_click（点击 WhatsApp 联系商家）、share（分享页面）、booking_submit（提交预订）、map_marker_click（点击地图标记）、story_to_merchant（从 Story 文章跳转到商家）。',
   'stories-analytics':
     'Stories 表现展示每篇文章的浏览量和转化率。Views = 文章被阅读的次数；Conversions = 读者点击 "View their full menu" 跳转到商家页面的次数。Conversion Rate 越高，说明文章引流效果越好。',
+  'stories-editor':
+    'Stories 编辑器允许你创建、编辑和删除文章。Published = 文章已上线，所有人可见；Draft = 文章未发布，只有管理员可见。点击 "New Story" 创建新文章，点击 "Edit" 修改现有文章。',
   map:
     '地图页面统计展示 Our Partner 地图页面的访问数据。包括地图页面总浏览量和地图标记点击次数。标记点击高说明用户对地理位置和附近餐厅感兴趣。',
   hourly:
@@ -97,6 +101,7 @@ function DashboardContent() {
   const [activeTab, setActiveTab] = useState('overview');
   const [dateRange, setDateRange] = useState('7d');
   const [activeHelp, setActiveHelp] = useState<string | null>(null);
+  const [editingSlug, setEditingSlug] = useState<string | null>(null);
 
   if (isLoading) {
     return (
@@ -235,6 +240,29 @@ function DashboardContent() {
               setActiveHelp={setActiveHelp}
             />
             <StoriesChart range={dateRange} />
+          </div>
+        );
+      case 'stories-editor':
+        return (
+          <div className="space-y-6">
+            <TabHeader
+              title="Stories Editor"
+              tabKey="stories-editor"
+              activeHelp={activeHelp}
+              setActiveHelp={setActiveHelp}
+            />
+            <StoriesManager
+              onEdit={(slug) => {
+                setEditingSlug(slug);
+                // TODO: open editor
+                alert('Editor coming in next step! Slug: ' + slug);
+              }}
+              onNew={() => {
+                setEditingSlug(null);
+                // TODO: open editor
+                alert('New story editor coming in next step!');
+              }}
+            />
           </div>
         );
       case 'map':
