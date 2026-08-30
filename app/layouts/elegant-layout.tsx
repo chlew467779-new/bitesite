@@ -18,7 +18,7 @@ import { getTodayKey } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
 
 export function ElegantLayout({
-  merchant, categories, products, videos, features, viewCount, events,
+  merchant, categories, products, videos, features, viewCount, events,footerText,whatsappNumber,
 }: LayoutProps) {
   const resolvedFeatures = mergeFeatures(features);
 
@@ -152,7 +152,7 @@ export function ElegantLayout({
         </FadeIn>
       )}
 
-      <TierSections merchant={merchant} products={products} features={features} variant="elegant" events={events} />
+      <TierSections merchant={merchant} products={products} features={features} variant="elegant" events={events} bookingWhatsapp={whatsappNumber} />
 
       {/* Hours & Contact */}
       {resolvedFeatures.contact && (
@@ -241,7 +241,7 @@ export function ElegantLayout({
       )}
 
       <footer className="py-8 px-4 text-center border-t border-slate-800">
-        <Link href="/" className="text-sm text-slate-500 hover:text-slate-300 transition-colors">Discover more restaurants on BiteSite</Link>
+        <Link href="/" className="text-sm text-slate-500 hover:text-slate-300 transition-colors">{footerText || "Discover more restaurants on BiteSite"}</Link>
       </footer>
     </div>
   );
