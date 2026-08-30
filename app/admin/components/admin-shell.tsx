@@ -14,6 +14,7 @@ import {
   Search,
   MousePointer,
   BookOpen,
+  PenLine,
   Map,
   Clock,
   Settings,
@@ -36,6 +37,7 @@ const navItems = [
   { id: 'search', label: 'Search Keywords', icon: Search },
   { id: 'events', label: 'Events', icon: MousePointer },
   { id: 'stories-analytics', label: 'Stories Analytics', icon: BookOpen },
+  { id: 'stories-editor', label: 'Stories Editor', icon: PenLine },
   { id: 'map', label: 'Map Stats', icon: Map },
   { id: 'hourly', label: 'Hourly', icon: Clock },
 ];
