@@ -1,6 +1,7 @@
 /* bitesite/app/admin/layout.tsx */
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import { ClientLayout } from './components/client-layout';
 import './admin-globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -19,7 +20,7 @@ export default function AdminLayout({
   return (
     <html lang="en" className="dark">
       <body className={`${inter.className} bg-slate-950 text-slate-100 min-h-screen`}>
-        {children}
+        <ClientLayout>{children}</ClientLayout>
       </body>
     </html>
   );
