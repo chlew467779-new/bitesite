@@ -19,7 +19,7 @@ import MerchantTable from './components/merchant-table';
 import ExportButton from './components/export-button';
 import RealtimeBadge from './components/realtime-badge';
 import DateRangePicker from './components/date-range-picker';
-import SettingsPanel from './components/settings-panel';
+import { SettingsPanel } from './components/settings-panel';
 import StoriesManager from './components/stories-manager';
 import StoryEditor from './components/story-editor';
 
