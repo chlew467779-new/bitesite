@@ -18,6 +18,7 @@ interface AppointmentSectionProps {
   variant?: LayoutVariant;
   id?: string;
   slug?: string;
+  bookingWhatsapp?: string;
 }
 
 const sectionBg: Record<LayoutVariant, string> = {
@@ -61,14 +62,13 @@ const btnPrimary: Record<LayoutVariant, string> = {
   rustic:  "bg-orange-700 hover:bg-orange-800",
 };
 
-const BITESITE_WHATSAPP = "60165660239";
-
 export function AppointmentSection({
   merchantName,
   title = "Book a Table",
   variant = "classic",
   id,
   slug,
+  bookingWhatsapp,
 }: AppointmentSectionProps) {
   const [formData, setFormData] = useState({
     name: "",
@@ -80,6 +80,8 @@ export function AppointmentSection({
   });
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  const waNumber = (bookingWhatsapp || "60165660239").replace(/\D/g, "");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,13 +100,12 @@ export function AppointmentSection({
     ].filter(Boolean).join("\n");
 
     const encoded = encodeURIComponent(message);
-    const waUrl = `https://wa.me/${BITESITE_WHATSAPP}?text=${encoded}`;
+    const waUrl = `https://wa.me/${waNumber}?text=${encoded}`;
 
     await new Promise((r) => setTimeout(r, 600));
     setSubmitting(false);
     setSubmitted(true);
 
-    // FIX: 发送 booking_submit 事件
     trackEvent('booking_submit', {
       pageType: 'merchant',
       slug,
@@ -131,7 +132,7 @@ export function AppointmentSection({
                 Please send the pre-filled message to confirm your reservation.
               </p>
               <a
-                href={`https://wa.me/${BITESITE_WHATSAPP}`}
+                href={`https://wa.me/${waNumber}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-green-600 text-white font-semibold hover:bg-green-700 transition-all active:scale-[0.98]"
