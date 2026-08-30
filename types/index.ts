@@ -129,7 +129,6 @@ export interface LayoutProps {
   viewCount?: number;
   events?: EventItem[];
   footerText?: string;
-  whatsappNumber?: string;
 }
 
 export const defaultFeatures: MerchantFeatures = {
