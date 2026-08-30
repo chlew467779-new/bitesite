@@ -32,7 +32,7 @@ const navItems = [
   { id: 'referrers', label: 'Referrers', icon: Link2 },
   { id: 'search', label: 'Search Keywords', icon: Search },
   { id: 'events', label: 'Events', icon: MousePointer },
-  { id: 'stories', label: 'Stories', icon: BookOpen },
+  { id: 'stories-analytics', label: 'Stories Analytics', icon: BookOpen },
   { id: 'map', label: 'Map Stats', icon: Map },
   { id: 'hourly', label: 'Hourly', icon: Clock },
 ];
