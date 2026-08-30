@@ -16,7 +16,7 @@ import { getTodayKey } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
 
 export function RusticLayout({
-  merchant, categories, products, videos, features, viewCount, events,footerText,whatsappNumber,
+  merchant, categories, products, videos, features, viewCount, events,footerText,
 }: LayoutProps) {
   const resolvedFeatures = mergeFeatures(features);
   const today = getTodayKey();
@@ -100,7 +100,7 @@ export function RusticLayout({
         </FadeIn>
       )}
 
-      <TierSections merchant={merchant} products={products} features={features} variant="rustic" events={events} bookingWhatsapp={whatsappNumber} />
+      <TierSections merchant={merchant} products={products} features={features} variant="rustic" events={events} />
 
       {resolvedFeatures.contact && (
         <FadeIn>
