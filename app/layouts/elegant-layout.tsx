@@ -18,7 +18,7 @@ import { getTodayKey } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
 
 export function ElegantLayout({
-  merchant, categories, products, videos, features, viewCount, events,footerText,whatsappNumber,
+  merchant, categories, products, videos, features, viewCount, events,footerText,
 }: LayoutProps) {
   const resolvedFeatures = mergeFeatures(features);
 
@@ -152,7 +152,7 @@ export function ElegantLayout({
         </FadeIn>
       )}
 
-      <TierSections merchant={merchant} products={products} features={features} variant="elegant" events={events} bookingWhatsapp={whatsappNumber} />
+      <TierSections merchant={merchant} products={products} features={features} variant="elegant" events={events} />
 
       {/* Hours & Contact */}
       {resolvedFeatures.contact && (
