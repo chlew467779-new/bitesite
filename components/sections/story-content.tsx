@@ -4,6 +4,7 @@
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 import { trackEvent } from '@/lib/analytics';
 
 interface StoryContentProps {
@@ -84,7 +85,7 @@ export function StoryContent({ content, articleSlug, theme = 'default' }: StoryC
       <div className="mx-auto max-w-3xl">
         <div className="max-w-none" style={cssVars}>
           <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
+            remarkPlugins={[remarkGfm, remarkBreaks]}
             components={{
               h1: ({ children }) => (
                 <h1 className="mb-6 mt-8 font-serif text-2xl font-medium sm:text-3xl" style={{ color: 'var(--sc-heading)' }}>
