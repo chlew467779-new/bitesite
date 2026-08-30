@@ -1,13 +1,26 @@
 /* bitesite/app/api/admin/settings/route.ts */
+
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { verifyAdminToken } from '@/lib/admin-auth';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-export async function GET() {
+function verifyRequest(request: Request) {
+  const token = request.headers.get('x-admin-token');
+  if (!token || !verifyAdminToken(token)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  return null;
+}
+
+export async function GET(request: Request) {
+  const authError = verifyRequest(request);
+  if (authError) return authError;
+
   const { data, error } = await supabase
     .from('settings')
     .select('*')
@@ -21,6 +34,9 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
+  const authError = verifyRequest(request);
+  if (authError) return authError;
+
   const body = await request.json();
   const { key, value } = body;
 
