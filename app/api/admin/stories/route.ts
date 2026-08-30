@@ -162,6 +162,11 @@ export async function PUT(request: Request) {
         .filter(Boolean);
     }
 
+    // 空字符串 merchant_slug 转成 null，避免外键约束错误
+    if (updateData.merchant_slug === '') {
+      updateData.merchant_slug = null;
+    }
+
     let query = supabase.from('articles').update(updateData);
     
     if (id) {
