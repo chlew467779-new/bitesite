@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminToken } from '@/lib/admin-auth';
 import { supabase } from '@/lib/supabase';
+import { revalidatePath } from 'next/cache';
 
 function generateSlug(name: string): string {
   return name
@@ -138,6 +139,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // Revalidate pages immediately
+    revalidatePath(`/store/${data.slug}`);
+    revalidatePath('/');
+
     return NextResponse.json({ merchant: data }, { status: 201 });
   } catch (error) {
     console.error('Merchants CRUD POST error:', error);
@@ -224,6 +229,10 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // Revalidate pages immediately
+    revalidatePath(`/store/${data.slug}`);
+    revalidatePath('/');
+
     return NextResponse.json({ merchant: data });
   } catch (error) {
     console.error('Merchants CRUD PUT error:', error);
@@ -244,6 +253,13 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Merchant ID is required' }, { status: 400 });
     }
 
+    // Get slug before deleting for revalidation
+    const { data: merchantToDelete } = await supabase
+      .from('merchants')
+      .select('slug')
+      .eq('id', id)
+      .single();
+
     await supabase.from('products').delete().eq('merchant_id', id);
     await supabase.from('categories').delete().eq('merchant_id', id);
     await supabase.from('merchant_videos').delete().eq('merchant_id', id);
@@ -254,6 +270,12 @@ export async function DELETE(request: NextRequest) {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    // Revalidate after deletion
+    if (merchantToDelete?.slug) {
+      revalidatePath(`/store/${merchantToDelete.slug}`);
+    }
+    revalidatePath('/');
 
     return NextResponse.json({ success: true });
   } catch (error) {
