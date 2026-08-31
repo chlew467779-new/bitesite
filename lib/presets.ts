@@ -50,3 +50,9 @@ export const TAGS_PRESETS = [
   "Vegan Options",
   "Gluten Free",
 ] as const;
+
+export const PAYMENT_METHODS = [
+  "Cash",
+  "Cashless",
+  "Cards",
+] as const;
