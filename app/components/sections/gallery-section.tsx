@@ -5,7 +5,7 @@
 import { useState, useCallback } from "react";
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
-import { X, ChevronLeft, ChevronRight, ImageIcon } from "lucide-react";
+import { X, ChevronLeft, ChevronRight } from "lucide-react";
 
 export type LayoutVariant = "classic" | "elegant" | "minimal" | "modern" | "rustic";
 
@@ -30,14 +30,6 @@ const titleColor: Record<LayoutVariant, string> = {
   minimal: "text-stone-800",
   modern:  "text-slate-900",
   rustic:  "text-orange-900",
-};
-
-const emptyStateBg: Record<LayoutVariant, string> = {
-  classic: "bg-amber-100/50",
-  elegant: "bg-slate-800",
-  minimal: "bg-stone-100",
-  modern:  "bg-slate-100",
-  rustic:  "bg-orange-100/50",
 };
 
 export function GallerySection({
@@ -75,21 +67,7 @@ export function GallerySection({
   }, [validImages.length]);
 
   if (validImages.length === 0) {
-    return (
-      <FadeIn>
-        <section id={id} className={`py-16 px-4 sm:px-6 lg:px-8 ${sectionBg[variant]}`}>
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className={`text-2xl font-bold mb-3 ${titleColor[variant]}`}>{title}</h2>
-            <div className={`inline-flex items-center gap-2 px-4 py-3 rounded-xl ${emptyStateBg[variant]}`}>
-              <ImageIcon size={18} className={`opacity-50 ${titleColor[variant]}`} />
-              <span className={`text-sm opacity-60 ${titleColor[variant]}`}>
-                No gallery images yet. Add photos to your menu items or cover image to see them here.
-              </span>
-            </div>
-          </div>
-        </section>
-      </FadeIn>
-    );
+    return null;
   }
 
   return (
@@ -100,7 +78,6 @@ export function GallerySection({
             <h2 className={`text-3xl font-bold text-center mb-10 ${titleColor[variant]}`}>
               {title}
             </h2>
-            {/* 统一 aspect-square，无 masonry，避免压图 */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {validImages.map((src, i) => (
                 <button
