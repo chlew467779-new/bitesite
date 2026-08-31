@@ -31,6 +31,7 @@ import {
   type DayHours,
   type TimeSlot,
 } from '@/lib/hours';
+import { CUISINE_TYPES, AREAS, TAGS_PRESETS } from '@/lib/presets';
 
 interface MerchantFormProps {
   merchant?: {
@@ -198,6 +199,34 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
   const [logoError, setLogoError] = useState(false);
   const [coverError, setCoverError] = useState(false);
 
+  /* Tags custom input state */
+  const [tagInput, setTagInput] = useState('');
+
+  /* Derived selected tags array */
+  const selectedTags = form.tags
+    ? form.tags.split(',').map((t) => t.trim()).filter(Boolean)
+    : [];
+
+  const toggleTag = (tag: string) => {
+    const exists = selectedTags.includes(tag);
+    const next = exists ? selectedTags.filter((t) => t !== tag) : [...selectedTags, tag];
+    updateField('tags', next.join(', '));
+  };
+
+  const addCustomTag = () => {
+    const raw = tagInput.trim();
+    if (!raw) return;
+    const newTags = raw.split(',').map((t) => t.trim()).filter(Boolean);
+    const combined = [...new Set([...selectedTags, ...newTags])];
+    updateField('tags', combined.join(', '));
+    setTagInput('');
+  };
+
+  const removeTag = (tag: string) => {
+    const next = selectedTags.filter((t) => t !== tag);
+    updateField('tags', next.join(', '));
+  };
+
   useEffect(() => {
     if (merchant) {
       setForm({
@@ -254,6 +283,7 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
 
       setLogoError(false);
       setCoverError(false);
+      setTagInput('');
     }
   }, [merchant]);
 
@@ -605,38 +635,145 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
               </div>
             </div>
 
+            {/* Cuisine Type & Area */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Cuisine Type */}
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-1.5">Cuisine Type</label>
-                <input
-                  type="text"
-                  value={form.cuisine_type}
-                  onChange={(e) => updateField('cuisine_type', e.target.value)}
-                  placeholder="e.g. Cafe, Western"
-                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors"
-                />
+                <select
+                  value={CUISINE_TYPES.includes(form.cuisine_type as (typeof CUISINE_TYPES)[number]) ? form.cuisine_type : 'Other'}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === 'Other') {
+                      updateField('cuisine_type', '');
+                    } else {
+                      updateField('cuisine_type', val);
+                    }
+                  }}
+                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white focus:border-amber-500 focus:outline-none transition-colors mb-2"
+                >
+                  <option value="" disabled>Select cuisine type...</option>
+                  {CUISINE_TYPES.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                  <option value="Other">Other (custom)</option>
+                </select>
+                {(!form.cuisine_type || !CUISINE_TYPES.includes(form.cuisine_type as (typeof CUISINE_TYPES)[number])) && (
+                  <input
+                    type="text"
+                    value={form.cuisine_type}
+                    onChange={(e) => updateField('cuisine_type', e.target.value)}
+                    placeholder="Enter custom cuisine type"
+                    className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors"
+                  />
+                )}
               </div>
+
+              {/* Area */}
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-1.5">Area</label>
-                <input
-                  type="text"
-                  value={form.area}
-                  onChange={(e) => updateField('area', e.target.value)}
-                  placeholder="e.g. Desa ParkCity"
-                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors"
-                />
+                <select
+                  value={AREAS.includes(form.area as (typeof AREAS)[number]) ? form.area : 'Other'}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === 'Other') {
+                      updateField('area', '');
+                    } else {
+                      updateField('area', val);
+                    }
+                  }}
+                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white focus:border-amber-500 focus:outline-none transition-colors mb-2"
+                >
+                  <option value="" disabled>Select area...</option>
+                  {AREAS.map((a) => (
+                    <option key={a} value={a}>{a}</option>
+                  ))}
+                  <option value="Other">Other (custom)</option>
+                </select>
+                {(!form.area || !AREAS.includes(form.area as (typeof AREAS)[number])) && (
+                  <input
+                    type="text"
+                    value={form.area}
+                    onChange={(e) => updateField('area', e.target.value)}
+                    placeholder="Enter custom area"
+                    className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors"
+                  />
+                )}
               </div>
             </div>
 
+            {/* Tags */}
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1.5">Tags</label>
-              <input
-                type="text"
-                value={form.tags}
-                onChange={(e) => updateField('tags', e.target.value)}
-                placeholder="Comma separated: Halal, Pet Friendly, WiFi"
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors"
-              />
+              
+              {/* Preset tag pills */}
+              <div className="flex flex-wrap gap-2 mb-3">
+                {TAGS_PRESETS.map((tag) => {
+                  const active = selectedTags.includes(tag);
+                  return (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => toggleTag(tag)}
+                      className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                        active
+                          ? 'bg-amber-500/10 border-amber-500/30 text-amber-400'
+                          : 'bg-slate-950 border-slate-700 text-slate-400 hover:border-slate-600'
+                      }`}
+                    >
+                      {active && <Check className="w-3 h-3" />}
+                      {tag}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Custom tag input */}
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addCustomTag();
+                    }
+                  }}
+                  placeholder="Add custom tag (press Enter or click +)"
+                  className="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors"
+                />
+                <button
+                  type="button"
+                  onClick={addCustomTag}
+                  className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors"
+                  title="Add tag"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Selected tags display */}
+              {selectedTags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {selectedTags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-500/10 border border-amber-500/20 rounded-full text-xs text-amber-400"
+                    >
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() => removeTag(tag)}
+                        className="hover:text-amber-300 transition-colors"
+                        title="Remove tag"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
