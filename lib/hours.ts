@@ -83,3 +83,86 @@ export function getTodayHours(operatingHours: Record<string, string> | null): {
   const isOpen = isCurrentlyOpen(todayHours);
   return { isOpen, hoursText: todayHours, todayKey };
 }
+
+/* ── Structured hours helpers (Admin + Frontend) ── */
+
+export interface TimeSlot {
+  start: string;
+  end: string;
+}
+
+export interface DayHours {
+  slots: TimeSlot[];
+  isClosed: boolean;
+}
+
+/**
+ * Parse a raw hours string into structured slots for Admin editing
+ * e.g. "9:00 AM - 10:00 PM, 3:00 PM - 7:00 PM" →
+ *   { slots: [{start:"9:00 AM", end:"10:00 PM"}, {start:"3:00 PM", end:"7:00 PM"}], isClosed: false }
+ */
+export function parseOperatingHoursString(raw: string | null | undefined): DayHours {
+  if (!raw || !raw.trim()) {
+    return { slots: [{ start: '', end: '' }], isClosed: false };
+  }
+
+  const lower = raw.trim().toLowerCase();
+  if (lower === 'closed' || lower.includes('closed')) {
+    return { slots: [], isClosed: true };
+  }
+
+  // Split by comma, slash, or ampersand for multiple slots
+  const slotStrs = raw.split(/,|\/|&/).map((s) => s.trim()).filter(Boolean);
+  const slots: TimeSlot[] = [];
+
+  for (const slotStr of slotStrs) {
+    const parts = slotStr.split('-').map((s) => s.trim());
+    if (parts.length === 2) {
+      slots.push({ start: parts[0], end: parts[1] });
+    }
+  }
+
+  if (slots.length === 0) {
+    return { slots: [{ start: '', end: '' }], isClosed: false };
+  }
+
+  return { slots, isClosed: false };
+}
+
+/**
+ * Format structured slots back to a string for database storage
+ */
+export function formatOperatingHoursToString(dayHours: DayHours): string {
+  if (dayHours.isClosed) return 'Closed';
+  const validSlots = dayHours.slots.filter((s) => s.start.trim() && s.end.trim());
+  if (validSlots.length === 0) return '';
+  return validSlots.map((s) => `${s.start.trim()} - ${s.end.trim()}`).join(', ');
+}
+
+/**
+ * Normalize hours string for frontend display
+ * - Standardizes AM/PM casing
+ * - Deduplicates repeated slots
+ * - Recognizes "Closed" (case-insensitive)
+ */
+export function formatOperatingHours(raw: string | null | undefined): string {
+  if (!raw || !raw.trim()) return '';
+  const lower = raw.trim().toLowerCase();
+  if (lower === 'closed' || lower.includes('closed')) return 'Closed';
+
+  // Normalize AM/PM variations
+  let formatted = raw
+    .replace(/\s*a\.m\.?/gi, ' AM')
+    .replace(/\s*p\.m\.?/gi, ' PM')
+    .replace(/\s*am(?!\w)/gi, ' AM')
+    .replace(/\s*pm(?!\w)/gi, ' PM');
+
+  // Normalize whitespace
+  formatted = formatted.replace(/\s+/g, ' ').trim();
+
+  // Split and deduplicate slots
+  const slots = formatted.split(/,|\/|&/).map((s) => s.trim()).filter(Boolean);
+  const uniqueSlots = [...new Set(slots)];
+
+  return uniqueSlots.join(', ');
+}
