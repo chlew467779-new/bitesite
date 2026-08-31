@@ -198,4 +198,182 @@ export default function AdminPage() {
       )}
 
       {/* Devices */}
-      {
+      {activeTab === 'devices' && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-white">Device Distribution</h1>
+              <p className="text-slate-400 text-sm mt-1">Breakdown of visitors by device type</p>
+            </div>
+            <DateRangePicker value={dateRange} onChange={setDateRange} />
+          </div>
+          <DeviceChart range={dateRange} />
+        </div>
+      )}
+
+      {/* Locations */}
+      {activeTab === 'locations' && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-white">Location Analytics</h1>
+              <p className="text-slate-400 text-sm mt-1">Top cities and countries by visitor count</p>
+            </div>
+            <DateRangePicker value={dateRange} onChange={setDateRange} />
+          </div>
+          <LocationChart range={dateRange} />
+        </div>
+      )}
+
+      {/* Referrers */}
+      {activeTab === 'referrers' && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-white">Traffic Sources</h1>
+              <p className="text-slate-400 text-sm mt-1">Where your visitors are coming from</p>
+            </div>
+            <DateRangePicker value={dateRange} onChange={setDateRange} />
+          </div>
+          <ReferrerChart range={dateRange} />
+        </div>
+      )}
+
+      {/* Search Keywords */}
+      {activeTab === 'search' && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-white">Search Keywords</h1>
+              <p className="text-slate-400 text-sm mt-1">Most popular search terms on your site</p>
+            </div>
+            <DateRangePicker value={dateRange} onChange={setDateRange} />
+          </div>
+          <SearchKeywordsTable range={dateRange} />
+        </div>
+      )}
+
+      {/* Events */}
+      {activeTab === 'events' && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-white">Event Analytics</h1>
+              <p className="text-slate-400 text-sm mt-1">User interactions and conversions</p>
+            </div>
+            <DateRangePicker value={dateRange} onChange={setDateRange} />
+          </div>
+          <EventsChart range={dateRange} />
+        </div>
+      )}
+
+      {/* Map Stats */}
+      {activeTab === 'map' && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-white">Map Statistics</h1>
+              <p className="text-slate-400 text-sm mt-1">Map page views and marker interactions</p>
+            </div>
+            <DateRangePicker value={dateRange} onChange={setDateRange} />
+          </div>
+          <MapStats range={dateRange} />
+        </div>
+      )}
+
+      {/* Hourly */}
+      {activeTab === 'hourly' && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-white">Peak Hours</h1>
+              <p className="text-slate-400 text-sm mt-1">Visitor activity by hour of day (Malaysia Time)</p>
+            </div>
+            <DateRangePicker value={dateRange} onChange={setDateRange} />
+          </div>
+          <HourlyChart range={dateRange} />
+        </div>
+      )}
+
+      {/* Stories Analytics */}
+      {activeTab === 'stories-analytics' && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-white">Stories Analytics</h1>
+            <DateRangePicker value={dateRange} onChange={setDateRange} />
+          </div>
+          <StoriesChart range={dateRange} />
+        </div>
+      )}
+
+      {/* Stories Editor */}
+      {activeTab === 'stories-editor' && (
+        <div className="space-y-6">
+          {showEditor ? (
+            <StoryEditor
+              slug={editingSlug}
+              onBack={handleBackToList}
+              onSaved={handleSaved}
+            />
+          ) : (
+            <StoriesManager
+              key={refreshKey}
+              onEdit={handleEditStory}
+              onNew={handleNewStory}
+            />
+          )}
+        </div>
+      )}
+
+      {/* Merchant Manager */}
+      {activeTab === 'merchant-manager' && (
+        <div className="space-y-6">
+          <MerchantManager />
+        </div>
+      )}
+
+      {/* Settings */}
+      {activeTab === 'settings' && (
+        <div className="space-y-6">
+          <h1 className="text-2xl font-bold text-white">Settings</h1>
+          <SettingsPanel />
+        </div>
+      )}
+
+      {/* Export CSV */}
+      {activeTab === 'export' && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-white">Export Data</h1>
+              <p className="text-slate-400 text-sm mt-1">Download analytics data as CSV</p>
+            </div>
+            <DateRangePicker value={dateRange} onChange={setDateRange} />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <ExportButton range={dateRange} />
+            </div>
+            <div className="space-y-4">
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+                <h3 className="text-sm font-medium text-slate-300 mb-2">What&apos;s included?</h3>
+                <ul className="text-slate-400 text-sm space-y-1.5">
+                  <li>• Page views by merchant</li>
+                  <li>• Unique visitor counts</li>
+                  <li>• Event conversions</li>
+                  <li>• Device and location data</li>
+                </ul>
+              </div>
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+                <h3 className="text-sm font-medium text-slate-300 mb-2">Date Range</h3>
+                <p className="text-slate-400 text-sm">
+                  Select a range above to filter the exported data. The CSV will contain all metrics for the selected period.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </AdminShell>
+  );
+}
