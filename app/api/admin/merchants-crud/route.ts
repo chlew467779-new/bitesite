@@ -109,6 +109,7 @@ export async function POST(request: NextRequest) {
       cuisine_type: body.cuisine_type?.trim() || null,
       area: body.area?.trim() || null,
       tags: body.tags?.length ? body.tags : null,
+      payment_methods: body.payment_methods?.length ? body.payment_methods : null,
       address: body.address?.trim() || null,
       phone: body.phone?.trim() || null,
       whatsapp: body.whatsapp.trim(),
@@ -197,6 +198,7 @@ export async function PUT(request: NextRequest) {
     if (body.cuisine_type !== undefined) updateData.cuisine_type = body.cuisine_type?.trim() || null;
     if (body.area !== undefined) updateData.area = body.area?.trim() || null;
     if (body.tags !== undefined) updateData.tags = body.tags?.length ? body.tags : null;
+    if (body.payment_methods !== undefined) updateData.payment_methods = body.payment_methods?.length ? body.payment_methods : null;
     if (body.address !== undefined) updateData.address = body.address?.trim() || null;
     if (body.phone !== undefined) updateData.phone = body.phone?.trim() || null;
     if (body.whatsapp !== undefined) updateData.whatsapp = body.whatsapp.trim();
