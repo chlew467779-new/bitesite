@@ -22,6 +22,7 @@ import {
   FileText,
   Check,
   AlertCircle,
+  AlertTriangle,
 } from 'lucide-react';
 
 interface MerchantFormProps {
@@ -78,6 +79,24 @@ const FEATURES = [
   { key: 'testimonials', label: 'Testimonials', desc: 'Customer reviews' },
 ];
 
+/* ── URL validation helpers ── */
+function isLikelyImageUrl(url: string): boolean {
+  if (!url.trim()) return true;
+  const clean = url.split('?')[0].toLowerCase();
+  return /\.(jpg|jpeg|png|webp|gif|svg|bmp)$/.test(clean);
+}
+
+function isLikelyPdfUrl(url: string): boolean {
+  if (!url.trim()) return true;
+  const clean = url.split('?')[0].toLowerCase();
+  return /\.pdf$/.test(clean);
+}
+
+function isValidHttpUrl(url: string): boolean {
+  if (!url.trim()) return true;
+  return /^https?:\/\//i.test(url);
+}
+
 function generateSlug(name: string): string {
   return name
     .toLowerCase()
@@ -86,6 +105,13 @@ function generateSlug(name: string): string {
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '');
+}
+
+/* ── Toast type ── */
+interface Toast {
+  id: string;
+  message: string;
+  type: 'success' | 'error';
 }
 
 export default function MerchantForm({ merchant, onBack, onSaved }: MerchantFormProps) {
@@ -97,6 +123,17 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saveError, setSaveError] = useState('');
+
+  /* Toast state */
+  const [toasts, setToasts] = useState<Toast[]>([]);
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    const id = Math.random().toString(36).slice(2);
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 3000);
+  };
 
   const [form, setForm] = useState({
     name: '',
@@ -142,6 +179,10 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
     cover_image: '',
     menu_pdf_url: '',
   });
+
+  /* Image preview error states */
+  const [logoError, setLogoError] = useState(false);
+  const [coverError, setCoverError] = useState(false);
 
   useEffect(() => {
     if (merchant) {
@@ -189,6 +230,8 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
         cover_image: merchant.cover_image || '',
         menu_pdf_url: merchant.menu_pdf_url || '',
       });
+      setLogoError(false);
+      setCoverError(false);
     }
   }, [merchant]);
 
@@ -201,6 +244,9 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
         return next;
       });
     }
+    /* Reset image errors when URL changes */
+    if (field === 'logo_image') setLogoError(false);
+    if (field === 'cover_image') setCoverError(false);
   };
 
   const updateHours = (day: string, value: string) => {
@@ -281,9 +327,12 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
       if (!res.ok) {
         throw new Error(data.error || 'Save failed');
       }
+      showToast(isEditing ? 'Merchant updated successfully' : 'Merchant created successfully', 'success');
       onSaved();
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Save failed');
+      const msg = err instanceof Error ? err.message : 'Save failed';
+      setSaveError(msg);
+      showToast(msg, 'error');
     } finally {
       setSaving(false);
     }
@@ -301,9 +350,12 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
         const data = await res.json();
         throw new Error(data.error || 'Delete failed');
       }
+      showToast('Merchant deleted successfully', 'success');
       onSaved();
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Delete failed');
+      const msg = err instanceof Error ? err.message : 'Delete failed';
+      setSaveError(msg);
+      showToast(msg, 'error');
     } finally {
       setDeleting(false);
       setShowDeleteConfirm(false);
@@ -317,6 +369,14 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
     { label: 'Settings', icon: Globe },
     { label: 'Images', icon: ImageIcon },
   ];
+
+  /* URL warning helpers */
+  const websiteWarning = form.website && !isValidHttpUrl(form.website);
+  const instagramWarning = form.instagram && !isValidHttpUrl(form.instagram);
+  const facebookWarning = form.facebook && !isValidHttpUrl(form.facebook);
+  const logoWarning = form.logo_image && !isLikelyImageUrl(form.logo_image);
+  const coverWarning = form.cover_image && !isLikelyImageUrl(form.cover_image);
+  const pdfWarning = form.menu_pdf_url && !isLikelyPdfUrl(form.menu_pdf_url);
 
   return (
     <div className="space-y-6">
@@ -344,6 +404,27 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
           {saveError}
         </div>
       )}
+
+      {/* Toast Container */}
+      <div className="fixed top-4 right-4 z-[60] space-y-2">
+        {toasts.map((t) => (
+          <div
+            key={t.id}
+            className={`flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg border text-sm font-medium transition-all animate-in slide-in-from-right ${
+              t.type === 'success'
+                ? 'bg-emerald-950/90 border-emerald-500/30 text-emerald-400'
+                : 'bg-red-950/90 border-red-500/30 text-red-400'
+            }`}
+          >
+            {t.type === 'success' ? (
+              <Check className="w-4 h-4 shrink-0" />
+            ) : (
+              <AlertCircle className="w-4 h-4 shrink-0" />
+            )}
+            {t.message}
+          </div>
+        ))}
+      </div>
 
       {/* Tab Navigation */}
       <div className="flex gap-2 overflow-x-auto pb-2">
@@ -557,8 +638,16 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
                 value={form.website}
                 onChange={(e) => updateField('website', e.target.value)}
                 placeholder="https://restaurant.com"
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors"
+                className={`w-full px-4 py-2.5 bg-slate-950 border rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors ${
+                  websiteWarning ? 'border-yellow-500/50' : 'border-slate-700'
+                }`}
               />
+              {websiteWarning && (
+                <p className="mt-1 text-xs text-yellow-400 flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" />
+                  URL should start with https://
+                </p>
+              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -569,8 +658,16 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
                   value={form.instagram}
                   onChange={(e) => updateField('instagram', e.target.value)}
                   placeholder="https://instagram.com/..."
-                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors"
+                  className={`w-full px-4 py-2.5 bg-slate-950 border rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors ${
+                    instagramWarning ? 'border-yellow-500/50' : 'border-slate-700'
+                  }`}
                 />
+                {instagramWarning && (
+                  <p className="mt-1 text-xs text-yellow-400 flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3" />
+                    URL should start with https://
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-1.5">Facebook</label>
@@ -579,8 +676,16 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
                   value={form.facebook}
                   onChange={(e) => updateField('facebook', e.target.value)}
                   placeholder="https://facebook.com/..."
-                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors"
+                  className={`w-full px-4 py-2.5 bg-slate-950 border rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors ${
+                    facebookWarning ? 'border-yellow-500/50' : 'border-slate-700'
+                  }`}
                 />
+                {facebookWarning && (
+                  <p className="mt-1 text-xs text-yellow-400 flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3" />
+                    URL should start with https://
+                  </p>
+                )}
               </div>
             </div>
 
@@ -732,18 +837,33 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
                 value={form.logo_image}
                 onChange={(e) => updateField('logo_image', e.target.value)}
                 placeholder="https://..."
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors"
+                className={`w-full px-4 py-2.5 bg-slate-950 border rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors ${
+                  logoWarning ? 'border-yellow-500/50' : 'border-slate-700'
+                }`}
               />
+              {logoWarning && (
+                <p className="mt-1 text-xs text-yellow-400 flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" />
+                  This doesn&apos;t look like a direct image URL. Make sure it ends with .jpg, .png, etc.
+                </p>
+              )}
+              <p className="mt-1 text-xs text-slate-500">
+                Paste the direct image URL (ends with .jpg or .png). Right-click image &rarr; Copy image address.
+              </p>
               {form.logo_image && (
                 <div className="mt-3">
-                  <img
-                    src={form.logo_image}
-                    alt="Logo preview"
-                    className="w-16 h-16 rounded-lg object-cover border border-slate-700"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = 'none';
-                    }}
-                  />
+                  {!logoError ? (
+                    <img
+                      src={form.logo_image}
+                      alt="Logo preview"
+                      className="w-16 h-16 rounded-lg object-cover border border-slate-700"
+                      onError={() => setLogoError(true)}
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center">
+                      <span className="text-xs text-slate-500 text-center px-1">Failed to load</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -755,18 +875,33 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
                 value={form.cover_image}
                 onChange={(e) => updateField('cover_image', e.target.value)}
                 placeholder="https://..."
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors"
+                className={`w-full px-4 py-2.5 bg-slate-950 border rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors ${
+                  coverWarning ? 'border-yellow-500/50' : 'border-slate-700'
+                }`}
               />
+              {coverWarning && (
+                <p className="mt-1 text-xs text-yellow-400 flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" />
+                  This doesn&apos;t look like a direct image URL. Make sure it ends with .jpg, .png, etc.
+                </p>
+              )}
+              <p className="mt-1 text-xs text-slate-500">
+                Paste the direct image URL (ends with .jpg or .png). Right-click image &rarr; Copy image address.
+              </p>
               {form.cover_image && (
                 <div className="mt-3">
-                  <img
-                    src={form.cover_image}
-                    alt="Cover preview"
-                    className="w-full h-32 rounded-lg object-cover border border-slate-700"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = 'none';
-                    }}
-                  />
+                  {!coverError ? (
+                    <img
+                      src={form.cover_image}
+                      alt="Cover preview"
+                      className="w-full h-32 rounded-lg object-cover border border-slate-700"
+                      onError={() => setCoverError(true)}
+                    />
+                  ) : (
+                    <div className="w-full h-32 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center">
+                      <span className="text-sm text-slate-500">Failed to load image. Check the URL.</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -778,8 +913,16 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
                 value={form.menu_pdf_url}
                 onChange={(e) => updateField('menu_pdf_url', e.target.value)}
                 placeholder="https://..."
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors"
+                className={`w-full px-4 py-2.5 bg-slate-950 border rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors ${
+                  pdfWarning ? 'border-yellow-500/50' : 'border-slate-700'
+                }`}
               />
+              {pdfWarning && (
+                <p className="mt-1 text-xs text-yellow-400 flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" />
+                  This doesn&apos;t look like a PDF URL. Make sure it ends with .pdf.
+                </p>
+              )}
             </div>
           </div>
         )}
