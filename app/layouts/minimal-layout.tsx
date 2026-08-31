@@ -12,7 +12,7 @@ import type { LayoutProps } from "@/types";
 import { MapPin, Phone, Instagram, ArrowLeft, MessageSquare, Banknote, Smartphone, CreditCard } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import Link from "next/link";
-import { getTodayKey } from "@/lib/hours";
+import { getTodayKey, formatOperatingHours } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
 
 export function MinimalLayout({
@@ -103,7 +103,8 @@ export function MinimalLayout({
               <div className="space-y-3 text-sm">
                 {hours && Object.entries(hours).map(([day, time]) => (
                   <div key={day} className={`flex justify-between py-1 ${day === today ? "text-stone-900 font-medium" : "text-stone-500"}`}>
-                    <span className="capitalize">{day}</span><span>{time}</span>
+                    <span className="capitalize">{day}</span>
+                    <span>{formatOperatingHours(time)}</span>
                   </div>
                 ))}
               </div>
