@@ -9,7 +9,7 @@ import { MapPin, Phone, Clock, Mail, Instagram, ArrowLeft, MessageSquare, Bankno
 import Link from "next/link";
 import type { LayoutProps } from "@/types";
 import { mergeFeatures } from "@/types";
-import { getTodayKey, formatOperatingHours } from "@/lib/hours";
+import { getTodayKey, formatOperatingHours, DAYS } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
 import { trackEvent } from "@/lib/analytics";
 
@@ -198,19 +198,23 @@ export function ClassicLayout({
               <h2 className="text-2xl font-bold text-amber-900 mb-6">Opening Hours</h2>
               <div className="grid sm:grid-cols-2 gap-6">
                 <div className="space-y-3">
-                  {hours && Object.entries(hours).map(([day, time]) => (
-                    <div
-                      key={day}
-                      className={`flex justify-between py-2 px-3 rounded-lg text-sm ${
-                        day === today
-                          ? "bg-amber-100 text-amber-900 font-medium"
-                          : "text-amber-800/70"
-                      }`}
-                    >
-                      <span className="capitalize">{day}</span>
-                      <span>{formatOperatingHours(time)}</span>
-                    </div>
-                  ))}
+                  {hours && DAYS.map((day) => {
+                    const time = hours[day];
+                    if (!time) return null;
+                    return (
+                      <div
+                        key={day}
+                        className={`flex justify-between py-2 px-3 rounded-lg text-sm ${
+                          day === today
+                            ? "bg-amber-100 text-amber-900 font-medium"
+                            : "text-amber-800/70"
+                        }`}
+                      >
+                        <span className="capitalize">{day}</span>
+                        <span>{formatOperatingHours(time)}</span>
+                      </div>
+                    );
+                  })}
                 </div>
                 <div className="space-y-4">
                   {merchant.address && (
