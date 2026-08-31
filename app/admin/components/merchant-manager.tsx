@@ -4,7 +4,8 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from './auth-context';
-import { Search, Plus, Eye, EyeOff, Store, Loader2, ExternalLink } from 'lucide-react';
+import { Search, Plus, Eye, EyeOff, Store, Loader2, ExternalLink, Pencil } from 'lucide-react';
+import MerchantForm from './merchant-form';
 
 interface Merchant {
   id: string;
@@ -21,6 +22,21 @@ interface Merchant {
   updated_at: string;
   product_count: number;
   view_count: number;
+  cuisine_type?: string;
+  area?: string;
+  tags?: string[] | null;
+  address?: string;
+  phone?: string;
+  whatsapp?: string;
+  email?: string;
+  website?: string;
+  instagram?: string;
+  facebook?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  operating_hours?: Record<string, string> | null;
+  features?: Record<string, boolean> | null;
+  menu_pdf_url?: string;
 }
 
 export default function MerchantManager() {
@@ -30,10 +46,13 @@ export default function MerchantManager() {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'published' | 'draft'>('all');
   const [error, setError] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [editingMerchant, setEditingMerchant] = useState<Merchant | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     fetchMerchants();
-  }, []);
+  }, [refreshKey]);
 
   const fetchMerchants = async () => {
     try {
@@ -53,6 +72,27 @@ export default function MerchantManager() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleNew = () => {
+    setEditingMerchant(null);
+    setShowForm(true);
+  };
+
+  const handleEdit = (merchant: Merchant) => {
+    setEditingMerchant(merchant);
+    setShowForm(true);
+  };
+
+  const handleBack = () => {
+    setShowForm(false);
+    setEditingMerchant(null);
+  };
+
+  const handleSaved = () => {
+    setShowForm(false);
+    setEditingMerchant(null);
+    setRefreshKey((k) => k + 1);
   };
 
   const filteredMerchants = merchants.filter((m) => {
@@ -78,6 +118,16 @@ export default function MerchantManager() {
     };
     return labels[layout || ''] || layout || 'Classic';
   };
+
+  if (showForm) {
+    return (
+      <MerchantForm
+        merchant={editingMerchant}
+        onBack={handleBack}
+        onSaved={handleSaved}
+      />
+    );
+  }
 
   if (loading) {
     return (
@@ -112,7 +162,7 @@ export default function MerchantManager() {
           </p>
         </div>
         <button
-          onClick={() => alert('Merchant Editor coming in Step 2!')}
+          onClick={handleNew}
           className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-medium text-sm rounded-lg transition-colors"
         >
           <Plus className="w-4 h-4" />
@@ -164,7 +214,8 @@ export default function MerchantManager() {
           {filteredMerchants.map((merchant) => (
             <div
               key={merchant.id}
-              className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden hover:border-slate-700 transition-colors"
+              onClick={() => handleEdit(merchant)}
+              className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden hover:border-slate-600 transition-colors cursor-pointer group"
             >
               {/* Cover Image */}
               <div className="relative h-32 bg-slate-800 overflow-hidden">
@@ -172,7 +223,7 @@ export default function MerchantManager() {
                   <img
                     src={merchant.cover_image}
                     alt={merchant.name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = 'none';
                     }}
@@ -192,6 +243,11 @@ export default function MerchantManager() {
                       <EyeOff className="w-3 h-3" /> Draft
                     </span>
                   )}
+                </div>
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 backdrop-blur text-white text-xs rounded-full">
+                    <Pencil className="w-3 h-3" /> Click to edit
+                  </span>
                 </div>
               </div>
 
