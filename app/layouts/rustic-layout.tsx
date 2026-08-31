@@ -12,7 +12,7 @@ import type { LayoutProps } from "@/types";
 import { MapPin, Phone, Mail, Instagram, ArrowLeft, MessageSquare, Clock, Banknote, Smartphone, CreditCard } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import Link from "next/link";
-import { getTodayKey } from "@/lib/hours";
+import { getTodayKey, formatOperatingHours } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
 
 export function RusticLayout({
@@ -57,7 +57,7 @@ export function RusticLayout({
                 </div>
                 <h1 className="text-3xl sm:text-4xl font-bold text-orange-900 mb-3">{merchant.name}</h1>
                 <p className="text-orange-800/70 leading-relaxed">{merchant.description}</p>
-                {hours && <p className="mt-3 text-sm text-orange-700 font-medium flex items-center gap-2"><Clock size={16} /> Today: {hours[today] || "Closed"}</p>}
+                {hours && <p className="mt-3 text-sm text-orange-700 font-medium flex items-center gap-2"><Clock size={16} /> Today: {formatOperatingHours(hours[today]) || "Closed"}</p>}
               </div>
             </div>
           </div>
@@ -136,7 +136,8 @@ export function RusticLayout({
                 <div className="space-y-2">
                   {hours && Object.entries(hours).map(([day, time]) => (
                     <div key={day} className={`flex justify-between py-2 px-3 rounded-lg text-sm ${day === today ? "bg-orange-100 text-orange-900 font-medium" : "text-orange-800/60"}`}>
-                      <span className="capitalize">{day}</span><span>{time}</span>
+                      <span className="capitalize">{day}</span>
+                      <span>{formatOperatingHours(time)}</span>
                     </div>
                   ))}
                 </div>
