@@ -4,7 +4,7 @@
 
 import { FadeIn } from "@/app/components/animations";
 import { SafeImage } from "@/app/components/safe-image";
-import { Calendar, MapPin, Clock, Ticket } from "lucide-react";
+import { MapPin, Clock } from "lucide-react";
 import type { LayoutVariant } from "./gallery-section";
 import type { EventItem } from "@/types";
 
@@ -54,21 +54,7 @@ export function EventsSection({
   id,
 }: EventsSectionProps) {
   if (!events || events.length === 0) {
-    return (
-      <FadeIn>
-        <section id={id} className={`py-16 px-4 sm:px-6 lg:px-8 ${sectionBg[variant]}`}>
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className={`text-2xl font-bold mb-3 ${textColor[variant]}`}>{title}</h2>
-            <div className={`inline-flex items-center gap-2 px-4 py-3 rounded-xl ${cardBg[variant]}`}>
-              <Ticket size={18} className={`opacity-50 ${textColor[variant]}`} />
-              <span className={`text-sm opacity-60 ${textColor[variant]}`}>
-                Stay tuned for upcoming events and special happenings!
-              </span>
-            </div>
-          </div>
-        </section>
-      </FadeIn>
-    );
+    return null;
   }
 
   return (
