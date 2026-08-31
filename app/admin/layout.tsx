@@ -1,4 +1,5 @@
 /* bitesite/app/admin/layout.tsx */
+
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { ClientLayout } from './components/client-layout';
@@ -11,6 +12,8 @@ export const metadata: Metadata = {
   description: 'BiteSite analytics dashboard for restaurant partners.',
   robots: 'noindex, nofollow',
 };
+
+export const dynamic = 'force-dynamic';
 
 export default function AdminLayout({
   children,
