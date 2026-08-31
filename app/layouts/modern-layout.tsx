@@ -1,4 +1,4 @@
-/* bitesite/app/layouts/modern-layout.tsx    */
+/* bitesite/app/layouts/modern-layout.tsx */
 
 "use client";
 
@@ -51,15 +51,21 @@ export function ModernLayout({
                   </p>
                 )}
               </div>
-              <div className="relative aspect-[4/3] rounded-2xl overflow-hidden">
-                <SafeImage src={merchant.cover_image} alt={merchant.name} fill className="object-cover" priority />
-              </div>
+              {merchant.cover_image ? (
+                <div className="relative aspect-[4/3] rounded-2xl overflow-hidden">
+                  <SafeImage src={merchant.cover_image} alt={merchant.name} fill className="object-cover" priority />
+                </div>
+              ) : (
+                <div className="aspect-[4/3] rounded-2xl bg-slate-100 flex items-center justify-center">
+                  <span className="text-6xl font-bold text-slate-300">{merchant.name.charAt(0).toUpperCase()}</span>
+                </div>
+              )}
             </div>
           </div>
         </FadeIn>
       )}
 
-      {resolvedFeatures.menu && (
+      {resolvedFeatures.menu && products.length > 0 && (
         <FadeIn>
           <section className="py-12 px-4">
             <div className="max-w-5xl mx-auto">
@@ -129,10 +135,8 @@ export function ModernLayout({
                 </div>
               </div>
 
-              {/* Map */}
               <MapEmbed address={merchant.address} borderColor="#E2E8F0" />
 
-              {/* Payment Methods */}
               {merchant.payment_methods && merchant.payment_methods.length > 0 && (
                 <div className="mt-8 pt-6 border-t border-slate-200">
                   <p className="text-xs font-medium uppercase tracking-wider text-slate-500 mb-3">
@@ -151,7 +155,6 @@ export function ModernLayout({
                 </div>
               )}
 
-              {/* Share */}
               <div className="mt-8 pt-6 border-t border-slate-200">
                 <p className="text-xs font-medium uppercase tracking-wider text-slate-500 mb-3">
                   Share
