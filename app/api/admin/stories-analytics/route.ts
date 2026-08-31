@@ -39,13 +39,12 @@ export async function GET(request: NextRequest) {
     const startDateTime = `${start}T00:00:00+08:00`;
     const endDateTime = `${end}T23:59:59+08:00`;
 
-    // 1. Get ALL articles from DB (published + draft) — match Stories Editor list
+    // 1. Get ALL articles from DB — match Stories Editor list
     const { data: articles } = await supabase
       .from('articles')
-      .select('slug, title, view_count');
+      .select('slug, title, view_count, published');
 
     const articleMap = new Map(articles?.map(a => [a.slug, a]) || []);
-    // Only slugs that exist in articles table
     const allSlugs = articles?.map(a => a.slug) || [];
 
     // 2. Get period views from page_views (only for article slugs)
@@ -60,14 +59,12 @@ export async function GET(request: NextRequest) {
     const periodViewsMap = new Map<string, number>();
     storyViews?.forEach(row => {
       const slug = row.slug || 'story-list';
-      // Only count if this slug exists in articles table
       if (articleMap.has(slug)) {
         periodViewsMap.set(slug, (periodViewsMap.get(slug) || 0) + 1);
       }
     });
 
     // 3. Get conversions (story_to_merchant events)
-    // Fallback event_detail to slug for legacy data
     const { data: conversions } = await supabase
       .from('page_views')
       .select('event_detail, slug')
@@ -78,13 +75,12 @@ export async function GET(request: NextRequest) {
     const conversionMap = new Map<string, number>();
     conversions?.forEach(row => {
       const articleSlug = row.event_detail || row.slug || 'unknown';
-      // Only count if this slug exists in articles table
       if (articleMap.has(articleSlug)) {
         conversionMap.set(articleSlug, (conversionMap.get(articleSlug) || 0) + 1);
       }
     });
 
-    // 4. Build result — one row per article, exactly matching Stories Editor
+    // 4. Build result — one row per article
     const result = allSlugs.map(slug => {
       const article = articleMap.get(slug)!;
       const periodViews = periodViewsMap.get(slug) || 0;
@@ -94,6 +90,7 @@ export async function GET(request: NextRequest) {
       return {
         slug,
         title: article.title || slug.replace(/-/g, ' '),
+        published: article.published,
         periodViews,
         totalViews,
         conversions: conv,
