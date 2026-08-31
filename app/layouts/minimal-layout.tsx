@@ -12,7 +12,7 @@ import type { LayoutProps } from "@/types";
 import { MapPin, Phone, Instagram, ArrowLeft, MessageSquare, Banknote, Smartphone, CreditCard } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import Link from "next/link";
-import { getTodayKey, formatOperatingHours } from "@/lib/hours";
+import { getTodayKey, formatOperatingHours, DAYS } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
 
 export function MinimalLayout({
@@ -101,12 +101,15 @@ export function MinimalLayout({
             <div className="max-w-3xl mx-auto">
               <h2 className="text-sm font-medium tracking-widest uppercase text-stone-500 mb-6">Info</h2>
               <div className="space-y-3 text-sm">
-                {hours && Object.entries(hours).map(([day, time]) => (
-                  <div key={day} className={`flex justify-between py-1 ${day === today ? "text-stone-900 font-medium" : "text-stone-500"}`}>
-                    <span className="capitalize">{day}</span>
-                    <span>{formatOperatingHours(time)}</span>
-                  </div>
-                ))}
+                {hours && DAYS.map((day) => {
+                  const time = hours[day];
+                  if (!time) return null;
+                  return (
+                    <div key={day} className={`flex justify-between py-1 ${day === today ? "text-stone-900 font-medium" : "text-stone-500"}`}>
+                      <span className="capitalize">{day}</span><span>{formatOperatingHours(time)}</span>
+                    </div>
+                  );
+                })}
               </div>
               <div className="mt-6 space-y-3 text-sm">
                 {merchant.address && <a href={`https://maps.google.com/?q=${encodeURIComponent(merchant.address)}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-stone-600"><MapPin size={16} />{merchant.address}</a>}
