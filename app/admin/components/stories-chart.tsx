@@ -8,7 +8,9 @@ import { BookOpen, ArrowRight } from 'lucide-react';
 
 interface StoryData {
   slug: string;
-  views: number;
+  title: string;
+  periodViews: number;
+  totalViews: number;
   conversions: number;
   conversionRate: string;
 }
@@ -20,7 +22,7 @@ interface StoriesChartProps {
 export default function StoriesChart({ range }: StoriesChartProps) {
   const { token } = useAuth();
   const [data, setData] = useState<StoryData[]>([]);
-  const [totals, setTotals] = useState({ totalStoryViews: 0, totalConversions: 0 });
+  const [totals, setTotals] = useState({ totalStoryViews: 0, totalAllTimeViews: 0, totalConversions: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -36,6 +38,7 @@ export default function StoriesChart({ range }: StoriesChartProps) {
           setData(json.data || []);
           setTotals({
             totalStoryViews: json.totalStoryViews || 0,
+            totalAllTimeViews: json.totalAllTimeViews || 0,
             totalConversions: json.totalConversions || 0,
           });
         }
@@ -63,11 +66,15 @@ export default function StoriesChart({ range }: StoriesChartProps) {
 
   return (
     <div className="space-y-6">
-      {/* Summary */}
-      <div className="grid grid-cols-2 gap-4">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-3 gap-4">
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-          <p className="text-xs text-slate-500 mb-1">Total Story Views</p>
+          <p className="text-xs text-slate-500 mb-1">Period Story Views</p>
           <p className="text-2xl font-bold text-white">{totals.totalStoryViews.toLocaleString()}</p>
+        </div>
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+          <p className="text-xs text-slate-500 mb-1">All-Time Story Views</p>
+          <p className="text-2xl font-bold text-slate-300">{totals.totalAllTimeViews.toLocaleString()}</p>
         </div>
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
           <p className="text-xs text-slate-500 mb-1">Story → Merchant Clicks</p>
@@ -86,7 +93,8 @@ export default function StoriesChart({ range }: StoriesChartProps) {
             <thead>
               <tr className="border-b border-slate-800">
                 <th className="text-left px-6 py-3 text-slate-500 font-medium">Story</th>
-                <th className="text-right px-6 py-3 text-slate-500 font-medium">Views</th>
+                <th className="text-right px-6 py-3 text-slate-500 font-medium">Period Views</th>
+                <th className="text-right px-6 py-3 text-slate-500 font-medium">Total Views</th>
                 <th className="text-right px-6 py-3 text-slate-500 font-medium">Conversions</th>
                 <th className="text-right px-6 py-3 text-slate-500 font-medium">Rate</th>
               </tr>
@@ -94,7 +102,7 @@ export default function StoriesChart({ range }: StoriesChartProps) {
             <tbody>
               {data.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-slate-500">
+                  <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
                     No stories data for this period.
                   </td>
                 </tr>
@@ -105,12 +113,20 @@ export default function StoriesChart({ range }: StoriesChartProps) {
                     className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors"
                   >
                     <td className="px-6 py-3">
-                      <span className="text-slate-200 font-medium capitalize">
-                        {story.slug === 'story-list' ? 'Stories List Page' : story.slug.replace(/-/g, ' ')}
-                      </span>
+                      <div>
+                        <span className="text-slate-200 font-medium">
+                          {story.title}
+                        </span>
+                        <span className="block text-xs text-slate-500 mt-0.5">
+                          {story.slug === 'story-list' ? 'Stories List Page' : story.slug}
+                        </span>
+                      </div>
                     </td>
                     <td className="px-6 py-3 text-right text-slate-300 font-mono">
-                      {story.views.toLocaleString()}
+                      {story.periodViews.toLocaleString()}
+                    </td>
+                    <td className="px-6 py-3 text-right text-slate-500 font-mono text-xs">
+                      {story.totalViews.toLocaleString()}
                     </td>
                     <td className="px-6 py-3 text-right">
                       <span className="inline-flex items-center gap-1 text-emerald-400 font-mono">
