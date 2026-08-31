@@ -18,7 +18,7 @@ import { RelatedMerchants } from "@/components/sections/related-merchants";
 import { ViewTracker } from "@/components/sections/view-tracker";
 import { PageViewTracker } from "@/app/components/page-view-tracker";
 
-export const revalidate = 300;
+export const revalidate = 60;
 
 type PageProps = {
   params: Promise<{ merchant: string }>;
