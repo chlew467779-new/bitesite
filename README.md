@@ -1,1139 +1,499 @@
-# BiteSite
-
-Beautiful Menus for Local Restaurants — Kuala Lumpur, Malaysia.
-
-> **Live URL**: https://bitesite-pied.vercel.app  
-> **GitHub**: https://github.com/chlew467779-new/bitesite  
-> **Owner**: CH (BiteSite) — 不懂代码，所有技术操作需逐步指导
-
----
-
-## 📌 Important — How We Edit Code
-
-**We edit code directly on GitHub.com. No local terminal, no bash commands.**
-
-Every change is done through the GitHub web interface:
-1. Go to https://github.com/chlew467779-new/bitesite
-2. Click on the file you want to edit
-3. Click the **pencil icon** (Edit this file)
-4. Paste the new code
-5. Scroll down, write a commit message, click **Commit changes**
-6. Vercel will auto-deploy within 30–60 seconds
-
-> **Tip**: If you need to create a new file, click **"Add file" → "Create new file"** and type the full path.
-
-> **Tip**: Don't edit too many files in one commit. Vercel queues deployments. Wait 30–60 seconds between commits.
-
-> **Tip**: After changing database data, you need to **Redeploy Vercel** (without build cache) to see changes immediately, because pages are cached for 5 minutes (ISR).
-
-> **Tip**: CH 不懂代码。每次对话只改 2-3 个文件，一步一步来，验证后再下一步。
+# BiteSite 项目交接文档 — Phase 4 进行中 + 已知问题汇总
+# 生成时间: 2026-08-31 11:45 MYT
+# 项目: BiteSite — KL 餐厅展示平台
+# GitHub: https://github.com/chlew467779-new/bitesite
+# Live: https://bitesite-pied.vercel.app
+# Owner: CH（不懂代码，所有技术操作需逐步指导）
+# 代码编辑方式: GitHub 网页直接编辑（无本地终端）
+# 部署: GitHub commit → Vercel 自动部署（30-60秒）
 
 ---
 
-## Tech Stack
+## ⚠️ 给新 Chat 的关键指令（必须遵守）
 
-| Layer | Technology |
-|-------|-----------|
-| Framework | Next.js 16 (App Router) |
-| Language | TypeScript (strict) |
-| Styling | Tailwind CSS v4 |
-| Database | Supabase (PostgreSQL) |
-| Deployment | Vercel |
-| Icons | Lucide React |
-| Fonts | Inter, Playfair Display, Noto Sans JP |
-| Markdown | react-markdown + remark-gfm + remark-breaks |
-| Map | Leaflet + OpenStreetMap (free) |
-| Charts | Recharts |
-
----
-
-## Project Structure
-
-```
-app/
-├── page.tsx                    # Homepage — merchant grid + filters + dish search + Latest Stories
-├── layout.tsx                  # Root layout (fonts + metadata + SEO + SiteHeader + Organization Schema)
-├── globals.css                 # Tailwind v4 + CSS custom properties
-├── sitemap.ts                  # Auto-generated sitemap.xml
-├── robots.ts                   # robots.txt
-├── loading.tsx                 # Global loading fallback
-├── join-us/
-│   └── page.tsx                # Join Us pricing page (FAQPage Schema)
-├── stories/
-│   ├── layout.tsx              # Stories list layout (SEO metadata)
-│   ├── page.tsx                # Stories list page (articles grid + category filter) — Client Component
-│   └── [slug]/
-│       └── page.tsx            # Story detail page (ISR 300s + Article Schema + Markdown render + hashtags)
-├── our-partner/
-│   ├── layout.tsx              # Our Partner page SEO metadata
-│   └── page.tsx                # Interactive map showing all merchant locations
-├── api/
-│   ├── view/
-│   │   └── route.ts            # POST /api/view — legacy merchant view count (retained for compatibility)
-│   ├── story-view/
-│   │   └── route.ts            # POST /api/story-view — legacy article view count (retained)
-│   ├── track/
-│   │   └── route.ts            # POST /api/track — universal tracking API (all events, sendBeacon compatible)
-│   └── admin/
-│       ├── login/
-│       │   └── route.ts        # POST /api/admin/login — password auth + 3-strike lockout
-│       ├── overview/
-│       │   └── route.ts        # GET /api/admin/overview?range=7d — dashboard KPI cards
-│       ├── trends/
-│       │   └── route.ts        # GET /api/admin/trends?range=7d — trend line chart data
-│       ├── merchants/
-│       │   └── route.ts        # GET /api/admin/merchants?range=7d — merchant ranking table
-│       ├── merchants-list/
-│       │   └── route.ts        # GET /api/admin/merchants-list — simple merchant list {slug, name}
-│       ├── devices/
-│       │   └── route.ts        # GET /api/admin/devices?range=7d — device/OS/browser breakdown
-│       ├── locations/
-│       │   └── route.ts        # GET /api/admin/locations?range=7d — country + city distribution
-│       ├── referrers/
-│       │   └── route.ts        # GET /api/admin/referrers?range=7d — traffic source pie chart
-│       ├── search-keywords/
-│       │   └── route.ts        # GET /api/admin/search-keywords?range=7d — search terms ranking
-│       ├── events/
-│       │   └── route.ts        # GET /api/admin/events?range=7d — WhatsApp/Booking/Share stats
-│       ├── stories/
-│       │   └── route.ts        # GET/POST/PUT/DELETE — Stories CRUD (supports Chinese slug)
-│       ├── stories-analytics/
-│       │   └── route.ts        # GET — Article views + conversion rate (shows titles + published status)
-│       ├── map/
-│       │   └── route.ts        # GET /api/admin/map?range=7d — Map page analytics
-│       ├── hourly/
-│       │   └── route.ts        # GET /api/admin/hourly?range=7d — 24h peak hours
-│       ├── realtime/
-│       │   └── route.ts        # GET /api/admin/realtime — current online users (5-min window)
-│       ├── export/
-│       │   └── route.ts        # GET /api/admin/export?range=7d&format=csv — CSV download
-│       └── settings/
-│           └── route.ts        # GET/PUT /api/admin/settings — read/write site config
-├── store/
-│   └── [merchant]/
-│       ├── page.tsx              # Merchant detail page (ISR + SSR + Restaurant/Menu/Breadcrumb Schema)
-│       └── loading.tsx           # Merchant page skeleton
-├── layouts/
-│   ├── index.ts                  # Layout registry (classic/elegant/minimal/modern/rustic)
-│   ├── classic-layout.tsx        # Warm amber cafe style
-│   ├── elegant-layout.tsx        # Dark luxury fine-dining style
-│   ├── minimal-layout.tsx        # Clean stone/zen style
-│   ├── modern-layout.tsx         # White slate contemporary style
-│   └── rustic-layout.tsx         # Orange earthy style
-├── admin/                        # Admin Analytics Dashboard + CMS (dark theme)
-│   ├── page.tsx                  # Admin entry: 14-tab dashboard (login form or full dashboard)
-│   ├── layout.tsx                # Admin layout (dark mode, force-dynamic, wraps ClientLayout)
-│   ├── admin-globals.css         # Admin-specific dark theme styles
-│   └── components/
-│       ├── auth-context.tsx      # Login state management (React Context + localStorage)
-│       ├── client-layout.tsx     # AuthProvider wrapper (exported as { ClientLayout })
-│       ├── admin-shell.tsx       # Sidebar + main content layout (12 nav tabs + settings + export)
-│       ├── date-range-picker.tsx # Time range selector (today/7d/30d/90d/365d)
-│       ├── realtime-badge.tsx    # Live online user counter (30s auto-refresh)
-│       ├── stat-cards.tsx        # Top 4 KPI cards (views/unique/events/merchants)
-│       ├── trend-chart.tsx       # Traffic trend line chart
-│       ├── merchant-table.tsx    # Merchant ranking table (sortable)
-│       ├── device-chart.tsx      # Device distribution donut chart
-│       ├── location-chart.tsx    # Top cities bar chart
-│       ├── referrer-chart.tsx    # Traffic source pie chart
-│       ├── search-keywords-table.tsx # Search terms ranking
-│       ├── events-chart.tsx      # WhatsApp/Booking/Share stacked bar chart
-│       ├── stories-chart.tsx     # Stories views + conversion rate (shows article titles + status)
-│       ├── map-stats.tsx         # Map page views + marker clicks
-│       ├── hourly-chart.tsx      # 24-hour peak hours bar chart
-│       ├── export-button.tsx     # CSV export trigger
-│       ├── settings-panel.tsx    # Site settings editor (⚠️ 命名导出 { SettingsPanel })
-│       ├── stories-manager.tsx   # Stories list with search, filter, delete, updated_at column
-│       ├── story-editor.tsx      # Markdown editor + live preview + 6 themes + auto-save + category dropdown + cover preview + word count + emoji picker + syntax hint
-│       ├── merchant-manager.tsx  # ⏳ P4 — Merchant list with status/actions (待创建)
-│       ├── merchant-form.tsx     # ⏳ P4 — 5-tab merchant create/edit form (待创建)
-│       └── menu-manager.tsx      # ⏳ P4 — Category & product management (待创建)
-├── components/
-│   ├── map-embed.tsx             # Google Maps iframe embed component
-│   ├── safe-image.tsx            # Next/Image wrapper with error fallback + loading shimmer
-│   ├── page-view-tracker.tsx     # Universal page view tracker (Client Component)
-│   └── sections/
-│       ├── hero.tsx                  # Homepage hero with search bar
-│       ├── category-filter.tsx       # 3-row sticky filter bar with smooth animations
-│       ├── merchant-card.tsx         # Card: Open Now badge + ShareMenu + ViewCount + tags + hours
-│       ├── merchant-card-skeleton.tsx # Loading skeleton with pulse animation
-│       ├── footer.tsx                # Site footer (Home / Stories / Join Us / Our Partner)
-│       ├── site-header.tsx           # Global nav bar (Home / Our Partner / Stories / Join Us)
-│       ├── map-container.tsx         # Map page wrapper: filter + search logic
-│       ├── map-section.tsx           # Leaflet map: markers with photos, user location pulse, recenter
-│       ├── map-filter.tsx            # Map top filter pills + search input
-│       ├── brand-intro.tsx           # Merchant brand intro
-│       ├── discover-bitesite.tsx     # "Discover more" CTA link to homepage
-│       ├── info-accordion.tsx        # Location / Hours / Dress Code / Social accordion
-│       ├── menu-section.tsx          # Category-based menu grid
-│       ├── product-card.tsx          # Individual dish card with image, price, discount
-│       ├── related-merchants.tsx     # "You May Also Like" recommendations
-│       ├── share-menu.tsx            # Floating share menu (auto-close on outside click & scroll)
-│       ├── share-buttons.tsx         # Inline share buttons (Share + Copy Link only)
-│       ├── view-tracker.tsx          # Client-side merchant view count tracker (2s delay)
-│       ├── view-count-inline.tsx     # Eye icon + formatted count badge
-│       ├── store-hero.tsx            # Full-bleed hero image
-│       ├── store-footer.tsx          # Merchant footer with WhatsApp CTA
-│       ├── text-image-block.tsx      # Alternating text/image section
-│       ├── video-section.tsx         # YouTube embed + self-hosted video player
-│       ├── join-us-hero.tsx          # Join Us page hero
-│       ├── how-it-works.tsx          # 3-step process (Shoot → Build → Share)
-│       ├── pricing-card.tsx          # Pricing card (RM599 + RM149/mo)
-│       ├── faq-accordion.tsx         # FAQ accordion (6 questions)
-│       ├── join-us-cta.tsx           # Bottom WhatsApp CTA
-│       ├── story-filter.tsx          # Stories category filter buttons
-│       ├── story-card.tsx            # Article card (featured + list variants)
-│       ├── story-list.tsx            # Article list with featured article on top
-│       ├── story-hero.tsx            # Story detail hero (6 theme support)
-│       ├── story-content.tsx         # Markdown renderer (6 theme support + /store/ link tracking + remark-breaks)
-│       ├── story-related.tsx         # "More Stories" recommendations
-│       ├── story-view-tracker.tsx    # Client-side article view count tracker
-│       └── latest-stories.tsx        # Homepage "Latest Stories" section (latest 3 articles)
-
-components/                         # LEGACY components (Stories page 在用)
-└── sections/
-    ├── story-content.tsx            # ⚠️ 旧版，不要修改！新版在 app/components/sections/
-    ├── story-hero.tsx               # ⚠️ 旧版
-    ├── story-related.tsx            # ⚠️ 旧版
-    ├── story-view-tracker.tsx       # ⚠️ 旧版
-    ├── story-merchant-link.tsx      # ⚠️ 旧版
-    ├── footer.tsx                   # ⚠️ 旧版
-    └── ...
-
-lib/
-├── supabase.ts                 # Supabase client + all DB queries + related merchant scoring + map query
-├── hours.ts                    # Timezone-safe open/closed logic (Asia/Kuala_Lumpur)
-├── utils.ts                    # cn() — clsx + tailwind-merge
-├── styles.ts                   # OLD 3-style theme map (fresh/luxury/japanese) — DEPRECATED
-├── map-colors.ts               # Cuisine type → marker color mapping for map
-├── image-utils.ts              # Auto image URL optimization (Unsplash / Supabase Storage)
-├── whatsapp.ts                 # BiteSite WhatsApp link constant
-├── markdown.ts                 # Markdown rendering utilities (reserved)
-├── analytics.ts                # EventTypes + classifyReferrer + trackEvent() (sendBeacon priority)
-├── device-detect.ts            # User-Agent parser (device / OS / browser)
-├── admin-auth.ts               # generateAdminToken() + verifyAdminToken() (HMAC-SHA256)
-└── settings.ts                 # Read site config from Supabase settings table with fallback defaults
-
-types/
-└── index.ts                    # All TypeScript interfaces + defaultFeatures + mergeFeatures
-```
-
-> ⚠️ **File Path Trap**: The project has TWO parallel component directories:
-> - `components/sections/` — **legacy**, used by stories page (story-content.tsx, story-hero.tsx, etc.)
-> - `app/components/sections/` — **actively used** by other pages
-> Before modifying any component, check which directory it's actually imported from.
-
-> ⚠️ **Import/Export Trap**: Admin components are mostly `export default`, with these exceptions:
-> - `SettingsPanel` → `import { SettingsPanel } from '...'`
-> - `AuthProvider` → `import { AuthProvider } from '...'`
-> - `useAuth` → `import { useAuth } from '...'`
-> - `ClientLayout` → `import { ClientLayout } from '...'`
+> **CH 不懂代码**。所有技术操作必须：
+> 1. **给完整代码**，让他 copy-paste 到 GitHub
+> 2. **一步一步来**，每次只改少量文件（2-3个）
+> 3. **每次 commit 后等 Vercel 部署**（30-60秒），验证后再下一步
+> 4. **每个新文件第一行必须写注释**：`/* bitesite/文件路径 */`
+> 5. **文件路径陷阱**：`components/sections/` 和 `app/components/sections/` 下可能有同名文件，修改前务必确认 import 路径
+> 6. **ISR 缓存已降到 60 秒**：改数据库后最多等 1 分钟就能看到效果（之前是 5 分钟）
+> 7. **保存/删除已自动刷新缓存**：Admin 操作后页面会立即更新（revalidatePath 已接入）
+> 8. **Import 导出方式陷阱**：admin components 大部分是 `export default`，只有 `SettingsPanel` 是命名导出 `{ SettingsPanel }`
+> 9. **分阶段工作**：每次对话不要安排太多文件改动，避免超出上下文长度被强制结束
+> 10. **Token 30 分钟过期**：Admin 操作超时后会 Unauthorized，需要刷新页面重新登录
 
 ---
 
-## Database Schema
+## 一、项目上下文（快速背景）
 
-### `settings` (site configuration)
-| Column | Type | Notes |
-|--------|------|-------|
-| id | SERIAL | PK |
-| key | TEXT | Unique setting key |
-| value | TEXT | Setting value |
-| description | TEXT | Human-readable description |
-| updated_at | TIMESTAMPTZ | Auto-updated |
-
-**Active settings** (controlled via Admin Dashboard):
-- `site_title` — Browser tab title, SEO, Schema.org
-- `site_description` — Meta description, social sharing
-- `footer_text` — Merchant page footer link text
-
-### `merchants` (main table)
-| Column | Type | Notes |
-|--------|------|-------|
-| id | UUID | PK |
-| slug | TEXT | URL-friendly name, unique, indexed |
-| name | TEXT | Restaurant name |
-| description | TEXT | Long description, supports newlines |
-| cuisine_type | TEXT | Comma-separated e.g. "Cafe, Western" |
-| address | TEXT | Full address |
-| phone | TEXT | Display phone number |
-| whatsapp | TEXT | WhatsApp number (digits only for wa.me link) |
-| email | TEXT | Contact email |
-| website | TEXT | External website URL |
-| instagram | TEXT | Instagram URL |
-| facebook | TEXT | Facebook URL |
-| cover_image | TEXT | Hero image URL (used for OG image + map marker photo) |
-| logo_image | TEXT | Logo URL |
-| operating_hours | JSONB | `{monday: "9:00 AM - 10:00 PM", ...}` |
-| dress_code | TEXT | Optional dress code info |
-| menu_pdf_url | TEXT | PDF menu link |
-| video_url | TEXT | Single video URL (legacy field) |
-| video_type | TEXT | "youtube" / "self_hosted" / "none" |
-| video_caption | TEXT | Video caption |
-| reference_website | TEXT | Reference/inspiration URL |
-| custom_style | JSONB | Custom CSS overrides (reserved) |
-| style | TEXT | **DEPRECATED** — old 3-style system (fresh/luxury/japanese) |
-| layout | TEXT | **ACTIVE** — 5 layouts (classic/elegant/minimal/modern/rustic) |
-| features | JSONB | Tier feature toggles |
-| settings | JSONB | Misc merchant settings |
-| status | TEXT | `active` or `inactive` |
-| area | TEXT | District/area e.g. "Desa ParkCity", "Bangsar" |
-| tags | TEXT[] | Array of tags e.g. `["Halal", "Pet Friendly", "WiFi"]` |
-| payment_methods | TEXT[] | `["Cash", "Cashless", "Cards"]` |
-| latitude | FLOAT8 | Latitude for map marker |
-| longitude | FLOAT8 | Longitude for map marker |
-| is_published | BOOLEAN | Only published merchants appear on site |
-| created_at | TIMESTAMPTZ | |
-| updated_at | TIMESTAMPTZ | Used for sitemap lastModified |
-
-### `categories`
-| Column | Type |
-|--------|------|
-| id | UUID PK |
-| merchant_id | UUID → merchants (ON DELETE CASCADE) |
-| name | TEXT | Category name e.g. "Starters", "Mains" |
-| sort_order | INT | Display order |
-| created_at | TIMESTAMPTZ |
-
-### `products`
-| Column | Type |
-|--------|------|
-| id | UUID PK |
-| category_id | UUID → categories |
-| merchant_id | UUID → merchants |
-| name | TEXT | Dish name |
-| description | TEXT | Dish description |
-| price | NUMERIC | Regular price |
-| discount_price | NUMERIC | Sale price (shows strikethrough original) |
-| image_url | TEXT | Product photo |
-| is_featured | BOOLEAN | Appears in Seasonal tier |
-| is_available | BOOLEAN | Shows "Unavailable" badge if false |
-| show_prices | BOOLEAN | Whether to display price |
-| sort_order | INT | Display order within category |
-| created_at | TIMESTAMPTZ |
-
-### `merchant_videos`
-| Column | Type |
-|--------|------|
-| id | UUID PK |
-| merchant_id | UUID → merchants (ON DELETE CASCADE) |
-| video_url | TEXT | YouTube URL or direct video URL |
-| video_type | TEXT | "youtube" / "self_hosted" |
-| caption | TEXT | Video caption below player |
-| sort_order | INT | Display order |
-| created_at | TIMESTAMPTZ |
-
-### `articles` (Stories)
-| Column | Type | Notes |
-|--------|------|-------|
-| id | UUID | PK, auto-generated |
-| slug | TEXT | **Required.** URL-friendly identifier. Unique, indexed. Supports Chinese characters. |
-| title | TEXT | **Required.** Article headline. |
-| excerpt | TEXT | Short summary shown on the list page. |
-| content | TEXT | **Required.** Full article body in **Markdown**. Single line breaks preserved. |
-| cover_image | TEXT | URL to the featured image. **Recommended:** 16:9 ratio. |
-| category | TEXT | **Required.** Used for filtering on `/stories`. |
-| tags | TEXT[] | Array of tags. |
-| merchant_slug | TEXT | **Optional.** Links to a merchant page. |
-| author | TEXT | Defaults to `BiteSite Team`. |
-| published | BOOLEAN | **Must be `true`** to appear on the website. |
-| view_count | INT | Auto-incremented. Legacy total views. Do NOT edit manually. |
-| background_style | TEXT | `default`/`warm`/`cool`/`dark`/`nature`/`minimal` |
-| created_at | TIMESTAMPTZ | Auto-generated. |
-| updated_at | TIMESTAMPTZ | Auto-generated. |
-
-### `events`
-| Column | Type |
-|--------|------|
-| id | UUID PK |
-| merchant_id | UUID → merchants |
-| title | TEXT | Event name |
-| description | TEXT | Event details |
-| event_date | DATE | Event date |
-| event_time | TEXT | e.g. "7:00 PM - 10:00 PM" |
-| image_url | TEXT | Event photo |
-| created_at | TIMESTAMPTZ |
-
-### `page_views` (raw analytics log — primary data source)
-| Column | Type | Notes |
-|--------|------|-------|
-| id | UUID PK | gen_random_uuid() |
-| slug | TEXT | Merchant slug (null for non-merchant pages) |
-| path | TEXT NOT NULL | e.g. `/store/abc`, `/stories/xyz` |
-| page_type | TEXT | merchant / story / home / join_us / our_partner / story_list / other |
-| event_type | TEXT NOT NULL DEFAULT 'page_view' | page_view / whatsapp_click / booking_submit / share / search / map_marker_click / story_to_merchant |
-| event_detail | TEXT | Search keyword, share platform, article slug, etc. |
-| ip | TEXT | Visitor IP |
-| country | TEXT | From Vercel `x-vercel-ip-country` |
-| city | Text | From Vercel `x-vercel-ip-city` (URL decoded) |
-| device_type | TEXT | mobile / desktop / tablet |
-| os | TEXT | iOS / Android / Windows / macOS / Linux / Other |
-| browser | TEXT | Chrome / Safari / Samsung Internet / Firefox / Edge / Other |
-| user_agent | TEXT | Raw User-Agent string |
-| referrer | TEXT | document.referrer |
-| referrer_type | TEXT | google / instagram / facebook / whatsapp / direct / internal / other |
-| metadata | JSONB DEFAULT '{}' | Reserved for future expansion |
-| created_at | TIMESTAMPTZ DEFAULT now() | |
-
-**Indexes**: `created_at`, `slug`, `event_type`, `path`, `device_type`, `country+city`, `page_type`, `referrer_type`
-
-### `merchant_daily_views` (daily aggregated analytics — cron rollup)
-| Column | Type | Notes |
-|--------|------|-------|
-| id | UUID PK | |
-| slug | TEXT | null = non-merchant pages |
-| page_type | TEXT NOT NULL | |
-| view_date | DATE NOT NULL | |
-| device_type | TEXT | |
-| country | TEXT | |
-| city | TEXT | |
-| os | TEXT | |
-| browser | TEXT | |
-| referrer_type | TEXT | |
-| event_type | TEXT DEFAULT 'page_view' | |
-| count | INT DEFAULT 0 | |
-| unique_ips | INT DEFAULT 0 | |
-| created_at | TIMESTAMPTZ DEFAULT now() | |
-| updated_at | TIMESTAMPTZ DEFAULT now() | |
-| **UNIQUE** | | (slug, page_type, view_date, device_type, country, city, os, browser, referrer_type, event_type) |
-
-**Indexes**: `view_date`, `slug`, `page_type`, `event_type`
-
-### `merchant_stats` (legacy view count — retained for compatibility)
-| Column | Type |
-|--------|------|
-| slug | TEXT PK | Same as merchants.slug |
-| view_count | INT DEFAULT 0 | Total lifetime views |
-| last_viewed_at | TIMESTAMPTZ | Last view timestamp |
-
-### `merchant_monthly_views` (monthly analytics — reserved)
-| Column | Type |
-|--------|------|
-| id | SERIAL PK |
-| slug | TEXT | Merchant slug |
-| year_month | TEXT | Format "YYYY-MM" |
-| view_count | INT DEFAULT 0 | Views for that month |
-| UNIQUE(slug, year_month) | Composite unique constraint |
-
-### `login_attempts` (brute-force protection)
-| Column | Type | Notes |
-|--------|------|-------|
-| id | UUID PK | |
-| ip | TEXT NOT NULL | |
-| attempt_count | INT DEFAULT 1 | |
-| last_attempt_at | TIMESTAMPTZ DEFAULT now() | |
-| locked_until | TIMESTAMPTZ | null = not locked |
-| created_at | TIMESTAMPTZ DEFAULT now() | |
-| **UNIQUE** | | (ip) |
-
-**Indexes**: `ip`, `locked_until`
+- **业务**: 为 KL 独立咖啡馆/餐厅提供展示页面，纯展示无购物车
+- **技术栈**: Next.js 16 + Tailwind v4 + Supabase + Vercel
+- **关键决策**: 
+  - 无购物车/无下单/无 auth（用户端）
+  - 每个商家页有独立视觉风格（classic/elegant/minimal/modern/rustic）
+  - BiteSite 品牌仅在底部低调显示 footer 链接
+  - Booking 表单发给**商家自己的 WhatsApp**（`merchant.whatsapp`）
+- **定价**: Setup RM599 + Monthly RM149
 
 ---
 
-## Supabase RPC Functions
+## 二、已完成工作汇总
 
+### ✅ Phase 0-1: 基础架构（之前完成）
+- 首页、商家列表、商家详情页、Stories 页面
+- 5 种 layout 风格（classic/elegant/minimal/modern/rustic）
+- Supabase 数据库 + Vercel 部署
+- Analytics 埋点系统
+
+### ✅ Phase 2: Admin Dashboard 修复（2026-08-31 完成）
+- 14 个 tab 全部正常渲染
+- `dynamic = 'force-dynamic'` 移到 layout.tsx
+
+### ✅ Phase 3: Stories Analytics 优化（2026-08-31 完成）
+- Stories Analytics 表格显示真实标题（不是 slug）
+- 双 views 系统（Period Views + Total Views）
+- Status 列（Published/Draft）
+- event_detail fallback 修复
+
+### ✅ Phase 4 步骤 1: Merchant Manager 列表（本次对话完成）
+**文件**:
+- `app/api/admin/merchants-crud/route.ts` — GET 接口，返回 enriched merchants（含 product_count, view_count）
+- `app/admin/components/merchant-manager.tsx` — 卡片式列表，支持搜索、Published/Draft 筛选、Status 筛选
+- `app/admin/components/admin-shell.tsx` — 添加 "Merchant Manager" tab
+- `app/admin/page.tsx` — 添加 `merchant-manager` tab 渲染
+
+**功能**:
+- 显示商家 logo、名称、slug、layout、is_published 状态、views 数、products 数量
+- 搜索框：按名称/slug 搜索
+- 状态筛选：All / Published / Draft
+- Status 筛选：All / Active / Inactive（右上角双标签：Live/Draft + Active/Inactive）
+- 新建商家按钮
+- 点击卡片进入编辑
+- View 外链可打开商家页面
+
+### ✅ Phase 4 步骤 2: Merchant Editor 表单（本次对话完成）
+**文件**:
+- `app/api/admin/merchants-crud/route.ts` — 已更新，支持 POST/PUT/DELETE + revalidatePath
+- `app/admin/components/merchant-form.tsx` — 新建，5 个 tab 的完整表单
+- `app/admin/components/merchant-manager.tsx` — 已更新，接入表单（新建/编辑/删除）
+
+**5 个 Tab**:
+1. **Basic Info**: name*, slug*（自动生成）, tagline, description, layout（5 种可选）, cuisine_type, area, tags
+2. **Contact**: address, phone, whatsapp*, email, website, instagram, facebook, latitude, longitude
+3. **Hours**: 周一到周日，每行一个文本输入框
+4. **Settings**: is_published toggle, status（active/inactive）, 9 个 Features 勾选（Hero/About/Menu/Contact/Related/Events/Video/Gallery/Testimonials）
+5. **Images**: logo_image URL, cover_image URL, menu_pdf_url URL（带预览图）
+
+**表单验证**:
+- name 必填
+- slug 必填，唯一，只允许 a-z0-9-（自动从 name 生成）
+- whatsapp 必填（Booking 表单需要）
+
+**删除功能**:
+- 点击 Delete 弹出确认对话框
+- 删除前自动清理关联数据（products, categories, merchant_videos, events）
+
+### ✅ 性能优化（本次对话完成）
+- ISR 缓存从 300s 降到 60s（`app/store/[merchant]/page.tsx` 和 `app/stories/[slug]/page.tsx`）
+- Admin API 保存/删除后立即调用 `revalidatePath()`
+  - Merchants: POST/PUT/DELETE 后刷新 `/store/{slug}` 和 `/`
+  - Stories: POST/PUT/DELETE 后刷新 `/stories/{slug}` 和 `/stories`
+
+---
+
+## 三、🟡 已知问题汇总（从 test restaurant 测试发现）
+
+### 🔴 高优先级（影响现有商家体验，必须尽快修）
+
+#### 问题 1: Operating Hours 输入不标准化
+**现象**: 
+- 输入 `9:00 am - 10:00 pm` → 显示正常
+- 输入 `open` → 显示 `open`（小写，未格式化）
+- 输入 `CLOSED` → 显示 `CLOSED`（大写，未统一）
+- 输入 `OPEN CLOSED` → 显示 `OPEN CLOSED`（混乱）
+- 输入 `9:00 am - 10:00 pm 9:00 am - 10:00 pm` → 文本重复
+- 输入 `9:00 am - 10:00 pm CLOSED` → 时间和 Closed 混在一起
+
+**根因**: 纯文本输入，前端没有标准化处理
+
+**需求**:
+- 支持多时间段：`9:00 AM - 12:00 PM, 3:00 PM - 7:00 PM`
+- 统一大小写：不管输入 `am`/`AM`/`a.m.`，显示统一格式
+- 识别 "Closed"：任何包含 `closed`（大小写不敏感）→ 显示 "Closed"
+- 结构化输入：不用文本框，改用 Start Time + End Time 行，可添加多行
+- 快捷按钮："Copy Monday to all days"、"Set as Closed"
+
+**涉及文件**:
+- `app/admin/components/merchant-form.tsx` — Hours tab 重构
+- `app/store/[merchant]/page.tsx` 或相关组件 — 前端显示标准化
+
+#### 问题 2: 空模块显示标题（没内容还显示区块）
+**现象**: 
+- Menu 区块：没有菜品，但显示 "Menu" 标题和空内容
+- Gallery 区块：没有图片，显示 "No Image" 灰色块
+- Events 区块：没有活动，显示 "Stay tuned..."
+- Video 区块：没有视频，完全空白但标题还在
+- Testimonials 区块：没有评论，完全空白但标题还在
+
+**根因**: Features toggle 只控制"是否渲染区块"，但区块内部没有判断"是否有内容"
+
+**需求**:
+- Menu 区块：products.length === 0 时不渲染
+- Gallery 区块：没有图片时不渲染
+- Events 区块：没有 events 时不渲染
+- Video 区块：没有 video URL 时不渲染
+- Testimonials 区块：没有 reviews 时不渲染
+- Hero 区块：没有 cover_image 时显示 fallback（纯色背景 + 商家名首字母），而不是 "No Image"
+
+**涉及文件**:
+- `app/store/[merchant]/page.tsx` 或相关 section 组件
+- 需要确认各区块的组件路径（可能在 `app/components/sections/` 或 `components/sections/`）
+
+#### 问题 3: 图片 URL 容易填错
+**现象**: 
+- 用户填了 Unsplash 页面链接（`https://unsplash.com/photos/...`）
+- 结果前端显示 "No Image" 灰色块
+- 用户不知道要填直接图片链接（`https://images.unsplash.com/photo-...`）
+
+**需求**:
+- 输入框加验证：如果不是以图片扩展名结尾（.jpg/.jpeg/.png/.webp/.gif），显示黄色警告提示
+- 加帮助文字："Paste the direct image URL (ends with .jpg or .png). Right-click image → Copy image address."
+- 预览图加载失败时显示明确提示（而不是默默隐藏）
+
+**涉及文件**:
+- `app/admin/components/merchant-form.tsx` — Images tab
+
+#### 问题 4: Social Links 没有格式验证
+**现象**: 
+- Website: `test website` → 不是网址
+- Instagram: `test instagram` → 不是网址
+- 前端点击会 404 或跳转错误
+
+**需求**:
+- 输入框加 `https://` 前缀占位符
+- 保存时验证：如果不是有效 URL（以 http:// 或 https:// 开头），显示警告但不阻止保存（或者存为 null）
+- 前端渲染时：如果不是有效 URL，显示为纯文本而不是链接
+
+**涉及文件**:
+- `app/admin/components/merchant-form.tsx` — Contact tab
+- `app/store/[merchant]/page.tsx` — 前端渲染逻辑
+
+#### 问题 5: 缺少 Save 成功/失败反馈
+**现象**: 
+- 点击 Create/Update 后，如果成功只是回到列表，没有 Toast/提示
+- 如果失败，只在表单顶部显示红色错误条，容易忽略
+- 用户不确定操作是否成功
+
+**需求**:
+- 添加 Toast 组件：Save 成功显示绿色 "Merchant saved successfully"
+- Delete 成功显示 "Merchant deleted"
+- 错误时显示红色 Toast（替代或补充现有的顶部 error bar）
+
+**涉及文件**:
+- `app/admin/components/merchant-form.tsx`
+- 可能需要新建 `app/admin/components/toast.tsx` 或类似组件
+
+### 🟡 中优先级（Admin 功能完善）
+
+#### 问题 6: Features toggle 有 9 个选项但大部分没有内容管理
+**现状**:
+| Feature | 有内容管理界面 | 内容存在哪 |
+|---------|--------------|----------|
+| Hero | ✅ | Images tab → cover_image |
+| About | ✅ | Basic Info → description |
+| Menu | ❌ | 需要 Menu Manager |
+| Contact | ✅ | Contact tab |
+| Related | ✅ | 自动（同 cuisine_type） |
+| Events | ❌ | 需要 Events Editor |
+| Video | ❌ | 需要 Video URL 输入 |
+| Gallery | ❌ | 需要 Gallery 图片管理 |
+| Testimonials | ❌ | 需要 Reviews 管理 |
+
+**需求**:
+- 短期内：没内容管理的 Features 先不显示 toggle，或者 toggle 旁标注 "Coming soon"
+- 或者：有 toggle 但对应区块为空时自动隐藏（见问题 2）
+
+#### 问题 7: Cuisine Type / Area / Tags 应该是下拉+自定义
+**现象**: 
+- 纯文本输入导致数据混乱
+- `test cuisine type` 显示为全大写 `TEST CUISINE TYPE`
+- 同一类型多种写法：`Cafe`/`cafe`/`CAFE`/`Café`
+
+**需求**:
+- **Cuisine Type**：下拉预设（Cafe, Western, Asian, Bakery, Japanese, Indian, Chinese, Korean, Mexican, Italian, French, Fusion, Dessert, Bar, Fine Dining）+ "Other" 自定义输入
+- **Area**：下拉预设（Desa ParkCity, Bangsar, Mont Kiara, KLCC, Damansara, TTDI, PJ, Kepong, Cheras, Subang, Puchong, Kuchai Lama, Mid Valley, Pavilion, Setapak）+ "Other" 自定义输入
+- **Tags**：多选标签预设（Halal, Pet Friendly, WiFi, Outdoor Seating, Delivery, Takeaway, Parking, Wheelchair Accessible, Live Music, Private Room, Vegan Options, Gluten Free）+ 自定义新增
+- 数据库层面：考虑是否需要新建 `cuisine_types` / `areas` 表，还是继续用字符串+前端限制
+
+**涉及文件**:
+- `app/admin/components/merchant-form.tsx` — Basic Info tab
+- 可能需要新建预设常量文件
+
+#### 问题 8: 缺少 Preview 功能
+**需求**:
+- 表单加 "Preview" 按钮，在新标签页打开 `/store/{slug}?preview=1`
+- 或者右侧边栏显示实时预览卡片
+- 对于 Draft 状态的商家，也能预览（绕过 is_published 检查）
+
+**涉及文件**:
+- `app/admin/components/merchant-form.tsx`
+- `app/store/[merchant]/page.tsx` — 需要支持 `?preview=1` 参数
+
+### 🟢 低优先级（体验提升）
+
+#### 问题 9: 缺少 Auto-save
+**需求**: 填到一半刷新页面，内容不丢失（localStorage 草稿）
+
+#### 问题 10: 缺少 Duplicate Merchant 功能
+**需求**: 基于现有商家复制一份，改个名字就能快速创建新商家
+
+#### 问题 11: tagline 字段数据库兼容性
+**历史**: 最初创建 merchants 表时可能没有 tagline 字段，需要确认所有环境都有该字段
+**SQL 检查**: `ALTER TABLE merchants ADD COLUMN IF NOT EXISTS tagline TEXT;`
+
+#### 问题 12: 地图坐标精度
+**现象**: 填了 Latitude 3.134, Longitude 101.7，但地图显示 Kuchai Lama（可能默认坐标）
+**需要确认**: Google Maps 嵌入组件用的是坐标还是地址搜索
+
+---
+
+## 四、🔵 下一步计划（分阶段）
+
+### 阶段 A: 修复高优先级问题（🔴 层）
+**目标**: 让现有商家页面体验正常，test restaurant 不再显示混乱
+
+#### A1: Operating Hours 结构化输入
+- 改 `app/admin/components/merchant-form.tsx` — Hours tab
+- 改商家页面营业时间显示组件（确认路径后修改）
+- 工作量：中
+
+#### A2: 空模块自动隐藏 + 图片 Fallback
+- 改商家页面各 section 组件
+- 工作量：中（需要确认各区块组件路径）
+
+#### A3: 图片 URL 验证 + Social Links 验证 + Toast 提示
+- 改 `app/admin/components/merchant-form.tsx`
+- 可能需要新建 Toast 组件
+- 工作量：小
+
+### 阶段 B: Menu Manager（核心功能）
+**目标**: 能在 Admin 里管理菜单（Categories + Products）
+
+#### B1: Menu Manager UI
+- 新建 `app/admin/components/menu-manager.tsx`
+- 在 MerchantForm 里嵌入或作为独立 tab
+- 功能：显示该商家的 categories + products，增删改，拖拽排序
+
+#### B2: Menu CRUD API
+- 新建 `app/api/admin/products/route.ts`（GET/POST/PUT/DELETE）
+- 操作 categories 和 products 表
+
+#### B3: 前端菜单渲染对接
+- 确认商家页面如何读取 categories/products
+- 工作量：大
+
+### 阶段 C: 下拉选择 + 自定义（🟡 层）
+- Cuisine Type / Area / Tags 下拉 + 自定义
+- Features toggle 标注 "Coming soon" 或隐藏无内容管理的选项
+- Preview 按钮
+
+### 阶段 D: 其他内容管理（Events/Video/Gallery/Testimonials）
+- 需要新建数据库表
+- 每个都要独立的 Admin 管理界面
+- 工作量：大，分多个阶段
+
+### 阶段 E: Phase 5 优化
+- Supabase Storage 图片上传
+- Auto-save
+- Duplicate Merchant
+- Stories 分页、全文搜索
+
+---
+
+## 五、数据库表结构速查（最新确认）
+
+### merchants（商家）
 ```sql
--- Increment merchant view count (total + monthly)
-increment_view_count(merchant_slug TEXT) RETURNS void
-
--- Increment article view count
-increment_article_view(article_slug TEXT) RETURNS void
-
--- Aggregate daily views (run by cron hourly)
-aggregate_daily_views() RETURNS void
+id uuid, slug text UNIQUE, name text, tagline text, description text,
+layout text, cuisine_type text, area text, tags text[],
+address text, phone text, whatsapp text, email text, website text,
+instagram text, facebook text, latitude numeric, longitude numeric,
+operating_hours jsonb, is_published boolean DEFAULT false,
+status text DEFAULT 'active', features jsonb,
+logo_image text, cover_image text, menu_pdf_url text,
+created_at timestamptz, updated_at timestamptz
 ```
 
-### Aggregation Setup (One-time)
-Run in Supabase SQL Editor:
+### categories（菜品分类）
 ```sql
-CREATE OR REPLACE FUNCTION aggregate_daily_views()
-RETURNS void AS $$
-BEGIN
-  INSERT INTO merchant_daily_views (
-    slug, page_type, view_date, device_type, country, city, os, browser, referrer_type, event_type, count, unique_ips
-  )
-  SELECT 
-    slug, page_type, DATE(created_at) as view_date,
-    device_type, country, city, os, browser, referrer_type, event_type,
-    COUNT(*) as count, COUNT(DISTINCT ip) as unique_ips
-  FROM page_views
-  WHERE created_at >= CURRENT_DATE - INTERVAL '2 days'
-  GROUP BY slug, page_type, DATE(created_at), device_type, country, city, os, browser, referrer_type, event_type
-  ON CONFLICT (slug, page_type, view_date, device_type, country, city, os, browser, referrer_type, event_type)
-  DO UPDATE SET count = EXCLUDED.count, unique_ips = EXCLUDED.unique_ips, updated_at = now();
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE EXTENSION IF NOT EXISTS pg_cron;
-SELECT cron.schedule('aggregate-views-hourly', '0 * * * *', 'SELECT aggregate_daily_views()');
+id uuid, merchant_id uuid REFERENCES merchants(id),
+name text, sort_order int, created_at
 ```
 
-
----
-
-## Admin Dashboard
-
-**URL**: `/admin`  
-**Login**: Password-protected (HMAC-SHA256 token, stored in localStorage)  
-**Theme**: Dark mode (slate-950 background, amber-500 accents)
-
-### Authentication
-- **Password**: Stored in Vercel Environment Variable `ADMIN_PASSWORD`
-- **Brute-force protection**: 3 failed attempts → lock IP for 15 minutes
-- **Session**: HMAC-SHA256 signed token, expires after 30 minutes
-- **Token storage**: localStorage (`admin_session`)
-
-### Security Features
-| Feature | Implementation |
-|---------|---------------|
-| Password storage | Vercel Environment Variable (Secret type) |
-| Brute-force lockout | `login_attempts` table — 3 strikes = 15 min lock |
-| Session token | HMAC-SHA256 signed, tamper-proof |
-| Token expiry | 30 minutes |
-| API auth | Every admin API checks `x-admin-token` header |
-
-### Dashboard Tabs (14个，全部 ✅ 正常工作)
-
-| Tab | What It Shows | Data Source | Status |
-|-----|--------------|-------------|--------|
-| **Overview** | Total Views, Unique Visitors, Total Events, Active Merchants + trend chart + device chart + referrer chart + events chart + location chart + hourly chart + stories chart + map stats + search keywords + merchant ranking | `page_views` raw table | ✅ |
-| **Trends** | Daily traffic line chart (last 7/30/90/365 days) | `page_views` raw table | ✅ |
-| **Merchants** | Merchant ranking table (views, WhatsApp, bookings) | `page_views` raw table | ✅ |
-| **Devices** | Desktop / Mobile / Tablet donut chart + OS/browser breakdown | `page_views` raw table | ✅ |
-| **Locations** | Top cities and countries bar chart | `page_views` raw table | ✅ |
-| **Referrers** | Direct / Google / Bing / Social / Other pie chart | `page_views` raw table | ✅ |
-| **Search Keywords** | What users searched on the homepage | `page_views` raw table (event_type='search') | ✅ |
-| **Events** | WhatsApp clicks, bookings, shares, map clicks, story→merchant | `page_views` raw table | ✅ |
-| **Stories Analytics** | Article views + conversion rate + **article titles** + **published/draft status** + Period Views + Total Views | `articles` + `page_views` | ✅ |
-| **Stories Editor** | Create/edit/delete articles with Markdown editor + live preview + 6 background themes + auto-save + category dropdown + cover image preview + word count + emoji picker + Markdown syntax hint | `articles` table (CRUD API) | ✅ |
-| **Map Stats** | Map page views + marker click counts | `page_views` raw table | ✅ |
-| **Hourly** | 24-hour peak hours bar chart | `page_views` raw table | ✅ |
-| **Export CSV** | Download all analytics data as CSV | `page_views` raw table | ✅ |
-| **Settings** | Edit `site_title`, `site_description`, `footer_text` | `settings` table | ✅ |
-
-### Admin API Endpoints
-
-All admin APIs require `x-admin-token` header (HMAC-SHA256).
-
-| Endpoint | Method | Description | Status |
-|----------|--------|-------------|--------|
-| `/api/admin/login` | POST | Password auth, returns admin token | ✅ |
-| `/api/admin/overview` | GET | Dashboard KPI cards | ✅ |
-| `/api/admin/trends` | GET | Daily traffic trend | ✅ |
-| `/api/admin/merchants` | GET | Merchant ranking (analytics data) | ✅ |
-| `/api/admin/merchants-list` | GET | Simple merchant list `{slug, name}` for dropdowns | ✅ |
-| `/api/admin/devices` | GET | Device breakdown | ✅ |
-| `/api/admin/locations` | GET | Geo distribution | ✅ |
-| `/api/admin/referrers` | GET | Traffic sources | ✅ |
-| `/api/admin/search-keywords` | GET | Search terms | ✅ |
-| `/api/admin/events` | GET | Event stats | ✅ |
-| `/api/admin/stories` | GET/POST/PUT/DELETE | Stories CRUD — list, create, update, delete articles | ✅ |
-| `/api/admin/stories-analytics` | GET | Article views + conversion rate (shows titles + status) | ✅ |
-| `/api/admin/map` | GET | Map page stats | ✅ |
-| `/api/admin/hourly` | GET | 24h peak hours | ✅ |
-| `/api/admin/realtime` | GET | Current online users | ✅ |
-| `/api/admin/export` | GET | CSV download | ✅ |
-| `/api/admin/settings` | GET/PUT | Site config (auth protected) | ✅ |
-| `/api/admin/merchants-crud` | GET/POST/PUT/DELETE | ⏳ Merchant CRUD (待创建) | ⏳ |
-| `/api/admin/products` | GET/POST/PUT/DELETE | ⏳ Product CRUD (待创建) | ⏳ |
-
----
-
-## Stories Editor 功能清单
-
-### 编辑器
-- ✅ **中文 slug** — 标题输入"测试文章" → slug 为 `测试文章`
-- ✅ **Category 下拉提示** — 从现有文章提取分类，如 "Chicken rice 鸡饭", "New Opening"
-- ✅ **Cover Image 预览** — 输入 URL 后下方显示缩略图
-- ✅ **Markdown 语法提示** — 编辑器上方显示 💡 语法提示条
-- ✅ **Emoji 选择器** — 工具栏笑脸按钮，点击弹出 emoji 面板
-- ✅ **字数统计** — 右下角显示 `1 words · 6 characters`
-- ✅ **自动保存草稿** — 每 30 秒自动保存到 localStorage，顶部显示 "Auto-saved at 10:45:08 PM"
-- ✅ **刷新后恢复草稿** — 刷新后提示恢复草稿
-- ✅ **6 个背景主题** — default / warm / cool / dark / nature / minimal
-- ✅ **实时预览** — 右侧显示渲染效果
-
-### 列表页
-- ✅ **显示 Updated 列** — 含日期和时分，如 "30 Aug 2026, 10:45 pm"
-- ✅ **保存后列表自动刷新** — 编辑文章 → Update → 回到列表立即看到更新
-- ✅ **Tags 显示正常** — `#Asian food`, `#bakery` 等
-- ✅ **搜索** — 按 title/category/tags 搜索
-- ✅ **筛选** — All / Published / Draft
-
----
-
-## Stories Analytics 功能清单
-
-- ✅ **Summary Cards** — 3 张：Period Story Views / All-Time Story Views / Story → Merchant Clicks
-- ✅ **表格 Story 列** — 显示文章**真实标题**（不是 slug）
-- ✅ **表格小字** — 标题下方灰色显示 slug
-- ✅ **Status 列** — Published = 绿色 Eye / Draft = 黄色 EyeOff
-- ✅ **Period Views** — 该时间段内 `page_views` 聚合数
-- ✅ **Total Views** — `articles.view_count` 累计数
-- ✅ **Conversions** — Story → Merchant 点击数
-- ✅ **Conversion Rate** — 转化率百分比
-- ✅ **切换 7d/30d/365d** — Period Views 变化，Total Views 不变
-- ✅ **只显示 articles 表存在的文章** — 不会混入陌生 slug
-- ✅ **Legacy 数据修复** — `event_detail` 为 NULL 时 fallback 到 `slug` 字段
-
----
-
-## How to Publish an Article
-
-### Method 1: Admin Editor (Recommended)
-
-1. Go to `/admin` and log in
-2. Click **"Stories Editor"** in the left sidebar
-3. Click **"+ New Story"**
-4. Fill in the form:
-   - **Title** — Article headline (supports Chinese)
-   - **Slug** — Auto-generated from title, editable (URL-friendly name, supports Chinese)
-   - **Excerpt** — Short summary for list page and SEO
-   - **Cover Image URL** — Full image URL (e.g. Unsplash). Preview appears below the input.
-   - **Category** — Type or select from existing categories (prevents typos)
-   - **Author** — Default "BiteSite Team"
-   - **Tags** — Comma-separated, e.g. "cafe, coffee, brunch"
-   - **Linked Merchant** — Optional: link to a merchant page
-   - **Background Style** — Choose from 6 themes: Default / Warm / Cool / Dark / Nature / Minimal
-   - **Published** — Toggle on to make visible on site
-   - **Content** — Write in Markdown with toolbar (Bold, Italic, H1, H2, Link, Image, Emoji). **Single line breaks are preserved.** Word count shown below.
-5. **Live Preview** updates in real-time on the right side
-6. Click **"Publish"** to save and go live
-
-> 💡 **Auto-save**: Content is auto-saved to browser storage every 30 seconds. If you accidentally refresh, a "Restore Draft" banner will appear.
-
-### Method 2: Direct Database (Fallback)
-
-If the editor has issues, insert directly in Supabase SQL Editor:
-
+### products（菜品）
 ```sql
-INSERT INTO articles (slug, title, excerpt, content, cover_image, category, tags, merchant_slug, author, published, background_style)
-VALUES (
-  'your-article-slug',
-  'Your Article Title',
-  'Short summary...',
-  '# Heading
-
-Your **markdown** content here.
-
-Single line breaks
-are preserved.',
-  'https://images.unsplash.com/...',
-  'Food',
-  ARRAY['cafe', 'brunch'],
-  NULL, -- or a merchant slug
-  'BiteSite Team',
-  true,
-  'default' -- or warm/cool/dark/nature/minimal
-);
+id uuid, merchant_id uuid REFERENCES merchants(id),
+category_id uuid REFERENCES categories(id), name text,
+description text, price numeric, discount_price numeric, image_url text,
+sort_order int, is_available boolean DEFAULT true, is_featured boolean DEFAULT false,
+show_prices boolean DEFAULT true, created_at, updated_at
 ```
 
-### Method 3: Edit Existing Article
-
-1. Go to `/admin` → **Stories Editor**
-2. Find the article in the list (shows last updated time)
-3. Click the **Edit** (pencil) icon
-4. Make changes in the editor
-5. Click **"Update"** to save
-
----
-
-## 6 Story Background Themes
-
-Each article can have its own visual theme. Set via Admin Editor or Supabase `background_style` column.
-
-| Theme | Background | Text Color | Accent | Best For |
-|-------|-----------|------------|--------|----------|
-| **default** | `#FAFBF7` 米白 | `#2C3E2D` 深绿 | `#5A8F6E` 绿 | General purpose |
-| **warm** | `#FDF8F3` 暖杏 | `#4A3728` 深棕 | `#B87333` 铜 | Bakery, cozy cafes |
-| **cool** | `#F5F7FA` 冷灰蓝 | `#2D3748` 深蓝灰 | `#4A90A4` 蓝 | Modern, tech-forward |
-| **dark** | `#1A1A1A` 深灰 | `#E8E8E8` 浅灰 | `#D4A853` 金 | Fine dining, bars |
-| **nature** | `#F4F7F0` 浅绿 | `#2C3E2D` 深绿 | `#5A8F6E` 绿 | Healthy, vegetarian |
-| **minimal** | `#FFFFFF` 纯白 | `#1A1A1A` 纯黑 | `#1A1A1A` 黑 | Clean, editorial |
-
-> **Note**: After changing `background_style` in Supabase, **Redeploy Vercel** (without build cache) to see changes immediately.
-
----
-
-## Merchant Layout System
-
-Each merchant can choose from 5 visual layouts. Set via `layout` column in `merchants` table.
-
-| Layout | Style | Primary Colors | Best For |
-|--------|-------|----------------|----------|
-| **classic** | Warm cafe / bakery | Amber-50 bg, amber-900 text, green accents | Traditional cafes, heritage restaurants |
-| **elegant** | Dark luxury fine-dining | Slate-950 bg, amber-300/gold accents, white text | Fine dining, upscale bars |
-| **minimal** | Clean zen / Japanese | Stone-50 bg, stone-800 text, minimal borders | Modern cafes, minimalist concepts |
-| **modern** | Contemporary urban | White bg, slate-900 text, slate-100 accents | New openings, trendy spots |
-| **rustic** | Earthy / farm-to-table | Orange-50 bg, orange-900 text, warm tones | Casual dining, neighborhood joints |
-
-All layouts include:
-- Google Maps embed in Contact section
-- Payment method badges
-- Share buttons (Share + Copy Link)
-- Dynamic footer link (from Settings)
-
-### Feature Tiers (per-merchant config)
-
-Controlled via `merchants.features` JSONB column. Each layout shows/hides sections based on these toggles:
-
-| Feature | Default | Description |
-|---------|---------|-------------|
-| `hero` | ✅ | Full-bleed cover image |
-| `about` | ✅ | Brand story text |
-| `menu` | ✅ | Menu section with categories |
-| `contact` | ✅ | Contact info + WhatsApp CTA |
-| `related` | ✅ | "You May Also Like" merchants |
-| `events` | ❌ | Events/promotions carousel |
-| `video` | ❌ | Video player section |
-| `gallery` | ❌ | Photo gallery |
-| `testimonials` | ❌ | Customer reviews |
-
----
-
-## 🏪 Merchant Status
-
-Merchants have a `status` field with two values:
-
-| Status | Meaning | Website Behavior |
-|--------|---------|------------------|
-| `active` | Normal operation | Full merchant page displayed |
-| `inactive` | Temporarily closed / ended partnership | Friendly "Unavailable" page with related merchant recommendations |
-
-Inactive merchants:
-- Return HTTP 200 (not 404) for SEO
-- Include `<meta name="robots" content="noindex">`
-- Still track page views for analytics
-- Show 3 related active merchants as alternatives
-
----
-
-## Analytics & Tracking
-
-### Tracked Events
-
-All events are sent to `/api/track` via `navigator.sendBeacon` (fires even if user navigates away).
-
-| Event | When It Fires | Detail Field |
-|-------|--------------|--------------|
-| `page_view` | Any page load | — |
-| `whatsapp_click` | User clicks WhatsApp button | — |
-| `share` | User shares page | `"copy_link"` / `"facebook"` / `"twitter"` |
-| `booking_submit` | Booking form submitted | Merchant name |
-| `map_marker_click` | Map marker clicked | Merchant slug |
-| `story_to_merchant` | Story → merchant link clicked | Article slug (stored in event_detail, fallback to slug field) |
-| `search` | Homepage search submitted | Search query |
-
-### View Count System
-
-- **Real-time**: `page_views` table records every visit with full metadata (device, location, referrer)
-- **Aggregated**: `merchant_daily_views` table updated hourly via cron job
-- **Dashboard Overview/Devices/Referrers/Events/Stories/Map/Hourly**: Read from `page_views` (real-time)
-- **Dashboard Trends/Merchants/Locations**: Read from `merchant_daily_views` (cached, efficient)
-- **Legacy**: `articles.view_count` — total accumulated views (shown in Stories Analytics as "Total Views")
-- **Period**: `page_views` count within selected time range (shown in Stories Analytics as "Period Views")
-
-### Legacy System (Retained)
-- **Merchant tracking**: `<ViewTracker>` fires `POST /api/view` after 2s delay → `merchant_stats`
-- **Article tracking**: `<StoryViewTracker>` fires `POST /api/story-view` after 2s delay → `articles.view_count`
-
-### How to Test Tracking
-
-1. Trigger an event (e.g. click WhatsApp on a merchant page)
-2. Immediately go to Supabase → SQL Editor
-3. Run: `SELECT * FROM page_views ORDER BY created_at DESC LIMIT 5;`
-4. You should see the new record within seconds
-
-### Tracking Best Practices
-- **For page navigation after tracking**: Use regular `<a>` tags, NOT Next.js `<Link>`. Client-side navigation interrupts `sendBeacon`/`fetch` requests.
-- **For WhatsApp/booking opens**: `trackEvent()` is fire-and-forget with `sendBeacon` — no need to `await` before `window.open()`.
-
----
-
-## 🗺️ Our Partner Map Page (`/our-partner`)
-
-### Features
-- **Interactive Leaflet map** with OpenStreetMap (completely free)
-- **Photo markers**: Each merchant shown as a circular photo with colored border
-- **Color-coded by cuisine type**:
-  - Cafe = Coffee `#8B4513`
-  - Western = Yellow `#F59E0B`
-  - Bakery = Orange `#F97316`
-  - Japanese / Asian = Red `#EF4444`
-  - Dessert = Pink `#EC4899`
-  - Other = Gray `#6B7280`
-- **User location**: Pulsing green dot with animation
-- **Recenter button**: Top-right corner, click to fly back to your location
-- **Type filters**: Top bar pills to show/hide cuisine types
-- **Search box**: Search by restaurant name, area, or cuisine
-- **Empty state**: "No restaurants found" message when filters return nothing
-- **Merchant card popup**: Photo, name, Open/Closed badge, cuisine type
-- **Two action buttons**:
-  - **Go to Merchant Page** → Opens the restaurant's detail page
-  - **Get Directions** → Opens Google Maps navigation directly
-
-### How to Add Merchant Coordinates
-
-The map requires `latitude` and `longitude`. Merchants without coordinates will NOT appear on the map.
-
-**Step 1**: Add columns to Supabase (run once):
+### articles（Stories）
 ```sql
-ALTER TABLE merchants
-ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION,
-ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION;
-CREATE INDEX IF NOT EXISTS idx_merchants_lat_lng ON merchants(latitude, longitude);
+id uuid, slug text UNIQUE, title text, excerpt text, content text,
+cover_image text, category text, tags text[], author text,
+background_style text, merchant_slug text, published boolean,
+view_count int DEFAULT 0, created_at, updated_at
 ```
 
-**Step 2**: Find coordinates for each merchant:
-1. Open [Google Maps](https://maps.google.com)
-2. Search the restaurant address
-3. **Right-click** on the exact location on the map
-4. Select **"Copy coordinates"** (e.g. `3.1489, 101.7103`)
-5. Go to **Supabase → Table Editor → merchants**
-6. Paste the first number into `latitude`, the second into `longitude`
-
----
-
-## SEO & Schema.org
-
-### On-Page SEO
-- **Meta tags**: Auto-generated per merchant and per article
-- **Canonical URLs**: Every page has a canonical link
-- **Open Graph**: Title, description, and image for social sharing
-- **Twitter Cards**: Summary large image cards
-- **Keywords**: Article pages include tags as meta keywords
-
-### Structured Data (Schema.org)
-
-| Page | Schema Type |
-|------|-------------|
-| Homepage | `WebSite` + `Organization` |
-| Merchant | `Restaurant` + `Menu` + `BreadcrumbList` |
-| Story | `Article` + `WebPage` |
-| Stories List | `ItemList` |
-| Join Us | `FAQPage` |
-| Our Partner | `WebPage` |
-
-### Technical SEO
-- **Sitemap**: Auto-generated from all published merchants (`sitemap.ts`)
-- **Robots**: Allow all, sitemap linked (`robots.ts`)
-- **Google Search Console**: Verified
-- **ISR**: 5-minute revalidation for fresh content without full rebuild
-- **Image optimization**: Automatic compression via URL parameters
-
----
-
-## Image Optimization
-
-All images served through `SafeImage` are automatically optimized via `lib/image-utils.ts`:
-
-- **Unsplash**: Resized to 800px, quality 80, auto WebP format, crop fit
-- **Supabase Storage**: Compressed with width/quality parameters
-- **Fallback**: Local images and data URIs pass through unchanged
-
-This significantly reduces page load time and mobile data usage without requiring a paid image CDN.
-
----
-
-## Environment Variables
-
-```bash
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-
-# Admin Dashboard (server-side only, no NEXT_PUBLIC_ prefix)
-ADMIN_PASSWORD=your-secure-password
-```
-
-> **Security**: `ADMIN_PASSWORD` must be set in **Vercel Dashboard → Environment Variables** with type **Secret**. Never commit it to Git.
-
----
-
-## ⚙️ Site Settings (Admin Dashboard)
-
-Go to `/admin` → **Settings** tab to modify:
-
-| Setting | What It Controls | Example |
-|---------|-----------------|---------|
-| **Site Title** | Browser tab title, SEO meta, Schema.org, social sharing | `BiteSite` |
-| **Site Description** | Meta description, Open Graph, Twitter Cards | `Discover the best restaurants in KL` |
-| **Footer Text** | Bottom link text on every merchant page | `Discover more restaurants on BiteSite` |
-
-Changes are saved instantly to the database and take effect within 5 minutes (ISR cache).
-
----
-
-## 📝 Markdown Syntax for Articles
-
-The `content` field supports full **GitHub Flavored Markdown** with **single line breaks preserved**:
-
-```markdown
-# Main Heading (H1)
-
-## Subheading (H2)
-
-**Bold text** for emphasis.
-*Italic text* for lighter emphasis.
-
-Regular paragraph text.
-Single line breaks
-are preserved automatically.
-
-- Bullet point 1
-- Bullet point 2
-
-1. Numbered item 1
-2. Numbered item 2
-
-[Link to merchant page](/store/the-hearth-bakery)
-
-[External link](https://example.com)
-
-> Blockquote: This is a highlighted quote.
-
-| Item | Price |
-|------|-------|
-| Country Sourdough | RM 18 |
-
----
-
-Emoji work too! 🍞☕🎉
-```
-
-**Important notes:**
-- **Images**: Use direct image URLs.
-- **Links to merchants**: Use `/store/{merchant-slug}` format.
-- **External links**: Use full `https://` URLs. These open in a new tab.
-- **Hashtags**: Article `tags` are automatically displayed as `#hashtag` at the bottom of each story.
-- **Line breaks**: Press Enter once for a new line, twice for a new paragraph.
-- **Bold**: Use `**text**` (双星号). Use `*text*` for italic.
-- **Horizontal rule**: Use `---` for a divider line.
-
----
-
-## Key Business Rules
-
-1. **No cart, no checkout, no auth** — pure showcase platform
-2. **BiteSite branding is minimal** — only dynamic footer link at bottom of merchant pages
-3. **Each merchant has independent visual identity** — layout + colors are per-merchant
-4. **WhatsApp is the primary CTA** — reservations route to **merchant's own WhatsApp** (`merchant.whatsapp`)
-5. **Booking form sends to merchant's WhatsApp** — not BiteSite's number
-6. **cuisine_type supports comma-separated multi-values** — e.g. "Cafe, Western" (first value used as primary tag)
-7. **Payment methods** stored as array: `["Cash", "Cashless", "Cards"]` — displayed with icons
-8. **Operating hours** stored as JSONB — supports single and split hours (comma-separated)
-9. **Tags** are free-text array — used for filtering (Halal, Pet Friendly, WiFi, etc.)
-10. **Articles are published via Admin Editor or Supabase** — zero code required
-11. **Article images use external URLs** — Google Drive, Unsplash, or any direct image link
-12. **Dish search** — homepage search queries all available product names per merchant
-13. **Embedded maps** — auto-rendered in Contact section if address exists
-14. **Map page requires coordinates** — merchants without `latitude`/`longitude` are hidden from the map
-15. **Admin Dashboard is password-only** — no user accounts, no registration
-16. **Analytics are self-hosted** — no Google Analytics, all data stays in Supabase
-17. **Legacy APIs are preserved** — `api/view` and `api/story-view` continue working alongside new `api/track`
-18. **Inactive merchants show friendly page** — not 404, with related recommendations
-
----
-
-## ⚠️ Known Issues
-
-### Current
-1. **Vercel deploy time increasing** — Build is getting slower. Likely causes: duplicate files between `components/` and `app/components/`, unused dependencies, or ISR static page generation overhead.
-
-### Recently Fixed (2026-08-31)
-- ✅ Admin Dashboard 14 个 tab 全部正常显示（之前只有 4 个）
-- ✅ `export const dynamic = 'force-dynamic'` 移到正确位置（layout.tsx）
-- ✅ Stories Analytics 显示文章真实标题（不是 slug）
-- ✅ Stories Analytics 显示 Published/Draft 状态
-- ✅ Stories Analytics 双 views 系统：Period Views + Total Views
-- ✅ Stories Analytics 修复 `unknown` slug 问题（只显示 articles 表存在的文章）
-- ✅ Stories Analytics 修复 legacy `event_detail=NULL` 数据（fallback 到 slug 字段）
-
-### Recently Fixed (2026-08-30)
-- ✅ Site title, description, and footer text now editable via Admin Settings
-- ✅ Inactive merchants display friendly "Unavailable" page instead of 404
-- ✅ Booking form correctly routes to merchant's own WhatsApp
-- ✅ Stories display hashtags and meta keywords from article tags
-- ✅ Admin nav renamed "Stories" → "Stories Analytics"
-- ✅ Settings panel only shows relevant fields (removed contact/phone/whatsapp)
-- ✅ Stories Editor with Markdown toolbar + live preview + 6 background themes
-- ✅ Stories CRUD API (GET/POST/PUT/DELETE) with Chinese slug support
-- ✅ Sidebar is collapsible on desktop
-- ✅ Single line breaks preserved in story content (remark-breaks)
-- ✅ Stories Analytics shows article titles instead of slugs
-- ✅ Stories Analytics displays both Total Views (legacy) and Period Views
-- ✅ Category input has datalist dropdown to prevent typos
-- ✅ Cover Image URL shows live preview
-- ✅ Auto-save to localStorage every 30 seconds with restore prompt
-- ✅ Word count displayed below content editor
-- ✅ Markdown syntax hint banner in editor
-- ✅ Stories Manager shows last updated time
-- ✅ Merchants dropdown uses dedicated `/api/admin/merchants-list` API
-- ✅ Save button refreshes stories list automatically
-
----
-
-## Common Issues & Solutions
-
-### "Build failed" email from Vercel
-- Check the error in Vercel dashboard → Deployments → click the failed deployment
-- Common causes: missing import, TypeScript type error, syntax error
-- Fix the file and commit again
-
-### Changes not showing after database edit
-- Pages are cached for 5 minutes (ISR)
-- **Solution**: Go to Vercel dashboard → Deployments → click latest → ⋮ → Redeploy → **uncheck "Use existing Build Cache"**
-- Wait 30 seconds, then refresh
-
-### Admin token expired
-- Token expires after 30 minutes
-- **Solution**: Log out and log back in at `/admin`
-
-### Sidebar won't close on mobile
-- Click the **X** button at the top of the sidebar
-- Or click outside the sidebar area
-
-### Story preview doesn't match real page
-- Make sure you've **Redeployed Vercel** after saving
-- Check that `background_style` is set correctly in Supabase
-
----
-
-## How to Debug
-
+### page_views（埋点）
 ```sql
--- Check if events are being recorded
-SELECT event_type, COUNT(*) FROM page_views GROUP BY event_type;
-
--- Check recent raw data
-SELECT * FROM page_views ORDER BY created_at DESC LIMIT 20;
-
--- Check aggregated data
-SELECT * FROM merchant_daily_views ORDER BY view_date DESC LIMIT 20;
-
--- Manually trigger aggregation
-SELECT aggregate_daily_views();
-
--- Check cron jobs
-SELECT * FROM cron.job;
-
--- Check settings
-SELECT * FROM settings;
-
--- Check merchant status
-SELECT slug, name, status, is_published FROM merchants;
-
--- Check articles
-SELECT slug, title, published, view_count, updated_at FROM articles ORDER BY updated_at DESC;
-
--- Check stories analytics data
-SELECT slug, title, view_count, published FROM articles ORDER BY view_count DESC;
-
--- Check stories analytics API 返回的数据结构
-SELECT 
-  a.slug, a.title, a.published, a.view_count,
-  COUNT(pv.id) as period_views
-FROM articles a
-LEFT JOIN page_views pv ON a.slug = pv.slug 
-  AND pv.page_type = 'story' 
-  AND pv.event_type = 'page_view'
-  AND pv.created_at >= NOW() - INTERVAL '7 days'
-GROUP BY a.slug, a.title, a.published, a.view_count
-ORDER BY period_views DESC;
+id uuid, slug text, path text, page_type text, event_type text,
+event_detail text, referrer text, user_agent text, ip text, created_at
 ```
 
-### Supabase Timezone
-All `created_at` timestamps are UTC. For Malaysia Time queries, append `+08:00`:
+**注意**: `tagline` 字段如果报错 "Could not find column"，需要执行：
 ```sql
-SELECT * FROM page_views 
-WHERE created_at >= '2026-08-30T00:00:00+08:00';
+ALTER TABLE merchants ADD COLUMN IF NOT EXISTS tagline TEXT;
 ```
 
 ---
 
-## Project History
+## 六、关键文件状态速查
 
-### Phase 0 — Foundation (Completed)
-- ✅ Homepage with merchant grid, category filters, dish search
-- ✅ 5 merchant layouts (classic/elegant/minimal/modern/rustic)
-- ✅ Merchant detail pages with menu, events, videos, contact
-- ✅ Stories system with Markdown rendering
-- ✅ Interactive map with Leaflet
-- ✅ Join Us pricing page
-- ✅ Admin analytics dashboard (dark theme)
-- ✅ Real-time tracking + view counts
-- ✅ SEO + Schema.org structured data
-- ✅ Settings system (site title, description, footer text)
+### 当前已确认正常的文件
+| 文件 | 状态 | 备注 |
+|------|------|------|
+| `package.json` | ✅ 正常 | 加了 remark-breaks |
+| `app/api/admin/stories/route.ts` | ✅ 正常 | 含 revalidatePath |
+| `app/api/admin/merchants-crud/route.ts` | ✅ 正常 | 完整 CRUD + revalidate |
+| `app/api/admin/merchants-list/route.ts` | ✅ 正常 | 返回 {slug, name} |
+| `app/api/admin/stories-analytics/route.ts` | ✅ 正常 | 含 title/published/fallback |
+| `components/sections/story-content.tsx` | ✅ 正常 | remark-breaks + 换行处理 |
+| `app/admin/components/story-editor.tsx` | ✅ 正常 | 完整重写，功能全 |
+| `app/admin/components/stories-manager.tsx` | ✅ 正常 | updated_at + tags null fix |
+| `app/admin/components/stories-chart.tsx` | ✅ 正常 | 含 Status 列 |
+| `app/admin/components/auth-context.tsx` | ✅ 正常 | 未改动 |
+| `app/admin/components/admin-shell.tsx` | ✅ 正常 | 13 tabs + settings/export |
+| `app/admin/components/client-layout.tsx` | ✅ 正常 | 包裹 AuthProvider |
+| `app/admin/components/merchant-manager.tsx` | ✅ 正常 | 含 Status filter + 表单接入 |
+| `app/admin/components/merchant-form.tsx` | ✅ 正常 | 5 tabs 完整表单 |
+| `app/admin/layout.tsx` | ✅ 正常 | force-dynamic |
+| `app/admin/page.tsx` | ✅ 正常 | 15 tabs 全部渲染 |
+| `lib/analytics.ts` | ✅ 正常 | trackEvent + classifyReferrer |
+| `lib/admin-auth.ts` | ✅ 正常 | verifyAdminToken |
+| `lib/supabase.ts` | ✅ 正常 | 未改动 |
 
-### Phase 1 — Stories CMS (Completed 2026-08-30)
-- ✅ **Stories Analytics API** moved to `/api/admin/stories-analytics` (shows article titles, legacy + period views)
-- ✅ **Stories CRUD API** — full REST API (GET/POST/PUT/DELETE) at `/api/admin/stories` with Chinese slug support
-- ✅ **Merchants List API** — `/api/admin/merchants-list` for dropdowns
-- ✅ **6 background themes** for articles (default/warm/cool/dark/nature/minimal)
-- ✅ **Admin Stories Editor** — Markdown editor with toolbar + live preview + auto-save + category dropdown + cover preview + word count + emoji picker + syntax hint
-- ✅ **Admin Stories Manager** — list page with search, filter, delete, updated_at column
-- ✅ **Settings API** now requires admin authentication
-- ✅ **Sidebar** is collapsible on desktop
-- ✅ **Single line breaks** preserved via remark-breaks
-- ✅ **Save refreshes** stories list automatically
-
-### Phase 2 — Admin Dashboard 修复 (Completed 2026-08-31)
-- ✅ **重写 `app/admin/page.tsx`** — 14 个 tab 全部添加条件渲染
-- ✅ **移动 `force-dynamic`** 从 page.tsx 到 layout.tsx（正确位置）
-- ✅ 所有图表组件正常加载（TrendChart, DeviceChart, ReferrerChart, EventsChart, LocationChart, HourlyChart, StoriesChart, MapStats, SearchKeywordsTable, MerchantTable）
-- ✅ Export CSV tab 正常工作
-- ✅ Settings tab 正常工作
-
-### Phase 3 — Stories Analytics 优化 (Completed 2026-08-31)
-- ✅ **API 读取 `articles.title` 和 `articles.published`** — 不再显示 slug
-- ✅ **双 views 系统** — Period Views（时间段 page_views 聚合）+ Total Views（articles.view_count 累计）
-- ✅ **Status 列** — Published = 绿色 Eye / Draft = 黄色 EyeOff
-- ✅ **只显示 articles 表存在的文章** — 不混入 page_views 里的陌生 slug
-- ✅ **Legacy 数据修复** — `event_detail=NULL` 的 `story_to_merchant` 事件 fallback 到 `slug` 字段
-
-### Phase 4 — Merchant Manager (进行中)
-- ⏳ **步骤 1**: Merchant Manager — 商家卡片列表（搜索 + 筛选 + 新建）
-- ⏳ **步骤 2**: Merchant Editor — 5-tab 编辑表单（基本信息/联系方式/营业时间/页面设置/图片）
-- ⏳ **步骤 3**: Menu Manager — 菜品分类和菜品管理
-- ⏳ **API**: `/api/admin/merchants-crud` (GET/POST/PUT/DELETE)
-- ⏳ **API**: `/api/admin/products` (GET/POST/PUT/DELETE)
-
-### Phase 5 — 其他优化 (Planned)
-- ⏳ Image upload (Supabase Storage) instead of URL pasting
-- ⏳ Stories 列表分页
-- ⏳ 搜索支持内容全文搜索
-- ⏳ Duplicate 文章功能
-- ⏳ 移动端 Preview 显示
-- ⏳ Analytics 365d 查询优化（数据库索引）
-- ⏳ `/stories` 页面 SSR 优化
-- ⏳ Multi-language support (EN / 中文 / BM)
-- ⏳ Email notifications for new bookings
-- ⏳ Social media auto-sharing
+### 需要修改的文件（待办）
+| 文件 | 优先级 | 说明 |
+|------|--------|------|
+| `app/admin/components/merchant-form.tsx` | 🔴 高 | Hours tab 重构、URL 验证、Toast |
+| `app/store/[merchant]/page.tsx` | 🔴 高 | ISR 已改 60s，需修空模块隐藏 |
+| 商家页面各 section 组件 | 🔴 高 | 空模块隐藏、图片 fallback |
+| `app/admin/components/menu-manager.tsx` | 🟡 中 | 待创建 |
+| `app/api/admin/products/route.ts` | 🟡 中 | 待创建 |
 
 ---
 
-## Pages Summary
+## 七、Import 导出方式速查（重要！）
 
-| Page | Path | Purpose |
-|------|------|---------|
-| Home | `/` | Browse all restaurants, search (including dishes), filter |
-| Merchant | `/store/{slug}` | Individual restaurant menu, map, hours, SEO Schema |
-| Our Partner | `/our-partner` | Interactive map showing all merchant locations |
-| Stories | `/stories` | Blog list — all articles |
-| Story | `/stories/{slug}` | Individual article (Markdown + Article Schema + hashtags) |
-| Join Us | `/join-us` | Pricing & signup for restaurant owners (FAQ Schema) |
-| **Admin** | **`/admin`** | **Analytics Dashboard + CMS — password protected** |
+| Component | 导出方式 | 正确 import |
+|-----------|----------|-------------|
+| `AdminShell` | `export default` | `import AdminShell from '...'` |
+| `StatCards` | `export default` | `import StatCards from '...'` |
+| `TrendChart` | `export default` | `import TrendChart from '...'` |
+| `DeviceChart` | `export default` | `import DeviceChart from '...'` |
+| `ReferrerChart` | `export default` | `import ReferrerChart from '...'` |
+| `EventsChart` | `export default` | `import EventsChart from '...'` |
+| `LocationChart` | `export default` | `import LocationChart from '...'` |
+| `HourlyChart` | `export default` | `import HourlyChart from '...'` |
+| `StoriesChart` | `export default` | `import StoriesChart from '...'` |
+| `MapStats` | `export default` | `import MapStats from '...'` |
+| `SearchKeywordsTable` | `export default` | `import SearchKeywordsTable from '...'` |
+| `MerchantTable` | `export default` | `import MerchantTable from '...'` |
+| `ExportButton` | `export default` | `import ExportButton from '...'` |
+| `RealtimeBadge` | `export default` | `import RealtimeBadge from '...'` |
+| `DateRangePicker` | `export default` | `import DateRangePicker from '...'` |
+| `SettingsPanel` | `export { SettingsPanel }` | `import { SettingsPanel } from '...'` ⚠️ 唯一例外 |
+| `StoriesManager` | `export default` | `import StoriesManager from '...'` |
+| `StoryEditor` | `export default` | `import StoryEditor from '...'` |
+| `MerchantManager` | `export default` | `import MerchantManager from '...'` |
+| `MerchantForm` | `export default` | `import MerchantForm from '...'` |
+| `AuthProvider` | `export { AuthProvider }` | `import { AuthProvider } from '...'` |
+| `useAuth` | `export { useAuth }` | `import { useAuth } from '...'` |
+| `ClientLayout` | `export { ClientLayout }` | `import { ClientLayout } from '...'` |
 
 ---
 
-## Contact
+## 八、文件路径陷阱
 
-**BiteSite** — Beautiful Menus for Local Restaurants  
-Kuala Lumpur, Malaysia
+项目有两个平行的 component 目录：
+- `components/sections/` —— **legacy**，Stories 页面在用（如 `story-content.tsx`, `story-hero.tsx`）
+- `app/components/sections/` —— **新版**，其他页面在用
 
-> Built with Next.js + Tailwind + Supabase + Vercel
+**修改前务必确认 import 路径！**
 
 ---
 
-*README last updated: 2026-08-31*  
-*Current Phase: Phase 4 — Merchant Manager (进行中)*
+## 九、关键代码速查
+
+### 埋点调用
+```typescript
+import { trackEvent } from '@/lib/analytics';
+trackEvent('page_view', { pageType: 'story', slug: articleSlug });
+trackEvent('story_to_merchant', { 
+  pageType: 'story', 
+  slug: merchantSlug, 
+  detail: articleSlug 
+});
+```
+
+### Supabase 查询
+```sql
+-- 查看所有商家
+SELECT * FROM merchants ORDER BY created_at DESC;
+
+-- 查看商家菜品
+SELECT * FROM products WHERE merchant_id = 'xxx';
+
+-- 查看分类
+SELECT * FROM categories WHERE merchant_id = 'xxx' ORDER BY sort_order;
+
+-- 添加 tagline 字段（如缺失）
+ALTER TABLE merchants ADD COLUMN IF NOT EXISTS tagline TEXT;
+```
+
+### 文件编辑方式
+1. 打开 https://github.com/chlew467779-new/bitesite
+2. 找到文件 → 点击铅笔 Edit
+3. 粘贴完整代码（新文件第一行必须写 `/* bitesite/文件路径 */`）
+4. Commit message 写清楚
+5. 等 Vercel 部署（30-60秒）
+
+---
+
+## 十、待确认问题（新 Chat 开始前必须解决）
+
+1. **商家页面各 section 组件路径**
+   - Menu 区块在哪个文件？`app/components/sections/menu-section.tsx`？
+   - Gallery 区块在哪个文件？
+   - Events 区块在哪个文件？
+   - Video 区块在哪个文件？
+   - Testimonials 区块在哪个文件？
+   - 需要查看 `app/store/[merchant]/page.tsx` 的 import 路径确认
+
+2. **operating_hours 前端解析逻辑**
+   - 现有商家页面如何解析 `operating_hours` JSON？
+   - 格式是 `{"monday":"9:00 AM - 10:00 PM",...}` 还是其他？
+   - 需要确认解析代码才能做标准化
+
+3. **地图组件使用方式**
+   - 是用 Google Maps iframe？还是 react-google-maps？
+   - 用的是 latitude/longitude 还是地址字符串？
+   - 需要确认才能修复坐标问题
+
+---
+
+*文档结束。下一个 Chat 请从 "阶段 A: 修复高优先级问题" 开始，先确认商家页面 section 组件路径，然后分阶段实现。*
