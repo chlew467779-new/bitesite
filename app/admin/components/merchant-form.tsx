@@ -6,12 +6,9 @@ import { useState, useEffect } from 'react';
 import { useAuth } from './auth-context';
 import {
   Save,
-  X,
   Trash2,
   ChevronLeft,
   Loader2,
-  Eye,
-  EyeOff,
   Image as ImageIcon,
   MapPin,
   Phone,
@@ -23,7 +20,17 @@ import {
   Check,
   AlertCircle,
   AlertTriangle,
+  Plus,
+  X,
+  Copy,
+  Clock,
 } from 'lucide-react';
+import {
+  parseOperatingHoursString,
+  formatOperatingHoursToString,
+  type DayHours,
+  type TimeSlot,
+} from '@/lib/hours';
 
 interface MerchantFormProps {
   merchant?: {
@@ -114,6 +121,8 @@ interface Toast {
   type: 'success' | 'error';
 }
 
+const DEFAULT_DAY_HOURS: DayHours = { slots: [{ start: '', end: '' }], isClosed: false };
+
 export default function MerchantForm({ merchant, onBack, onSaved }: MerchantFormProps) {
   const { token } = useAuth();
   const isEditing = !!merchant;
@@ -180,6 +189,11 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
     menu_pdf_url: '',
   });
 
+  /* Structured hours state for Admin editing */
+  const [hoursSlots, setHoursSlots] = useState<Record<string, DayHours>>(() =>
+    Object.fromEntries(DAYS.map((d) => [d, { ...DEFAULT_DAY_HOURS }]))
+  );
+
   /* Image preview error states */
   const [logoError, setLogoError] = useState(false);
   const [coverError, setCoverError] = useState(false);
@@ -230,6 +244,14 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
         cover_image: merchant.cover_image || '',
         menu_pdf_url: merchant.menu_pdf_url || '',
       });
+
+      /* Parse operating_hours into structured slots */
+      const parsed: Record<string, DayHours> = {};
+      for (const day of DAYS) {
+        parsed[day] = parseOperatingHoursString(merchant.operating_hours?.[day]);
+      }
+      setHoursSlots(parsed);
+
       setLogoError(false);
       setCoverError(false);
     }
@@ -249,18 +271,55 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
     if (field === 'cover_image') setCoverError(false);
   };
 
-  const updateHours = (day: string, value: string) => {
-    setForm((prev) => ({
-      ...prev,
-      operating_hours: { ...prev.operating_hours, [day]: value },
-    }));
-  };
-
   const updateFeature = (key: string, checked: boolean) => {
     setForm((prev) => ({
       ...prev,
       features: { ...prev.features, [key]: checked },
     }));
+  };
+
+  /* ── Hours slot helpers ── */
+  const addSlot = (day: string) => {
+    setHoursSlots((prev) => ({
+      ...prev,
+      [day]: { ...prev[day], slots: [...prev[day].slots, { start: '', end: '' }] },
+    }));
+  };
+
+  const removeSlot = (day: string, idx: number) => {
+    setHoursSlots((prev) => ({
+      ...prev,
+      [day]: { ...prev[day], slots: prev[day].slots.filter((_, i) => i !== idx) },
+    }));
+  };
+
+  const updateSlot = (day: string, idx: number, field: keyof TimeSlot, value: string) => {
+    setHoursSlots((prev) => {
+      const newSlots = [...prev[day].slots];
+      newSlots[idx] = { ...newSlots[idx], [field]: value };
+      return { ...prev, [day]: { ...prev[day], slots: newSlots } };
+    });
+  };
+
+  const setDayClosed = (day: string, closed: boolean) => {
+    setHoursSlots((prev) => ({
+      ...prev,
+      [day]: { slots: closed ? [] : [{ start: '', end: '' }], isClosed: closed },
+    }));
+  };
+
+  const copyMondayToAll = () => {
+    const monday = hoursSlots.monday;
+    setHoursSlots((prev) => {
+      const next = { ...prev };
+      for (const day of DAYS) {
+        if (day !== 'monday') {
+          next[day] = { slots: monday.slots.map((s) => ({ ...s })), isClosed: monday.isClosed };
+        }
+      }
+      return next;
+    });
+    showToast('Monday hours copied to all days', 'success');
   };
 
   const validate = (): boolean => {
@@ -280,6 +339,13 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
     setSaving(true);
     setSaveError('');
 
+    /* Build operating_hours from structured slots */
+    const operatingHoursPayload: Record<string, string> = {};
+    for (const day of DAYS) {
+      const str = formatOperatingHoursToString(hoursSlots[day]);
+      if (str) operatingHoursPayload[day] = str;
+    }
+
     const payload: Record<string, unknown> = {
       name: form.name,
       slug: form.slug,
@@ -298,9 +364,7 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
       facebook: form.facebook || null,
       latitude: form.latitude ? parseFloat(form.latitude) : null,
       longitude: form.longitude ? parseFloat(form.longitude) : null,
-      operating_hours: Object.fromEntries(
-        Object.entries(form.operating_hours).filter(([, v]) => v.trim())
-      ),
+      operating_hours: operatingHoursPayload,
       is_published: form.is_published,
       status: form.status,
       features: form.features,
@@ -714,26 +778,96 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
           </div>
         )}
 
-        {/* Tab 3: Hours */}
+        {/* Tab 3: Hours — Structured */}
         {activeTab === 2 && (
           <div className="space-y-4">
-            <p className="text-sm text-slate-400">
-              Enter hours like <code className="bg-slate-800 px-1.5 py-0.5 rounded text-amber-400">9:00 AM - 10:00 PM</code> or <code className="bg-slate-800 px-1.5 py-0.5 rounded text-amber-400">Closed</code>
-            </p>
-            {DAYS.map((day) => (
-              <div key={day} className="flex items-center gap-4">
-                <label className="w-24 text-sm font-medium text-slate-300 capitalize shrink-0">
-                  {day}
-                </label>
-                <input
-                  type="text"
-                  value={form.operating_hours[day as keyof typeof form.operating_hours]}
-                  onChange={(e) => updateHours(day, e.target.value)}
-                  placeholder="9:00 AM - 10:00 PM"
-                  className="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors"
-                />
-              </div>
-            ))}
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-slate-400">
+                Add time slots for each day. Click <strong className="text-slate-300">Closed</strong> if not open.
+              </p>
+              <button
+                onClick={copyMondayToAll}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg transition-colors"
+              >
+                <Copy className="w-3 h-3" />
+                Copy Monday to all
+              </button>
+            </div>
+
+            <div className="grid gap-3">
+              {DAYS.map((day) => {
+                const dayData = hoursSlots[day];
+                const isClosed = dayData.isClosed;
+
+                return (
+                  <div
+                    key={day}
+                    className={`p-4 rounded-lg border transition-colors ${
+                      isClosed
+                        ? 'bg-slate-950/50 border-slate-800'
+                        : 'bg-slate-950 border-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm font-medium text-slate-300 capitalize">{day}</span>
+                      <button
+                        onClick={() => setDayClosed(day, !isClosed)}
+                        className={`text-xs font-medium px-2.5 py-1 rounded-md transition-colors ${
+                          isClosed
+                            ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'
+                            : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-300'
+                        }`}
+                      >
+                        {isClosed ? 'Set as Open' : 'Set as Closed'}
+                      </button>
+                    </div>
+
+                    {isClosed ? (
+                      <p className="text-sm text-slate-500 italic">Closed</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {dayData.slots.map((slot, idx) => (
+                          <div key={idx} className="flex items-center gap-2">
+                            <Clock className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                            <input
+                              type="text"
+                              value={slot.start}
+                              onChange={(e) => updateSlot(day, idx, 'start', e.target.value)}
+                              placeholder="9:00 AM"
+                              className="flex-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded-md text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors"
+                            />
+                            <span className="text-slate-500 text-sm">-</span>
+                            <input
+                              type="text"
+                              value={slot.end}
+                              onChange={(e) => updateSlot(day, idx, 'end', e.target.value)}
+                              placeholder="10:00 PM"
+                              className="flex-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded-md text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors"
+                            />
+                            {dayData.slots.length > 1 && (
+                              <button
+                                onClick={() => removeSlot(day, idx)}
+                                className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-colors"
+                                title="Remove slot"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                        <button
+                          onClick={() => addSlot(day)}
+                          className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-amber-400 transition-colors mt-1"
+                        >
+                          <Plus className="w-3 h-3" />
+                          Add time slot
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
