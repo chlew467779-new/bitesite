@@ -1,4 +1,4 @@
-/* bitesite/app/layouts/classic-layout.tsx    */
+/* bitesite/app/layouts/classic-layout.tsx */
 
 "use client";
 
@@ -48,27 +48,52 @@ export function ClassicLayout({
       {resolvedFeatures.hero && (
         <FadeIn>
           <div className="relative h-64 sm:h-80 lg:h-96">
-            <SafeImage
-              src={merchant.cover_image}
-              alt={merchant.name}
-              fill
-              className="object-cover"
-              priority
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
-              <div className="max-w-4xl mx-auto">
-                <span className="inline-block px-3 py-1 rounded-full bg-amber-100/90 text-amber-800 text-xs font-semibold mb-3">
-                  {merchant.cuisine_type}
-                </span>
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-2">
-                  {merchant.name}
-                </h1>
-                <p className="text-white/80 text-sm sm:text-base max-w-xl">
-                  Today: {todayHours}
-                </p>
-              </div>
-            </div>
+            {merchant.cover_image ? (
+              <>
+                <SafeImage
+                  src={merchant.cover_image}
+                  alt={merchant.name}
+                  fill
+                  className="object-cover"
+                  priority
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
+                  <div className="max-w-4xl mx-auto">
+                    <span className="inline-block px-3 py-1 rounded-full bg-amber-100/90 text-amber-800 text-xs font-semibold mb-3">
+                      {merchant.cuisine_type}
+                    </span>
+                    <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-2">
+                      {merchant.name}
+                    </h1>
+                    <p className="text-white/80 text-sm sm:text-base max-w-xl">
+                      Today: {todayHours}
+                    </p>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="absolute inset-0 bg-amber-100 flex items-center justify-center">
+                  <span className="text-8xl font-bold text-amber-200">
+                    {merchant.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
+                  <div className="max-w-4xl mx-auto">
+                    <span className="inline-block px-3 py-1 rounded-full bg-white/90 text-amber-800 text-xs font-semibold mb-3">
+                      {merchant.cuisine_type}
+                    </span>
+                    <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-amber-900 mb-2">
+                      {merchant.name}
+                    </h1>
+                    <p className="text-amber-800/70 text-sm sm:text-base max-w-xl">
+                      Today: {todayHours}
+                    </p>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </FadeIn>
       )}
@@ -87,7 +112,7 @@ export function ClassicLayout({
       )}
 
       {/* Menu */}
-      {resolvedFeatures.menu && (
+      {resolvedFeatures.menu && products.length > 0 && (
         <FadeIn>
           <section className="py-10 px-4 sm:px-6">
             <div className="max-w-4xl mx-auto">
