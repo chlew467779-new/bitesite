@@ -31,7 +31,7 @@ import {
   type DayHours,
   type TimeSlot,
 } from '@/lib/hours';
-import { CUISINE_TYPES, AREAS, TAGS_PRESETS } from '@/lib/presets';
+import { CUISINE_TYPES, AREAS, TAGS_PRESETS, PAYMENT_METHODS } from '@/lib/presets';
 
 interface MerchantFormProps {
   merchant?: {
@@ -44,6 +44,7 @@ interface MerchantFormProps {
     cuisine_type?: string;
     area?: string;
     tags?: string[] | null;
+    payment_methods?: string[] | null;
     address?: string;
     phone?: string;
     whatsapp?: string;
@@ -154,6 +155,7 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
     cuisine_type: '',
     area: '',
     tags: '',
+    payment_methods: '',
     address: '',
     phone: '',
     whatsapp: '',
@@ -202,6 +204,9 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
   /* Tags custom input state */
   const [tagInput, setTagInput] = useState('');
 
+  /* Payment methods custom input state */
+  const [paymentMethodInput, setPaymentMethodInput] = useState('');
+
   /* Derived selected tags array */
   const selectedTags = form.tags
     ? form.tags.split(',').map((t) => t.trim()).filter(Boolean)
@@ -227,6 +232,33 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
     updateField('tags', next.join(', '));
   };
 
+  /* Derived selected payment methods array */
+  const selectedPaymentMethods = form.payment_methods
+    ? form.payment_methods.split(',').map((t) => t.trim()).filter(Boolean)
+    : [];
+
+  const togglePaymentMethod = (pm: string) => {
+    const exists = selectedPaymentMethods.includes(pm);
+    const next = exists
+      ? selectedPaymentMethods.filter((t) => t !== pm)
+      : [...selectedPaymentMethods, pm];
+    updateField('payment_methods', next.join(', '));
+  };
+
+  const addCustomPaymentMethod = () => {
+    const raw = paymentMethodInput.trim();
+    if (!raw) return;
+    const newMethods = raw.split(',').map((t) => t.trim()).filter(Boolean);
+    const combined = [...new Set([...selectedPaymentMethods, ...newMethods])];
+    updateField('payment_methods', combined.join(', '));
+    setPaymentMethodInput('');
+  };
+
+  const removePaymentMethod = (pm: string) => {
+    const next = selectedPaymentMethods.filter((t) => t !== pm);
+    updateField('payment_methods', next.join(', '));
+  };
+
   useEffect(() => {
     if (merchant) {
       setForm({
@@ -238,6 +270,7 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
         cuisine_type: merchant.cuisine_type || '',
         area: merchant.area || '',
         tags: merchant.tags?.join(', ') || '',
+        payment_methods: merchant.payment_methods?.join(', ') || '',
         address: merchant.address || '',
         phone: merchant.phone || '',
         whatsapp: merchant.whatsapp || '',
@@ -284,6 +317,7 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
       setLogoError(false);
       setCoverError(false);
       setTagInput('');
+      setPaymentMethodInput('');
     }
   }, [merchant]);
 
@@ -385,6 +419,7 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
       cuisine_type: form.cuisine_type || null,
       area: form.area || null,
       tags: form.tags ? form.tags.split(',').map((t) => t.trim()).filter(Boolean) : null,
+      payment_methods: form.payment_methods ? form.payment_methods.split(',').map((t) => t.trim()).filter(Boolean) : null,
       address: form.address || null,
       phone: form.phone || null,
       whatsapp: form.whatsapp,
@@ -767,6 +802,80 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
                         onClick={() => removeTag(tag)}
                         className="hover:text-amber-300 transition-colors"
                         title="Remove tag"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Payment Methods */}
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">Payment Methods</label>
+              
+              {/* Preset payment method pills */}
+              <div className="flex flex-wrap gap-2 mb-3">
+                {PAYMENT_METHODS.map((pm) => {
+                  const active = selectedPaymentMethods.includes(pm);
+                  return (
+                    <button
+                      key={pm}
+                      type="button"
+                      onClick={() => togglePaymentMethod(pm)}
+                      className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                        active
+                          ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                          : 'bg-slate-950 border-slate-700 text-slate-400 hover:border-slate-600'
+                      }`}
+                    >
+                      {active && <Check className="w-3 h-3" />}
+                      {pm}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Custom payment method input */}
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={paymentMethodInput}
+                  onChange={(e) => setPaymentMethodInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addCustomPaymentMethod();
+                    }
+                  }}
+                  placeholder="Add custom payment method (press Enter or click +)"
+                  className="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors"
+                />
+                <button
+                  type="button"
+                  onClick={addCustomPaymentMethod}
+                  className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors"
+                  title="Add payment method"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Selected payment methods display */}
+              {selectedPaymentMethods.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {selectedPaymentMethods.map((pm) => (
+                    <span
+                      key={pm}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-xs text-emerald-400"
+                    >
+                      {pm}
+                      <button
+                        type="button"
+                        onClick={() => removePaymentMethod(pm)}
+                        className="hover:text-emerald-300 transition-colors"
+                        title="Remove payment method"
                       >
                         <X className="w-3 h-3" />
                       </button>
