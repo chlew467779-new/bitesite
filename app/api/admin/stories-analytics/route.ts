@@ -39,22 +39,30 @@ export async function GET(request: NextRequest) {
     const startDateTime = `${start}T00:00:00+08:00`;
     const endDateTime = `${end}T23:59:59+08:00`;
 
+    // 1. Get all published articles (slug, title, total view_count)
+    const { data: articles } = await supabase
+      .from('articles')
+      .select('slug, title, view_count')
+      .eq('published', true);
+
+    const articleMap = new Map(articles?.map(a => [a.slug, a]) || []);
+
+    // 2. Get period views from page_views (aggregated by slug)
     const { data: storyViews } = await supabase
       .from('page_views')
-      .select('slug, page_type')
+      .select('slug')
       .in('page_type', ['story', 'story_list'])
       .eq('event_type', 'page_view')
       .gte('created_at', startDateTime)
       .lte('created_at', endDateTime);
 
-    const storyMap = new Map<string, { slug: string; views: number }>();
+    const periodViewsMap = new Map<string, number>();
     storyViews?.forEach(row => {
       const slug = row.slug || 'story-list';
-      const existing = storyMap.get(slug) || { slug, views: 0 };
-      existing.views += 1;
-      storyMap.set(slug, existing);
+      periodViewsMap.set(slug, (periodViewsMap.get(slug) || 0) + 1);
     });
 
+    // 3. Get conversions (story_to_merchant events)
     const { data: conversions } = await supabase
       .from('page_views')
       .select('event_detail')
@@ -64,21 +72,37 @@ export async function GET(request: NextRequest) {
 
     const conversionMap = new Map<string, number>();
     conversions?.forEach(row => {
-      const articleSlug = row.event_detail || 'unknown';
-      conversionMap.set(articleSlug, (conversionMap.get(articleSlug) || 0) + 1);
+      const slug = row.event_detail || 'unknown';
+      conversionMap.set(slug, (conversionMap.get(slug) || 0) + 1);
     });
 
-    const result = Array.from(storyMap.values())
-      .map(s => ({
-        ...s,
-        conversions: conversionMap.get(s.slug) || 0,
-        conversionRate: s.views > 0 ? ((conversionMap.get(s.slug) || 0) / s.views * 100).toFixed(2) : '0.00',
-      }))
-      .sort((a, b) => b.views - a.views);
+    // 4. Merge data: include articles with views OR conversions in period
+    const allSlugs = new Set([
+      ...(articles?.map(a => a.slug) || []),
+      ...periodViewsMap.keys(),
+      ...conversionMap.keys(),
+    ]);
+
+    const result = Array.from(allSlugs).map(slug => {
+      const article = articleMap.get(slug);
+      const periodViews = periodViewsMap.get(slug) || 0;
+      const totalViews = article?.view_count || 0;
+      const conv = conversionMap.get(slug) || 0;
+
+      return {
+        slug,
+        title: article?.title || (slug === 'story-list' ? 'Stories List Page' : slug.replace(/-/g, ' ')),
+        periodViews,
+        totalViews,
+        conversions: conv,
+        conversionRate: periodViews > 0 ? ((conv / periodViews) * 100).toFixed(2) : '0.00',
+      };
+    }).sort((a, b) => b.periodViews - a.periodViews);
 
     return NextResponse.json({
       data: result,
-      totalStoryViews: result.reduce((sum, r) => sum + r.views, 0),
+      totalStoryViews: result.reduce((sum, r) => sum + r.periodViews, 0),
+      totalAllTimeViews: result.reduce((sum, r) => sum + r.totalViews, 0),
       totalConversions: result.reduce((sum, r) => sum + r.conversions, 0),
       range,
     });
