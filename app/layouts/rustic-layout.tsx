@@ -1,4 +1,4 @@
-/* bitesite/app/layouts/rustic-layout.tsx    */
+/* bitesite/app/layouts/rustic-layout.tsx */
 
 "use client";
 
@@ -16,7 +16,7 @@ import { getTodayKey } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
 
 export function RusticLayout({
-  merchant, categories, products, videos, features, viewCount, events,footerText,
+  merchant, categories, products, videos, features, viewCount, events, footerText,
 }: LayoutProps) {
   const resolvedFeatures = mergeFeatures(features);
   const today = getTodayKey();
@@ -36,8 +36,16 @@ export function RusticLayout({
         <FadeIn>
           <div className="relative">
             <div className="h-64 sm:h-80">
-              <SafeImage src={merchant.cover_image} alt={merchant.name} fill className="object-cover" priority />
-              <div className="absolute inset-0 bg-gradient-to-t from-orange-950/70 to-transparent" />
+              {merchant.cover_image ? (
+                <>
+                  <SafeImage src={merchant.cover_image} alt={merchant.name} fill className="object-cover" priority />
+                  <div className="absolute inset-0 bg-gradient-to-t from-orange-950/70 to-transparent" />
+                </>
+              ) : (
+                <div className="w-full h-full bg-orange-200 flex items-center justify-center">
+                  <span className="text-8xl font-bold text-orange-300">{merchant.name.charAt(0).toUpperCase()}</span>
+                </div>
+              )}
             </div>
             <div className="max-w-4xl mx-auto px-4 -mt-20 relative z-10">
               <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-lg border border-orange-100">
@@ -56,7 +64,7 @@ export function RusticLayout({
         </FadeIn>
       )}
 
-      {resolvedFeatures.menu && (
+      {resolvedFeatures.menu && products.length > 0 && (
         <FadeIn>
           <section className="py-10 px-4 sm:px-6">
             <div className="max-w-4xl mx-auto">
