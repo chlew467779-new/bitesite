@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { verifyAdminToken } from '@/lib/admin-auth';
+import { revalidatePath } from 'next/cache';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -121,6 +122,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // Revalidate immediately
+    revalidatePath(`/stories/${data.slug}`);
+    revalidatePath('/stories');
+
     return NextResponse.json({ article: data, success: true }, { status: 201 });
   } catch (err) {
     console.error('Stories POST error:', err);
@@ -174,6 +179,10 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // Revalidate immediately
+    revalidatePath(`/stories/${data.slug}`);
+    revalidatePath('/stories');
+
     return NextResponse.json({ article: data, success: true });
   } catch (err) {
     console.error('Stories PUT error:', err);
@@ -202,6 +211,10 @@ export async function DELETE(request: NextRequest) {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    // Revalidate immediately
+    revalidatePath(`/stories/${slug}`);
+    revalidatePath('/stories');
 
     return NextResponse.json({ success: true });
   } catch (err) {
