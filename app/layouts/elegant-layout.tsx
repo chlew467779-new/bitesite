@@ -1,4 +1,4 @@
-/* bitesite/app/layouts/elegant-layout.tsx    */
+/* bitesite/app/layouts/elegant-layout.tsx */
 
 "use client";
 
@@ -18,7 +18,7 @@ import { getTodayKey } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
 
 export function ElegantLayout({
-  merchant, categories, products, videos, features, viewCount, events,footerText,
+  merchant, categories, products, videos, features, viewCount, events, footerText,
 }: LayoutProps) {
   const resolvedFeatures = mergeFeatures(features);
 
@@ -26,7 +26,7 @@ export function ElegantLayout({
   const hours = merchant.operating_hours as Record<string, string> | null;
 
   const navItems = [
-    { label: "Menu", id: "menu-section", show: resolvedFeatures.menu },
+    { label: "Menu", id: "menu-section", show: resolvedFeatures.menu && products.length > 0 },
     { label: "Hours", id: "hours-section", show: resolvedFeatures.contact },
     { label: "Gallery", id: "gallery-section", show: resolvedFeatures.gallery },
     { label: "Reserve", id: "reserve-section", show: resolvedFeatures.appointment },
@@ -78,7 +78,7 @@ export function ElegantLayout({
               <SafeImage src={merchant.cover_image} alt={merchant.name} fill className="object-cover" priority />
             ) : (
               <div className="w-full h-full bg-slate-900 flex items-center justify-center">
-                <span className="text-slate-600 text-sm">No Image</span>
+                <span className="text-8xl font-bold text-slate-800">{merchant.name.charAt(0).toUpperCase()}</span>
               </div>
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
@@ -101,7 +101,7 @@ export function ElegantLayout({
       )}
 
       {/* Menu */}
-      {resolvedFeatures.menu && (
+      {resolvedFeatures.menu && products.length > 0 && (
         <FadeIn>
           <section id="menu-section" className="py-10 px-4 sm:px-6">
             <div className="max-w-4xl mx-auto space-y-10">
