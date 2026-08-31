@@ -12,7 +12,7 @@ import { PageViewTracker } from "@/app/components/page-view-tracker";
 import { Footer } from "@/components/sections/footer";
 import type { Article } from "@/types";
 
-export const revalidate = 300;
+export const revalidate = 60;
 
 type PageProps = {
   params: Promise<{ slug: string }>;
