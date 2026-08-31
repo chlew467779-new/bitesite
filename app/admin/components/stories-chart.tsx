@@ -4,11 +4,12 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from './auth-context';
-import { BookOpen, ArrowRight } from 'lucide-react';
+import { BookOpen, ArrowRight, Eye, EyeOff } from 'lucide-react';
 
 interface StoryData {
   slug: string;
   title: string;
+  published: boolean;
   periodViews: number;
   totalViews: number;
   conversions: number;
@@ -93,6 +94,7 @@ export default function StoriesChart({ range }: StoriesChartProps) {
             <thead>
               <tr className="border-b border-slate-800">
                 <th className="text-left px-6 py-3 text-slate-500 font-medium">Story</th>
+                <th className="text-left px-6 py-3 text-slate-500 font-medium">Status</th>
                 <th className="text-right px-6 py-3 text-slate-500 font-medium">Period Views</th>
                 <th className="text-right px-6 py-3 text-slate-500 font-medium">Total Views</th>
                 <th className="text-right px-6 py-3 text-slate-500 font-medium">Conversions</th>
@@ -102,7 +104,7 @@ export default function StoriesChart({ range }: StoriesChartProps) {
             <tbody>
               {data.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
+                  <td colSpan={6} className="px-6 py-8 text-center text-slate-500">
                     No stories data for this period.
                   </td>
                 </tr>
@@ -121,6 +123,17 @@ export default function StoriesChart({ range }: StoriesChartProps) {
                           {story.slug === 'story-list' ? 'Stories List Page' : story.slug}
                         </span>
                       </div>
+                    </td>
+                    <td className="px-6 py-3">
+                      {story.published ? (
+                        <span className="inline-flex items-center gap-1 text-xs text-emerald-400">
+                          <Eye className="w-3 h-3" /> Published
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-xs text-amber-400">
+                          <EyeOff className="w-3 h-3" /> Draft
+                        </span>
+                      )}
                     </td>
                     <td className="px-6 py-3 text-right text-slate-300 font-mono">
                       {story.periodViews.toLocaleString()}
