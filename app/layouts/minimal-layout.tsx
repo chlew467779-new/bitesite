@@ -1,4 +1,4 @@
-/* bitesite/app/layouts/minimal-layout.tsx    */
+/* bitesite/app/layouts/minimal-layout.tsx */
 
 "use client";
 
@@ -16,7 +16,7 @@ import { getTodayKey } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
 
 export function MinimalLayout({
-  merchant, categories, products, videos, features, viewCount, events,footerText,
+  merchant, categories, products, videos, features, viewCount, events, footerText,
 }: LayoutProps) {
   const resolvedFeatures = mergeFeatures(features);
   const today = getTodayKey();
@@ -35,9 +35,13 @@ export function MinimalLayout({
       {resolvedFeatures.hero && (
         <FadeIn>
           <div className="max-w-3xl mx-auto px-4 pt-8 pb-6">
-            {merchant.cover_image && (
+            {merchant.cover_image ? (
               <div className="relative aspect-[16/9] rounded-lg overflow-hidden mb-6">
                 <SafeImage src={merchant.cover_image} alt={merchant.name} fill className="object-cover" priority />
+              </div>
+            ) : (
+              <div className="aspect-[16/9] rounded-lg bg-stone-200 flex items-center justify-center mb-6">
+                <span className="text-6xl font-light text-stone-300">{merchant.name.charAt(0).toUpperCase()}</span>
               </div>
             )}
             <div className="flex items-center gap-2 flex-wrap">
@@ -52,7 +56,7 @@ export function MinimalLayout({
         </FadeIn>
       )}
 
-      {resolvedFeatures.menu && (
+      {resolvedFeatures.menu && products.length > 0 && (
         <FadeIn>
           <section className="py-8 px-4">
             <div className="max-w-3xl mx-auto">
