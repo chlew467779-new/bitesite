@@ -9,7 +9,7 @@ import { MapPin, Phone, Clock, Mail, Instagram, ArrowLeft, MessageSquare, Bankno
 import Link from "next/link";
 import type { LayoutProps } from "@/types";
 import { mergeFeatures } from "@/types";
-import { getTodayKey } from "@/lib/hours";
+import { getTodayKey, formatOperatingHours } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
 import { trackEvent } from "@/lib/analytics";
 
@@ -26,7 +26,7 @@ export function ClassicLayout({
 
   const today = getTodayKey();
   const hours = merchant.operating_hours as Record<string, string> | null;
-  const todayHours = hours?.[today] || "Closed";
+  const todayHours = formatOperatingHours(hours?.[today]) || "Closed";
 
   return (
     <div className="min-h-screen bg-amber-50">
@@ -208,7 +208,7 @@ export function ClassicLayout({
                       }`}
                     >
                       <span className="capitalize">{day}</span>
-                      <span>{time}</span>
+                      <span>{formatOperatingHours(time)}</span>
                     </div>
                   ))}
                 </div>
