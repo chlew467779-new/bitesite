@@ -12,11 +12,11 @@ import type { LayoutProps } from "@/types";
 import { MapPin, Phone, Mail, Instagram, ArrowLeft, MessageSquare, Clock, Banknote, Smartphone, CreditCard } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import Link from "next/link";
-import { getTodayKey } from "@/lib/hours";
+import { getTodayKey, formatOperatingHours } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
 
 export function ModernLayout({
-  merchant, categories, products, videos, features, viewCount, events,footerText,
+  merchant, categories, products, videos, features, viewCount, events, footerText,
 }: LayoutProps) {
   const resolvedFeatures = mergeFeatures(features);
   const today = getTodayKey();
@@ -47,7 +47,7 @@ export function ModernLayout({
                 <p className="text-slate-600 leading-relaxed">{merchant.description}</p>
                 {hours && (
                   <p className="mt-4 text-sm text-slate-500 flex items-center gap-2">
-                    <Clock size={16} /> Today: {hours[today] || "Closed"}
+                    <Clock size={16} /> Today: {formatOperatingHours(hours[today]) || "Closed"}
                   </p>
                 )}
               </div>
@@ -129,7 +129,8 @@ export function ModernLayout({
                 <div className="space-y-2">
                   {hours && Object.entries(hours).map(([day, time]) => (
                     <div key={day} className={`flex justify-between py-2 px-3 rounded-lg text-sm ${day === today ? "bg-white shadow-sm text-slate-900 font-medium" : "text-slate-500"}`}>
-                      <span className="capitalize">{day}</span><span>{time}</span>
+                      <span className="capitalize">{day}</span>
+                      <span>{formatOperatingHours(time)}</span>
                     </div>
                   ))}
                 </div>
