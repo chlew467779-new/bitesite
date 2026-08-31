@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import Link from "next/link";
-import { getTodayKey, formatOperatingHours } from "@/lib/hours";
+import { getTodayKey, formatOperatingHours, DAYS } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
 
 export function ElegantLayout({
@@ -161,7 +161,9 @@ export function ElegantLayout({
             <div className="max-w-4xl mx-auto">
               <h2 className="text-2xl font-bold text-amber-100 mb-6">Opening Hours</h2>
               <div className="space-y-2">
-                {hours && Object.entries(hours).map(([day, time]) => {
+                {hours && DAYS.map((day) => {
+                  const time = hours[day];
+                  if (!time) return null;
                   const isToday = day === today;
                   const timeSlots = time.split(",").map((t) => t.trim());
                   return (
