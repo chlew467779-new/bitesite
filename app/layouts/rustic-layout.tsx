@@ -12,7 +12,7 @@ import type { LayoutProps } from "@/types";
 import { MapPin, Phone, Mail, Instagram, ArrowLeft, MessageSquare, Clock, Banknote, Smartphone, CreditCard } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import Link from "next/link";
-import { getTodayKey, formatOperatingHours } from "@/lib/hours";
+import { getTodayKey, formatOperatingHours, DAYS } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
 
 export function RusticLayout({
@@ -134,12 +134,15 @@ export function RusticLayout({
                   {merchant.email && <a href={`mailto:${merchant.email}`} className="flex items-center gap-3 text-orange-800 active:scale-[0.98] transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}><Mail size={18} /><span className="text-sm">{merchant.email}</span></a>}
                 </div>
                 <div className="space-y-2">
-                  {hours && Object.entries(hours).map(([day, time]) => (
-                    <div key={day} className={`flex justify-between py-2 px-3 rounded-lg text-sm ${day === today ? "bg-orange-100 text-orange-900 font-medium" : "text-orange-800/60"}`}>
-                      <span className="capitalize">{day}</span>
-                      <span>{formatOperatingHours(time)}</span>
-                    </div>
-                  ))}
+                  {hours && DAYS.map((day) => {
+                    const time = hours[day];
+                    if (!time) return null;
+                    return (
+                      <div key={day} className={`flex justify-between py-2 px-3 rounded-lg text-sm ${day === today ? "bg-orange-100 text-orange-900 font-medium" : "text-orange-800/60"}`}>
+                        <span className="capitalize">{day}</span><span>{formatOperatingHours(time)}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
