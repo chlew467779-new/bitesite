@@ -4,7 +4,7 @@ Beautiful Menus for Local Restaurants — Kuala Lumpur, Malaysia.
 
 > **Live URL**: https://bitesite-pied.vercel.app  
 > **GitHub**: https://github.com/chlew467779-new/bitesite  
-> **Owner**: CH (BiteSite)
+> **Owner**: CH (BiteSite) — 不懂代码，所有技术操作需逐步指导
 
 ---
 
@@ -25,6 +25,8 @@ Every change is done through the GitHub web interface:
 > **Tip**: Don't edit too many files in one commit. Vercel queues deployments. Wait 30–60 seconds between commits.
 
 > **Tip**: After changing database data, you need to **Redeploy Vercel** (without build cache) to see changes immediately, because pages are cached for 5 minutes (ISR).
+
+> **Tip**: CH 不懂代码。每次对话只改 2-3 个文件，一步一步来，验证后再下一步。
 
 ---
 
@@ -59,7 +61,7 @@ app/
 │   └── page.tsx                # Join Us pricing page (FAQPage Schema)
 ├── stories/
 │   ├── layout.tsx              # Stories list layout (SEO metadata)
-│   ├── page.tsx                # Stories list page (articles grid + category filter)
+│   ├── page.tsx                # Stories list page (articles grid + category filter) — Client Component
 │   └── [slug]/
 │       └── page.tsx            # Story detail page (ISR 300s + Article Schema + Markdown render + hashtags)
 ├── our-partner/
@@ -82,7 +84,7 @@ app/
 │       ├── merchants/
 │       │   └── route.ts        # GET /api/admin/merchants?range=7d — merchant ranking table
 │       ├── merchants-list/
-│       │   └── route.ts        # GET /api/admin/merchants-list — simple merchant list for dropdowns
+│       │   └── route.ts        # GET /api/admin/merchants-list — simple merchant list {slug, name}
 │       ├── devices/
 │       │   └── route.ts        # GET /api/admin/devices?range=7d — device/OS/browser breakdown
 │       ├── locations/
@@ -94,9 +96,9 @@ app/
 │       ├── events/
 │       │   └── route.ts        # GET /api/admin/events?range=7d — WhatsApp/Booking/Share stats
 │       ├── stories/
-│       │   └── route.ts        # GET/POST/PUT/DELETE /api/admin/stories — Stories CRUD (supports Chinese slug)
+│       │   └── route.ts        # GET/POST/PUT/DELETE — Stories CRUD (supports Chinese slug)
 │       ├── stories-analytics/
-│       │   └── route.ts        # GET /api/admin/stories-analytics — Article views + conversion rate (shows titles)
+│       │   └── route.ts        # GET — Article views + conversion rate (shows titles + published status)
 │       ├── map/
 │       │   └── route.ts        # GET /api/admin/map?range=7d — Map page analytics
 │       ├── hourly/
@@ -106,7 +108,7 @@ app/
 │       ├── export/
 │       │   └── route.ts        # GET /api/admin/export?range=7d&format=csv — CSV download
 │       └── settings/
-│           └── route.ts        # GET/PUT /api/admin/settings — read/write site config (auth protected)
+│           └── route.ts        # GET/PUT /api/admin/settings — read/write site config
 ├── store/
 │   └── [merchant]/
 │       ├── page.tsx              # Merchant detail page (ISR + SSR + Restaurant/Menu/Breadcrumb Schema)
@@ -119,13 +121,13 @@ app/
 │   ├── modern-layout.tsx         # White slate contemporary style
 │   └── rustic-layout.tsx         # Orange earthy style
 ├── admin/                        # Admin Analytics Dashboard + CMS (dark theme)
-│   ├── page.tsx                  # Admin entry: login form or dashboard shell
-│   ├── layout.tsx                # Admin layout (dark mode, no SiteHeader)
+│   ├── page.tsx                  # Admin entry: 14-tab dashboard (login form or full dashboard)
+│   ├── layout.tsx                # Admin layout (dark mode, force-dynamic, wraps ClientLayout)
 │   ├── admin-globals.css         # Admin-specific dark theme styles
-│   ├── login-form.tsx            # Password input component
 │   └── components/
 │       ├── auth-context.tsx      # Login state management (React Context + localStorage)
-│       ├── admin-shell.tsx       # Sidebar + main content layout (collapsible on desktop)
+│       ├── client-layout.tsx     # AuthProvider wrapper (exported as { ClientLayout })
+│       ├── admin-shell.tsx       # Sidebar + main content layout (12 nav tabs + settings + export)
 │       ├── date-range-picker.tsx # Time range selector (today/7d/30d/90d/365d)
 │       ├── realtime-badge.tsx    # Live online user counter (30s auto-refresh)
 │       ├── stat-cards.tsx        # Top 4 KPI cards (views/unique/events/merchants)
@@ -136,16 +138,16 @@ app/
 │       ├── referrer-chart.tsx    # Traffic source pie chart
 │       ├── search-keywords-table.tsx # Search terms ranking
 │       ├── events-chart.tsx      # WhatsApp/Booking/Share stacked bar chart
-│       ├── stories-chart.tsx     # Stories views + conversion rate (shows article titles)
+│       ├── stories-chart.tsx     # Stories views + conversion rate (shows article titles + status)
 │       ├── map-stats.tsx         # Map page views + marker clicks
 │       ├── hourly-chart.tsx      # 24-hour peak hours bar chart
 │       ├── export-button.tsx     # CSV export trigger
-│       ├── settings-panel.tsx    # Site settings editor (title, description, footer text)
+│       ├── settings-panel.tsx    # Site settings editor (⚠️ 命名导出 { SettingsPanel })
 │       ├── stories-manager.tsx   # Stories list with search, filter, delete, updated_at column
-│       ├── story-editor.tsx      # Markdown editor + live preview + 6 background themes + auto-save + category dropdown + cover preview + word count + Markdown syntax hint
-│       ├── merchant-manager.tsx  # ⏳ P2 — Merchant list with status/actions
-│       ├── merchant-form.tsx     # ⏳ P2 — 5-tab merchant create/edit form
-│       └── menu-manager.tsx      # ⏳ P2 — Category & product management
+│       ├── story-editor.tsx      # Markdown editor + live preview + 6 themes + auto-save + category dropdown + cover preview + word count + emoji picker + syntax hint
+│       ├── merchant-manager.tsx  # ⏳ P4 — Merchant list with status/actions (待创建)
+│       ├── merchant-form.tsx     # ⏳ P4 — 5-tab merchant create/edit form (待创建)
+│       └── menu-manager.tsx      # ⏳ P4 — Category & product management (待创建)
 ├── components/
 │   ├── map-embed.tsx             # Google Maps iframe embed component
 │   ├── safe-image.tsx            # Next/Image wrapper with error fallback + loading shimmer
@@ -183,10 +185,20 @@ app/
 │       ├── story-card.tsx            # Article card (featured + list variants)
 │       ├── story-list.tsx            # Article list with featured article on top
 │       ├── story-hero.tsx            # Story detail hero (6 theme support)
-│       ├── story-content.tsx         # Markdown renderer (6 theme support + /store/ link tracking + single-line-break support via remark-breaks)
+│       ├── story-content.tsx         # Markdown renderer (6 theme support + /store/ link tracking + remark-breaks)
 │       ├── story-related.tsx         # "More Stories" recommendations
 │       ├── story-view-tracker.tsx    # Client-side article view count tracker
 │       └── latest-stories.tsx        # Homepage "Latest Stories" section (latest 3 articles)
+
+components/                         # LEGACY components (Stories page 在用)
+└── sections/
+    ├── story-content.tsx            # ⚠️ 旧版，不要修改！新版在 app/components/sections/
+    ├── story-hero.tsx               # ⚠️ 旧版
+    ├── story-related.tsx            # ⚠️ 旧版
+    ├── story-view-tracker.tsx       # ⚠️ 旧版
+    ├── story-merchant-link.tsx      # ⚠️ 旧版
+    ├── footer.tsx                   # ⚠️ 旧版
+    └── ...
 
 lib/
 ├── supabase.ts                 # Supabase client + all DB queries + related merchant scoring + map query
@@ -206,7 +218,16 @@ types/
 └── index.ts                    # All TypeScript interfaces + defaultFeatures + mergeFeatures
 ```
 
-> ⚠️ **File Path Trap**: The project has two parallel component directories — `components/sections/` (legacy, used by stories page) and `app/components/sections/` (actively used by tier-sections). Before modifying any component, check which directory it's actually imported from.
+> ⚠️ **File Path Trap**: The project has TWO parallel component directories:
+> - `components/sections/` — **legacy**, used by stories page (story-content.tsx, story-hero.tsx, etc.)
+> - `app/components/sections/` — **actively used** by other pages
+> Before modifying any component, check which directory it's actually imported from.
+
+> ⚠️ **Import/Export Trap**: Admin components are mostly `export default`, with these exceptions:
+> - `SettingsPanel` → `import { SettingsPanel } from '...'`
+> - `AuthProvider` → `import { AuthProvider } from '...'`
+> - `useAuth` → `import { useAuth } from '...'`
+> - `ClientLayout` → `import { ClientLayout } from '...'`
 
 ---
 
@@ -341,7 +362,7 @@ types/
 | path | TEXT NOT NULL | e.g. `/store/abc`, `/stories/xyz` |
 | page_type | TEXT | merchant / story / home / join_us / our_partner / story_list / other |
 | event_type | TEXT NOT NULL DEFAULT 'page_view' | page_view / whatsapp_click / booking_submit / share / search / map_marker_click / story_to_merchant |
-| event_detail | TEXT | Search keyword, share platform, etc. |
+| event_detail | TEXT | Search keyword, share platform, article slug, etc. |
 | ip | TEXT | Visitor IP |
 | country | TEXT | From Vercel `x-vercel-ip-country` |
 | city | Text | From Vercel `x-vercel-ip-city` (URL decoded) |
@@ -447,6 +468,7 @@ CREATE EXTENSION IF NOT EXISTS pg_cron;
 SELECT cron.schedule('aggregate-views-hourly', '0 * * * *', 'SELECT aggregate_daily_views()');
 ```
 
+
 ---
 
 ## Admin Dashboard
@@ -470,50 +492,89 @@ SELECT cron.schedule('aggregate-views-hourly', '0 * * * *', 'SELECT aggregate_da
 | Token expiry | 30 minutes |
 | API auth | Every admin API checks `x-admin-token` header |
 
-### Dashboard Tabs
+### Dashboard Tabs (14个，全部 ✅ 正常工作)
 
 | Tab | What It Shows | Data Source | Status |
 |-----|--------------|-------------|--------|
-| **Overview** | Total Views, Unique Visitors, Total Events, Active Merchants + trend chart + device chart + merchant ranking | `page_views` raw table | ✅ |
+| **Overview** | Total Views, Unique Visitors, Total Events, Active Merchants + trend chart + device chart + referrer chart + events chart + location chart + hourly chart + stories chart + map stats + search keywords + merchant ranking | `page_views` raw table | ✅ |
 | **Trends** | Daily traffic line chart (last 7/30/90/365 days) | `page_views` raw table | ✅ |
-| **Merchants** | Merchant ranking table (total views, today views, avg time) | `merchant_daily_views` aggregate table | ✅ |
+| **Merchants** | Merchant ranking table (views, WhatsApp, bookings) | `page_views` raw table | ✅ |
 | **Devices** | Desktop / Mobile / Tablet donut chart + OS/browser breakdown | `page_views` raw table | ✅ |
 | **Locations** | Top cities and countries bar chart | `page_views` raw table | ✅ |
 | **Referrers** | Direct / Google / Bing / Social / Other pie chart | `page_views` raw table | ✅ |
 | **Search Keywords** | What users searched on the homepage | `page_views` raw table (event_type='search') | ✅ |
-| **Events** | WhatsApp clicks, bookings, shares, map clicks | `page_views` raw table | ✅ |
-| **Stories Analytics** | Article views + conversion rate (story → merchant clicks) + article titles | `articles` + `page_views` | ✅ |
-| **Stories Editor** | Create/edit/delete articles with Markdown editor + live preview + 6 background themes + auto-save + category dropdown + cover image preview + word count + Markdown syntax hint | `articles` table (CRUD API) | ✅ |
+| **Events** | WhatsApp clicks, bookings, shares, map clicks, story→merchant | `page_views` raw table | ✅ |
+| **Stories Analytics** | Article views + conversion rate + **article titles** + **published/draft status** + Period Views + Total Views | `articles` + `page_views` | ✅ |
+| **Stories Editor** | Create/edit/delete articles with Markdown editor + live preview + 6 background themes + auto-save + category dropdown + cover image preview + word count + emoji picker + Markdown syntax hint | `articles` table (CRUD API) | ✅ |
 | **Map Stats** | Map page views + marker click counts | `page_views` raw table | ✅ |
 | **Hourly** | 24-hour peak hours bar chart | `page_views` raw table | ✅ |
 | **Export CSV** | Download all analytics data as CSV | `page_views` raw table | ✅ |
 | **Settings** | Edit `site_title`, `site_description`, `footer_text` | `settings` table | ✅ |
-| **Merchant Manager** | List all merchants with status/actions | `merchants` table | ⏳ P2 |
-| **Menu Manager** | Manage categories and products per merchant | `categories` + `products` | ⏳ P2 |
 
 ### Admin API Endpoints
 
 All admin APIs require `x-admin-token` header (HMAC-SHA256).
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/admin/login` | POST | Password auth, returns admin token |
-| `/api/admin/overview` | GET | Dashboard KPI cards |
-| `/api/admin/trends` | GET | Daily traffic trend |
-| `/api/admin/merchants` | GET | Merchant ranking (analytics data) |
-| `/api/admin/merchants-list` | GET | Simple merchant list `{slug, name}` for dropdowns |
-| `/api/admin/devices` | GET | Device breakdown |
-| `/api/admin/locations` | GET | Geo distribution |
-| `/api/admin/referrers` | GET | Traffic sources |
-| `/api/admin/search-keywords` | GET | Search terms |
-| `/api/admin/events` | GET | Event stats |
-| `/api/admin/stories` | GET/POST/PUT/DELETE | Stories CRUD — list, create, update, delete articles |
-| `/api/admin/stories-analytics` | GET | Article views + conversion rate (shows article titles) |
-| `/api/admin/map` | GET | Map page stats |
-| `/api/admin/hourly` | GET | 24h peak hours |
-| `/api/admin/realtime` | GET | Current online users |
-| `/api/admin/export` | GET | CSV download |
-| `/api/admin/settings` | GET/PUT | Site config (auth protected) |
+| Endpoint | Method | Description | Status |
+|----------|--------|-------------|--------|
+| `/api/admin/login` | POST | Password auth, returns admin token | ✅ |
+| `/api/admin/overview` | GET | Dashboard KPI cards | ✅ |
+| `/api/admin/trends` | GET | Daily traffic trend | ✅ |
+| `/api/admin/merchants` | GET | Merchant ranking (analytics data) | ✅ |
+| `/api/admin/merchants-list` | GET | Simple merchant list `{slug, name}` for dropdowns | ✅ |
+| `/api/admin/devices` | GET | Device breakdown | ✅ |
+| `/api/admin/locations` | GET | Geo distribution | ✅ |
+| `/api/admin/referrers` | GET | Traffic sources | ✅ |
+| `/api/admin/search-keywords` | GET | Search terms | ✅ |
+| `/api/admin/events` | GET | Event stats | ✅ |
+| `/api/admin/stories` | GET/POST/PUT/DELETE | Stories CRUD — list, create, update, delete articles | ✅ |
+| `/api/admin/stories-analytics` | GET | Article views + conversion rate (shows titles + status) | ✅ |
+| `/api/admin/map` | GET | Map page stats | ✅ |
+| `/api/admin/hourly` | GET | 24h peak hours | ✅ |
+| `/api/admin/realtime` | GET | Current online users | ✅ |
+| `/api/admin/export` | GET | CSV download | ✅ |
+| `/api/admin/settings` | GET/PUT | Site config (auth protected) | ✅ |
+| `/api/admin/merchants-crud` | GET/POST/PUT/DELETE | ⏳ Merchant CRUD (待创建) | ⏳ |
+| `/api/admin/products` | GET/POST/PUT/DELETE | ⏳ Product CRUD (待创建) | ⏳ |
+
+---
+
+## Stories Editor 功能清单
+
+### 编辑器
+- ✅ **中文 slug** — 标题输入"测试文章" → slug 为 `测试文章`
+- ✅ **Category 下拉提示** — 从现有文章提取分类，如 "Chicken rice 鸡饭", "New Opening"
+- ✅ **Cover Image 预览** — 输入 URL 后下方显示缩略图
+- ✅ **Markdown 语法提示** — 编辑器上方显示 💡 语法提示条
+- ✅ **Emoji 选择器** — 工具栏笑脸按钮，点击弹出 emoji 面板
+- ✅ **字数统计** — 右下角显示 `1 words · 6 characters`
+- ✅ **自动保存草稿** — 每 30 秒自动保存到 localStorage，顶部显示 "Auto-saved at 10:45:08 PM"
+- ✅ **刷新后恢复草稿** — 刷新后提示恢复草稿
+- ✅ **6 个背景主题** — default / warm / cool / dark / nature / minimal
+- ✅ **实时预览** — 右侧显示渲染效果
+
+### 列表页
+- ✅ **显示 Updated 列** — 含日期和时分，如 "30 Aug 2026, 10:45 pm"
+- ✅ **保存后列表自动刷新** — 编辑文章 → Update → 回到列表立即看到更新
+- ✅ **Tags 显示正常** — `#Asian food`, `#bakery` 等
+- ✅ **搜索** — 按 title/category/tags 搜索
+- ✅ **筛选** — All / Published / Draft
+
+---
+
+## Stories Analytics 功能清单
+
+- ✅ **Summary Cards** — 3 张：Period Story Views / All-Time Story Views / Story → Merchant Clicks
+- ✅ **表格 Story 列** — 显示文章**真实标题**（不是 slug）
+- ✅ **表格小字** — 标题下方灰色显示 slug
+- ✅ **Status 列** — Published = 绿色 Eye / Draft = 黄色 EyeOff
+- ✅ **Period Views** — 该时间段内 `page_views` 聚合数
+- ✅ **Total Views** — `articles.view_count` 累计数
+- ✅ **Conversions** — Story → Merchant 点击数
+- ✅ **Conversion Rate** — 转化率百分比
+- ✅ **切换 7d/30d/365d** — Period Views 变化，Total Views 不变
+- ✅ **只显示 articles 表存在的文章** — 不会混入陌生 slug
+- ✅ **Legacy 数据修复** — `event_detail` 为 NULL 时 fallback 到 `slug` 字段
 
 ---
 
@@ -660,15 +721,15 @@ All events are sent to `/api/track` via `navigator.sendBeacon` (fires even if us
 | `share` | User shares page | `"copy_link"` / `"facebook"` / `"twitter"` |
 | `booking_submit` | Booking form submitted | Merchant name |
 | `map_marker_click` | Map marker clicked | Merchant slug |
-| `story_to_merchant` | Story → merchant link clicked | Article slug |
+| `story_to_merchant` | Story → merchant link clicked | Article slug (stored in event_detail, fallback to slug field) |
 | `search` | Homepage search submitted | Search query |
 
 ### View Count System
 
 - **Real-time**: `page_views` table records every visit with full metadata (device, location, referrer)
 - **Aggregated**: `merchant_daily_views` table updated hourly via cron job
-- **Dashboard**: Overview/Devices/Referrers/Events/Stories/Map/Hourly read from `page_views` (real-time)
-- **Dashboard**: Trends/Merchants/Locations read from `merchant_daily_views` (cached, efficient)
+- **Dashboard Overview/Devices/Referrers/Events/Stories/Map/Hourly**: Read from `page_views` (real-time)
+- **Dashboard Trends/Merchants/Locations**: Read from `merchant_daily_views` (cached, efficient)
 - **Legacy**: `articles.view_count` — total accumulated views (shown in Stories Analytics as "Total Views")
 - **Period**: `page_views` count within selected time range (shown in Stories Analytics as "Period Views")
 
@@ -879,6 +940,15 @@ Emoji work too! 🍞☕🎉
 ### Current
 1. **Vercel deploy time increasing** — Build is getting slower. Likely causes: duplicate files between `components/` and `app/components/`, unused dependencies, or ISR static page generation overhead.
 
+### Recently Fixed (2026-08-31)
+- ✅ Admin Dashboard 14 个 tab 全部正常显示（之前只有 4 个）
+- ✅ `export const dynamic = 'force-dynamic'` 移到正确位置（layout.tsx）
+- ✅ Stories Analytics 显示文章真实标题（不是 slug）
+- ✅ Stories Analytics 显示 Published/Draft 状态
+- ✅ Stories Analytics 双 views 系统：Period Views + Total Views
+- ✅ Stories Analytics 修复 `unknown` slug 问题（只显示 articles 表存在的文章）
+- ✅ Stories Analytics 修复 legacy `event_detail=NULL` 数据（fallback 到 slug 字段）
+
 ### Recently Fixed (2026-08-30)
 - ✅ Site title, description, and footer text now editable via Admin Settings
 - ✅ Inactive merchants display friendly "Unavailable" page instead of 404
@@ -957,7 +1027,19 @@ SELECT slug, name, status, is_published FROM merchants;
 SELECT slug, title, published, view_count, updated_at FROM articles ORDER BY updated_at DESC;
 
 -- Check stories analytics data
-SELECT slug, title, view_count FROM articles WHERE published = true ORDER BY view_count DESC;
+SELECT slug, title, view_count, published FROM articles ORDER BY view_count DESC;
+
+-- Check stories analytics API 返回的数据结构
+SELECT 
+  a.slug, a.title, a.published, a.view_count,
+  COUNT(pv.id) as period_views
+FROM articles a
+LEFT JOIN page_views pv ON a.slug = pv.slug 
+  AND pv.page_type = 'story' 
+  AND pv.event_type = 'page_view'
+  AND pv.created_at >= NOW() - INTERVAL '7 days'
+GROUP BY a.slug, a.title, a.published, a.view_count
+ORDER BY period_views DESC;
 ```
 
 ### Supabase Timezone
@@ -988,23 +1070,42 @@ WHERE created_at >= '2026-08-30T00:00:00+08:00';
 - ✅ **Stories CRUD API** — full REST API (GET/POST/PUT/DELETE) at `/api/admin/stories` with Chinese slug support
 - ✅ **Merchants List API** — `/api/admin/merchants-list` for dropdowns
 - ✅ **6 background themes** for articles (default/warm/cool/dark/nature/minimal)
-- ✅ **Admin Stories Editor** — Markdown editor with toolbar + live preview + auto-save + category dropdown + cover preview + word count + syntax hint
+- ✅ **Admin Stories Editor** — Markdown editor with toolbar + live preview + auto-save + category dropdown + cover preview + word count + emoji picker + syntax hint
 - ✅ **Admin Stories Manager** — list page with search, filter, delete, updated_at column
 - ✅ **Settings API** now requires admin authentication
 - ✅ **Sidebar** is collapsible on desktop
 - ✅ **Single line breaks** preserved via remark-breaks
 - ✅ **Save refreshes** stories list automatically
 
-### Phase 2 — Merchant CMS (Planned)
-- ⏳ Merchant Manager — list all merchants with status/actions
-- ⏳ Merchant Form (5 tabs) — create/edit merchant info, contact, hours, layout, images
-- ⏳ Menu Manager — manage categories and products per merchant
-- ⏳ Category CRUD API
-- ⏳ Product CRUD API
+### Phase 2 — Admin Dashboard 修复 (Completed 2026-08-31)
+- ✅ **重写 `app/admin/page.tsx`** — 14 个 tab 全部添加条件渲染
+- ✅ **移动 `force-dynamic`** 从 page.tsx 到 layout.tsx（正确位置）
+- ✅ 所有图表组件正常加载（TrendChart, DeviceChart, ReferrerChart, EventsChart, LocationChart, HourlyChart, StoriesChart, MapStats, SearchKeywordsTable, MerchantTable）
+- ✅ Export CSV tab 正常工作
+- ✅ Settings tab 正常工作
 
-### Phase 3 — Polish (Planned)
+### Phase 3 — Stories Analytics 优化 (Completed 2026-08-31)
+- ✅ **API 读取 `articles.title` 和 `articles.published`** — 不再显示 slug
+- ✅ **双 views 系统** — Period Views（时间段 page_views 聚合）+ Total Views（articles.view_count 累计）
+- ✅ **Status 列** — Published = 绿色 Eye / Draft = 黄色 EyeOff
+- ✅ **只显示 articles 表存在的文章** — 不混入 page_views 里的陌生 slug
+- ✅ **Legacy 数据修复** — `event_detail=NULL` 的 `story_to_merchant` 事件 fallback 到 `slug` 字段
+
+### Phase 4 — Merchant Manager (进行中)
+- ⏳ **步骤 1**: Merchant Manager — 商家卡片列表（搜索 + 筛选 + 新建）
+- ⏳ **步骤 2**: Merchant Editor — 5-tab 编辑表单（基本信息/联系方式/营业时间/页面设置/图片）
+- ⏳ **步骤 3**: Menu Manager — 菜品分类和菜品管理
+- ⏳ **API**: `/api/admin/merchants-crud` (GET/POST/PUT/DELETE)
+- ⏳ **API**: `/api/admin/products` (GET/POST/PUT/DELETE)
+
+### Phase 5 — 其他优化 (Planned)
 - ⏳ Image upload (Supabase Storage) instead of URL pasting
-- ⏳ Rich text editor (replace Markdown with WYSIWYG)
+- ⏳ Stories 列表分页
+- ⏳ 搜索支持内容全文搜索
+- ⏳ Duplicate 文章功能
+- ⏳ 移动端 Preview 显示
+- ⏳ Analytics 365d 查询优化（数据库索引）
+- ⏳ `/stories` 页面 SSR 优化
 - ⏳ Multi-language support (EN / 中文 / BM)
 - ⏳ Email notifications for new bookings
 - ⏳ Social media auto-sharing
@@ -1031,3 +1132,8 @@ WHERE created_at >= '2026-08-30T00:00:00+08:00';
 Kuala Lumpur, Malaysia
 
 > Built with Next.js + Tailwind + Supabase + Vercel
+
+---
+
+*README last updated: 2026-08-31*  
+*Current Phase: Phase 4 — Merchant Manager (进行中)*
