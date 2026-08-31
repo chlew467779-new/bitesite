@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import Link from "next/link";
-import { getTodayKey } from "@/lib/hours";
+import { getTodayKey, formatOperatingHours } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
 
 export function ElegantLayout({
@@ -174,7 +174,7 @@ export function ElegantLayout({
                       <span className="capitalize flex-shrink-0">{day}</span>
                       <div className="text-right">
                         {timeSlots.map((slot, i) => (
-                          <div key={i}>{slot}</div>
+                          <div key={i}>{formatOperatingHours(slot)}</div>
                         ))}
                       </div>
                     </div>
