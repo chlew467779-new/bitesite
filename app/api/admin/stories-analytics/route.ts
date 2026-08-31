@@ -63,17 +63,19 @@ export async function GET(request: NextRequest) {
     });
 
     // 3. Get conversions (story_to_merchant events)
+    // For story_to_merchant, event_detail should be the article slug.
+    // Fallback to the 'slug' field if event_detail is empty (legacy data).
     const { data: conversions } = await supabase
       .from('page_views')
-      .select('event_detail')
+      .select('event_detail, slug')
       .eq('event_type', 'story_to_merchant')
       .gte('created_at', startDateTime)
       .lte('created_at', endDateTime);
 
     const conversionMap = new Map<string, number>();
     conversions?.forEach(row => {
-      const slug = row.event_detail || 'unknown';
-      conversionMap.set(slug, (conversionMap.get(slug) || 0) + 1);
+      const articleSlug = row.event_detail || row.slug || 'unknown';
+      conversionMap.set(articleSlug, (conversionMap.get(articleSlug) || 0) + 1);
     });
 
     // 4. Merge data: include articles with views OR conversions in period
