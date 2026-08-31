@@ -1,5 +1,7 @@
 /* bitesite/lib/hours.ts */
 
+export const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
 /**
  * Get current day key: "monday", "tuesday", etc.
  * Forces Asia/Kuala_Lumpur timezone to prevent hydration mismatch
@@ -98,8 +100,6 @@ export interface DayHours {
 
 /**
  * Parse a raw hours string into structured slots for Admin editing
- * e.g. "9:00 AM - 10:00 PM, 3:00 PM - 7:00 PM" →
- *   { slots: [{start:"9:00 AM", end:"10:00 PM"}, {start:"3:00 PM", end:"7:00 PM"}], isClosed: false }
  */
 export function parseOperatingHoursString(raw: string | null | undefined): DayHours {
   if (!raw || !raw.trim()) {
@@ -111,7 +111,6 @@ export function parseOperatingHoursString(raw: string | null | undefined): DayHo
     return { slots: [], isClosed: true };
   }
 
-  // Split by comma, slash, or ampersand for multiple slots
   const slotStrs = raw.split(/,|\/|&/).map((s) => s.trim()).filter(Boolean);
   const slots: TimeSlot[] = [];
 
@@ -144,6 +143,7 @@ export function formatOperatingHoursToString(dayHours: DayHours): string {
  * - Standardizes AM/PM casing
  * - Deduplicates repeated slots
  * - Recognizes "Closed" (case-insensitive)
+ * - Filters out slots that don't look like valid time ranges
  */
 export function formatOperatingHours(raw: string | null | undefined): string {
   if (!raw || !raw.trim()) return '';
@@ -160,9 +160,20 @@ export function formatOperatingHours(raw: string | null | undefined): string {
   // Normalize whitespace
   formatted = formatted.replace(/\s+/g, ' ').trim();
 
-  // Split and deduplicate slots
+  // Split into slots
   const slots = formatted.split(/,|\/|&/).map((s) => s.trim()).filter(Boolean);
   const uniqueSlots = [...new Set(slots)];
 
-  return uniqueSlots.join(', ');
+  // Validate each slot looks like a time range: "9:00 AM - 10:00 PM"
+  const timeLike = /^\d{1,2}(:\d{2})?(\s*[AP]M)?$/i;
+  const validSlots = uniqueSlots.filter((slot) => {
+    if (!slot.includes('-')) return false;
+    const parts = slot.split('-').map((s) => s.trim());
+    if (parts.length !== 2) return false;
+    return timeLike.test(parts[0]) && timeLike.test(parts[1]);
+  });
+
+  if (validSlots.length === 0) return raw.trim(); // Can't parse, return original
+
+  return validSlots.join(', ');
 }
