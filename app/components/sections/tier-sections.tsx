@@ -49,9 +49,13 @@ export function TierSections({
         : undefined,
     }));
 
+  const hasGallery = galleryImages.length > 0;
+  const hasEvents = (events?.length ?? 0) > 0;
+  const hasReviews = (merchant.reviews?.length ?? 0) > 0;
+
   return (
     <>
-      {resolved.gallery && (
+      {resolved.gallery && hasGallery && (
         <GallerySection images={galleryImages} variant={variant} id="gallery-section" />
       )}
 
@@ -59,11 +63,11 @@ export function TierSections({
         <SeasonalSection items={seasonalItems} variant={variant} id="seasonal-section" />
       )}
 
-      {resolved.events && (
+      {resolved.events && hasEvents && (
         <EventsSection events={events || []} variant={variant} id="events-section" />
       )}
 
-      {resolved.reviews && (
+      {resolved.reviews && hasReviews && (
         <ReviewsSection reviews={merchant.reviews || []} variant={variant} id="reviews-section" />
       )}
 
