@@ -3,16 +3,21 @@
 "use client";
 
 import { useCallback, useState, useEffect } from "react";
-import { Clock, MapPin, Banknote, CreditCard, Smartphone, ChevronDown, ChevronUp, X } from "lucide-react";
+import { Clock, MapPin, Banknote, CreditCard, Smartphone, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const CUISINE_TAGS = ["Cafe", "Western", "Asian", "Dessert", "Japanese", "Bakery"];
-const MORE_TAGS = [
-  { label: "Halal", icon: null },
-  { label: "Cash", icon: <Banknote className="h-3 w-3" /> },
-  { label: "Cashless", icon: <Smartphone className="h-3 w-3" /> },
-  { label: "Cards", icon: <CreditCard className="h-3 w-3" /> },
-];
+function getMoreIcon(label: string) {
+  switch (label) {
+    case "Cash":
+      return <Banknote className="h-3 w-3" />;
+    case "Cashless":
+      return <Smartphone className="h-3 w-3" />;
+    case "Cards":
+      return <CreditCard className="h-3 w-3" />;
+    default:
+      return null;
+  }
+}
 
 interface CategoryFilterProps {
   activeCuisines: string[];
@@ -24,6 +29,8 @@ interface CategoryFilterProps {
   openNow: boolean;
   onOpenNowChange: (v: boolean) => void;
   availableAreas: string[];
+  availableCuisines: string[];
+  availableMore: string[];
 }
 
 export function CategoryFilter({
@@ -36,9 +43,10 @@ export function CategoryFilter({
   openNow,
   onOpenNowChange,
   availableAreas,
+  availableCuisines,
+  availableMore,
 }: CategoryFilterProps) {
   const [collapsed, setCollapsed] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
 
   // Auto-collapse when scrolling down past 120px
   useEffect(() => {
@@ -52,9 +60,7 @@ export function CategoryFilter({
   }, [collapsed]);
 
   const toggleCollapsed = useCallback(() => {
-    setIsAnimating(true);
     setCollapsed((prev) => !prev);
-    setTimeout(() => setIsAnimating(false), 400);
   }, []);
 
   const toggleCuisine = useCallback(
@@ -176,7 +182,7 @@ export function CategoryFilter({
                 Open Now
               </button>
 
-              {CUISINE_TAGS.map((tag, i) => (
+              {availableCuisines.map((tag, i) => (
                 <button
                   key={tag}
                   onClick={() => toggleCuisine(tag)}
@@ -245,25 +251,28 @@ export function CategoryFilter({
               style={{ transitionDelay: "100ms" }}
             >
               <span className="text-xs text-[#8A968B] mr-1">More</span>
-              {MORE_TAGS.map((item, i) => (
-                <button
-                  key={item.label}
-                  onClick={() => toggleMore(item.label)}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-300 active:scale-95 select-none",
-                    isMoreActive(item.label)
-                      ? "bg-[#5A8F6E] text-white shadow-sm"
-                      : "border border-[#DDE5DC] bg-white text-[#6B6560] hover:border-[#5A8F6E] hover:text-[#5A8F6E]"
-                  )}
-                  style={{
-                    WebkitTapHighlightColor: "transparent",
-                    transitionDelay: `${i * 20}ms`,
-                  }}
-                >
-                  {item.icon}
-                  {item.label}
-                </button>
-              ))}
+              {availableMore.map((label, i) => {
+                const icon = getMoreIcon(label);
+                return (
+                  <button
+                    key={label}
+                    onClick={() => toggleMore(label)}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-300 active:scale-95 select-none",
+                      isMoreActive(label)
+                        ? "bg-[#5A8F6E] text-white shadow-sm"
+                        : "border border-[#DDE5DC] bg-white text-[#6B6560] hover:border-[#5A8F6E] hover:text-[#5A8F6E]"
+                    )}
+                    style={{
+                      WebkitTapHighlightColor: "transparent",
+                      transitionDelay: `${i * 20}ms`,
+                    }}
+                  >
+                    {icon}
+                    {label}
+                  </button>
+                );
+              })}
 
               {activeCount > 0 && (
                 <button
