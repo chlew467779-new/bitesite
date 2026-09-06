@@ -13,6 +13,7 @@ import { supabase } from "@/lib/supabase";
 import { FadeIn } from "@/app/components/animations";
 import { isCurrentlyOpen, getTodayKey } from "@/lib/hours";
 import { trackEvent } from "@/lib/analytics";
+import { CUISINE_TYPES } from "@/lib/presets";
 import type { Merchant } from "@/types";
 
 export default function HomePage() {
@@ -98,25 +99,59 @@ export default function HomePage() {
     return ["All Areas", ...Array.from(areas).sort()];
   }, [merchants]);
 
+  // 动态提取所有 cuisine_type（预设内按预设顺序，预设外归类为 "Other"）
+  const availableCuisines = useMemo(() => {
+    const presetCuisines = new Set<string>();
+    const hasOther = merchants.some((m) => {
+      if (!m.cuisine_type) return false;
+      const isPreset = (CUISINE_TYPES as readonly string[]).includes(m.cuisine_type);
+      if (isPreset) {
+        presetCuisines.add(m.cuisine_type);
+      }
+      return !isPreset;
+    });
+
+    const result = (CUISINE_TYPES as readonly string[]).filter((c) => presetCuisines.has(c));
+    if (hasOther) {
+      result.push("Other");
+    }
+    return result;
+  }, [merchants]);
+
+  // 动态提取所有 tags + payment_methods 作为 More 筛选
+  const availableMore = useMemo(() => {
+    const allMore = new Set<string>();
+    merchants.forEach((m) => {
+      m.tags?.forEach((t) => allMore.add(t));
+      m.payment_methods?.forEach((p) => allMore.add(p));
+    });
+    return Array.from(allMore).sort();
+  }, [merchants]);
+
   // Filter logic
   const filtered = useMemo(() => {
     return merchants.filter((m) => {
       const matchesCuisine =
         activeCuisines.length === 0 ||
-        activeCuisines.some((c) =>
-          m.cuisine_type?.toLowerCase().includes(c.toLowerCase()) ||
-          m.tags?.some((t) => t.toLowerCase() === c.toLowerCase())
-        );
+        activeCuisines.some((c) => {
+          if (c === "Other") {
+            return m.cuisine_type && !(CUISINE_TYPES as readonly string[]).includes(m.cuisine_type);
+          }
+          return (
+            m.cuisine_type?.toLowerCase() === c.toLowerCase() ||
+            m.tags?.some((t) => t.toLowerCase() === c.toLowerCase())
+          );
+        });
 
       const matchesArea = !activeArea || activeArea === "All Areas" || m.area === activeArea;
 
       const matchesMore =
         activeMore.length === 0 ||
         activeMore.some((item) => {
-          if (["Cash", "Cashless", "Cards"].includes(item)) {
-            return m.payment_methods?.includes(item);
-          }
-          return m.tags?.some((t) => t.toLowerCase() === item.toLowerCase());
+          return (
+            m.tags?.some((t) => t.toLowerCase() === item.toLowerCase()) ||
+            m.payment_methods?.some((p) => p.toLowerCase() === item.toLowerCase())
+          );
         });
 
       const matchesOpenNow = !openNow || (() => {
@@ -216,6 +251,8 @@ export default function HomePage() {
         openNow={openNow}
         onOpenNowChange={handleOpenNowChange}
         availableAreas={availableAreas}
+        availableCuisines={availableCuisines}
+        availableMore={availableMore}
       />
 
       <section className="px-4 pb-16">
