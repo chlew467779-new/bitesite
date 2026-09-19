@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from './auth-context';
-import { Eye, Users, MousePointerClick, Store } from 'lucide-react';
+import { Eye, Users, MousePointerClick, Store, RefreshCw } from 'lucide-react';
 
 interface OverviewData {
   totalViews: number;
@@ -22,27 +22,30 @@ export default function StatCards({ range }: StatCardsProps) {
   const { token } = useAuth();
   const [data, setData] = useState<OverviewData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
       if (!token) return;
       setLoading(true);
+      setError('');
       try {
         const res = await fetch(`/api/admin/overview?range=${range}`, {
           headers: { 'x-admin-token': token },
         });
-        if (res.ok) {
-          const json = await res.json();
-          setData(json);
-        }
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || 'Unable to load dashboard metrics');
+        setData(json);
       } catch (err) {
         console.error('StatCards fetch error:', err);
+        setError(err instanceof Error ? err.message : 'Unable to load dashboard metrics');
       } finally {
         setLoading(false);
       }
     };
     fetchData();
-  }, [range, token]);
+  }, [range, retryKey, token]);
 
   const formatNumber = (n: number) => {
     if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
@@ -89,6 +92,26 @@ export default function StatCards({ range }: StatCardsProps) {
     },
   ];
 
+  if (error) {
+    return (
+      <div className="rounded-xl border border-red-500/20 bg-slate-900 p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-medium text-slate-200">Dashboard metrics unavailable</p>
+            <p className="mt-1 text-sm text-red-400">{error}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setRetryKey((key) => key + 1)}
+            className="inline-flex items-center gap-2 self-start rounded-lg bg-slate-800 px-3 py-2 text-sm text-slate-200 transition-colors hover:bg-slate-700"
+          >
+            <RefreshCw className="h-4 w-4" /> Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
       {cards.map((card) => {
@@ -102,7 +125,7 @@ export default function StatCards({ range }: StatCardsProps) {
               <div className={`w-9 h-9 rounded-lg ${card.bg} flex items-center justify-center`}>
                 <Icon className={`w-4.5 h-4.5 ${card.color}`} />
               </div>
-              {range === 'today' && card.label === 'Total Page Views' && data?.todayViews !== undefined && (
+              {range === 'today' && card.label === 'All Page Views' && data?.todayViews !== undefined && (
                 <span className="text-xs text-slate-500">Today: {formatNumber(data.todayViews)}</span>
               )}
             </div>
