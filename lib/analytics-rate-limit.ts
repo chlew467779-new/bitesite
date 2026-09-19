@@ -12,6 +12,14 @@ type Bucket = { startedAt: number; count: number };
 const buckets = new Map<string, Bucket>();
 const recentEvents = new Map<string, number>();
 
+function trimOldest<K, V>(map: Map<K, V>, limit: number) {
+  while (map.size > limit) {
+    const oldest = map.keys().next().value;
+    if (oldest === undefined) break;
+    map.delete(oldest);
+  }
+}
+
 export function getClientIp(request: Request): string {
   return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
     || request.headers.get("x-real-ip")?.trim()
@@ -28,6 +36,7 @@ export function allowAnalyticsRequest(key: string, now = Date.now()): boolean {
   const current = buckets.get(key);
   if (!current || now - current.startedAt >= WINDOW_MS) {
     buckets.set(key, { startedAt: now, count: 1 });
+    trimOldest(buckets, MAX_BUCKETS);
     return true;
   }
 
@@ -39,6 +48,7 @@ export function allowAnalyticsRequest(key: string, now = Date.now()): boolean {
 export function isDuplicateAnalyticsEvent(key: string, now = Date.now()): boolean {
   const previous = recentEvents.get(key);
   recentEvents.set(key, now);
+  trimOldest(recentEvents, MAX_BUCKETS);
 
   if (recentEvents.size > MAX_BUCKETS) {
     for (const [eventKey, timestamp] of recentEvents) {
