@@ -32,6 +32,61 @@ function isValidSlug(slug: string): boolean {
   return /^[a-z0-9-]+$/.test(slug) && slug.length > 0;
 }
 
+const merchantTextFields = [
+  'name', 'slug', 'tagline', 'description', 'layout', 'cuisine_type', 'area',
+  'address', 'phone', 'whatsapp', 'email', 'website', 'instagram', 'facebook',
+  'logo_image', 'cover_image', 'menu_pdf_url', 'grabfood_url',
+] as const;
+
+function validateMerchantPayload(body: Record<string, unknown>, requireBaseFields: boolean): string | null {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return 'Invalid request body';
+
+  for (const field of merchantTextFields) {
+    const value = body[field];
+    if (value !== undefined && value !== null && typeof value !== 'string') {
+      return `${field} must be a string`;
+    }
+  }
+
+  if (requireBaseFields && (typeof body.name !== 'string' || !body.name.trim())) return 'Name is required';
+  if (requireBaseFields && (typeof body.whatsapp !== 'string' || !body.whatsapp.trim())) return 'WhatsApp is required';
+  if (!requireBaseFields && body.name !== undefined && (typeof body.name !== 'string' || !body.name.trim())) return 'Name is required';
+  if (!requireBaseFields && body.whatsapp !== undefined && (typeof body.whatsapp !== 'string' || !body.whatsapp.trim())) return 'WhatsApp is required';
+
+  if (typeof body.email === 'string' && body.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email.trim())) {
+    return 'Email must be valid';
+  }
+
+  for (const field of ['website', 'instagram', 'facebook', 'logo_image', 'cover_image', 'menu_pdf_url', 'grabfood_url']) {
+    const value = body[field];
+    if (typeof value !== 'string' || !value.trim()) continue;
+    try {
+      const url = new URL(value.trim());
+      if (url.protocol !== 'http:' && url.protocol !== 'https:') return `${field} must use http:// or https://`;
+    } catch {
+      return `${field} must be a valid URL`;
+    }
+  }
+
+  for (const [field, min, max] of [['latitude', -90, 90], ['longitude', -180, 180] ] as const) {
+    const value = body[field];
+    if (value === undefined || value === null || value === '') continue;
+    const numeric = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : Number.NaN;
+    if (!Number.isFinite(numeric) || numeric < min || numeric > max) return `${field} must be between ${min} and ${max}`;
+  }
+
+  for (const field of ['tags', 'payment_methods'] as const) {
+    const value = body[field];
+    if (value !== undefined && value !== null && (!Array.isArray(value) || value.some(item => typeof item !== 'string'))) {
+      return `${field} must be an array of strings`;
+    }
+  }
+  if (body.operating_hours !== undefined && body.operating_hours !== null && (typeof body.operating_hours !== 'object' || Array.isArray(body.operating_hours))) {
+    return 'operating_hours must be an object';
+  }
+  return null;
+}
+
 function normalizeGrabFoodUrl(value: unknown): string | null | 'invalid' {
   if (value === undefined || value === null || value === '') return null;
   if (typeof value !== 'string') return 'invalid';
@@ -120,12 +175,8 @@ export async function POST(request: NextRequest) {
 
     const body = await readBoundedJson(request, MAX_MERCHANT_BODY_BYTES);
 
-    if (!body.name?.trim()) {
-      return NextResponse.json({ error: 'Name is required' }, { status: 400 });
-    }
-    if (!body.whatsapp?.trim()) {
-      return NextResponse.json({ error: 'WhatsApp is required' }, { status: 400 });
-    }
+    const validationError = validateMerchantPayload(body, true);
+    if (validationError) return NextResponse.json({ error: validationError }, { status: 400 });
 
     const slug = body.slug?.trim() || generateSlug(body.name);
     if (!isValidSlug(slug)) {
@@ -211,12 +262,8 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Merchant ID is required' }, { status: 400 });
     }
 
-    if (body.name !== undefined && !body.name.trim()) {
-      return NextResponse.json({ error: 'Name is required' }, { status: 400 });
-    }
-    if (body.whatsapp !== undefined && !body.whatsapp?.trim()) {
-      return NextResponse.json({ error: 'WhatsApp is required' }, { status: 400 });
-    }
+    const validationError = validateMerchantPayload(body, false);
+    if (validationError) return NextResponse.json({ error: validationError }, { status: 400 });
 
     const slug = body.slug?.trim();
     if (slug && !isValidSlug(slug)) {
