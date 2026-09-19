@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from './auth-context';
-import { ArrowUpDown, Eye, MessageCircle, CalendarCheck } from 'lucide-react';
+import { Eye, MessageCircle, CalendarCheck, RefreshCw } from 'lucide-react';
 
 interface MerchantData {
   slug: string;
@@ -28,33 +28,34 @@ export default function MerchantTable({ range }: MerchantTableProps) {
   const { token } = useAuth();
   const [data, setData] = useState<MerchantData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sortBy, setSortBy] = useState<'views' | 'whatsapp' | 'bookings'>('views');
+  const [sortBy, setSortBy] = useState<keyof Pick<MerchantData, 'views' | 'unique_ips' | 'menuViews' | 'storyViews' | 'grabfoodClicks' | 'directionsClicks' | 'phoneClicks' | 'websiteClicks' | 'emailClicks' | 'whatsapp' | 'bookings'>>('views');
+  const [error, setError] = useState('');
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
       if (!token) return;
       setLoading(true);
+      setError('');
       try {
         const res = await fetch(`/api/admin/merchants?range=${range}`, {
           headers: { 'x-admin-token': token },
         });
-        if (res.ok) {
-          const json = await res.json();
-          setData(json.data || []);
-        }
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || 'Unable to load merchant analytics');
+        setData(json.data || []);
       } catch (err) {
         console.error('MerchantTable fetch error:', err);
+        setError(err instanceof Error ? err.message : 'Unable to load merchant analytics');
       } finally {
         setLoading(false);
       }
     };
     fetchData();
-  }, [range, token]);
+  }, [range, retryKey, token]);
 
   const sortedData = [...data].sort((a, b) => {
-    if (sortBy === 'views') return b.views - a.views;
-    if (sortBy === 'whatsapp') return b.whatsapp - a.whatsapp;
-    return b.bookings - a.bookings;
+    return b[sortBy] - a[sortBy];
   });
 
   const formatNumber = (n: number) => n.toLocaleString();
@@ -72,36 +73,50 @@ export default function MerchantTable({ range }: MerchantTableProps) {
     );
   }
 
+  if (error) {
+    return (
+      <div className="bg-slate-900 border border-red-500/20 rounded-xl p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h3 className="text-sm font-medium text-slate-200">Merchant Performance</h3>
+            <p className="text-sm text-red-400 mt-1">{error}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setRetryKey((key) => key + 1)}
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-800 px-3 py-2 text-sm text-slate-200 hover:bg-slate-700 transition-colors"
+          >
+            <RefreshCw className="w-4 h-4" /> Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
       <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
         <h3 className="text-sm font-medium text-slate-300">Merchant Performance</h3>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-500">Sort by:</span>
-          <button
-            onClick={() => setSortBy('views')}
-            className={`text-xs px-2.5 py-1 rounded-md transition-colors ${
-              sortBy === 'views' ? 'bg-amber-500/10 text-amber-400' : 'text-slate-400 hover:text-slate-200'
-            }`}
+          <label htmlFor="merchant-sort" className="text-xs text-slate-500">Sort by:</label>
+          <select
+            id="merchant-sort"
+            value={sortBy}
+            onChange={(event) => setSortBy(event.target.value as typeof sortBy)}
+            className="rounded-md border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs text-slate-300 focus:border-amber-500 focus:outline-none"
           >
-            Views
-          </button>
-          <button
-            onClick={() => setSortBy('whatsapp')}
-            className={`text-xs px-2.5 py-1 rounded-md transition-colors ${
-              sortBy === 'whatsapp' ? 'bg-amber-500/10 text-amber-400' : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            WhatsApp
-          </button>
-          <button
-            onClick={() => setSortBy('bookings')}
-            className={`text-xs px-2.5 py-1 rounded-md transition-colors ${
-              sortBy === 'bookings' ? 'bg-amber-500/10 text-amber-400' : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            Bookings
-          </button>
+            <option value="views">Views</option>
+            <option value="unique_ips">Unique visitors</option>
+            <option value="menuViews">Menu views</option>
+            <option value="storyViews">Story views</option>
+            <option value="grabfoodClicks">GrabFood</option>
+            <option value="directionsClicks">Directions</option>
+            <option value="phoneClicks">Phone</option>
+            <option value="websiteClicks">Website</option>
+            <option value="emailClicks">Email</option>
+            <option value="whatsapp">WhatsApp</option>
+            <option value="bookings">Bookings</option>
+          </select>
         </div>
       </div>
 
