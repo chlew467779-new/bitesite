@@ -28,6 +28,9 @@ export default function StorySubmissionsManager() {
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [showNew, setShowNew] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [draft, setDraft] = useState({ title: '', content: '', excerpt: '', merchant_slug: '', rights_declared: false });
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -66,14 +69,50 @@ export default function StorySubmissionsManager() {
     }
   };
 
+  const createSubmission = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!token || !draft.title.trim() || !draft.content.trim()) return;
+    setSaving(true);
+    setError('');
+    try {
+      const res = await fetch('/api/admin/story-submissions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
+        body: JSON.stringify({ ...draft, channel: 'admin_relayed', status: 'pending_review', submitted_by: 'admin' }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to create submission');
+      setDraft({ title: '', content: '', excerpt: '', merchant_slug: '', rights_declared: false });
+      setShowNew(false);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create submission');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="w-8 h-8 text-amber-500 animate-spin" /></div>;
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <div><h1 className="text-2xl font-bold text-white">Story Submissions</h1><p className="text-slate-400 text-sm mt-1">Review merchant submissions before creating a public Story.</p></div>
-        <button onClick={load} className="px-3 py-2 rounded-lg border border-slate-700 text-slate-300 text-sm hover:border-slate-500">Refresh</button>
+        <div className="flex items-center gap-2"><button onClick={() => setShowNew(value => !value)} className="px-3 py-2 rounded-lg bg-amber-500 text-slate-950 text-sm font-medium hover:bg-amber-400">{showNew ? 'Cancel' : 'New relayed submission'}</button><button onClick={load} className="px-3 py-2 rounded-lg border border-slate-700 text-slate-300 text-sm hover:border-slate-500">Refresh</button></div>
       </div>
+      {showNew && (
+        <form onSubmit={createSubmission} className="rounded-xl border border-slate-800 bg-slate-900/50 p-5 space-y-3">
+          <h2 className="text-sm font-semibold text-slate-200">Admin-relayed submission</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <input required value={draft.title} onChange={e => setDraft(prev => ({ ...prev, title: e.target.value }))} placeholder="Story title" className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white" />
+            <input value={draft.merchant_slug} onChange={e => setDraft(prev => ({ ...prev, merchant_slug: e.target.value }))} placeholder="Merchant slug (optional)" className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white" />
+          </div>
+          <input value={draft.excerpt} onChange={e => setDraft(prev => ({ ...prev, excerpt: e.target.value }))} placeholder="Short excerpt (optional)" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white" />
+          <textarea required rows={6} value={draft.content} onChange={e => setDraft(prev => ({ ...prev, content: e.target.value }))} placeholder="Facts and source material from the merchant" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white" />
+          <label className="flex items-center gap-2 text-sm text-slate-300"><input type="checkbox" checked={draft.rights_declared} onChange={e => setDraft(prev => ({ ...prev, rights_declared: e.target.checked }))} className="h-4 w-4" />Merchant permission has been recorded</label>
+          <button type="submit" disabled={saving || !draft.rights_declared} className="px-4 py-2 rounded-lg bg-sky-500 text-slate-950 text-sm font-medium disabled:opacity-50">{saving ? 'Submitting…' : 'Submit for review'}</button>
+        </form>
+      )}
       {error && <div className="rounded-xl border border-red-800 bg-red-950/50 p-3 text-red-400 text-sm">{error}</div>}
       {submissions.length === 0 ? (
         <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-12 text-center text-slate-500"><Inbox className="w-8 h-8 mx-auto mb-3" />No pending Story submissions.</div>
