@@ -75,6 +75,7 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
   const [showDraftRestore, setShowDraftRestore] = useState(false);
   const [draftData, setDraftData] = useState<Record<string, unknown> | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
+  const [dirty, setDirty] = useState(false);
 
   const [form, setForm] = useState({
     title: '',
@@ -196,9 +197,20 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
     };
   }, [form, slug, loading]);
 
+  useEffect(() => {
+    if (!dirty) return;
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [dirty]);
+
   const updateField = (field: string, value: string | boolean) => {
     setForm(prev => ({ ...prev, [field]: value }));
     setSaved(false);
+    setDirty(true);
   };
 
   // Auto-generate slug (consistent with backend, no toLowerCase)
@@ -218,6 +230,7 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
     if (draftData?.form) {
       setForm(draftData.form as typeof form);
       setShowDraftRestore(false);
+      setDirty(true);
     }
   };
 
@@ -237,6 +250,7 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
     const replacement = before + selected + after;
     const newContent = text.substring(0, start) + replacement + text.substring(end);
     setForm(prev => ({ ...prev, content: newContent }));
+    setDirty(true);
     setTimeout(() => {
       textarea.focus();
       const newCursor = start + before.length + selected.length;
@@ -327,6 +341,7 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
       if (!res.ok) throw new Error(data.error || 'Save failed');
 
       localStorage.removeItem(getDraftKey(slug));
+      setDirty(false);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
       onSaved();
@@ -335,6 +350,11 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleBack = () => {
+    if (dirty && !window.confirm('You have unsaved changes. Leave without saving?')) return;
+    onBack();
   };
 
   const previewArticle: Article = {
@@ -371,7 +391,7 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 shrink-0">
         <button
-          onClick={onBack}
+          onClick={handleBack}
           className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-200 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
