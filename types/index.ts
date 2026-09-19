@@ -69,6 +69,14 @@ export interface Merchant {
   reviews?: Review[] | null;
 }
 
+export interface MerchantExternalLink {
+  id: string;
+  merchant_id: string;
+  link_type: 'grabfood';
+  url: string;
+  is_active: boolean;
+}
+
 export interface Category {
   id: string;
   merchant_id: string;
