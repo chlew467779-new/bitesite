@@ -16,6 +16,7 @@ interface MerchantData {
   phoneClicks: number;
   menuViews: number;
   websiteClicks: number;
+  emailClicks: number;
   storyViews: number;
 }
 
@@ -121,6 +122,7 @@ export default function MerchantTable({ range }: MerchantTableProps) {
               <th className="text-right px-6 py-3 text-slate-500 font-medium">Directions</th>
               <th className="text-right px-6 py-3 text-slate-500 font-medium">Phone</th>
               <th className="text-right px-6 py-3 text-slate-500 font-medium">Website</th>
+              <th className="text-right px-6 py-3 text-slate-500 font-medium">Email</th>
               <th className="text-right px-6 py-3 text-slate-500 font-medium">
                 <span className="flex items-center justify-end gap-1">
                   <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
@@ -136,7 +138,7 @@ export default function MerchantTable({ range }: MerchantTableProps) {
           <tbody>
             {sortedData.length === 0 ? (
               <tr>
-                <td colSpan={11} className="px-6 py-8 text-center text-slate-500">
+                <td colSpan={12} className="px-6 py-8 text-center text-slate-500">
                   No data available for this period.
                 </td>
               </tr>
@@ -172,6 +174,9 @@ export default function MerchantTable({ range }: MerchantTableProps) {
                   </td>
                   <td className="px-6 py-3 text-right text-slate-300 font-mono">
                     {formatNumber(merchant.websiteClicks)}
+                  </td>
+                  <td className="px-6 py-3 text-right text-slate-300 font-mono">
+                    {formatNumber(merchant.emailClicks)}
                   </td>
                   <td className="px-6 py-3 text-right text-slate-300 font-mono">
                     {formatNumber(merchant.whatsapp)}

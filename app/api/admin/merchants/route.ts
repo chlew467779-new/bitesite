@@ -94,6 +94,13 @@ export async function GET(request: NextRequest) {
       .gte('view_date', start)
       .lte('view_date', end);
 
+    const { data: emailData } = await supabase
+      .from('merchant_daily_views')
+      .select('slug, count')
+      .eq('event_type', 'email_click')
+      .gte('view_date', start)
+      .lte('view_date', end);
+
     // Story slugs are stored in page_views; map them to merchants through the
     // article relation and keep the result separate from merchant page views.
     const { data: storyViewData } = await supabase
@@ -155,6 +162,7 @@ export async function GET(request: NextRequest) {
       menuViews: number;
       websiteClicks: number;
       storyViews: number;
+      emailClicks?: number;
     }>();
 
     viewData?.forEach(row => {
@@ -215,7 +223,7 @@ export async function GET(request: NextRequest) {
     orderClickData?.forEach(row => {
       const existing = merchantMap.get(row.slug) || {
         slug: row.slug, views: 0, unique_ips: 0, whatsapp: 0, bookings: 0,
-        grabfoodClicks: 0, directionsClicks: 0, phoneClicks: 0, menuViews: 0, websiteClicks: 0, storyViews: 0,
+        grabfoodClicks: 0, directionsClicks: 0, phoneClicks: 0, menuViews: 0, websiteClicks: 0, storyViews: 0, emailClicks: 0,
       };
       existing.grabfoodClicks += row.count || 0;
       merchantMap.set(row.slug, existing);
@@ -224,7 +232,7 @@ export async function GET(request: NextRequest) {
     directionsData?.forEach(row => {
       const existing = merchantMap.get(row.slug) || {
         slug: row.slug, views: 0, unique_ips: 0, whatsapp: 0, bookings: 0,
-        grabfoodClicks: 0, directionsClicks: 0, phoneClicks: 0, menuViews: 0, websiteClicks: 0, storyViews: 0,
+        grabfoodClicks: 0, directionsClicks: 0, phoneClicks: 0, menuViews: 0, websiteClicks: 0, storyViews: 0, emailClicks: 0,
       };
       existing.directionsClicks += row.count || 0;
       merchantMap.set(row.slug, existing);
@@ -233,7 +241,7 @@ export async function GET(request: NextRequest) {
     phoneData?.forEach(row => {
       const existing = merchantMap.get(row.slug) || {
         slug: row.slug, views: 0, unique_ips: 0, whatsapp: 0, bookings: 0,
-        grabfoodClicks: 0, directionsClicks: 0, phoneClicks: 0, menuViews: 0, websiteClicks: 0, storyViews: 0,
+        grabfoodClicks: 0, directionsClicks: 0, phoneClicks: 0, menuViews: 0, websiteClicks: 0, storyViews: 0, emailClicks: 0,
       };
       existing.phoneClicks += row.count || 0;
       merchantMap.set(row.slug, existing);
@@ -242,7 +250,7 @@ export async function GET(request: NextRequest) {
     menuData?.forEach(row => {
       const existing = merchantMap.get(row.slug) || {
         slug: row.slug, views: 0, unique_ips: 0, whatsapp: 0, bookings: 0,
-        grabfoodClicks: 0, directionsClicks: 0, phoneClicks: 0, menuViews: 0, websiteClicks: 0, storyViews: 0,
+        grabfoodClicks: 0, directionsClicks: 0, phoneClicks: 0, menuViews: 0, websiteClicks: 0, storyViews: 0, emailClicks: 0,
       };
       existing.menuViews += row.count || 0;
       merchantMap.set(row.slug, existing);
@@ -251,16 +259,25 @@ export async function GET(request: NextRequest) {
     websiteData?.forEach(row => {
       const existing = merchantMap.get(row.slug) || {
         slug: row.slug, views: 0, unique_ips: 0, whatsapp: 0, bookings: 0,
-        grabfoodClicks: 0, directionsClicks: 0, phoneClicks: 0, menuViews: 0, websiteClicks: 0, storyViews: 0,
+        grabfoodClicks: 0, directionsClicks: 0, phoneClicks: 0, menuViews: 0, websiteClicks: 0, storyViews: 0, emailClicks: 0,
       };
       existing.websiteClicks += row.count || 0;
+      merchantMap.set(row.slug, existing);
+    });
+
+    emailData?.forEach(row => {
+      const existing = merchantMap.get(row.slug) || {
+        slug: row.slug, views: 0, unique_ips: 0, whatsapp: 0, bookings: 0,
+        grabfoodClicks: 0, directionsClicks: 0, phoneClicks: 0, menuViews: 0, websiteClicks: 0, storyViews: 0, emailClicks: 0,
+      };
+      existing.emailClicks = (existing.emailClicks || 0) + (row.count || 0);
       merchantMap.set(row.slug, existing);
     });
 
     storyViewsByMerchant.forEach((count, slug) => {
       const existing = merchantMap.get(slug) || {
         slug, views: 0, unique_ips: 0, whatsapp: 0, bookings: 0,
-        grabfoodClicks: 0, directionsClicks: 0, phoneClicks: 0, menuViews: 0, websiteClicks: 0, storyViews: 0,
+        grabfoodClicks: 0, directionsClicks: 0, phoneClicks: 0, menuViews: 0, websiteClicks: 0, storyViews: 0, emailClicks: 0,
       };
       existing.storyViews += count;
       merchantMap.set(slug, existing);
@@ -269,6 +286,7 @@ export async function GET(request: NextRequest) {
     const result = Array.from(merchantMap.values())
       .map(merchant => ({
         ...merchant,
+        emailClicks: merchant.emailClicks || 0,
         unique_ips: visitorIpsByMerchant.has(merchant.slug)
           ? visitorIpsByMerchant.get(merchant.slug)!.size
           : merchant.unique_ips,
