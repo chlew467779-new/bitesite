@@ -11,6 +11,7 @@ import { StoryMerchantLink } from "@/components/sections/story-merchant-link";
 import { PageViewTracker } from "@/app/components/page-view-tracker";
 import { Footer } from "@/components/sections/footer";
 import type { Article } from "@/types";
+import { getSiteUrl } from "@/lib/site-url";
 
 export const revalidate = 60;
 
@@ -87,6 +88,7 @@ const hashtagColors: Record<string, { border: string; text: string }> = {
 };
 
 export default async function StoryPage({ params }: PageProps) {
+  const siteUrl = getSiteUrl();
   const { slug } = await params;
 
   const { data: article } = await supabase
@@ -119,12 +121,12 @@ export default async function StoryPage({ params }: PageProps) {
       name: "BiteSite",
       logo: {
         "@type": "ImageObject",
-        url: "https://bitesite-pied.vercel.app/logo.png",
+        url: `${siteUrl}/logo.png`,
       },
     },
     mainEntityOfPage: {
       "@type": "WebPage",
-      "@id": `https://bitesite-pied.vercel.app/stories/${article.slug}`,
+      "@id": `${siteUrl}/stories/${article.slug}`,
     },
   };
 

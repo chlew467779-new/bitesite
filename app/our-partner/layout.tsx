@@ -1,18 +1,21 @@
 /* bitesite/app/our-partner/layout.tsx */
 
 import type { Metadata } from "next";
+import { getSiteUrl } from "@/lib/site-url";
+
+const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
   title: "Our Partner | BiteSite",
   description:
     "Explore all BiteSite partner restaurants on the map. Find cafes, bakeries, and restaurants near you in Kuala Lumpur.",
   alternates: {
-    canonical: "https://bitesite-pied.vercel.app/our-partner",
+    canonical: `${siteUrl}/our-partner`,
   },
   openGraph: {
     title: "Our Partner | BiteSite",
     description: "Explore all BiteSite partner restaurants on the map.",
-    url: "https://bitesite-pied.vercel.app/our-partner",
+    url: `${siteUrl}/our-partner`,
     type: "website",
   },
 };

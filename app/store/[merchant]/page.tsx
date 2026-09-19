@@ -18,6 +18,7 @@ import { RelatedMerchants } from "@/components/sections/related-merchants";
 import { ViewTracker } from "@/components/sections/view-tracker";
 import { PageViewTracker } from "@/app/components/page-view-tracker";
 import { GrabFoodOrderButton } from "@/components/sections/grabfood-order-button";
+import { getSiteUrl } from "@/lib/site-url";
 
 export const revalidate = 60;
 
@@ -31,6 +32,7 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const siteUrl = getSiteUrl();
   const { merchant: slug } = await params;
   if (!slug) {
     return {
@@ -62,9 +64,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const ogImage = merchant.cover_image
     ? merchant.cover_image.startsWith("http")
       ? merchant.cover_image
-      : `https://bitesite-pied.vercel.app${merchant.cover_image}`
+      : `${siteUrl}${merchant.cover_image}`
     : null;
-  const canonicalUrl = `https://bitesite-pied.vercel.app/store/${merchant.slug}`;
+  const canonicalUrl = `${siteUrl}/store/${merchant.slug}`;
   return {
     title: `${merchant.name} | ${merchant.cuisine_type ?? "Restaurant"} Menu | BiteSite`,
     description,
@@ -96,6 +98,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function MerchantPage({ params }: PageProps) {
+  const siteUrl = getSiteUrl();
   const { merchant: slug } = await params;
   if (!slug) notFound();
 
@@ -189,7 +192,7 @@ export default async function MerchantPage({ params }: PageProps) {
   const LayoutComponent = layouts[layoutKey as keyof typeof layouts];
   if (!LayoutComponent) notFound();
 
-  const canonicalUrl = `https://bitesite-pied.vercel.app/store/${merchant.slug}`;
+  const canonicalUrl = `${siteUrl}/store/${merchant.slug}`;
   const dayMap: Record<string, string> = {
     monday: "Mo", tuesday: "Tu", wednesday: "We", thursday: "Th",
     friday: "Fr", saturday: "Sa", sunday: "Su",
@@ -229,7 +232,7 @@ export default async function MerchantPage({ params }: PageProps) {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: "https://bitesite-pied.vercel.app" },
+      { "@type": "ListItem", position: 1, name: "Home", item: siteUrl },
       { "@type": "ListItem", position: 2, name: merchant.name, item: canonicalUrl },
     ],
   };
