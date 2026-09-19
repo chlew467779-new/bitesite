@@ -18,6 +18,17 @@ function validEnum<T extends readonly string[]>(value: unknown, values: T): valu
   return typeof value === 'string' && values.includes(value);
 }
 
+function validHttpUrl(value: unknown) {
+  if (value === null || value === undefined || value === '') return true;
+  if (typeof value !== 'string') return false;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' || url.protocol === 'http:';
+  } catch {
+    return false;
+  }
+}
+
 function makeSlug(title: string, existing: string[]) {
   const base = title.trim().toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g, '-').replace(/^-|-$/g, '').slice(0, 50);
   const safe = base || 'story';
@@ -56,6 +67,10 @@ export async function POST(request: Request) {
     if (status === 'pending_review' && body.rights_declared !== true) {
       return NextResponse.json({ error: 'Rights declaration is required before submission' }, { status: 400 });
     }
+    const imageUrls = Array.isArray(body.image_urls) ? body.image_urls.filter(Boolean) : [];
+    if (!validHttpUrl(body.cover_image) || imageUrls.length > 3 || imageUrls.some((url: unknown) => !validHttpUrl(url))) {
+      return NextResponse.json({ error: 'Use valid http(s) image URLs and no more than three gallery images' }, { status: 400 });
+    }
 
     const now = new Date().toISOString();
     const { data, error } = await supabase.from('story_submissions').insert({
@@ -69,7 +84,7 @@ export async function POST(request: Request) {
       story_angle: body.story_angle || null,
       facts: body.facts && typeof body.facts === 'object' ? body.facts : {},
       cover_image: body.cover_image || null,
-      image_urls: Array.isArray(body.image_urls) ? body.image_urls.slice(0, 3) : [],
+      image_urls: imageUrls,
       rights_declared: body.rights_declared === true,
       rights_note: body.rights_note || null,
       submitted_by: body.submitted_by || 'admin',
@@ -107,11 +122,14 @@ export async function PATCH(request: Request) {
       if (!source.rights_declared) return NextResponse.json({ error: 'Rights declaration is required before conversion' }, { status: 400 });
       const { data: existing } = await supabase.from('articles').select('slug');
       const slug = makeSlug(source.title, (existing || []).map((item) => item.slug));
+      const gallery = Array.isArray(source.image_urls)
+        ? source.image_urls.map((url: string, index: number) => `![${source.title} image ${index + 1}](${url})`).join('\n\n')
+        : '';
       const { data: article, error: articleError } = await supabase.from('articles').insert({
         slug,
         title: source.title,
         excerpt: source.excerpt || null,
-        content: source.content,
+        content: gallery ? `${source.content}\n\n${gallery}` : source.content,
         cover_image: source.cover_image || null,
         category: 'Merchant Story',
         tags: [],
