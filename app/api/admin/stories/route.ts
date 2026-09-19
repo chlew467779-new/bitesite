@@ -232,6 +232,15 @@ export async function PUT(request: Request) {
               : 'updated';
     await recordRevision(data, action, data.review_notes);
 
+    if (data.editorial_status === 'published' && data.merchant_slug) {
+      const { error: cycleError } = await supabase
+        .from('merchant_content_cycles')
+        .update({ status: 'completed', completed_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .eq('merchant_slug', data.merchant_slug)
+        .in('status', ['active', 'due', 'overdue']);
+      if (cycleError) console.error('Content cycle completion error:', cycleError);
+    }
+
     // Revalidate immediately
     revalidatePath(`/stories/${data.slug}`);
     revalidatePath('/stories');
