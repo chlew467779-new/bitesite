@@ -452,6 +452,17 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
       newErrors.longitude = 'Longitude must be between -180 and 180';
     }
     setErrors(newErrors);
+    const firstError = Object.keys(newErrors)[0];
+    if (firstError) {
+      const errorTab = new Set(['name', 'slug', 'cuisine_type', 'area', 'tags', 'payment_methods']).has(firstError)
+        ? 0
+        : new Set(['whatsapp', 'phone', 'email', 'website', 'instagram', 'facebook', 'grabfood_url', 'latitude', 'longitude']).has(firstError)
+          ? 1
+          : new Set(['logo_image', 'cover_image', 'menu_pdf_url']).has(firstError)
+            ? 4
+            : 0;
+      setActiveTab(errorTab);
+    }
     return Object.keys(newErrors).length === 0;
   };
 
