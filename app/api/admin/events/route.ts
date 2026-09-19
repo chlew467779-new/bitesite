@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { verifyAdminToken } from '@/lib/admin-auth';
+import { EventTypes } from '@/lib/analytics';
 
 function getDateRange(range: string) {
   const end = new Date();
@@ -45,7 +46,9 @@ export async function GET(request: NextRequest) {
     // 汇总统计
     const eventMap = new Map<string, number>();
     const dailyMap = new Map<string, Map<string, number>>();
-  const eventTypes = ['whatsapp_click', 'booking_submit', 'share', 'search', 'map_marker_click', 'story_to_merchant', 'merchant_order_click', 'directions_click', 'phone_click', 'menu_view', 'website_click', 'email_click'];
+    // Keep the chart's zero-filled series in lockstep with the public ingest
+    // allow-list. New tracked events will automatically appear in trends.
+    const eventTypes = Object.values(EventTypes).filter(type => type !== EventTypes.PAGE_VIEW);
 
     rawData?.forEach(row => {
       const type = row.event_type || 'other';
