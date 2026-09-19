@@ -1,13 +1,26 @@
 /* bitesite/app/api/track/route.ts */
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { detectDevice } from '@/lib/device-detect';
-import { classifyReferrer } from '@/lib/analytics';
+import { classifyReferrer, EventTypes } from '@/lib/analytics';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+const ALLOWED_EVENT_TYPES = new Set<string>(Object.values(EventTypes));
+const ALLOWED_PAGE_TYPES = new Set([
+  'home',
+  'merchant',
+  'story',
+  'story_list',
+  'join_us',
+  'our_partner',
+  'other',
+]);
+const SLUG_PATTERN = /^[a-z0-9-]{1,200}$/;
+
+function optionalString(value: unknown, maxLength: number): string | null {
+  if (value === undefined || value === null || value === '') return null;
+  if (typeof value !== 'string') throw new Error('Invalid string field');
+  return value.trim().slice(0, maxLength);
+}
 
 function normalizeCity(rawCity: string): string {
   if (!rawCity || rawCity === 'Unknown') return 'Unknown';
@@ -35,14 +48,29 @@ export async function POST(request: NextRequest) {
       body = text ? JSON.parse(text) : {};
     }
 
-    const {
-      eventType,
-      slug,
-      path,
-      pageType,
-      eventDetail,
-      referrer,
-    } = body;
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+    }
+
+    const eventType = optionalString(body.eventType, 64) || 'page_view';
+    const slug = optionalString(body.slug, 200);
+    const path = optionalString(body.path, 512) || '/';
+    const pageType = optionalString(body.pageType, 64) || 'other';
+    const eventDetail = optionalString(body.eventDetail, 500);
+    const referrer = optionalString(body.referrer, 2048) || '';
+
+    if (!ALLOWED_EVENT_TYPES.has(eventType)) {
+      return NextResponse.json({ error: 'Unsupported event type' }, { status: 400 });
+    }
+    if (!ALLOWED_PAGE_TYPES.has(pageType)) {
+      return NextResponse.json({ error: 'Unsupported page type' }, { status: 400 });
+    }
+    if (slug && !SLUG_PATTERN.test(slug)) {
+      return NextResponse.json({ error: 'Invalid slug' }, { status: 400 });
+    }
+    if (!path.startsWith('/')) {
+      return NextResponse.json({ error: 'Invalid path' }, { status: 400 });
+    }
 
     // 获取 IP 和地理位置（Vercel headers）
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
@@ -53,17 +81,17 @@ export async function POST(request: NextRequest) {
     const city = normalizeCity(rawCity);
 
     // 设备检测
-    const userAgent = request.headers.get('user-agent') || '';
+    const userAgent = (request.headers.get('user-agent') || '').slice(0, 512);
     const { device, os, browser } = detectDevice(userAgent);
     const referrerType = classifyReferrer(referrer);
 
     // 插入原始日志
     const { error } = await supabase.from('page_views').insert({
-      slug: slug || null,
-      path: path || '/',
-      page_type: pageType || 'other',
-      event_type: eventType || 'page_view',
-      event_detail: eventDetail || null,
+      slug,
+      path,
+      page_type: pageType,
+      event_type: eventType,
+      event_detail: eventDetail,
       ip,
       country,
       city,

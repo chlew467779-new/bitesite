@@ -1,13 +1,8 @@
 /* bitesite/app/api/admin/login/route.ts */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { generateAdminToken } from '@/lib/admin-auth';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 const MAX_ATTEMPTS = 3;
 const LOCK_DURATION_MINUTES = 15;

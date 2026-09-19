@@ -1,13 +1,8 @@
 /* bitesite/app/api/admin/merchants-list/route.ts */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { verifyAdminToken } from '@/lib/admin-auth';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 export async function GET(request: NextRequest) {
   const token = request.headers.get('x-admin-token');

@@ -2,13 +2,8 @@
 
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { verifyAdminToken } from '@/lib/admin-auth';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 function getDateRange(range: string) {
   const days = range === 'today' ? 1 : parseInt(range) || 7;
