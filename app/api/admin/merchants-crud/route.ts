@@ -19,6 +19,32 @@ function isValidSlug(slug: string): boolean {
   return /^[a-z0-9-]+$/.test(slug) && slug.length > 0;
 }
 
+function normalizeGrabFoodUrl(value: unknown): string | null | 'invalid' {
+  if (value === undefined || value === null || value === '') return null;
+  if (typeof value !== 'string') return 'invalid';
+  try {
+    const url = new URL(value.trim());
+    return url.protocol === 'https:' ? url.toString() : 'invalid';
+  } catch {
+    return 'invalid';
+  }
+}
+
+async function saveGrabFoodLink(merchantId: string, value: unknown): Promise<string | null> {
+  if (value === undefined) return null;
+  const url = normalizeGrabFoodUrl(value);
+  if (url === 'invalid') return 'GrabFood URL must start with https://';
+  if (!url) {
+    const { error } = await supabase.from('merchant_external_links').delete().eq('merchant_id', merchantId).eq('link_type', 'grabfood');
+    return error?.message || null;
+  }
+  const { error } = await supabase.from('merchant_external_links').upsert(
+    { merchant_id: merchantId, link_type: 'grabfood', url, is_active: true, updated_at: new Date().toISOString() },
+    { onConflict: 'merchant_id,link_type' }
+  );
+  return error?.message || null;
+}
+
 async function verifyToken(request: NextRequest): Promise<boolean> {
   const token = request.headers.get('x-admin-token');
   if (!token) return false;
@@ -41,6 +67,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { data: products } = await supabase.from('products').select('merchant_id');
+    const { data: grabFoodLinks } = await supabase.from('merchant_external_links').select('merchant_id, url').eq('link_type', 'grabfood').eq('is_active', true);
     const { data: views } = await supabase
       .from('page_views')
       .select('slug')
@@ -57,8 +84,10 @@ export async function GET(request: NextRequest) {
       if (v.slug) viewCounts[v.slug] = (viewCounts[v.slug] || 0) + 1;
     });
 
+    const grabFoodByMerchant = new Map(grabFoodLinks?.map((link) => [link.merchant_id, link.url]));
     const enriched = merchants?.map((m) => ({
       ...m,
+      grabfood_url: grabFoodByMerchant.get(m.id) || '',
       product_count: productCounts[m.id] || 0,
       view_count: viewCounts[m.slug] || 0,
     }));
@@ -139,6 +168,9 @@ export async function POST(request: NextRequest) {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    const linkError = await saveGrabFoodLink(data.id, body.grabfood_url);
+    if (linkError) return NextResponse.json({ error: linkError }, { status: 400 });
 
     // Revalidate pages immediately
     revalidatePath(`/store/${data.slug}`);
@@ -230,6 +262,9 @@ export async function PUT(request: NextRequest) {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    const linkError = await saveGrabFoodLink(data.id, body.grabfood_url);
+    if (linkError) return NextResponse.json({ error: linkError }, { status: 400 });
 
     // Revalidate pages immediately
     revalidatePath(`/store/${data.slug}`);

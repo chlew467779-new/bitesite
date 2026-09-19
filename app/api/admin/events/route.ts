@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
     // 汇总统计
     const eventMap = new Map<string, number>();
     const dailyMap = new Map<string, Map<string, number>>();
-    const eventTypes = ['whatsapp_click', 'booking_submit', 'share', 'search', 'map_marker_click', 'story_to_merchant'];
+    const eventTypes = ['whatsapp_click', 'booking_submit', 'share', 'search', 'map_marker_click', 'story_to_merchant', 'merchant_order_click'];
 
     rawData?.forEach(row => {
       const type = row.event_type || 'other';

@@ -17,6 +17,7 @@ import { layouts } from "@/app/layouts";
 import { RelatedMerchants } from "@/components/sections/related-merchants";
 import { ViewTracker } from "@/components/sections/view-tracker";
 import { PageViewTracker } from "@/app/components/page-view-tracker";
+import { GrabFoodOrderButton } from "@/components/sections/grabfood-order-button";
 
 export const revalidate = 60;
 
@@ -173,13 +174,14 @@ export default async function MerchantPage({ params }: PageProps) {
     );
   }
 
-  const [categories, products, videos, relatedMerchants, statsRes, events] = await Promise.all([
+  const [categories, products, videos, relatedMerchants, statsRes, events, externalLinksRes] = await Promise.all([
     getCategoriesByMerchant(merchant.id),
     getProductsByMerchant(merchant.id),
     getVideosByMerchant(merchant.id),
     getRelatedMerchants(merchant.slug, merchant.cuisine_type, merchant.tags, merchant.area, 3),
     supabase.from("merchant_stats").select("view_count").eq("slug", slug).single(),
     getEventsByMerchant(merchant.id),
+    supabase.from("merchant_external_links").select("url").eq("merchant_id", merchant.id).eq("link_type", "grabfood").eq("is_active", true).maybeSingle(),
   ]);
 
   const viewCount = statsRes.data?.view_count || 0;
@@ -236,6 +238,7 @@ export default async function MerchantPage({ params }: PageProps) {
     <>
       <PageViewTracker pageType="merchant" slug={merchant.slug} />
       <ViewTracker slug={merchant.slug} />
+      {externalLinksRes.data?.url && <GrabFoodOrderButton url={externalLinksRes.data.url} slug={merchant.slug} />}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaData) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       <LayoutComponent

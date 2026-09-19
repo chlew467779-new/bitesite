@@ -61,6 +61,7 @@ interface MerchantFormProps {
     logo_image?: string;
     cover_image?: string;
     menu_pdf_url?: string;
+    grabfood_url?: string;
   } | null;
   onBack: () => void;
   onSaved: () => void;
@@ -190,6 +191,7 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
     logo_image: '',
     cover_image: '',
     menu_pdf_url: '',
+    grabfood_url: '',
   });
 
   /* Structured hours state for Admin editing */
@@ -305,6 +307,7 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
         logo_image: merchant.logo_image || '',
         cover_image: merchant.cover_image || '',
         menu_pdf_url: merchant.menu_pdf_url || '',
+        grabfood_url: merchant.grabfood_url || '',
       });
 
       /* Parse operating_hours into structured slots */
@@ -436,6 +439,7 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
       logo_image: form.logo_image || null,
       cover_image: form.cover_image || null,
       menu_pdf_url: form.menu_pdf_url || null,
+      grabfood_url: form.grabfood_url || null,
     };
 
     if (isEditing) {
@@ -939,6 +943,18 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
                 placeholder="hello@restaurant.com"
                 className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">GrabFood URL</label>
+              <input
+                type="url"
+                value={form.grabfood_url}
+                onChange={(e) => updateField('grabfood_url', e.target.value)}
+                placeholder="https://food.grab.com/..."
+                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors"
+              />
+              <p className="mt-1 text-xs text-slate-500">Optional. This opens the merchant&apos;s own GrabFood store; BiteSite never processes an order or payment.</p>
             </div>
 
             <div>

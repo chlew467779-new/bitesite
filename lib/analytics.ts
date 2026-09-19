@@ -6,6 +6,7 @@ export const EventTypes = {
   SEARCH: 'search',
   MAP_MARKER_CLICK: 'map_marker_click',
   STORY_TO_MERCHANT: 'story_to_merchant',
+  MERCHANT_ORDER_CLICK: 'merchant_order_click',
 } as const;
 
 export type EventType = typeof EventTypes[keyof typeof EventTypes];
