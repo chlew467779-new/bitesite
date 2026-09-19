@@ -38,6 +38,26 @@ const merchantTextFields = [
   'logo_image', 'cover_image', 'menu_pdf_url', 'grabfood_url',
 ] as const;
 
+const merchantTextLimits: Partial<Record<typeof merchantTextFields[number], number>> = {
+  name: 160,
+  slug: 200,
+  tagline: 300,
+  description: 10000,
+  cuisine_type: 100,
+  area: 160,
+  address: 500,
+  phone: 40,
+  whatsapp: 40,
+  email: 254,
+  website: 2048,
+  instagram: 2048,
+  facebook: 2048,
+  logo_image: 2048,
+  cover_image: 2048,
+  menu_pdf_url: 2048,
+  grabfood_url: 2048,
+};
+
 function validateMerchantPayload(body: Record<string, unknown>, requireBaseFields: boolean): string | null {
   if (!body || typeof body !== 'object' || Array.isArray(body)) return 'Invalid request body';
 
@@ -45,6 +65,10 @@ function validateMerchantPayload(body: Record<string, unknown>, requireBaseField
     const value = body[field];
     if (value !== undefined && value !== null && typeof value !== 'string') {
       return `${field} must be a string`;
+    }
+    const maxLength = merchantTextLimits[field];
+    if (typeof value === 'string' && maxLength && value.length > maxLength) {
+      return `${field} must be ${maxLength} characters or fewer`;
     }
   }
 
