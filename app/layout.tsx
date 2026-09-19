@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { Inter, Playfair_Display, Noto_Sans_JP } from "next/font/google";
 import { SiteHeader } from "@/components/sections/site-header";
 import { getSettings } from "@/lib/settings";
+import { getSiteUrl } from "@/lib/site-url";
 import "./globals.css";
 
 const inter = Inter({
@@ -27,6 +28,7 @@ const notoSansJP = Noto_Sans_JP({
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSettings();
+  const siteUrl = getSiteUrl();
 
   return {
     title: `${settings.site_title} | Every Bite Tells a Story`,
@@ -42,11 +44,11 @@ export async function generateMetadata(): Promise<Metadata> {
     ],
     authors: [{ name: settings.site_title }],
     creator: settings.site_title,
-    metadataBase: new URL("https://bitesite-pied.vercel.app"),
+    metadataBase: new URL(siteUrl),
     openGraph: {
       title: `${settings.site_title} | Every Bite Tells a Story`,
       description: settings.site_description,
-      url: "https://bitesite-pied.vercel.app",
+      url: siteUrl,
       siteName: settings.site_title,
       locale: "en_MY",
       type: "website",
@@ -68,12 +70,13 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const settings = await getSettings();
+  const siteUrl = getSiteUrl();
 
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: settings.site_title,
-    url: "https://bitesite-pied.vercel.app",
+    url: siteUrl,
     description: settings.site_description,
   };
 
@@ -81,7 +84,7 @@ export default async function RootLayout({
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: settings.site_title,
-    url: "https://bitesite-pied.vercel.app",
+    url: siteUrl,
   };
 
   return (
