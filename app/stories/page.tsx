@@ -74,6 +74,12 @@ export default function StoriesPage() {
           activeCategory={activeCategory}
           onCategoryChange={setActiveCategory}
         />
+        {!loading && !error && (
+          <p className="pb-2 text-xs text-[#8A968B]" aria-live="polite">
+            {filtered.length} {filtered.length === 1 ? 'story' : 'stories'}
+            {activeCategory ? ` in ${activeCategory}` : ''}
+          </p>
+        )}
       </div>
 
       {/* Article List */}
@@ -104,7 +110,10 @@ export default function StoriesPage() {
               </button>
             </div>
           ) : (
-            <StoryList articles={filtered} />
+            <StoryList
+              articles={filtered}
+              onClearFilter={activeCategory ? () => setActiveCategory(null) : undefined}
+            />
           )}
         </div>
       </section>

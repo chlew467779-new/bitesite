@@ -377,6 +377,28 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
 
   const theme = bgThemes.find(t => t.value === form.background_style) || bgThemes[0];
   const wordCount = countWords(form.content);
+  const copyChecks = [
+    {
+      label: 'Title is specific',
+      ok: form.title.trim().length >= 12 && form.title.trim().length <= 80,
+      hint: 'Aim for 12–80 characters.',
+    },
+    {
+      label: 'Excerpt is useful',
+      ok: form.excerpt.trim().length >= 40 && form.excerpt.trim().length <= 220,
+      hint: 'Add a 40–220 character summary for cards and SEO.',
+    },
+    {
+      label: 'Story has enough detail',
+      ok: wordCount >= 80,
+      hint: 'Aim for at least 80 words so readers get useful context.',
+    },
+    {
+      label: 'Cover image is ready',
+      ok: Boolean(form.cover_image.trim()),
+      hint: 'A cover image improves Story discovery and sharing.',
+    },
+  ];
 
   if (loading) {
     return (
@@ -456,6 +478,32 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
           {error}
         </div>
       )}
+
+      {/* Lightweight editorial quality guardrails. These keep AI-assisted or manually written copy reviewable. */}
+      <div className="mb-4 shrink-0 rounded-xl border border-slate-800 bg-slate-900/60 p-3">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 className="text-sm font-medium text-slate-200">Copy quality check</h2>
+            <p className="text-xs text-slate-500">Helpful guidance only — editors still approve every Story.</p>
+          </div>
+          <span className="text-xs text-slate-500">{wordCount} words</span>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {copyChecks.map((check) => (
+            <div key={check.label} className="flex items-start gap-2 rounded-lg bg-slate-950/60 px-2.5 py-2">
+              {check.ok ? (
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
+              ) : (
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+              )}
+              <div>
+                <p className={`text-xs font-medium ${check.ok ? 'text-emerald-300' : 'text-amber-300'}`}>{check.label}</p>
+                {!check.ok && <p className="mt-0.5 text-[11px] leading-snug text-slate-500">{check.hint}</p>}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* Main Editor + Preview */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1 min-h-0">
