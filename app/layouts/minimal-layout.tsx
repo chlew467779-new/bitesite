@@ -22,6 +22,7 @@ export function MinimalLayout({
   const resolvedFeatures = mergeFeatures(features);
   const today = getTodayKey();
   const hours = merchant.operating_hours as Record<string, string> | null;
+  const hasHours = Boolean(hours && Object.values(hours).some((value) => value?.trim()));
 
   return (
     <div className="min-h-screen bg-stone-50 text-stone-800">
@@ -46,13 +47,13 @@ export function MinimalLayout({
               </div>
             )}
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-medium tracking-widest uppercase text-stone-500">{merchant.cuisine_type}</span>
+              {merchant.cuisine_type && <span className="text-xs font-medium tracking-widest uppercase text-stone-500">{merchant.cuisine_type}</span>}
               {typeof viewCount !== "undefined" && viewCount > 0 && (
                 <ViewCountInline count={viewCount} className="ml-0" />
               )}
             </div>
             <h1 className="text-3xl font-light mt-2 mb-4">{merchant.name}</h1>
-            <p className="text-stone-600 leading-relaxed text-sm">{merchant.description}</p>
+            {merchant.description && <p className="text-stone-600 leading-relaxed text-sm">{merchant.description}</p>}
           </div>
         </FadeIn>
       )}
@@ -103,8 +104,8 @@ export function MinimalLayout({
             <div className="max-w-3xl mx-auto">
               <h2 className="text-sm font-medium tracking-widest uppercase text-stone-500 mb-6">Info</h2>
               <div className="space-y-3 text-sm">
-                {hours && DAYS.map((day) => {
-                  const time = hours[day];
+                {hasHours && DAYS.map((day) => {
+                  const time = hours?.[day];
                   if (!time) return null;
                   return (
                     <div key={day} className={`flex justify-between py-1 ${day === today ? "text-stone-900 font-medium" : "text-stone-500"}`}>

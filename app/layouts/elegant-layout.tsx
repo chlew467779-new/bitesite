@@ -25,6 +25,7 @@ export function ElegantLayout({
 
   const today = getTodayKey();
   const hours = merchant.operating_hours as Record<string, string> | null;
+  const hasHours = Boolean(hours && Object.values(hours).some((value) => value?.trim()));
 
   const navItems = [
     { label: "Menu", id: "menu-section", show: resolvedFeatures.menu && products.length > 0 },
@@ -86,15 +87,13 @@ export function ElegantLayout({
             <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
               <div className="max-w-4xl mx-auto">
                 <div className="flex items-center gap-2 mb-3 flex-wrap">
-                  <span className="inline-block px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-semibold border border-amber-500/30">
-                    {merchant.cuisine_type}
-                  </span>
+                  {merchant.cuisine_type && <span className="inline-block px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-semibold border border-amber-500/30">{merchant.cuisine_type}</span>}
                   {typeof viewCount !== "undefined" && viewCount > 0 && (
                     <ViewCountInline count={viewCount} className="ml-0" />
                   )}
                 </div>
                 <h1 className="text-3xl sm:text-5xl font-bold text-white mb-2">{merchant.name}</h1>
-                <p className="text-slate-400 text-sm sm:text-base max-w-xl">{merchant.description}</p>
+                {merchant.description && <p className="text-slate-400 text-sm sm:text-base max-w-xl">{merchant.description}</p>}
               </div>
             </div>
           </div>
@@ -163,8 +162,8 @@ export function ElegantLayout({
             <div className="max-w-4xl mx-auto">
               <h2 className="text-2xl font-bold text-amber-100 mb-6">Opening Hours</h2>
               <div className="space-y-2">
-                {hours && DAYS.map((day) => {
-                  const time = hours[day];
+                {hasHours && DAYS.map((day) => {
+                  const time = hours?.[day];
                   if (!time) return null;
                   const isToday = day === today;
                   const timeSlots = time.split(",").map((t) => t.trim());
