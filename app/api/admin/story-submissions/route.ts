@@ -124,6 +124,17 @@ export async function PATCH(request: Request) {
         background_style: 'default',
       }).select().single();
       if (articleError || !article) return NextResponse.json({ error: articleError?.message || 'Failed to create Story draft' }, { status: 500 });
+      const { error: revisionError } = await supabase.from('article_revisions').insert({
+        article_id: article.id,
+        action: 'created',
+        snapshot: article,
+        actor: 'admin',
+        note: `Created from Story submission ${source.id}`,
+      });
+      if (revisionError) {
+        await supabase.from('articles').delete().eq('id', article.id);
+        return NextResponse.json({ error: revisionError.message }, { status: 500 });
+      }
       updateData.article_id = article.id;
       const { data: converted, error: conversionError } = await supabase.from('story_submissions').update(updateData).eq('id', body.id).select().single();
       if (conversionError) return NextResponse.json({ error: conversionError.message }, { status: 500 });
