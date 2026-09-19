@@ -18,6 +18,15 @@ function validEnum<T extends readonly string[]>(value: unknown, values: T): valu
   return typeof value === 'string' && values.includes(value);
 }
 
+function makeSlug(title: string, existing: string[]) {
+  const base = title.trim().toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g, '-').replace(/^-|-$/g, '').slice(0, 50);
+  const safe = base || 'story';
+  if (!existing.includes(safe)) return safe;
+  let i = 1;
+  while (existing.includes(`${safe}-${i}`)) i += 1;
+  return `${safe}-${i}`;
+}
+
 export async function GET(request: NextRequest) {
   const denied = authError(request);
   if (denied) return denied;
@@ -91,6 +100,34 @@ export async function PATCH(request: Request) {
     if (['approved', 'rejected', 'archived', 'converted'].includes(body.status)) {
       updateData.reviewed_at = new Date().toISOString();
       updateData.reviewed_by = body.reviewed_by || 'admin';
+    }
+    if (body.status === 'converted') {
+      const { data: source, error: sourceError } = await supabase.from('story_submissions').select('*').eq('id', body.id).single();
+      if (sourceError || !source) return NextResponse.json({ error: sourceError?.message || 'Submission not found' }, { status: 404 });
+      if (!source.rights_declared) return NextResponse.json({ error: 'Rights declaration is required before conversion' }, { status: 400 });
+      const { data: existing } = await supabase.from('articles').select('slug');
+      const slug = makeSlug(source.title, (existing || []).map((item) => item.slug));
+      const { data: article, error: articleError } = await supabase.from('articles').insert({
+        slug,
+        title: source.title,
+        excerpt: source.excerpt || null,
+        content: source.content,
+        cover_image: source.cover_image || null,
+        category: 'Merchant Story',
+        tags: [],
+        merchant_slug: source.merchant_slug || null,
+        author: 'BiteSite Team',
+        published: false,
+        editorial_status: 'draft',
+        rights_declared: true,
+        review_notes: source.review_notes || null,
+        background_style: 'default',
+      }).select().single();
+      if (articleError || !article) return NextResponse.json({ error: articleError?.message || 'Failed to create Story draft' }, { status: 500 });
+      updateData.article_id = article.id;
+      const { data: converted, error: conversionError } = await supabase.from('story_submissions').update(updateData).eq('id', body.id).select().single();
+      if (conversionError) return NextResponse.json({ error: conversionError.message }, { status: 500 });
+      return NextResponse.json({ submission: converted, article, success: true });
     }
     const { data, error } = await supabase.from('story_submissions').update(updateData).eq('id', body.id).select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });

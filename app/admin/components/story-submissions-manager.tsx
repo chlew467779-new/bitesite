@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { CheckCircle2, Eye, Inbox, Loader2, XCircle } from 'lucide-react';
+import { Eye, FilePlus2, Inbox, Loader2, XCircle } from 'lucide-react';
 import { useAuth } from './auth-context';
 
 type Submission = {
@@ -49,7 +49,7 @@ export default function StorySubmissionsManager() {
 
   useEffect(() => { load(); }, [load]);
 
-  const updateStatus = async (submission: Submission, status: 'approved' | 'rejected') => {
+  const updateStatus = async (submission: Submission, status: 'converted' | 'rejected') => {
     if (!token) return;
     setWorking(submission.id);
     setError('');
@@ -129,7 +129,7 @@ export default function StorySubmissionsManager() {
                   <p className="text-xs mt-3"><span className={submission.rights_declared ? 'text-emerald-400' : 'text-red-400'}>{submission.rights_declared ? 'Rights declared' : 'Rights declaration missing'}</span></p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <button onClick={() => updateStatus(submission, 'approved')} disabled={working === submission.id} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-emerald-500/10 text-emerald-300 border border-emerald-700/50 text-sm disabled:opacity-50"><CheckCircle2 className="w-4 h-4" />Approve</button>
+                  <button onClick={() => updateStatus(submission, 'converted')} disabled={working === submission.id} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-emerald-500/10 text-emerald-300 border border-emerald-700/50 text-sm disabled:opacity-50"><FilePlus2 className="w-4 h-4" />Create draft Story</button>
                   <button onClick={() => updateStatus(submission, 'rejected')} disabled={working === submission.id} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-red-500/10 text-red-300 border border-red-700/50 text-sm disabled:opacity-50"><XCircle className="w-4 h-4" />Request changes</button>
                   <button onClick={() => window.open(`/stories/${submission.merchant_slug || ''}`, '_blank')} className="p-2 rounded-lg border border-slate-700 text-slate-400 hover:text-slate-200" title="Open related page"><Eye className="w-4 h-4" /></button>
                 </div>
