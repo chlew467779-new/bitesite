@@ -202,6 +202,11 @@ export function ElegantLayout({
                     <Globe size={18} /><span className="text-sm">Website</span>
                   </a>
                 )}
+                {merchant.email && (
+                  <a href={`mailto:${merchant.email}`} onClick={() => trackEvent('email_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-3 text-slate-400 hover:text-slate-200 transition-colors">
+                    <Mail size={18} /><span className="text-sm">{merchant.email}</span>
+                  </a>
+                )}
                 {merchant.whatsapp && (
                   <a
                     href={`https://wa.me/${merchant.whatsapp.replace(/\D/g, "")}`}

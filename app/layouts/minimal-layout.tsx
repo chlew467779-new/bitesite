@@ -9,7 +9,7 @@ import { ViewCountInline } from "@/components/sections/view-count-inline";
 import { ShareButtons } from "@/components/sections/share-buttons";
 import { mergeFeatures } from "@/types";
 import type { LayoutProps } from "@/types";
-import { MapPin, Phone, Instagram, Globe, ArrowLeft, MessageSquare, Banknote, Smartphone, CreditCard } from "lucide-react";
+import { MapPin, Phone, Mail, Instagram, Globe, ArrowLeft, MessageSquare, Banknote, Smartphone, CreditCard } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { MenuViewTracker } from "@/components/sections/menu-view-tracker";
 import Link from "next/link";
@@ -117,6 +117,7 @@ export function MinimalLayout({
                 {merchant.address && <a href={`https://maps.google.com/?q=${encodeURIComponent(merchant.address)}`} onClick={() => trackEvent('directions_click', { slug: merchant.slug, pageType: 'merchant' })} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-stone-600"><MapPin size={16} />{merchant.address}</a>}
                 {merchant.phone && <a href={`tel:${merchant.phone}`} onClick={() => trackEvent('phone_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-2 text-stone-600"><Phone size={16} />{merchant.phone}</a>}
                 {merchant.website && <a href={merchant.website} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent('website_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-2 text-stone-600"><Globe size={16} />Website</a>}
+                {merchant.email && <a href={`mailto:${merchant.email}`} onClick={() => trackEvent('email_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-2 text-stone-600"><Mail size={16} />{merchant.email}</a>}
                 {merchant.whatsapp && (
                   <a
                     href={`https://wa.me/${merchant.whatsapp.replace(/\D/g, "")}`}
