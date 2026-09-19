@@ -269,14 +269,42 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
     }
   };
 
+  const validateBeforeSave = (requestedStatus: EditorialStatus): string | null => {
+    if (!form.title.trim()) return 'Title is required.';
+    if (!form.content.trim()) return 'Story content is required.';
+    if (!form.category.trim()) return 'Category is required.';
+    if (!form.slug.trim()) return 'Slug is required.';
+    if (form.slug.length > 100) return 'Slug must be 100 characters or fewer.';
+    if (/[\\/\s]/.test(form.slug)) return 'Slug cannot contain spaces or slashes.';
+    if (form.cover_image.trim()) {
+      try {
+        const imageUrl = new URL(form.cover_image.trim());
+        if (imageUrl.protocol !== 'http:' && imageUrl.protocol !== 'https:') {
+          return 'Cover image must use an http:// or https:// URL.';
+        }
+      } catch {
+        return 'Cover image must be a valid URL.';
+      }
+    }
+    if (requestedStatus === 'pending_review' && !form.rights_declared) {
+      return 'Declare image and content rights before submitting for review.';
+    }
+    return null;
+  };
+
   const handleSave = async (publish: boolean, requestedStatus?: EditorialStatus) => {
     if (!token) return;
+    const editorialStatus = requestedStatus || (publish ? 'published' : 'draft');
+    const validationError = validateBeforeSave(editorialStatus);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
     setSaving(true);
     setError('');
     setSaved(false);
 
     try {
-      const editorialStatus = requestedStatus || (publish ? 'published' : 'draft');
       const payload = {
         ...form,
         published: publish,
