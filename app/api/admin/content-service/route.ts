@@ -98,9 +98,21 @@ export async function PATCH(request: Request) {
     if (!table || !statuses || !isIn(body.status, statuses)) return NextResponse.json({ error: 'Invalid type or status' }, { status: 400 });
     const updateData: Record<string, unknown> = { status: body.status, updated_at: new Date().toISOString() };
     if (body.notes !== undefined) updateData.notes = body.notes;
-    if (body.status === 'completed') updateData.completed_at = new Date().toISOString();
+    updateData.completed_at = body.status === 'completed' ? new Date().toISOString() : null;
     const { data, error } = await supabase.from(table).update(updateData).eq('id', body.id).select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    // Completing an assisted request fulfils its linked content cycle as well.
+    // Keep this best-effort so a service-status update is never blocked by
+    // reminder metadata.
+    if (body.type === 'assisted_request' && body.status === 'completed' && data?.cycle_id) {
+      const { error: cycleError } = await supabase
+        .from('merchant_content_cycles')
+        .update({ status: 'completed', completed_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .eq('id', data.cycle_id)
+        .in('status', ['active', 'due', 'overdue']);
+      if (cycleError) console.error('Assisted content cycle completion error:', cycleError);
+    }
     return NextResponse.json({ [body.type === 'cycle' ? 'cycle' : 'request']: body.type === 'cycle' ? cycleView(data) : data, success: true });
   } catch {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
