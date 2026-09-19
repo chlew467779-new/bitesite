@@ -192,6 +192,29 @@ export async function PUT(request: Request) {
       );
     }
 
+    const existingQuery = supabase.from('articles').select('*');
+    const { data: existingArticle, error: existingError } = id
+      ? await existingQuery.eq('id', id).maybeSingle()
+      : await existingQuery.eq('slug', slug).maybeSingle();
+    if (existingError || !existingArticle) {
+      return NextResponse.json({ error: 'Story not found' }, { status: 404 });
+    }
+
+    // Published Stories must pass through draft/review before material edits
+    // become public. A direct published update would silently replace content
+    // that has not gone through the editorial checks again.
+    const materialFields = ['title', 'excerpt', 'content', 'cover_image', 'category', 'tags', 'merchant_slug', 'background_style'];
+    const hasMaterialEdit = materialFields.some((field) => {
+      if (!(field in updates)) return false;
+      return JSON.stringify(existingArticle[field]) !== JSON.stringify(updates[field]);
+    });
+    if (existingArticle.published === true && hasMaterialEdit && editorial_status === 'published') {
+      return NextResponse.json(
+        { error: 'Published Story edits must be saved as draft or submitted for review before republishing' },
+        { status: 409 },
+      );
+    }
+
     const updateData: Record<string, unknown> = {
       ...updates,
       updated_at: new Date().toISOString(),
