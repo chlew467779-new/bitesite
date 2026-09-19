@@ -17,7 +17,8 @@ import {
   Loader2,
   AlertCircle,
   Clock,
-  Calendar
+  Calendar,
+  RefreshCw
 } from 'lucide-react';
 import type { Article } from '@/types';
 
@@ -46,14 +47,16 @@ export default function StoriesManager({ onEdit, onNew }: StoriesManagerProps) {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [updating, setUpdating] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     fetchArticles();
-  }, [token]);
+  }, [token, retryKey]);
 
   const fetchArticles = async () => {
     if (!token) return;
     setLoading(true);
+    setError('');
     try {
       const res = await fetch('/api/admin/stories', {
         headers: { 'x-admin-token': token },
@@ -146,9 +149,18 @@ export default function StoriesManager({ onEdit, onNew }: StoriesManagerProps) {
       </div>
 
       {error && (
-        <div className="rounded-xl border border-red-800 bg-red-950/50 p-3 text-red-400 text-sm flex items-center gap-2">
+        <div className="rounded-xl border border-red-800 bg-red-950/50 p-3 text-red-400 text-sm flex items-center justify-between gap-3">
+          <span className="flex items-center gap-2">
           <AlertCircle className="w-4 h-4" />
           {error}
+          </span>
+          <button
+            type="button"
+            onClick={() => setRetryKey((key) => key + 1)}
+            className="inline-flex items-center gap-1.5 rounded-md bg-red-900/40 px-2.5 py-1.5 text-xs text-red-200 hover:bg-red-900/70 transition-colors"
+          >
+            <RefreshCw className="w-3.5 h-3.5" /> Retry
+          </button>
         </div>
       )}
 
