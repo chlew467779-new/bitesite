@@ -51,13 +51,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // FIX: 兼容 sendBeacon 发送的 Blob 和 fetch 发送的 JSON
+    // Read once so chunked requests without Content-Length are capped too.
+    const rawBody = await request.text();
+    if (new TextEncoder().encode(rawBody).byteLength > 4096) {
+      return NextResponse.json({ error: 'Request too large' }, { status: 413 });
+    }
+
     let body;
     try {
-      body = await request.json();
+      body = rawBody ? JSON.parse(rawBody) : {};
     } catch {
-      const text = await request.text();
-      body = text ? JSON.parse(text) : {};
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
     }
 
     if (!body || typeof body !== 'object' || Array.isArray(body)) {
