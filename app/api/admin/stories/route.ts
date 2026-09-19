@@ -32,6 +32,26 @@ function generateSlug(title: string, existingSlugs: string[]): string {
   return `${base}-${counter}`;
 }
 
+type EditorialStatus = 'draft' | 'pending_review' | 'approved' | 'published' | 'rejected' | 'archived';
+
+function normalizeEditorialStatus(value: unknown, published: boolean): EditorialStatus {
+  if (typeof value === 'string' && ['draft', 'pending_review', 'approved', 'published', 'rejected', 'archived'].includes(value)) {
+    return value as EditorialStatus;
+  }
+  return published ? 'published' : 'draft';
+}
+
+async function recordRevision(article: Record<string, unknown>, action: string, note?: unknown) {
+  const { error } = await supabase.from('article_revisions').insert({
+    article_id: article.id,
+    action,
+    snapshot: article,
+    actor: 'admin',
+    note: typeof note === 'string' ? note : null,
+  });
+  if (error) console.error('Story revision audit error:', error);
+}
+
 // GET
 export async function GET(request: NextRequest) {
   const authError = verifyRequest(request);
@@ -92,6 +112,12 @@ export async function POST(request: Request) {
     const slug = body.slug || generateSlug(body.title, existingSlugs);
 
     const now = new Date().toISOString();
+    const published = body.published ?? false;
+    const editorialStatus = normalizeEditorialStatus(body.editorial_status, published);
+
+    if (editorialStatus === 'pending_review' && body.rights_declared !== true) {
+      return NextResponse.json({ error: 'Rights declaration is required before submitting a Story for review' }, { status: 400 });
+    }
 
     const { data, error } = await supabase
       .from('articles')
@@ -105,7 +131,12 @@ export async function POST(request: Request) {
         tags: body.tags || [],
         merchant_slug: body.merchant_slug || null,
         author: body.author || 'BiteSite Team',
-        published: body.published ?? false,
+        published: editorialStatus === 'published',
+        editorial_status: editorialStatus,
+        rights_declared: body.rights_declared === true ? true : null,
+        review_notes: body.review_notes || null,
+        submitted_at: editorialStatus === 'pending_review' ? now : null,
+        published_at: editorialStatus === 'published' ? now : null,
         background_style: body.background_style || 'default',
         created_at: now,
         updated_at: now,
@@ -116,6 +147,8 @@ export async function POST(request: Request) {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    await recordRevision(data, editorialStatus === 'published' ? 'published' : editorialStatus === 'pending_review' ? 'submitted' : 'created');
 
     // Revalidate immediately
     revalidatePath(`/stories/${data.slug}`);
@@ -135,7 +168,7 @@ export async function PUT(request: Request) {
 
   try {
     const body = await request.json();
-    const { id, slug, ...updates } = body;
+    const { id, slug, editorial_status, ...updates } = body;
 
     if (!id && !slug) {
       return NextResponse.json(
@@ -148,6 +181,18 @@ export async function PUT(request: Request) {
       ...updates,
       updated_at: new Date().toISOString(),
     };
+
+    if (editorial_status !== undefined || updates.published !== undefined) {
+      const status = normalizeEditorialStatus(editorial_status, updates.published === true);
+      if (status === 'pending_review' && updates.rights_declared !== true) {
+        return NextResponse.json({ error: 'Rights declaration is required before submitting a Story for review' }, { status: 400 });
+      }
+      updateData.editorial_status = status;
+      updateData.published = status === 'published';
+      if (status === 'pending_review') updateData.submitted_at = new Date().toISOString();
+      if (status === 'published') updateData.published_at = new Date().toISOString();
+      if (['approved', 'rejected', 'archived'].includes(status)) updateData.reviewed_at = new Date().toISOString();
+    }
 
     if (typeof updateData.tags === 'string') {
       updateData.tags = updateData.tags
@@ -173,6 +218,13 @@ export async function PUT(request: Request) {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    const action = data.editorial_status === 'published'
+      ? 'published'
+      : data.editorial_status === 'pending_review'
+        ? 'submitted'
+        : 'updated';
+    await recordRevision(data, action, data.review_notes);
 
     // Revalidate immediately
     revalidatePath(`/stories/${data.slug}`);
