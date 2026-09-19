@@ -328,7 +328,11 @@ export default function AdminPage() {
 
       {/* Story Submissions */}
       {activeTab === 'story-submissions' && (
-        <StorySubmissionsManager />
+        <StorySubmissionsManager onDraftCreated={(slug) => {
+          setEditingSlug(slug);
+          setShowEditor(true);
+          setActiveTab('stories-editor');
+        }} />
       )}
 
       {/* Merchant Manager */}
