@@ -22,7 +22,7 @@ const labels: Record<Submission['status'], string> = {
   draft: 'Draft', pending_review: 'Pending review', approved: 'Approved', rejected: 'Rejected', archived: 'Archived', converted: 'Converted',
 };
 
-export default function StorySubmissionsManager() {
+export default function StorySubmissionsManager({ onDraftCreated }: { onDraftCreated?: (slug: string) => void }) {
   const { token } = useAuth();
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,6 +61,9 @@ export default function StorySubmissionsManager() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Status update failed');
+      if (status === 'converted' && data.article?.slug) {
+        onDraftCreated?.(data.article.slug);
+      }
       setSubmissions(prev => prev.filter(item => item.id !== submission.id));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Status update failed');
