@@ -145,6 +145,7 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saveError, setSaveError] = useState('');
+  const [dirty, setDirty] = useState(false);
 
   /* Toast state */
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -336,6 +337,7 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
 
   const updateField = (field: string, value: unknown) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+    setDirty(true);
     if (errors[field]) {
       setErrors((prev) => {
         const next = { ...prev };
@@ -353,6 +355,7 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
       ...prev,
       features: { ...prev.features, [key]: checked },
     }));
+    setDirty(true);
   };
 
   /* ── Hours slot helpers ── */
@@ -361,6 +364,7 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
       ...prev,
       [day]: { ...prev[day], slots: [...prev[day].slots, { start: '', end: '' }] },
     }));
+    setDirty(true);
   };
 
   const removeSlot = (day: string, idx: number) => {
@@ -368,6 +372,7 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
       ...prev,
       [day]: { ...prev[day], slots: prev[day].slots.filter((_, i) => i !== idx) },
     }));
+    setDirty(true);
   };
 
   const updateSlot = (day: string, idx: number, field: keyof TimeSlot, value: string) => {
@@ -376,6 +381,7 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
       newSlots[idx] = { ...newSlots[idx], [field]: value };
       return { ...prev, [day]: { ...prev[day], slots: newSlots } };
     });
+    setDirty(true);
   };
 
   const setDayClosed = (day: string, closed: boolean) => {
@@ -383,6 +389,7 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
       ...prev,
       [day]: { slots: closed ? [] : [{ start: '', end: '' }], isClosed: closed },
     }));
+    setDirty(true);
   };
 
   const copyMondayToAll = () => {
@@ -396,8 +403,19 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
       }
       return next;
     });
+    setDirty(true);
     showToast('Monday hours copied to all days', 'success');
   };
+
+  useEffect(() => {
+    if (!dirty) return;
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [dirty]);
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -497,6 +515,7 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
         throw new Error(data.error || 'Save failed');
       }
       showToast(isEditing ? 'Merchant updated successfully' : 'Merchant created successfully', 'success');
+      setDirty(false);
       onSaved();
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Save failed';
@@ -505,6 +524,11 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleBack = () => {
+    if (dirty && !window.confirm('You have unsaved changes. Leave without saving?')) return;
+    onBack();
   };
 
   const handleDelete = async () => {
@@ -552,7 +576,7 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
       {/* Header */}
       <div className="flex items-center gap-4">
         <button
-          onClick={onBack}
+          onClick={handleBack}
           className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
         >
           <ChevronLeft className="w-5 h-5" />
@@ -1386,7 +1410,7 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={onBack}
+            onClick={handleBack}
             className="px-4 py-2.5 text-slate-400 hover:text-white text-sm font-medium transition-colors"
           >
             Cancel
