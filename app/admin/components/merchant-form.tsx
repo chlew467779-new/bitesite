@@ -104,7 +104,17 @@ function isLikelyPdfUrl(url: string): boolean {
 
 function isValidHttpUrl(url: string): boolean {
   if (!url.trim()) return true;
-  return /^https?:\/\//i.test(url);
+  try {
+    const parsed = new URL(url.trim());
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+function isValidEmail(email: string): boolean {
+  if (!email.trim()) return true;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }
 
 function generateSlug(name: string): string {
@@ -397,6 +407,32 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
       newErrors.slug = 'Slug can only contain lowercase letters, numbers, and hyphens';
     }
     if (!form.whatsapp.trim()) newErrors.whatsapp = 'WhatsApp is required';
+    if (!isValidEmail(form.email)) newErrors.email = 'Enter a valid email address';
+
+    const urlFields: Array<[keyof typeof form, string]> = [
+      ['grabfood_url', 'GrabFood URL'],
+      ['website', 'Website URL'],
+      ['instagram', 'Instagram URL'],
+      ['facebook', 'Facebook URL'],
+      ['logo_image', 'Logo image URL'],
+      ['cover_image', 'Cover image URL'],
+      ['menu_pdf_url', 'Menu PDF URL'],
+    ];
+    for (const [field, label] of urlFields) {
+      const value = form[field];
+      if (typeof value === 'string' && value.trim() && !isValidHttpUrl(value)) {
+        newErrors[field] = `${label} must start with http:// or https://`;
+      }
+    }
+
+    const latitude = form.latitude.trim();
+    if (latitude && (!Number.isFinite(Number(latitude)) || Number(latitude) < -90 || Number(latitude) > 90)) {
+      newErrors.latitude = 'Latitude must be between -90 and 90';
+    }
+    const longitude = form.longitude.trim();
+    if (longitude && (!Number.isFinite(Number(longitude)) || Number(longitude) < -180 || Number(longitude) > 180)) {
+      newErrors.longitude = 'Longitude must be between -180 and 180';
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -535,6 +571,16 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
         <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
           <AlertCircle className="w-4 h-4 shrink-0" />
           {saveError}
+        </div>
+      )}
+
+      {Object.keys(errors).length > 0 && (
+        <div className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-amber-300 text-sm">
+          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+          <p>
+            Please fix the highlighted fields before saving:{' '}
+            {Object.keys(errors).map((field) => field.replace(/_/g, ' ')).join(', ')}.
+          </p>
         </div>
       )}
 
