@@ -24,6 +24,7 @@ import StoriesManager from './components/stories-manager';
 import StoryEditor from './components/story-editor';
 import StorySubmissionsManager from './components/story-submissions-manager';
 import MerchantManager from './components/merchant-manager';
+import ContentServiceManager from './components/content-service-manager';
 import { Lock, Loader2 } from 'lucide-react';
 
 export default function AdminPage() {
@@ -333,6 +334,10 @@ export default function AdminPage() {
           setShowEditor(true);
           setActiveTab('stories-editor');
         }} />
+      )}
+
+      {activeTab === 'content-service' && (
+        <ContentServiceManager />
       )}
 
       {/* Merchant Manager */}
