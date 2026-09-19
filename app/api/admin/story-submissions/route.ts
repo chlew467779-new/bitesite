@@ -153,6 +153,14 @@ export async function PATCH(request: Request) {
         await supabase.from('articles').delete().eq('id', article.id);
         return NextResponse.json({ error: revisionError.message }, { status: 500 });
       }
+      if (source.merchant_slug) {
+        const { error: cycleError } = await supabase
+          .from('merchant_content_cycles')
+          .update({ last_submission_id: source.id, updated_at: new Date().toISOString() })
+          .eq('merchant_slug', source.merchant_slug)
+          .in('status', ['active', 'due', 'overdue']);
+        if (cycleError) console.error('Content cycle link error:', cycleError);
+      }
       updateData.article_id = article.id;
       const { data: converted, error: conversionError } = await supabase.from('story_submissions').update(updateData).eq('id', body.id).select().single();
       if (conversionError) return NextResponse.json({ error: conversionError.message }, { status: 500 });
