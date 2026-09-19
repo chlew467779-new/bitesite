@@ -16,8 +16,12 @@ language plpgsql as $f$
 begin
   begin
     execute stmt;
-  exception when insufficient_privilege then
-    return;                                   -- 42501 = permission denied OR RLS violation: both count as "denied"
+  exception
+    when insufficient_privilege then
+      return;                                 -- 42501 = permission denied OR RLS violation: both count as "denied"
+    when others then
+      raise exception 'LOCKDOWN TEST FAILED: % was NOT denied; statement reached execution and raised % (%)',
+        label, sqlerrm, sqlstate;
   end;
   raise exception 'LOCKDOWN TEST FAILED: % was NOT denied', label;
 end $f$;

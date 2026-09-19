@@ -5,7 +5,15 @@ import { detectDevice } from '@/lib/device-detect';
 import { classifyReferrer, EventTypes } from '@/lib/analytics';
 
 const ALLOWED_EVENT_TYPES = new Set<string>(Object.values(EventTypes));
-const ALLOWED_PAGE_TYPES = new Set(['home', 'merchant', 'story', 'our_partner', 'other']);
+const ALLOWED_PAGE_TYPES = new Set([
+  'home',
+  'merchant',
+  'story',
+  'story_list',
+  'join_us',
+  'our_partner',
+  'other',
+]);
 const SLUG_PATTERN = /^[a-z0-9-]{1,200}$/;
 
 function optionalString(value: unknown, maxLength: number): string | null {
