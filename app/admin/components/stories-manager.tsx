@@ -23,12 +23,23 @@ interface StoriesManagerProps {
   onNew: () => void;
 }
 
+type EditorialFilter = 'all' | 'draft' | 'pending_review' | 'approved' | 'published' | 'rejected' | 'archived';
+
+const statusLabels: Record<Exclude<EditorialFilter, 'all'>, string> = {
+  draft: 'Draft',
+  pending_review: 'Pending review',
+  approved: 'Approved',
+  published: 'Published',
+  rejected: 'Rejected',
+  archived: 'Archived',
+};
+
 export default function StoriesManager({ onEdit, onNew }: StoriesManagerProps) {
   const { token } = useAuth();
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState<'all' | 'published' | 'draft'>('all');
+  const [filter, setFilter] = useState<EditorialFilter>('all');
   const [deleting, setDeleting] = useState<string | null>(null);
   const [error, setError] = useState('');
 
@@ -82,10 +93,8 @@ export default function StoriesManager({ onEdit, onNew }: StoriesManagerProps) {
       a.title.toLowerCase().includes(search.toLowerCase()) ||
       a.category.toLowerCase().includes(search.toLowerCase()) ||
       (a.tags || []).some(t => t.toLowerCase().includes(search.toLowerCase()));
-    const matchesFilter = 
-      filter === 'all' ? true :
-      filter === 'published' ? a.published :
-      !a.published;
+    const status = a.editorial_status || (a.published ? 'published' : 'draft');
+    const matchesFilter = filter === 'all' || status === filter;
     return matchesSearch && matchesFilter;
   });
 
@@ -129,7 +138,7 @@ export default function StoriesManager({ onEdit, onNew }: StoriesManagerProps) {
           />
         </div>
         <div className="flex gap-2">
-          {(['all', 'published', 'draft'] as const).map((f) => (
+          {(['all', 'draft', 'pending_review', 'approved', 'published', 'rejected', 'archived'] as const).map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
@@ -139,7 +148,7 @@ export default function StoriesManager({ onEdit, onNew }: StoriesManagerProps) {
                   : 'border border-slate-700 text-slate-400 hover:text-slate-200 hover:border-slate-500'
               }`}
             >
-              {f.charAt(0).toUpperCase() + f.slice(1)}
+              {f === 'all' ? 'All' : statusLabels[f]}
             </button>
           ))}
         </div>
@@ -198,15 +207,16 @@ export default function StoriesManager({ onEdit, onNew }: StoriesManagerProps) {
                       </span>
                     </td>
                     <td className="py-3 px-4">
-                      {article.published ? (
-                        <span className="inline-flex items-center gap-1 text-xs text-emerald-400">
-                          <Eye className="w-3 h-3" /> Published
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-xs text-amber-400">
-                          <EyeOff className="w-3 h-3" /> Draft
-                        </span>
-                      )}
+                      {(() => {
+                        const status = article.editorial_status || (article.published ? 'published' : 'draft');
+                        const visible = status === 'published';
+                        return (
+                          <span className={`inline-flex items-center gap-1 text-xs ${visible ? 'text-emerald-400' : status === 'pending_review' ? 'text-sky-400' : 'text-amber-400'}`}>
+                            {visible ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                            {statusLabels[status as Exclude<EditorialFilter, 'all'>] || status}
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td className="py-3 px-4 text-slate-400 text-xs">
                       {new Date(article.created_at).toLocaleDateString('en-MY', {

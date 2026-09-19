@@ -123,6 +123,13 @@ export interface Article {
   merchant_slug: string | null;
   author: string;
   published: boolean;
+  editorial_status?: 'draft' | 'pending_review' | 'approved' | 'published' | 'rejected' | 'archived';
+  rights_declared?: boolean | null;
+  review_notes?: string | null;
+  submitted_at?: string | null;
+  reviewed_at?: string | null;
+  reviewed_by?: string | null;
+  published_at?: string | null;
   view_count: number;
   background_style?: string;  // ← 加这一行
   created_at: string;

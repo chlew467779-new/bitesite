@@ -26,6 +26,8 @@ import { StoryHero } from '@/components/sections/story-hero';
 import { StoryContent } from '@/components/sections/story-content';
 import type { Article } from '@/types';
 
+type EditorialStatus = NonNullable<Article['editorial_status']>;
+
 interface MerchantOption {
   slug: string;
   name: string;
@@ -86,6 +88,9 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
     author: 'BiteSite Team',
     background_style: 'default',
     published: false,
+    editorial_status: 'draft' as EditorialStatus,
+    rights_declared: false,
+    review_notes: '',
   });
 
   // Load categories from existing articles
@@ -156,6 +161,9 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
               author: a.author || 'BiteSite Team',
               background_style: a.background_style || 'default',
               published: a.published || false,
+              editorial_status: a.editorial_status || (a.published ? 'published' : 'draft'),
+              rights_declared: a.rights_declared === true,
+              review_notes: a.review_notes || '',
             });
           }
         } catch (err) {
@@ -261,16 +269,18 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
     }
   };
 
-  const handleSave = async (publish: boolean) => {
+  const handleSave = async (publish: boolean, requestedStatus?: EditorialStatus) => {
     if (!token) return;
     setSaving(true);
     setError('');
     setSaved(false);
 
     try {
+      const editorialStatus = requestedStatus || (publish ? 'published' : 'draft');
       const payload = {
         ...form,
         published: publish,
+        editorial_status: editorialStatus,
         tags: form.tags.split(',').map(t => t.trim()).filter(Boolean),
         merchant_slug: form.merchant_slug || null,
       };
@@ -348,10 +358,10 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
           {saved && (
             <span className="flex items-center gap-1 text-xs text-green-400">
               <CheckCircle2 className="w-3.5 h-3.5" /> Saved
-            </span>
+          </span>
           )}
           <button
-            onClick={() => handleSave(false)}
+            onClick={() => handleSave(false, 'draft')}
             disabled={saving}
             className="px-4 py-2 rounded-lg text-sm border border-slate-700 text-slate-300 hover:text-white hover:border-slate-500 transition-colors disabled:opacity-50"
           >
@@ -359,12 +369,21 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
             Save Draft
           </button>
           <button
-            onClick={() => handleSave(true)}
+            onClick={() => handleSave(true, 'published')}
             disabled={saving}
             className="px-4 py-2 rounded-lg text-sm bg-amber-500 hover:bg-amber-400 text-slate-950 font-medium transition-colors disabled:opacity-50"
           >
             {saving && form.published ? <Loader2 className="w-3.5 h-3.5 animate-spin inline mr-1" /> : <Send className="w-3.5 h-3.5 inline mr-1" />}
             {form.published ? 'Update' : 'Publish'}
+          </button>
+          <button
+            onClick={() => handleSave(false, 'pending_review')}
+            disabled={saving || !form.rights_declared}
+            className="px-4 py-2 rounded-lg text-sm border border-sky-700 text-sky-300 hover:text-sky-200 hover:border-sky-500 transition-colors disabled:opacity-50"
+            title={!form.rights_declared ? 'Declare rights below before submitting' : 'Submit this Story for editorial review'}
+          >
+            {saving && form.editorial_status === 'pending_review' ? <Loader2 className="w-3.5 h-3.5 animate-spin inline mr-1" /> : <Send className="w-3.5 h-3.5 inline mr-1" />}
+            Submit for Review
           </button>
         </div>
       </div>
@@ -538,6 +557,45 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Editorial status and rights */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 rounded-lg border border-slate-800 bg-slate-900/50">
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">Editorial Status</label>
+              <select
+                value={form.editorial_status}
+                onChange={(e) => updateField('editorial_status', e.target.value)}
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-200 focus:border-amber-500 focus:outline-none"
+              >
+                <option value="draft">Draft</option>
+                <option value="pending_review">Pending review</option>
+                <option value="approved">Approved</option>
+                <option value="published">Published</option>
+                <option value="rejected">Rejected</option>
+                <option value="archived">Archived</option>
+              </select>
+            </div>
+            <label className="flex items-center gap-2 self-end pb-2 text-sm text-slate-300">
+              <input
+                type="checkbox"
+                checked={form.rights_declared}
+                onChange={(e) => updateField('rights_declared', e.target.checked)}
+                className="h-4 w-4 rounded border-slate-600 bg-slate-950 text-amber-500 focus:ring-amber-500"
+              />
+              I confirm BiteSite has permission to publish this Story
+            </label>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-1.5">Review Notes</label>
+            <textarea
+              value={form.review_notes}
+              onChange={(e) => updateField('review_notes', e.target.value)}
+              placeholder="Internal editorial notes (optional)"
+              rows={2}
+              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-200 placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors resize-none"
+            />
           </div>
 
           {/* Published Toggle */}
