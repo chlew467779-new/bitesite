@@ -3,11 +3,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
 
+const SLUG_PATTERN = /^[a-z0-9-]{1,200}$/;
+
 export async function POST(request: NextRequest) {
   try {
     const { slug } = await request.json();
-    if (!slug || typeof slug !== "string") {
-      return NextResponse.json({ error: "Missing slug" }, { status: 400 });
+    if (!slug || typeof slug !== "string" || !SLUG_PATTERN.test(slug)) {
+      return NextResponse.json({ error: "Invalid slug" }, { status: 400 });
     }
 
     const { error } = await supabase.rpc("increment_view_count", {
