@@ -33,10 +33,6 @@ export function SettingsPanel() {
   const [saved, setSaved] = useState<string | null>(null);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    fetchSettings();
-  }, []);
-
   const fetchSettings = async () => {
     try {
       const res = await fetch('/api/admin/settings', {
@@ -54,6 +50,10 @@ export function SettingsPanel() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    void fetchSettings();
+  }, [token]);
 
   const updateSetting = async (key: string, value: string) => {
     setSaving(key);

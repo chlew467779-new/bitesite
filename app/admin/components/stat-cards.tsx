@@ -52,7 +52,8 @@ export default function StatCards({ range }: StatCardsProps) {
 
   const cards = [
     {
-      label: 'Total Page Views',
+      label: 'All Page Views',
+      description: 'Public pages in the selected period',
       value: data?.totalViews ?? 0,
       icon: Eye,
       color: 'text-blue-400',
@@ -61,6 +62,7 @@ export default function StatCards({ range }: StatCardsProps) {
     },
     {
       label: 'Unique Visitors',
+      description: 'Distinct IPs; an approximate visitor count',
       value: data?.totalUnique ?? 0,
       icon: Users,
       color: 'text-emerald-400',
@@ -68,7 +70,8 @@ export default function StatCards({ range }: StatCardsProps) {
       border: 'border-emerald-500/20',
     },
     {
-      label: 'Total Events',
+      label: 'Tracked Events',
+      description: 'Clicks and interactions, not completed orders',
       value: data?.totalEvents ?? 0,
       icon: MousePointerClick,
       color: 'text-amber-400',
@@ -76,7 +79,8 @@ export default function StatCards({ range }: StatCardsProps) {
       border: 'border-amber-500/20',
     },
     {
-      label: 'Active Merchants',
+      label: 'Published Merchants',
+      description: 'Merchants currently visible to the public',
       value: data?.merchantCount ?? 0,
       icon: Store,
       color: 'text-purple-400',
@@ -109,7 +113,8 @@ export default function StatCards({ range }: StatCardsProps) {
                 formatNumber(card.value)
               )}
             </p>
-            <p className="text-sm text-slate-400">{card.label}</p>
+            <p className="text-sm text-slate-300" title={card.description}>{card.label}</p>
+            <p className="mt-1 text-[11px] leading-snug text-slate-500">{card.description}</p>
           </div>
         );
       })}

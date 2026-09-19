@@ -1,6 +1,7 @@
 /* bitesite/app/store/[merchant]/page.tsx */
 
 import { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   getMerchantBySlug,
@@ -142,35 +143,35 @@ export default async function MerchantPage({ params }: PageProps) {
                   </p>
                   <div className="space-y-3">
                     {relatedMerchants.map((m) => (
-                      <a
+                      <Link
                         key={m.slug}
                         href={`/store/${m.slug}`}
                         className="block p-4 bg-white rounded-xl border border-[#DDE5DC] hover:border-[#5A8F6E] transition-colors text-left"
                       >
                         <h3 className="font-semibold text-[#2C3E2D]">{m.name}</h3>
                         <p className="text-sm text-[#8A968B]">{m.cuisine_type}</p>
-                      </a>
+                      </Link>
                     ))}
                   </div>
                 </div>
               )}
               <div className="mt-8">
-                <a
+                <Link
                   href="/"
                   className="inline-flex items-center gap-2 text-[#5A8F6E] font-medium hover:text-[#4A7A5E] transition-colors"
                 >
                   ← Back to BiteSite
-                </a>
+                </Link>
               </div>
             </div>
           </div>
           <footer className="py-8 px-4 text-center border-t border-[#DDE5DC]">
-            <a
+            <Link
               href="/"
               className="text-sm text-[#8A968B] hover:text-[#5A8F6E] transition-colors"
             >
               {settings.footer_text}
-            </a>
+            </Link>
           </footer>
         </div>
       </>

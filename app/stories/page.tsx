@@ -10,31 +10,43 @@ import { Footer } from "@/components/sections/footer";
 import { FadeIn } from "@/app/components/animations";
 import { PageViewTracker } from "@/app/components/page-view-tracker";
 import type { Article } from "@/types";
+import { RefreshCw } from "lucide-react";
 
 export default function StoriesPage() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     async function fetchData() {
-      const { data } = await supabase
-        .from("articles")
-        .select("*")
-        .eq("published", true)
-        .order("created_at", { ascending: false });
+      try {
+        const { data, error: queryError } = await supabase
+          .from("articles")
+          .select("*")
+          .eq("published", true)
+          .order("created_at", { ascending: false });
 
-      const allArticles = data || [];
-      const cats = Array.from(new Set(allArticles.map((a) => a.category))).sort();
+        if (queryError) throw queryError;
+        if (!data) throw new Error('Unable to load Stories right now.');
+        const cats = Array.from(new Set(data.map((a) => a.category)))
+          .filter((category): category is string => Boolean(category))
+          .sort();
 
-      setArticles(allArticles);
-      setCategories(cats);
-      setLoading(false);
+        setArticles(data);
+        setCategories(cats);
+        setError('');
+      } catch (fetchError) {
+        setError(fetchError instanceof Error ? fetchError.message : 'Unable to load Stories right now.');
+      } finally {
+        setLoading(false);
+      }
     }
 
     fetchData();
-  }, []);
+  }, [retryKey]);
 
   const filtered = activeCategory
     ? articles.filter((a) => a.category === activeCategory)
@@ -83,6 +95,13 @@ export default function StoriesPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          ) : error ? (
+            <div className="rounded-2xl border border-red-200 bg-red-50 px-6 py-12 text-center">
+              <p className="text-sm text-red-700">{error}</p>
+              <button type="button" onClick={() => { setLoading(true); setRetryKey((key) => key + 1); }} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#2C3E2D] px-4 py-2 text-sm font-medium text-white hover:bg-[#3D5940]">
+                <RefreshCw className="h-4 w-4" /> Try again
+              </button>
             </div>
           ) : (
             <StoryList articles={filtered} />

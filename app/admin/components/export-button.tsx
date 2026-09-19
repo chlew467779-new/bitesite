@@ -55,7 +55,7 @@ export default function ExportButton({ range }: ExportButtonProps) {
       <h3 className="text-lg font-semibold text-white mb-2">Export Analytics Data</h3>
       <p className="text-slate-400 text-sm mb-6 max-w-md mx-auto">
         Download a CSV file containing all analytics data for the selected date range.
-        Each row represents one merchant's daily aggregated metrics.
+        Each row represents one merchant&apos;s daily aggregated metrics.
       </p>
 
       <div className="flex items-center justify-center gap-3">

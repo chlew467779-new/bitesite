@@ -49,10 +49,6 @@ export default function StoriesManager({ onEdit, onNew }: StoriesManagerProps) {
   const [updating, setUpdating] = useState<string | null>(null);
   const [retryKey, setRetryKey] = useState(0);
 
-  useEffect(() => {
-    fetchArticles();
-  }, [token, retryKey]);
-
   const fetchArticles = async () => {
     if (!token) return;
     setLoading(true);
@@ -94,6 +90,10 @@ export default function StoriesManager({ onEdit, onNew }: StoriesManagerProps) {
       setDeleting(null);
     }
   };
+
+  useEffect(() => {
+    void fetchArticles();
+  }, [token, retryKey]);
 
   const handleStatusUpdate = async (article: Article, status: 'approved' | 'published' | 'rejected' | 'archived') => {
     if (!token) return;

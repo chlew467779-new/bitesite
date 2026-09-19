@@ -51,10 +51,6 @@ export default function MerchantManager() {
   const [editingMerchant, setEditingMerchant] = useState<Merchant | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  useEffect(() => {
-    fetchMerchants();
-  }, [refreshKey]);
-
   const fetchMerchants = async () => {
     try {
       setLoading(true);
@@ -74,6 +70,10 @@ export default function MerchantManager() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    void fetchMerchants();
+  }, [refreshKey, token]);
 
   const handleNew = () => {
     setEditingMerchant(null);
