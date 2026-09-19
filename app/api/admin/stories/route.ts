@@ -1,14 +1,9 @@
 /* bitesite/app/api/admin/stories/route.ts */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { verifyAdminToken } from '@/lib/admin-auth';
 import { revalidatePath } from 'next/cache';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 function verifyRequest(request: Request) {
   const token = request.headers.get('x-admin-token');

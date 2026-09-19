@@ -1,13 +1,8 @@
 /* bitesite/app/api/track/route.ts */
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { detectDevice } from '@/lib/device-detect';
 import { classifyReferrer } from '@/lib/analytics';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 function normalizeCity(rawCity: string): string {
   if (!rawCity || rawCity === 'Unknown') return 'Unknown';

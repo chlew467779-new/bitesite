@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "check:security": "node scripts/check-service-role-usage.mjs"
   },
   "dependencies": {
     "next": "16.2.11",
@@ -22,7 +24,8 @@
     "remark-breaks": "^4.0.0",
     "leaflet": "^1.9.4",
     "recharts": "^2.15.0",
-    "@tailwindcss/postcss": "^4.0.0"
+    "@tailwindcss/postcss": "^4.0.0",
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
     "typescript": "^5",
