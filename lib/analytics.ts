@@ -11,6 +11,7 @@ export const EventTypes = {
   PHONE_CLICK: 'phone_click',
   MENU_VIEW: 'menu_view',
   WEBSITE_CLICK: 'website_click',
+  EMAIL_CLICK: 'email_click',
 } as const;
 
 export type EventType = typeof EventTypes[keyof typeof EventTypes];

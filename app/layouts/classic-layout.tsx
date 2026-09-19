@@ -264,6 +264,7 @@ export function ClassicLayout({
                   {merchant.email && (
                     <a
                       href={`mailto:${merchant.email}`}
+                      onClick={() => trackEvent('email_click', { slug: merchant.slug, pageType: 'merchant' })}
                       className="flex items-center gap-3 text-amber-800 active:scale-[0.98] transition-transform"
                       style={{ WebkitTapHighlightColor: "transparent" }}
                     >

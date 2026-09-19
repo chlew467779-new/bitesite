@@ -26,6 +26,7 @@ const EVENT_LABELS: Record<string, string> = {
   phone_click: 'Phone',
   menu_view: 'Menu Views',
   website_click: 'Website',
+  email_click: 'Email',
 };
 
 const EVENT_COLORS: Record<string, string> = {
@@ -40,6 +41,7 @@ const EVENT_COLORS: Record<string, string> = {
   phone_click: '#06b6d4',
   menu_view: '#a78bfa',
   website_click: '#84cc16',
+  email_click: '#64748b',
 };
 
 export default function EventsChart({ range }: EventsChartProps) {

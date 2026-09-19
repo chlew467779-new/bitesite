@@ -127,7 +127,7 @@ export function ModernLayout({
                       <MessageSquare size={18} /><span className="text-sm font-medium">WhatsApp</span>
                     </a>
                   )}
-                  {merchant.email && <a href={`mailto:${merchant.email}`} className="flex items-center gap-3 text-slate-600 hover:text-slate-900 transition-colors"><Mail size={18} /><span className="text-sm">{merchant.email}</span></a>}
+                  {merchant.email && <a href={`mailto:${merchant.email}`} onClick={() => trackEvent('email_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-3 text-slate-600 hover:text-slate-900 transition-colors"><Mail size={18} /><span className="text-sm">{merchant.email}</span></a>}
                 </div>
                 <div className="space-y-2">
                   {hours && DAYS.map((day) => {
