@@ -82,15 +82,17 @@ export default function ContentServiceManager() {
 
   const dueCount = cycles.filter(cycle => cycle.effective_status === 'due').length;
   const overdueCount = cycles.filter(cycle => cycle.effective_status === 'overdue').length;
+  const inactiveCount = cycles.filter(cycle => cycle.effective_status === 'inactive').length;
   const openRequestCount = requests.filter(item => ['requested', 'paid', 'in_progress'].includes(item.status)).length;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3"><div><h1 className="text-2xl font-bold text-white">Content Service</h1><p className="text-slate-400 text-sm mt-1">Simple 60-day Story cadence and manual Assisted Content tracking.</p></div><button onClick={load} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-700 text-slate-300 text-sm"><RefreshCw className="w-4 h-4" />Refresh</button></div>
       {error && <div className="rounded-xl border border-red-800 bg-red-950/50 p-3 text-red-400 text-sm">{error}</div>}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
         <div className="rounded-xl border border-amber-800/60 bg-amber-950/20 p-4"><p className="text-xs text-amber-300">Due soon</p><p className="text-2xl font-semibold text-white mt-1">{dueCount}</p><p className="text-xs text-slate-500 mt-1">Next 14 days</p></div>
         <div className="rounded-xl border border-red-800/60 bg-red-950/20 p-4"><p className="text-xs text-red-300">Overdue</p><p className="text-2xl font-semibold text-white mt-1">{overdueCount}</p><p className="text-xs text-slate-500 mt-1">Needs follow-up</p></div>
+        <div className="rounded-xl border border-slate-700 bg-slate-900/70 p-4"><p className="text-xs text-slate-300">Inactive</p><p className="text-2xl font-semibold text-white mt-1">{inactiveCount}</p><p className="text-xs text-slate-500 mt-1">14+ days overdue</p></div>
         <div className="rounded-xl border border-sky-800/60 bg-sky-950/20 p-4"><p className="text-xs text-sky-300">Open service requests</p><p className="text-2xl font-semibold text-white mt-1">{openRequestCount}</p><p className="text-xs text-slate-500 mt-1">Requested, paid or in progress</p></div>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

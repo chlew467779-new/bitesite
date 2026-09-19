@@ -21,8 +21,10 @@ function cycleView(cycle: Record<string, unknown>) {
   const status = cycle.status;
   if (status !== 'active' || typeof cycle.due_at !== 'string') return { ...cycle, effective_status: status };
   const dueAt = new Date(cycle.due_at).getTime();
-  const age = Date.now() - dueAt;
-  const effective_status = age < 0 ? 'active' : age < 14 * 24 * 60 * 60 * 1000 ? 'due' : 'overdue';
+  const days = 24 * 60 * 60 * 1000;
+  const untilDue = dueAt - Date.now();
+  const overdueBy = Date.now() - dueAt;
+  const effective_status = untilDue > 14 * days ? 'active' : untilDue > 0 ? 'due' : overdueBy < 14 * days ? 'overdue' : 'inactive';
   return { ...cycle, effective_status };
 }
 
