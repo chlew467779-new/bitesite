@@ -223,7 +223,13 @@ export async function PUT(request: Request) {
       ? 'published'
       : data.editorial_status === 'pending_review'
         ? 'submitted'
-        : 'updated';
+        : data.editorial_status === 'approved'
+          ? 'approved'
+          : data.editorial_status === 'rejected'
+            ? 'rejected'
+            : data.editorial_status === 'archived'
+              ? 'archived'
+              : 'updated';
     await recordRevision(data, action, data.review_notes);
 
     // Revalidate immediately
