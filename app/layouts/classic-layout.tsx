@@ -221,6 +221,7 @@ export function ClassicLayout({
                     <a
                       href={`https://maps.google.com/?q=${encodeURIComponent(merchant.address)}`}
                       target="_blank"
+                                  onClick={() => trackEvent('directions_click', { slug: merchant.slug, pageType: 'merchant' })}
                       rel="noopener noreferrer"
                       className="flex items-start gap-3 text-amber-800 active:scale-[0.98] transition-transform"
                       style={{ WebkitTapHighlightColor: "transparent" }}
@@ -234,6 +235,7 @@ export function ClassicLayout({
                       href={`tel:${merchant.phone}`}
                       className="flex items-center gap-3 text-amber-800 active:scale-[0.98] transition-transform"
                       style={{ WebkitTapHighlightColor: "transparent" }}
+                                  onClick={() => trackEvent('phone_click', { slug: merchant.slug, pageType: 'merchant' })}
                     >
                       <Phone size={18} />
                       <span className="text-sm">{merchant.phone}</span>
