@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './auth-context';
 import { 
   Search, 
@@ -49,7 +49,7 @@ export default function StoriesManager({ onEdit, onNew }: StoriesManagerProps) {
   const [updating, setUpdating] = useState<string | null>(null);
   const [retryKey, setRetryKey] = useState(0);
 
-  const fetchArticles = async () => {
+  const fetchArticles = useCallback(async () => {
     if (!token) return;
     setLoading(true);
     setError('');
@@ -68,7 +68,7 @@ export default function StoriesManager({ onEdit, onNew }: StoriesManagerProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
   const handleDelete = async (slug: string) => {
     if (!confirm('Are you sure? This cannot be undone.')) return;
@@ -93,7 +93,7 @@ export default function StoriesManager({ onEdit, onNew }: StoriesManagerProps) {
 
   useEffect(() => {
     void fetchArticles();
-  }, [token, retryKey]);
+  }, [fetchArticles, retryKey]);
 
   const handleStatusUpdate = async (article: Article, status: 'approved' | 'published' | 'rejected' | 'archived') => {
     if (!token) return;

@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './auth-context';
 import { Search, Plus, Eye, EyeOff, Store, Loader2, ExternalLink, Pencil, Circle } from 'lucide-react';
 import MerchantForm from './merchant-form';
@@ -51,7 +51,7 @@ export default function MerchantManager() {
   const [editingMerchant, setEditingMerchant] = useState<Merchant | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const fetchMerchants = async () => {
+  const fetchMerchants = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
@@ -69,11 +69,11 @@ export default function MerchantManager() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
   useEffect(() => {
     void fetchMerchants();
-  }, [refreshKey, token]);
+  }, [fetchMerchants, refreshKey]);
 
   const handleNew = () => {
     setEditingMerchant(null);
