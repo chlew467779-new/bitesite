@@ -22,6 +22,7 @@ import DateRangePicker from './components/date-range-picker';
 import { SettingsPanel } from './components/settings-panel';
 import StoriesManager from './components/stories-manager';
 import StoryEditor from './components/story-editor';
+import StorySubmissionsManager from './components/story-submissions-manager';
 import MerchantManager from './components/merchant-manager';
 import { Lock, Loader2 } from 'lucide-react';
 
@@ -323,6 +324,11 @@ export default function AdminPage() {
             />
           )}
         </div>
+      )}
+
+      {/* Story Submissions */}
+      {activeTab === 'story-submissions' && (
+        <StorySubmissionsManager />
       )}
 
       {/* Merchant Manager */}
