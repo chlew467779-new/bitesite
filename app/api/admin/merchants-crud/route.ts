@@ -4,6 +4,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminToken } from '@/lib/admin-auth';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { revalidatePath } from 'next/cache';
+import { InvalidJsonBodyError, readBoundedJson, RequestBodyTooLargeError } from '@/lib/bounded-json';
+
+const MAX_MERCHANT_BODY_BYTES = 128 * 1024;
+
+function bodyErrorResponse(error: unknown) {
+  if (error instanceof RequestBodyTooLargeError) {
+    return NextResponse.json({ error: error.message }, { status: 413 });
+  }
+  if (error instanceof InvalidJsonBodyError) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+  return null;
+}
 
 function generateSlug(name: string): string {
   return name
@@ -105,7 +118,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body = await readBoundedJson(request, MAX_MERCHANT_BODY_BYTES);
 
     if (!body.name?.trim()) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
@@ -178,6 +191,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ merchant: data }, { status: 201 });
   } catch (error) {
+    const bodyError = bodyErrorResponse(error);
+    if (bodyError) return bodyError;
     console.error('Merchants CRUD POST error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
@@ -189,7 +204,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body = await readBoundedJson(request, MAX_MERCHANT_BODY_BYTES);
     const { id } = body;
 
     if (!id) {
@@ -272,6 +287,8 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ merchant: data });
   } catch (error) {
+    const bodyError = bodyErrorResponse(error);
+    if (bodyError) return bodyError;
     console.error('Merchants CRUD PUT error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
