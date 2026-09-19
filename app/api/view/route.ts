@@ -19,7 +19,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { slug } = await request.json();
+    const rawBody = await request.text();
+    if (new TextEncoder().encode(rawBody).byteLength > 1024) {
+      return NextResponse.json({ error: "Request too large" }, { status: 413 });
+    }
+    const { slug } = JSON.parse(rawBody || "{}");
     if (!slug || typeof slug !== "string" || !SLUG_PATTERN.test(slug)) {
       return NextResponse.json({ error: "Invalid slug" }, { status: 400 });
     }
