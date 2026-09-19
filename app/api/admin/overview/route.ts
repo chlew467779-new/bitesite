@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
       merchantCount: merchantCount || 0,
       todayViews,
       range,
-    });
+    }, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (err) {
     console.error('Overview API error:', err);
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });

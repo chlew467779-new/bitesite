@@ -5,13 +5,14 @@
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
 import { TierSections } from "@/app/components/sections/tier-sections";
-import { MapPin, Phone, Clock, Mail, Instagram, ArrowLeft, MessageSquare, Banknote, Smartphone, CreditCard } from "lucide-react";
+import { MapPin, Phone, Clock, Mail, Instagram, Globe, ArrowLeft, MessageSquare, Banknote, Smartphone, CreditCard } from "lucide-react";
 import Link from "next/link";
 import type { LayoutProps } from "@/types";
 import { mergeFeatures } from "@/types";
 import { getTodayKey, formatOperatingHours, DAYS } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
 import { trackEvent } from "@/lib/analytics";
+import { MenuViewTracker } from "@/components/sections/menu-view-tracker";
 
 export function ClassicLayout({
   merchant,
@@ -114,7 +115,8 @@ export function ClassicLayout({
       {/* Menu */}
       {resolvedFeatures.menu && products.length > 0 && (
         <FadeIn>
-          <section className="py-10 px-4 sm:px-6">
+          <MenuViewTracker slug={merchant.slug} />
+          <section id="menu-section" className="py-10 px-4 sm:px-6">
             <div className="max-w-4xl mx-auto">
               <h2 className="text-2xl font-bold text-amber-900 mb-6">Menu</h2>
               <div className="space-y-8">
@@ -222,6 +224,7 @@ export function ClassicLayout({
                       href={`https://maps.google.com/?q=${encodeURIComponent(merchant.address)}`}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={() => trackEvent('directions_click', { slug: merchant.slug, pageType: 'merchant' })}
                       className="flex items-start gap-3 text-amber-800 active:scale-[0.98] transition-transform"
                       style={{ WebkitTapHighlightColor: "transparent" }}
                     >
@@ -232,11 +235,17 @@ export function ClassicLayout({
                   {merchant.phone && (
                     <a
                       href={`tel:${merchant.phone}`}
+                      onClick={() => trackEvent('phone_click', { slug: merchant.slug, pageType: 'merchant' })}
                       className="flex items-center gap-3 text-amber-800 active:scale-[0.98] transition-transform"
                       style={{ WebkitTapHighlightColor: "transparent" }}
                     >
                       <Phone size={18} />
                       <span className="text-sm">{merchant.phone}</span>
+                    </a>
+                  )}
+                  {merchant.website && (
+                    <a href={merchant.website} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent('website_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-3 text-amber-800 active:scale-[0.98] transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}>
+                      <Globe size={18} /><span className="text-sm">Website</span>
                     </a>
                   )}
                   {merchant.whatsapp && (

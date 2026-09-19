@@ -10,9 +10,10 @@ import { ShareButtons } from "@/components/sections/share-buttons";
 import { mergeFeatures } from "@/types";
 import type { LayoutProps } from "@/types";
 import {
-  MapPin, Phone, Mail, Instagram, ArrowLeft, MessageSquare, Banknote, Smartphone, CreditCard,
+  MapPin, Phone, Mail, Instagram, Globe, ArrowLeft, MessageSquare, Banknote, Smartphone, CreditCard,
 } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
+import { MenuViewTracker } from "@/components/sections/menu-view-tracker";
 import Link from "next/link";
 import { getTodayKey, formatOperatingHours, DAYS } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
@@ -103,6 +104,7 @@ export function ElegantLayout({
       {/* Menu */}
       {resolvedFeatures.menu && products.length > 0 && (
         <FadeIn>
+          <MenuViewTracker slug={merchant.slug} />
           <section id="menu-section" className="py-10 px-4 sm:px-6">
             <div className="max-w-4xl mx-auto space-y-10">
               {categories.map((cat) => {
@@ -185,14 +187,19 @@ export function ElegantLayout({
               </div>
               <div className="mt-8 space-y-4">
                 {merchant.address && (
-                  <a href={`https://maps.google.com/?q=${encodeURIComponent(merchant.address)}`} target="_blank" rel="noopener noreferrer" className="flex items-start gap-3 text-slate-400 hover:text-slate-200 transition-colors">
+                  <a href={`https://maps.google.com/?q=${encodeURIComponent(merchant.address)}`} onClick={() => trackEvent('directions_click', { slug: merchant.slug, pageType: 'merchant' })} target="_blank" rel="noopener noreferrer" className="flex items-start gap-3 text-slate-400 hover:text-slate-200 transition-colors">
                     <MapPin size={18} className="mt-0.5 flex-shrink-0" />
                     <span className="text-sm">{merchant.address}</span>
                   </a>
                 )}
                 {merchant.phone && (
-                  <a href={`tel:${merchant.phone}`} className="flex items-center gap-3 text-slate-400 hover:text-slate-200 transition-colors">
+                  <a href={`tel:${merchant.phone}`} onClick={() => trackEvent('phone_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-3 text-slate-400 hover:text-slate-200 transition-colors">
                     <Phone size={18} /><span className="text-sm">{merchant.phone}</span>
+                  </a>
+                )}
+                {merchant.website && (
+                  <a href={merchant.website} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent('website_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-3 text-slate-400 hover:text-slate-200 transition-colors">
+                    <Globe size={18} /><span className="text-sm">Website</span>
                   </a>
                 )}
                 {merchant.whatsapp && (

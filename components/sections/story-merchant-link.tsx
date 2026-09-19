@@ -7,9 +7,10 @@ import { trackEvent } from '@/lib/analytics';
 
 interface StoryMerchantLinkProps {
   slug: string;
+  articleSlug: string;
 }
 
-export function StoryMerchantLink({ slug }: StoryMerchantLinkProps) {
+export function StoryMerchantLink({ slug, articleSlug }: StoryMerchantLinkProps) {
   const router = useRouter();
 
   return (
@@ -20,7 +21,11 @@ export function StoryMerchantLink({ slug }: StoryMerchantLinkProps) {
           onClick={async (e) => {
             e.preventDefault();
             // FIX: await trackEvent before navigating so the request completes
-            await trackEvent('story_to_merchant', { pageType: 'story', slug });
+            await trackEvent('story_to_merchant', {
+              pageType: 'story',
+              slug,
+              detail: articleSlug,
+            });
             router.push(`/store/${slug}`);
           }}
           className="inline-flex items-center gap-2 rounded-full bg-[#5A8F6E] px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-[#4A7A5E] active:scale-[0.98]"

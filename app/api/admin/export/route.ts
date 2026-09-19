@@ -77,7 +77,10 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({ data, range });
+    return NextResponse.json(
+      { data, range },
+      { headers: { 'Cache-Control': 'private, no-store' } },
+    );
   } catch (err) {
     console.error('Export API error:', err);
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });

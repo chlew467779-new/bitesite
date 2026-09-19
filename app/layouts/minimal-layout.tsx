@@ -9,8 +9,9 @@ import { ViewCountInline } from "@/components/sections/view-count-inline";
 import { ShareButtons } from "@/components/sections/share-buttons";
 import { mergeFeatures } from "@/types";
 import type { LayoutProps } from "@/types";
-import { MapPin, Phone, Instagram, ArrowLeft, MessageSquare, Banknote, Smartphone, CreditCard } from "lucide-react";
+import { MapPin, Phone, Instagram, Globe, ArrowLeft, MessageSquare, Banknote, Smartphone, CreditCard } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
+import { MenuViewTracker } from "@/components/sections/menu-view-tracker";
 import Link from "next/link";
 import { getTodayKey, formatOperatingHours, DAYS } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
@@ -58,7 +59,8 @@ export function MinimalLayout({
 
       {resolvedFeatures.menu && products.length > 0 && (
         <FadeIn>
-          <section className="py-8 px-4">
+          <MenuViewTracker slug={merchant.slug} />
+          <section id="menu-section" className="py-8 px-4">
             <div className="max-w-3xl mx-auto">
               <h2 className="text-sm font-medium tracking-widest uppercase text-stone-500 mb-6">Menu</h2>
               <div className="space-y-8">
@@ -112,8 +114,9 @@ export function MinimalLayout({
                 })}
               </div>
               <div className="mt-6 space-y-3 text-sm">
-                {merchant.address && <a href={`https://maps.google.com/?q=${encodeURIComponent(merchant.address)}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-stone-600"><MapPin size={16} />{merchant.address}</a>}
-                {merchant.phone && <a href={`tel:${merchant.phone}`} className="flex items-center gap-2 text-stone-600"><Phone size={16} />{merchant.phone}</a>}
+                {merchant.address && <a href={`https://maps.google.com/?q=${encodeURIComponent(merchant.address)}`} onClick={() => trackEvent('directions_click', { slug: merchant.slug, pageType: 'merchant' })} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-stone-600"><MapPin size={16} />{merchant.address}</a>}
+                {merchant.phone && <a href={`tel:${merchant.phone}`} onClick={() => trackEvent('phone_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-2 text-stone-600"><Phone size={16} />{merchant.phone}</a>}
+                {merchant.website && <a href={merchant.website} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent('website_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-2 text-stone-600"><Globe size={16} />Website</a>}
                 {merchant.whatsapp && (
                   <a
                     href={`https://wa.me/${merchant.whatsapp.replace(/\D/g, "")}`}

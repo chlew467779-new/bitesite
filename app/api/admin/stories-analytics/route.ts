@@ -99,7 +99,7 @@ export async function GET(request: NextRequest) {
       totalAllTimeViews: result.reduce((sum, r) => sum + r.totalViews, 0),
       totalConversions: result.reduce((sum, r) => sum + r.conversions, 0),
       range,
-    });
+    }, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (err) {
     console.error('Stories Analytics API error:', err);
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });

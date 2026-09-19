@@ -138,7 +138,7 @@ export default async function StoryPage({ params }: PageProps) {
         <StoryContent content={article.content} articleSlug={slug} theme={theme} />
 
         {article.merchant_slug && (
-          <StoryMerchantLink slug={article.merchant_slug} />
+          <StoryMerchantLink slug={article.merchant_slug} articleSlug={slug} />
         )}
 
         <StoryRelated currentSlug={slug} category={article.category} />

@@ -2,14 +2,39 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
+import { allowAnalyticsRequest, getClientIp, isDuplicateAnalyticsEvent } from "@/lib/analytics-rate-limit";
 
 const SLUG_PATTERN = /^[a-z0-9-]{1,200}$/;
 
 export async function POST(request: NextRequest) {
   try {
+    if (Number(request.headers.get("content-length") || 0) > 1024) {
+      return NextResponse.json({ error: "Request too large" }, { status: 413 });
+    }
+    const requestIp = getClientIp(request);
+    if (!allowAnalyticsRequest(`view:${requestIp}`)) {
+      return NextResponse.json(
+        { error: "Too many requests" },
+        { status: 429, headers: { "Retry-After": "60" } },
+      );
+    }
+
     const { slug } = await request.json();
     if (!slug || typeof slug !== "string" || !SLUG_PATTERN.test(slug)) {
       return NextResponse.json({ error: "Invalid slug" }, { status: 400 });
+    }
+
+    if (isDuplicateAnalyticsEvent(`view:${requestIp}:${slug}`)) {
+      return NextResponse.json({ success: true, deduplicated: true }, { status: 202 });
+    }
+
+    const { data: merchant } = await supabase
+      .from("merchants")
+      .select("slug")
+      .eq("slug", slug)
+      .maybeSingle();
+    if (!merchant) {
+      return NextResponse.json({ error: "Unknown merchant" }, { status: 400 });
     }
 
     const { error } = await supabase.rpc("increment_view_count", {

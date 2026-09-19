@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { detectDevice } from '@/lib/device-detect';
 import { classifyReferrer, EventTypes } from '@/lib/analytics';
+import { allowAnalyticsRequest, getClientIp, isDuplicateAnalyticsEvent } from '@/lib/analytics-rate-limit';
 
 const ALLOWED_EVENT_TYPES = new Set<string>(Object.values(EventTypes));
 const ALLOWED_PAGE_TYPES = new Set([
@@ -39,6 +40,17 @@ function normalizeCountry(rawCountry: string): string {
 
 export async function POST(request: NextRequest) {
   try {
+    if (Number(request.headers.get('content-length') || 0) > 4096) {
+      return NextResponse.json({ error: 'Request too large' }, { status: 413 });
+    }
+    const requestIp = getClientIp(request);
+    if (!allowAnalyticsRequest(`track:${requestIp}`)) {
+      return NextResponse.json(
+        { error: 'Too many requests' },
+        { status: 429, headers: { 'Retry-After': '60' } },
+      );
+    }
+
     // FIX: 兼容 sendBeacon 发送的 Blob 和 fetch 发送的 JSON
     let body;
     try {
@@ -72,8 +84,52 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid path' }, { status: 400 });
     }
 
+    // Page and menu exposures are noisy under reloads and React development
+    // remounts. Suppress only these passive events; real user actions remain
+    // countable even when repeated.
+    if ((eventType === EventTypes.PAGE_VIEW || eventType === EventTypes.MENU_VIEW)
+      && isDuplicateAnalyticsEvent(`${requestIp}:${eventType}:${pageType}:${slug || path}`)) {
+      return NextResponse.json({ success: true, deduplicated: true }, { status: 202 });
+    }
+
+    // Do not let the public ingest endpoint create analytics for arbitrary
+    // slugs. Story-to-merchant events carry the Story slug in eventDetail and
+    // the destination merchant slug in slug, so validate both sides.
+    if (pageType === 'merchant' && slug) {
+      const { data: merchant } = await supabase
+        .from('merchants')
+        .select('slug')
+        .eq('slug', slug)
+        .maybeSingle();
+      if (!merchant) {
+        return NextResponse.json({ error: 'Unknown merchant' }, { status: 400 });
+      }
+    }
+
+    if (pageType === 'story' && eventType === 'page_view' && slug) {
+      const { data: article } = await supabase
+        .from('articles')
+        .select('slug')
+        .eq('slug', slug)
+        .eq('published', true)
+        .maybeSingle();
+      if (!article) {
+        return NextResponse.json({ error: 'Unknown story' }, { status: 400 });
+      }
+    }
+
+    if (eventType === EventTypes.STORY_TO_MERCHANT && slug && eventDetail) {
+      const [{ data: merchant }, { data: article }] = await Promise.all([
+        supabase.from('merchants').select('slug').eq('slug', slug).maybeSingle(),
+        supabase.from('articles').select('slug').eq('slug', eventDetail).eq('published', true).maybeSingle(),
+      ]);
+      if (!merchant || !article) {
+        return NextResponse.json({ error: 'Invalid story destination' }, { status: 400 });
+      }
+    }
+
     // 获取 IP 和地理位置（Vercel headers）
-    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    const ip = requestIp;
     const rawCountry = request.headers.get('x-vercel-ip-country') || 'Unknown';
     const rawCity = request.headers.get('x-vercel-ip-city') || 'Unknown';
     
