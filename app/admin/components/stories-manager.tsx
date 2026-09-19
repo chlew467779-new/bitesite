@@ -11,6 +11,9 @@ import {
   Trash2, 
   Eye, 
   EyeOff,
+  CheckCircle2,
+  XCircle,
+  Archive,
   Loader2,
   AlertCircle,
   Clock,
@@ -42,6 +45,7 @@ export default function StoriesManager({ onEdit, onNew }: StoriesManagerProps) {
   const [filter, setFilter] = useState<EditorialFilter>('all');
   const [deleting, setDeleting] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [updating, setUpdating] = useState<string | null>(null);
 
   useEffect(() => {
     fetchArticles();
@@ -85,6 +89,28 @@ export default function StoriesManager({ onEdit, onNew }: StoriesManagerProps) {
       alert('Delete failed');
     } finally {
       setDeleting(null);
+    }
+  };
+
+  const handleStatusUpdate = async (article: Article, status: 'approved' | 'published' | 'rejected' | 'archived') => {
+    if (!token) return;
+    const label = status === 'published' ? 'publish' : status === 'rejected' ? 'reject' : status;
+    if (!window.confirm(`Are you sure you want to ${label} this Story?`)) return;
+    setUpdating(article.slug);
+    setError('');
+    try {
+      const res = await fetch('/api/admin/stories', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
+        body: JSON.stringify({ slug: article.slug, editorial_status: status, review_notes: status === 'rejected' ? 'Changes requested by editorial review.' : article.review_notes || null }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Status update failed');
+      setArticles(prev => prev.map(item => item.slug === article.slug ? data.article : item));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Status update failed');
+    } finally {
+      setUpdating(null);
     }
   };
 
@@ -252,6 +278,25 @@ export default function StoriesManager({ onEdit, onNew }: StoriesManagerProps) {
                         >
                           <Pencil className="w-4 h-4" />
                         </button>
+                        {(() => {
+                          const status = article.editorial_status || (article.published ? 'published' : 'draft');
+                          if (status === 'pending_review') {
+                            return (
+                              <>
+                                <button onClick={() => handleStatusUpdate(article, 'published')} disabled={updating === article.slug} className="p-1.5 rounded hover:bg-emerald-950 text-slate-400 hover:text-emerald-400 transition-colors disabled:opacity-50" title="Publish">
+                                  <CheckCircle2 className="w-4 h-4" />
+                                </button>
+                                <button onClick={() => handleStatusUpdate(article, 'rejected')} disabled={updating === article.slug} className="p-1.5 rounded hover:bg-red-950 text-slate-400 hover:text-red-400 transition-colors disabled:opacity-50" title="Request changes">
+                                  <XCircle className="w-4 h-4" />
+                                </button>
+                              </>
+                            );
+                          }
+                          if (status === 'published') {
+                            return <button onClick={() => handleStatusUpdate(article, 'archived')} disabled={updating === article.slug} className="p-1.5 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors disabled:opacity-50" title="Archive"><Archive className="w-4 h-4" /></button>;
+                          }
+                          return null;
+                        })()}
                         <button
                           onClick={() => handleDelete(article.slug)}
                           disabled={deleting === article.slug}
