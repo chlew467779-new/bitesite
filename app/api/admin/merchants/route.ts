@@ -31,103 +31,42 @@ export async function GET(request: NextRequest) {
   const { start, end } = getDateRange(range);
 
   try {
-    // 查询商家访问数据
-    const { data: viewData } = await supabase
-      .from('merchant_daily_views')
-      .select('slug, count, unique_ips')
-      .eq('event_type', 'page_view')
-      .eq('page_type', 'merchant')
-      .gte('view_date', start)
-      .lte('view_date', end);
+    const startDateTime = `${start}T00:00:00+08:00`;
+    const endDateTime = `${end}T23:59:59+08:00`;
 
-    // 查询 WhatsApp 点击
-    const { data: waData } = await supabase
-      .from('merchant_daily_views')
-      .select('slug, count')
-      .eq('event_type', 'whatsapp_click')
-      .gte('view_date', start)
-      .lte('view_date', end);
-
-    // 查询 Booking 提交
-    const { data: bookData } = await supabase
-      .from('merchant_daily_views')
-      .select('slug, count')
-      .eq('event_type', 'booking_submit')
-      .gte('view_date', start)
-      .lte('view_date', end);
-
-    // Order clicks are aggregated by event type. Platform detail remains in
-    // page_views until a second delivery platform requires a schema change.
-    const { data: orderClickData } = await supabase
-      .from('merchant_daily_views')
-      .select('slug, count')
-      .eq('event_type', 'merchant_order_click')
-      .gte('view_date', start)
-      .lte('view_date', end);
-
-    const { data: directionsData } = await supabase
-      .from('merchant_daily_views')
-      .select('slug, count')
-      .eq('event_type', 'directions_click')
-      .gte('view_date', start)
-      .lte('view_date', end);
-
-    const { data: phoneData } = await supabase
-      .from('merchant_daily_views')
-      .select('slug, count')
-      .eq('event_type', 'phone_click')
-      .gte('view_date', start)
-      .lte('view_date', end);
-
-    const { data: menuData } = await supabase
-      .from('merchant_daily_views')
-      .select('slug, count')
-      .eq('event_type', 'menu_view')
-      .eq('page_type', 'merchant')
-      .gte('view_date', start)
-      .lte('view_date', end);
-
-    const { data: websiteData } = await supabase
-      .from('merchant_daily_views')
-      .select('slug, count')
-      .eq('event_type', 'website_click')
-      .gte('view_date', start)
-      .lte('view_date', end);
-
-    const { data: emailData } = await supabase
-      .from('merchant_daily_views')
-      .select('slug, count')
-      .eq('event_type', 'email_click')
-      .gte('view_date', start)
-      .lte('view_date', end);
-
-    // Story slugs are stored in page_views; map them to merchants through the
-    // article relation and keep the result separate from merchant page views.
-    const { data: storyViewData } = await supabase
-      .from('merchant_daily_views')
-      .select('slug, count')
-      .eq('event_type', 'page_view')
-      .eq('page_type', 'story')
-      .gte('view_date', start)
-      .lte('view_date', end);
-
-    const { data: articlesWithMerchant } = await supabase
-      .from('articles')
-      .select('slug, merchant_slug')
-      .not('merchant_slug', 'is', null);
+    // These are independent read-only aggregates. Run them together so the
+    // dashboard does not wait for each metric's round trip in sequence.
+    const [
+      { data: viewData },
+      { data: waData },
+      { data: bookData },
+      { data: orderClickData },
+      { data: directionsData },
+      { data: phoneData },
+      { data: menuData },
+      { data: websiteData },
+      { data: emailData },
+      { data: storyViewData },
+      { data: articlesWithMerchant },
+      { data: merchantVisitorData },
+    ] = await Promise.all([
+      supabase.from('merchant_daily_views').select('slug, count, unique_ips').eq('event_type', 'page_view').eq('page_type', 'merchant').gte('view_date', start).lte('view_date', end),
+      supabase.from('merchant_daily_views').select('slug, count').eq('event_type', 'whatsapp_click').gte('view_date', start).lte('view_date', end),
+      supabase.from('merchant_daily_views').select('slug, count').eq('event_type', 'booking_submit').gte('view_date', start).lte('view_date', end),
+      supabase.from('merchant_daily_views').select('slug, count').eq('event_type', 'merchant_order_click').gte('view_date', start).lte('view_date', end),
+      supabase.from('merchant_daily_views').select('slug, count').eq('event_type', 'directions_click').gte('view_date', start).lte('view_date', end),
+      supabase.from('merchant_daily_views').select('slug, count').eq('event_type', 'phone_click').gte('view_date', start).lte('view_date', end),
+      supabase.from('merchant_daily_views').select('slug, count').eq('event_type', 'menu_view').eq('page_type', 'merchant').gte('view_date', start).lte('view_date', end),
+      supabase.from('merchant_daily_views').select('slug, count').eq('event_type', 'website_click').gte('view_date', start).lte('view_date', end),
+      supabase.from('merchant_daily_views').select('slug, count').eq('event_type', 'email_click').gte('view_date', start).lte('view_date', end),
+      supabase.from('merchant_daily_views').select('slug, count').eq('event_type', 'page_view').eq('page_type', 'story').gte('view_date', start).lte('view_date', end),
+      supabase.from('articles').select('slug, merchant_slug').not('merchant_slug', 'is', null),
+      supabase.from('page_views').select('slug, ip').eq('page_type', 'merchant').eq('event_type', 'page_view').gte('created_at', startDateTime).lte('created_at', endDateTime),
+    ]);
 
     // Aggregated unique_ips are split by device/location dimensions and must
     // not be summed across rows. Recompute distinct visitors per merchant from
     // the server-only raw event table instead.
-    const startDateTime = `${start}T00:00:00+08:00`;
-    const endDateTime = `${end}T23:59:59+08:00`;
-    const { data: merchantVisitorData } = await supabase
-      .from('page_views')
-      .select('slug, ip')
-      .eq('page_type', 'merchant')
-      .eq('event_type', 'page_view')
-      .gte('created_at', startDateTime)
-      .lte('created_at', endDateTime);
 
     const visitorIpsByMerchant = new Map<string, Set<string>>();
     merchantVisitorData?.forEach(row => {
