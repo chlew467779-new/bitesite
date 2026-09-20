@@ -18,7 +18,10 @@ begin
     if bucket.file_size_limit <> 5242880 then
       bad := bad || format(' [%s file size limit is %s, expected 5242880]', bucket.id, bucket.file_size_limit);
     end if;
-    if bucket.allowed_mime_types is distinct from expected_mime_types then
+    if not (
+      coalesce(bucket.allowed_mime_types, array[]::text[]) @> expected_mime_types
+      and expected_mime_types @> coalesce(bucket.allowed_mime_types, array[]::text[])
+    ) then
       bad := bad || format(' [%s MIME restrictions do not match the signed-upload APIs]', bucket.id);
     end if;
   end loop;
