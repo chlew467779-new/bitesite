@@ -31,7 +31,7 @@ import {
   type DayHours,
   type TimeSlot,
 } from '@/lib/hours';
-import { CUISINE_TYPES, AREAS, TAGS_PRESETS, PAYMENT_METHODS } from '@/lib/presets';
+import { AMENITY_TAGS, AREAS, CUISINE_TAGS, OCCASION_TAGS, PAYMENT_METHODS } from '@/lib/presets';
 import ImageUpload from './image-upload';
 
 interface MerchantFormProps {
@@ -42,9 +42,10 @@ interface MerchantFormProps {
     tagline?: string;
     description?: string;
     layout?: string;
-    cuisine_type?: string;
+    cuisine?: string[] | null;
+    amenities?: string[] | null;
+    occasion?: string[] | null;
     area?: string;
-    tags?: string[] | null;
     payment_methods?: string[] | null;
     address?: string;
     phone?: string;
@@ -167,9 +168,10 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
     tagline: '',
     description: '',
     layout: 'classic',
-    cuisine_type: '',
+    cuisine: [] as string[],
+    amenities: [] as string[],
+    occasion: [] as string[],
     area: '',
-    tags: '',
     payment_methods: '',
     address: '',
     phone: '',
@@ -219,36 +221,8 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
   const [logoError, setLogoError] = useState(false);
   const [coverError, setCoverError] = useState(false);
 
-  /* Tags custom input state */
-  const [tagInput, setTagInput] = useState('');
-
   /* Payment methods custom input state */
   const [paymentMethodInput, setPaymentMethodInput] = useState('');
-
-  /* Derived selected tags array */
-  const selectedTags = form.tags
-    ? form.tags.split(',').map((t) => t.trim()).filter(Boolean)
-    : [];
-
-  const toggleTag = (tag: string) => {
-    const exists = selectedTags.includes(tag);
-    const next = exists ? selectedTags.filter((t) => t !== tag) : [...selectedTags, tag];
-    updateField('tags', next.join(', '));
-  };
-
-  const addCustomTag = () => {
-    const raw = tagInput.trim();
-    if (!raw) return;
-    const newTags = raw.split(',').map((t) => t.trim()).filter(Boolean);
-    const combined = [...new Set([...selectedTags, ...newTags])];
-    updateField('tags', combined.join(', '));
-    setTagInput('');
-  };
-
-  const removeTag = (tag: string) => {
-    const next = selectedTags.filter((t) => t !== tag);
-    updateField('tags', next.join(', '));
-  };
 
   /* Derived selected payment methods array */
   const selectedPaymentMethods = form.payment_methods
@@ -285,9 +259,10 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
         tagline: merchant.tagline || '',
         description: merchant.description || '',
         layout: merchant.layout || 'classic',
-        cuisine_type: merchant.cuisine_type || '',
+        cuisine: merchant.cuisine || [],
+        amenities: merchant.amenities || [],
+        occasion: merchant.occasion || [],
         area: merchant.area || '',
-        tags: merchant.tags?.join(', ') || '',
         payment_methods: merchant.payment_methods?.join(', ') || '',
         address: merchant.address || '',
         phone: merchant.phone || '',
@@ -337,7 +312,6 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
 
       setLogoError(false);
       setCoverError(false);
-      setTagInput('');
       setPaymentMethodInput('');
     }
   }, [merchant]);
@@ -363,6 +337,19 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
       features: { ...prev.features, [key]: checked },
     }));
     setDirty(true);
+  };
+
+  const toggleControlledTag = (
+    field: 'cuisine' | 'amenities' | 'occasion',
+    tag: string,
+    max: number,
+  ) => {
+    const selected = form[field];
+    if (selected.includes(tag)) {
+      updateField(field, selected.filter((value) => value !== tag));
+      return;
+    }
+    if (selected.length < max) updateField(field, [...selected, tag]);
   };
 
   /* ── Hours slot helpers ── */
@@ -432,6 +419,9 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
       newErrors.slug = 'Slug can only contain lowercase letters, numbers, and hyphens';
     }
     if (!form.whatsapp.trim()) newErrors.whatsapp = 'WhatsApp is required';
+    if (form.cuisine.length > 3) newErrors.cuisine = 'Choose at most 3 cuisine tags';
+    if (form.amenities.length > 5) newErrors.amenities = 'Choose at most 5 amenity tags';
+    if (form.occasion.length > 3) newErrors.occasion = 'Choose at most 3 occasion tags';
     if (!isValidEmail(form.email)) newErrors.email = 'Enter a valid email address';
 
     const urlFields: Array<[keyof typeof form, string]> = [
@@ -461,7 +451,7 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
     setErrors(newErrors);
     const firstError = Object.keys(newErrors)[0];
     if (firstError) {
-      const errorTab = new Set(['name', 'slug', 'cuisine_type', 'area', 'tags', 'payment_methods']).has(firstError)
+      const errorTab = new Set(['name', 'slug', 'cuisine', 'amenities', 'occasion', 'area', 'payment_methods']).has(firstError)
         ? 0
         : new Set(['whatsapp', 'phone', 'email', 'website', 'instagram', 'facebook', 'grabfood_url', 'latitude', 'longitude']).has(firstError)
           ? 1
@@ -491,9 +481,10 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
       tagline: form.tagline || null,
       description: form.description || null,
       layout: form.layout,
-      cuisine_type: form.cuisine_type || null,
+      cuisine: form.cuisine,
+      amenities: form.amenities,
+      occasion: form.occasion,
       area: form.area || null,
-      tags: form.tags ? form.tags.split(',').map((t) => t.trim()).filter(Boolean) : null,
       payment_methods: form.payment_methods ? form.payment_methods.split(',').map((t) => t.trim()).filter(Boolean) : null,
       address: form.address || null,
       phone: form.phone || null,
@@ -764,146 +755,68 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
               </div>
             </div>
 
-            {/* Cuisine Type & Area */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Cuisine Type */}
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1.5">Cuisine Type</label>
-                <select
-                  value={CUISINE_TYPES.includes(form.cuisine_type as (typeof CUISINE_TYPES)[number]) ? form.cuisine_type : 'Other'}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val === 'Other') {
-                      updateField('cuisine_type', '');
-                    } else {
-                      updateField('cuisine_type', val);
-                    }
-                  }}
-                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white focus:border-amber-500 focus:outline-none transition-colors mb-2"
-                >
-                  <option value="" disabled>Select cuisine type...</option>
-                  {CUISINE_TYPES.map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                  <option value="Other">Other (custom)</option>
-                </select>
-                {(!form.cuisine_type || !CUISINE_TYPES.includes(form.cuisine_type as (typeof CUISINE_TYPES)[number])) && (
-                  <input
-                    type="text"
-                    value={form.cuisine_type}
-                    onChange={(e) => updateField('cuisine_type', e.target.value)}
-                    placeholder="Enter custom cuisine type"
-                    className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors"
-                  />
-                )}
-              </div>
-
-              {/* Area */}
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1.5">Area</label>
-                <select
-                  value={AREAS.includes(form.area as (typeof AREAS)[number]) ? form.area : 'Other'}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val === 'Other') {
-                      updateField('area', '');
-                    } else {
-                      updateField('area', val);
-                    }
-                  }}
-                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white focus:border-amber-500 focus:outline-none transition-colors mb-2"
-                >
-                  <option value="" disabled>Select area...</option>
-                  {AREAS.map((a) => (
-                    <option key={a} value={a}>{a}</option>
-                  ))}
-                  <option value="Other">Other (custom)</option>
-                </select>
-                {(!form.area || !AREAS.includes(form.area as (typeof AREAS)[number])) && (
-                  <input
-                    type="text"
-                    value={form.area}
-                    onChange={(e) => updateField('area', e.target.value)}
-                    placeholder="Enter custom area"
-                    className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors"
-                  />
-                )}
-              </div>
-            </div>
-
-            {/* Tags */}
+            {/* Area */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Tags</label>
-              
-              {/* Preset tag pills */}
-              <div className="flex flex-wrap gap-2 mb-3">
-                {TAGS_PRESETS.map((tag) => {
-                  const active = selectedTags.includes(tag);
-                  return (
-                    <button
-                      key={tag}
-                      type="button"
-                      onClick={() => toggleTag(tag)}
-                      className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                        active
-                          ? 'bg-amber-500/10 border-amber-500/30 text-amber-400'
-                          : 'bg-slate-950 border-slate-700 text-slate-400 hover:border-slate-600'
-                      }`}
-                    >
-                      {active && <Check className="w-3 h-3" />}
-                      {tag}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Custom tag input */}
-              <div className="flex gap-2">
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">Area</label>
+              <select
+                value={AREAS.includes(form.area as (typeof AREAS)[number]) ? form.area : 'Other'}
+                onChange={(e) => updateField('area', e.target.value === 'Other' ? '' : e.target.value)}
+                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white focus:border-amber-500 focus:outline-none transition-colors mb-2"
+              >
+                <option value="" disabled>Select area...</option>
+                {AREAS.map((a) => <option key={a} value={a}>{a}</option>)}
+                <option value="Other">Other (custom)</option>
+              </select>
+              {(!form.area || !AREAS.includes(form.area as (typeof AREAS)[number])) && (
                 <input
                   type="text"
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addCustomTag();
-                    }
-                  }}
-                  placeholder="Add custom tag (press Enter or click +)"
-                  className="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors"
+                  value={form.area}
+                  onChange={(e) => updateField('area', e.target.value)}
+                  placeholder="Enter custom area"
+                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors"
                 />
-                <button
-                  type="button"
-                  onClick={addCustomTag}
-                  className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors"
-                  title="Add tag"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Selected tags display */}
-              {selectedTags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {selectedTags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-500/10 border border-amber-500/20 rounded-full text-xs text-amber-400"
-                    >
-                      {tag}
-                      <button
-                        type="button"
-                        onClick={() => removeTag(tag)}
-                        className="hover:text-amber-300 transition-colors"
-                        title="Remove tag"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
               )}
             </div>
+
+            {([
+              { field: 'cuisine' as const, label: 'Cuisine', help: 'Choose up to 3', values: CUISINE_TAGS, max: 3 },
+              { field: 'amenities' as const, label: 'Amenities', help: 'Choose up to 5', values: AMENITY_TAGS, max: 5 },
+              { field: 'occasion' as const, label: 'Occasion', help: 'Choose up to 3', values: OCCASION_TAGS, max: 3 },
+            ]).map(({ field, label, help, values, max }) => (
+              <div key={field}>
+                <div className="flex items-center justify-between gap-3 mb-2">
+                  <label className="block text-sm font-medium text-slate-300">{label}</label>
+                  <span className={form[field].length >= max ? 'text-xs text-amber-400' : 'text-xs text-slate-500'}>
+                    {form[field].length >= max ? `Maximum ${max}` : `${form[field].length}/${max} · ${help}`}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {values.map((tag) => {
+                    const active = form[field].includes(tag);
+                    const disabled = !active && form[field].length >= max;
+                    return (
+                      <button
+                        key={tag}
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => toggleControlledTag(field, tag, max)}
+                        className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                          active
+                            ? 'bg-amber-500/10 border-amber-500/30 text-amber-400'
+                            : disabled
+                              ? 'bg-slate-950 border-slate-800 text-slate-700 cursor-not-allowed'
+                              : 'bg-slate-950 border-slate-700 text-slate-400 hover:border-slate-600'
+                        }`}
+                      >
+                        {active && <Check className="w-3 h-3" />}
+                        {tag}
+                      </button>
+                    );
+                  })}
+                </div>
+                {errors[field] && <p className="mt-2 text-xs text-red-400">{errors[field]}</p>}
+              </div>
+            ))}
 
             {/* Payment Methods */}
             <div>

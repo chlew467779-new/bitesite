@@ -5,6 +5,7 @@ import { verifyAdminToken } from '@/lib/admin-auth';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { revalidatePath } from 'next/cache';
 import { InvalidJsonBodyError, readBoundedJson, RequestBodyTooLargeError } from '@/lib/bounded-json';
+import { AMENITY_TAGS, CUISINE_TAGS, OCCASION_TAGS } from '@/lib/presets';
 
 const MAX_MERCHANT_BODY_BYTES = 128 * 1024;
 
@@ -33,7 +34,7 @@ function isValidSlug(slug: string): boolean {
 }
 
 const merchantTextFields = [
-  'name', 'slug', 'tagline', 'description', 'layout', 'cuisine_type', 'area',
+  'name', 'slug', 'tagline', 'description', 'layout', 'area',
   'address', 'phone', 'whatsapp', 'email', 'website', 'instagram', 'facebook',
   'logo_image', 'cover_image', 'menu_pdf_url', 'grabfood_url',
 ] as const;
@@ -43,7 +44,6 @@ const merchantTextLimits: Partial<Record<typeof merchantTextFields[number], numb
   slug: 200,
   tagline: 300,
   description: 10000,
-  cuisine_type: 100,
   area: 160,
   address: 500,
   phone: 40,
@@ -57,6 +57,20 @@ const merchantTextLimits: Partial<Record<typeof merchantTextFields[number], numb
   menu_pdf_url: 2048,
   grabfood_url: 2048,
 };
+
+const controlledTagFields = [
+  { field: 'cuisine', values: CUISINE_TAGS, max: 3 },
+  { field: 'amenities', values: AMENITY_TAGS, max: 5 },
+  { field: 'occasion', values: OCCASION_TAGS, max: 3 },
+] as const;
+
+function normalizeStringArray(value: unknown): string[] {
+  return Array.isArray(value) ? [...new Set(value)] as string[] : [];
+}
+
+function normalizeControlledTags(value: unknown, allowed: readonly string[]): string[] {
+  return normalizeStringArray(value).filter(item => allowed.includes(item));
+}
 
 function validateMerchantPayload(body: Record<string, unknown>, requireBaseFields: boolean): string | null {
   if (!body || typeof body !== 'object' || Array.isArray(body)) return 'Invalid request body';
@@ -104,6 +118,15 @@ function validateMerchantPayload(body: Record<string, unknown>, requireBaseField
     if (value !== undefined && value !== null && (!Array.isArray(value) || value.some(item => typeof item !== 'string'))) {
       return `${field} must be an array of strings`;
     }
+  }
+  for (const { field, values, max } of controlledTagFields) {
+    const value = body[field];
+    if (value === undefined || value === null) continue;
+    if (!Array.isArray(value) || value.some(item => typeof item !== 'string')) {
+      return `${field} must be an array of strings`;
+    }
+    const unique = normalizeControlledTags(value, values);
+    if (unique.length > max) return `${field} can contain at most ${max} tags`;
   }
   if (body.operating_hours !== undefined && body.operating_hours !== null && (typeof body.operating_hours !== 'object' || Array.isArray(body.operating_hours))) {
     return 'operating_hours must be an object';
@@ -227,9 +250,10 @@ export async function POST(request: NextRequest) {
       tagline: body.tagline?.trim() || null,
       description: body.description?.trim() || null,
       layout: body.layout || 'classic',
-      cuisine_type: body.cuisine_type?.trim() || null,
+      cuisine: normalizeControlledTags(body.cuisine, CUISINE_TAGS),
+      amenities: normalizeControlledTags(body.amenities, AMENITY_TAGS),
+      occasion: normalizeControlledTags(body.occasion, OCCASION_TAGS),
       area: body.area?.trim() || null,
-      tags: body.tags?.length ? body.tags : null,
       payment_methods: body.payment_methods?.length ? body.payment_methods : null,
       address: body.address?.trim() || null,
       phone: body.phone?.trim() || null,
@@ -319,9 +343,10 @@ export async function PUT(request: NextRequest) {
     if (body.tagline !== undefined) updateData.tagline = body.tagline?.trim() || null;
     if (body.description !== undefined) updateData.description = body.description?.trim() || null;
     if (body.layout !== undefined) updateData.layout = body.layout;
-    if (body.cuisine_type !== undefined) updateData.cuisine_type = body.cuisine_type?.trim() || null;
+    if (body.cuisine !== undefined) updateData.cuisine = normalizeControlledTags(body.cuisine, CUISINE_TAGS);
+    if (body.amenities !== undefined) updateData.amenities = normalizeControlledTags(body.amenities, AMENITY_TAGS);
+    if (body.occasion !== undefined) updateData.occasion = normalizeControlledTags(body.occasion, OCCASION_TAGS);
     if (body.area !== undefined) updateData.area = body.area?.trim() || null;
-    if (body.tags !== undefined) updateData.tags = body.tags?.length ? body.tags : null;
     if (body.payment_methods !== undefined) updateData.payment_methods = body.payment_methods?.length ? body.payment_methods : null;
     if (body.address !== undefined) updateData.address = body.address?.trim() || null;
     if (body.phone !== undefined) updateData.phone = body.phone?.trim() || null;

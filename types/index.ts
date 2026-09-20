@@ -64,6 +64,9 @@ export interface Merchant {
   platform_status?: 'DRAFT' | 'PENDING_REVIEW' | 'PUBLISHED' | 'SUSPENDED' | 'ARCHIVED' | string;
   business_status?: 'OPEN' | 'TEMPORARILY_CLOSED' | 'MOVED' | 'PERMANENTLY_CLOSED' | string;
   area: string | null;
+  cuisine: string[];
+  amenities: string[];
+  occasion: string[];
   tags: string[];
   payment_methods: string[];
   latitude: number | null;
