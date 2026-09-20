@@ -12,11 +12,11 @@ import { PageViewTracker } from "@/app/components/page-view-tracker";
 export const metadata: Metadata = {
   title: "Join BiteSite — Every Bite Tells a Story",
   description:
-    "Join BiteSite and let your restaurant's story be discovered. Get a stunning digital page for your restaurant. No app downloads, no commissions. Setup RM599 + RM149/month.",
+    "Join BiteSite's free partner programme. Get discovered by local diners, share regular restaurant Stories, and let BiteSite help amplify suitable updates on social media.",
   openGraph: {
     title: "Join BiteSite — Every Bite Tells a Story",
     description:
-      "Join BiteSite and let your restaurant's story be discovered. Get a stunning digital page for your restaurant. No app downloads, no commissions.",
+    "Join BiteSite for free, share your restaurant's story regularly, and reach more local diners.",
     type: "website",
   },
 };
@@ -28,10 +28,26 @@ export default function JoinUsPage() {
     mainEntity: [
       {
         "@type": "Question",
-        name: "Can I update my menu?",
+        name: "Is it really free?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Yes — monthly content updates are included in your plan. Just send us your new menu items, photos, or changes via WhatsApp and we will update your page within 48 hours.",
+          text: "Yes. There is no setup fee, monthly fee, or commission for the BiteSite partner programme. Partners agree to keep their listing useful by sharing Stories regularly.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "What do partners need to contribute?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Partners should share useful restaurant updates regularly, such as new menus, launches, offers, events, behind-the-scenes moments, or founder stories. Original information and image rights remain important.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Will BiteSite promote my Stories?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "BiteSite may reshare suitable Stories on our Facebook, Instagram, and other social channels. We will choose content that fits the channel and cannot guarantee that every Story will be reshared.",
         },
       },
       {
@@ -39,39 +55,23 @@ export default function JoinUsPage() {
         name: "Do I need to download an app?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Nope! Your customers simply open a link or scan a QR code. No app downloads, no sign-ups, no friction.",
+          text: "No. Customers simply open your BiteSite link. Partners can work with us through the web and WhatsApp.",
         },
       },
       {
         "@type": "Question",
-        name: "Any hidden cost?",
+        name: "Can I update my listing?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Zero hidden costs! You pay exactly RM599 one-time setup + RM149/month. No commission, no transaction fees, no surprises.",
+          text: "Yes. Merchants can update approved listing details from the Merchant dashboard. Name, address, slug, and business status changes go through a review request.",
         },
       },
       {
         "@type": "Question",
-        name: "Can I customize my restaurant page?",
+        name: "How do I join?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Absolutely! You can choose from 5 beautiful layout styles: Classic, Elegant, Minimal, Modern, and Rustic.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "How long does it take to go live?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Typically 3–5 business days after we receive your menu, photos, and business details.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "What if I want to cancel?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "No worries! You can cancel anytime with 30 days notice. There is no lock-in contract.",
+          text: "Send us a message on WhatsApp with your restaurant name, area, and best contact email. We will explain the next steps and invite you when ready.",
         },
       },
     ],
@@ -96,15 +96,14 @@ export default function JoinUsPage() {
             </h2>
             <ul className="space-y-4">
               {[
-                "Custom branded menu page",
-                "5 layout styles (classic / elegant / minimal / modern / rustic)",
-                "Photo gallery & video support",
-                "WhatsApp / Call CTA buttons",
-                "View count analytics",
-                "Monthly content updates",
-                "SEO-friendly page",
-                "Share buttons (WhatsApp / FB / IG)",
-                '"Open Now" badge',
+                "Free BiteSite restaurant listing",
+                "Custom profile with menu, photos, hours, and contact links",
+                "Story submission workflow for restaurant updates",
+                "Merchant dashboard to maintain approved details",
+                "View count analytics as the product grows",
+                "BiteSite editorial review and publishing",
+                "Possible reshares on Facebook, Instagram, and other channels",
+                "No setup fee, monthly fee, or commission",
               ].map((item, index) => (
                 <li
                   key={index}
