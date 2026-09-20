@@ -119,6 +119,20 @@ For every code change:
 
 If tests cannot be run, say exactly why.
 
+The standard local/PR verification command is:
+
+```text
+npm run verify
+```
+
+Production build verification is separate because Next.js may need network access to fetch configured Google Fonts:
+
+```text
+npm run build
+```
+
+The repository CI workflow runs both verification and build for every pull request.
+
 ## 9. Change reporting
 
 At the end of a coding task, report:
