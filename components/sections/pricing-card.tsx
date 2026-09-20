@@ -3,6 +3,7 @@
 import { FadeIn } from "@/app/components/animations";
 import { MessageCircle } from "lucide-react";
 import { BITESITE_WHATSAPP_URL } from "@/lib/whatsapp";
+import { trackEvent } from "@/lib/analytics";
 
 export function PricingCard() {
   return (
@@ -35,6 +36,7 @@ export function PricingCard() {
               href={BITESITE_WHATSAPP_URL}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => trackEvent("whatsapp_click", { pageType: "join_us", detail: "pricing_cta" })}
               className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#5A8F6E] px-6 py-3.5 text-sm font-semibold text-white transition-all hover:bg-[#4A7A5E] active:scale-[0.98]"
               style={{ WebkitTapHighlightColor: "transparent" }}
             >

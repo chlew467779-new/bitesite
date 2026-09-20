@@ -25,6 +25,7 @@ import {
 import { StoryHero } from '@/components/sections/story-hero';
 import { StoryContent } from '@/components/sections/story-content';
 import type { Article } from '@/types';
+import ImageUpload from './image-upload';
 
 type EditorialStatus = NonNullable<Article['editorial_status']>;
 
@@ -75,11 +76,16 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
   const [showDraftRestore, setShowDraftRestore] = useState(false);
   const [draftData, setDraftData] = useState<Record<string, unknown> | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
+  const [generatingDraft, setGeneratingDraft] = useState(false);
+  const [aiGenerated, setAiGenerated] = useState(false);
+  const [articleId, setArticleId] = useState<string | null>(null);
+  const [dirty, setDirty] = useState(false);
 
   const [form, setForm] = useState({
     title: '',
     slug: '',
     excerpt: '',
+    end_at: '',
     content: '',
     cover_image: '',
     category: '',
@@ -149,10 +155,12 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
           const data = await res.json();
           if (data.article) {
             const a = data.article;
+            setArticleId(a.id || null);
             setForm({
               title: a.title || '',
               slug: a.slug || '',
               excerpt: a.excerpt || '',
+              end_at: a.end_at ? a.end_at.slice(0, 16) : '',
               content: a.content || '',
               cover_image: a.cover_image || '',
               category: a.category || '',
@@ -196,9 +204,20 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
     };
   }, [form, slug, loading]);
 
+  useEffect(() => {
+    if (!dirty) return;
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [dirty]);
+
   const updateField = (field: string, value: string | boolean) => {
     setForm(prev => ({ ...prev, [field]: value }));
     setSaved(false);
+    setDirty(true);
   };
 
   // Auto-generate slug (consistent with backend, no toLowerCase)
@@ -218,6 +237,7 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
     if (draftData?.form) {
       setForm(draftData.form as typeof form);
       setShowDraftRestore(false);
+      setDirty(true);
     }
   };
 
@@ -237,6 +257,7 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
     const replacement = before + selected + after;
     const newContent = text.substring(0, start) + replacement + text.substring(end);
     setForm(prev => ({ ...prev, content: newContent }));
+    setDirty(true);
     setTimeout(() => {
       textarea.focus();
       const newCursor = start + before.length + selected.length;
@@ -269,14 +290,42 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
     }
   };
 
+  const validateBeforeSave = (requestedStatus: EditorialStatus): string | null => {
+    if (!form.title.trim()) return 'Title is required.';
+    if (!form.content.trim()) return 'Story content is required.';
+    if (!form.category.trim()) return 'Category is required.';
+    if (!form.slug.trim()) return 'Slug is required.';
+    if (form.slug.length > 100) return 'Slug must be 100 characters or fewer.';
+    if (/[\\/\s]/.test(form.slug)) return 'Slug cannot contain spaces or slashes.';
+    if (form.cover_image.trim()) {
+      try {
+        const imageUrl = new URL(form.cover_image.trim());
+        if (imageUrl.protocol !== 'http:' && imageUrl.protocol !== 'https:') {
+          return 'Cover image must use an http:// or https:// URL.';
+        }
+      } catch {
+        return 'Cover image must be a valid URL.';
+      }
+    }
+    if (requestedStatus === 'pending_review' && !form.rights_declared) {
+      return 'Declare image and content rights before submitting for review.';
+    }
+    return null;
+  };
+
   const handleSave = async (publish: boolean, requestedStatus?: EditorialStatus) => {
     if (!token) return;
+    const editorialStatus = requestedStatus || (publish ? 'published' : 'draft');
+    const validationError = validateBeforeSave(editorialStatus);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
     setSaving(true);
     setError('');
     setSaved(false);
 
     try {
-      const editorialStatus = requestedStatus || (publish ? 'published' : 'draft');
       const payload = {
         ...form,
         published: publish,
@@ -299,6 +348,7 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
       if (!res.ok) throw new Error(data.error || 'Save failed');
 
       localStorage.removeItem(getDraftKey(slug));
+      setDirty(false);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
       onSaved();
@@ -307,6 +357,34 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
     } finally {
       setSaving(false);
     }
+  };
+
+  const generateAiDraft = async () => {
+    if (!token || !form.title.trim()) {
+      setError('Add a title before generating an AI draft.');
+      return;
+    }
+    setGeneratingDraft(true);
+    setError('');
+    try {
+      const res = await fetch('/api/admin/ai-draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
+        body: JSON.stringify({ article_id: articleId, title: form.title, facts: { excerpt: form.excerpt, content: form.content, merchant_slug: form.merchant_slug } }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'AI not available, please edit manually');
+      setForm((current) => ({ ...current, title: data.draft.title, excerpt: data.draft.excerpt, content: data.draft.content }));
+      setAiGenerated(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'AI not available, please edit manually');
+    } finally {
+      setGeneratingDraft(false);
+    }
+  };
+  const handleBack = () => {
+    if (dirty && !window.confirm('You have unsaved changes. Leave without saving?')) return;
+    onBack();
   };
 
   const previewArticle: Article = {
@@ -329,6 +407,28 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
 
   const theme = bgThemes.find(t => t.value === form.background_style) || bgThemes[0];
   const wordCount = countWords(form.content);
+  const copyChecks = [
+    {
+      label: 'Title is specific',
+      ok: form.title.trim().length >= 12 && form.title.trim().length <= 80,
+      hint: 'Aim for 12–80 characters.',
+    },
+    {
+      label: 'Excerpt is useful',
+      ok: form.excerpt.trim().length >= 40 && form.excerpt.trim().length <= 220,
+      hint: 'Add a 40–220 character summary for cards and SEO.',
+    },
+    {
+      label: 'Story has enough detail',
+      ok: wordCount >= 80,
+      hint: 'Aim for at least 80 words so readers get useful context.',
+    },
+    {
+      label: 'Cover image is ready',
+      ok: Boolean(form.cover_image.trim()),
+      hint: 'A cover image improves Story discovery and sharing.',
+    },
+  ];
 
   if (loading) {
     return (
@@ -343,7 +443,7 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 shrink-0">
         <button
-          onClick={onBack}
+          onClick={handleBack}
           className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-200 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -360,6 +460,9 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
               <CheckCircle2 className="w-3.5 h-3.5" /> Saved
           </span>
           )}
+          <button onClick={generateAiDraft} disabled={generatingDraft || saving} className="inline-flex items-center gap-1.5 rounded-lg border border-violet-700/60 px-3 py-2 text-sm text-violet-300 hover:bg-violet-950/40 disabled:opacity-50">
+            {generatingDraft ? <Loader2 className="w-4 h-4 animate-spin" /> : null}{generatingDraft ? 'Generating…' : 'Generate AI Draft'}
+          </button>
           <button
             onClick={() => handleSave(false, 'draft')}
             disabled={saving}
@@ -408,6 +511,35 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
           {error}
         </div>
       )}
+      {aiGenerated && (
+        <div className="rounded-xl border border-violet-700/50 bg-violet-950/30 p-3 text-sm text-violet-200 mb-4 shrink-0">AI Generated — requires editorial review before publishing.</div>
+      )}
+
+      {/* Lightweight editorial quality guardrails. These keep AI-assisted or manually written copy reviewable. */}
+      <div className="mb-4 shrink-0 rounded-xl border border-slate-800 bg-slate-900/60 p-3">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 className="text-sm font-medium text-slate-200">Copy quality check</h2>
+            <p className="text-xs text-slate-500">Helpful guidance only — editors still approve every Story.</p>
+          </div>
+          <span className="text-xs text-slate-500">{wordCount} words</span>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {copyChecks.map((check) => (
+            <div key={check.label} className="flex items-start gap-2 rounded-lg bg-slate-950/60 px-2.5 py-2">
+              {check.ok ? (
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
+              ) : (
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+              )}
+              <div>
+                <p className={`text-xs font-medium ${check.ok ? 'text-emerald-300' : 'text-amber-300'}`}>{check.label}</p>
+                {!check.ok && <p className="mt-0.5 text-[11px] leading-snug text-slate-500">{check.hint}</p>}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* Main Editor + Preview */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1 min-h-0">
@@ -450,6 +582,12 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
             />
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-1.5">Promotion end (optional)</label>
+            <input type="datetime-local" value={form.end_at} onChange={(e) => updateField('end_at', e.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-200 focus:border-amber-500 focus:outline-none" />
+            <p className="text-xs text-slate-500 mt-1">After this time the Story remains published but shows an ended badge.</p>
+          </div>
+
           {/* Cover Image with Preview */}
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-1.5">Cover Image URL</label>
@@ -475,6 +613,7 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
                 <p className="hidden text-xs text-red-400 mt-1">Failed to load image. Check the URL.</p>
               </div>
             )}
+            <div className="mt-3"><ImageUpload kind="story" value={form.cover_image} onChange={(value) => updateField('cover_image', value)} label="Or upload Story cover" help="JPG, PNG, or WebP; compressed to 1200px and max 5MB." /></div>
           </div>
 
           {/* Category (with datalist) & Author */}

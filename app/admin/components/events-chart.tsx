@@ -21,6 +21,12 @@ const EVENT_LABELS: Record<string, string> = {
   search: 'Searches',
   map_marker_click: 'Map Clicks',
   story_to_merchant: 'Story Clicks',
+  merchant_order_click: 'GrabFood / Order Clicks',
+  directions_click: 'Directions',
+  phone_click: 'Phone',
+  menu_view: 'Menu Views',
+  website_click: 'Website',
+  email_click: 'Email',
 };
 
 const EVENT_COLORS: Record<string, string> = {
@@ -30,6 +36,12 @@ const EVENT_COLORS: Record<string, string> = {
   search: '#8b5cf6',
   map_marker_click: '#ec4899',
   story_to_merchant: '#ef4444',
+  merchant_order_click: '#14b8a6',
+  directions_click: '#f97316',
+  phone_click: '#06b6d4',
+  menu_view: '#a78bfa',
+  website_click: '#84cc16',
+  email_click: '#64748b',
 };
 
 export default function EventsChart({ range }: EventsChartProps) {

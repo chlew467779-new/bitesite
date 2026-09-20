@@ -3,6 +3,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { verifyAdminToken } from '@/lib/admin-auth';
+import { InvalidJsonBodyError, readBoundedJson, RequestBodyTooLargeError } from '@/lib/bounded-json';
+
+const MAX_CONTENT_SERVICE_BODY_BYTES = 64 * 1024;
+
+function bodyErrorResponse(error: unknown) {
+  if (error instanceof RequestBodyTooLargeError) return NextResponse.json({ error: error.message }, { status: 413 });
+  if (error instanceof InvalidJsonBodyError) return NextResponse.json({ error: error.message }, { status: 400 });
+  return null;
+}
 
 const cycleStatuses = ['active', 'due', 'overdue', 'completed', 'inactive'] as const;
 const requestStatuses = ['requested', 'paid', 'in_progress', 'completed', 'cancelled'] as const;
@@ -56,7 +65,7 @@ export async function POST(request: Request) {
   const authError = denied(request);
   if (authError) return authError;
   try {
-    const body = await request.json();
+    const body = await readBoundedJson(request, MAX_CONTENT_SERVICE_BODY_BYTES);
     if (!body.merchant_slug || typeof body.merchant_slug !== 'string') return NextResponse.json({ error: 'merchant_slug is required' }, { status: 400 });
     const type = body.type || 'cycle';
     if (type === 'cycle') {
@@ -84,7 +93,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ request: data, success: true }, { status: 201 });
     }
     return NextResponse.json({ error: 'Invalid type' }, { status: 400 });
-  } catch {
+  } catch (error) {
+    const bodyError = bodyErrorResponse(error);
+    if (bodyError) return bodyError;
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
 }
@@ -93,7 +104,7 @@ export async function PATCH(request: Request) {
   const authError = denied(request);
   if (authError) return authError;
   try {
-    const body = await request.json();
+    const body = await readBoundedJson(request, MAX_CONTENT_SERVICE_BODY_BYTES);
     if (!body.id || !body.type || !body.status) return NextResponse.json({ error: 'id, type and status are required' }, { status: 400 });
     const table = body.type === 'cycle' ? 'merchant_content_cycles' : body.type === 'assisted_request' ? 'assisted_content_requests' : null;
     const statuses = body.type === 'cycle' ? cycleStatuses : body.type === 'assisted_request' ? requestStatuses : null;
@@ -116,7 +127,9 @@ export async function PATCH(request: Request) {
       if (cycleError) console.error('Assisted content cycle completion error:', cycleError);
     }
     return NextResponse.json({ [body.type === 'cycle' ? 'cycle' : 'request']: body.type === 'cycle' ? cycleView(data) : data, success: true });
-  } catch {
+  } catch (error) {
+    const bodyError = bodyErrorResponse(error);
+    if (bodyError) return bodyError;
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
 }

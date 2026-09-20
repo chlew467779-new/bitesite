@@ -5,6 +5,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Check, Copy, MessageCircle, Facebook, Twitter, Instagram, X, Share2 } from "lucide-react";
 import { trackEvent } from '@/lib/analytics';
+import { getSiteUrl } from '@/lib/site-url';
 
 interface ShareMenuProps {
   slug: string;
@@ -15,7 +16,7 @@ export function ShareMenu({ slug, name }: ShareMenuProps) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const url = `https://bitesite-pied.vercel.app/store/${slug}`;
+  const url = `${getSiteUrl()}/store/${slug}`;
   const encodedUrl = encodeURIComponent(url);
   const encodedName = encodeURIComponent(`Check out ${name} on BiteSite!`);
 

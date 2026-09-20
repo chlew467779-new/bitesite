@@ -3,6 +3,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { verifyAdminToken } from '@/lib/admin-auth';
+import { InvalidJsonBodyError, readBoundedJson, RequestBodyTooLargeError } from '@/lib/bounded-json';
+
+const MAX_SUBMISSION_BODY_BYTES = 512 * 1024;
 
 const channels = ['self_service_form', 'admin_relayed'] as const;
 const statuses = ['draft', 'pending_review', 'approved', 'rejected', 'archived', 'converted'] as const;
@@ -60,7 +63,7 @@ export async function POST(request: Request) {
   if (denied) return denied;
 
   try {
-    const body = await request.json();
+    const body = await readBoundedJson(request, MAX_SUBMISSION_BODY_BYTES);
     const channel: Channel = validEnum(body.channel, channels) ? body.channel : 'admin_relayed';
     const status: Status = validEnum(body.status, statuses) ? body.status : 'draft';
     if (!body.title || !body.content) return NextResponse.json({ error: 'title and content are required' }, { status: 400 });
@@ -92,9 +95,18 @@ export async function POST(request: Request) {
       submitted_at: status === 'pending_review' ? now : null,
       updated_at: now,
     }).select().single();
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      if (error.code === '23505' && status === 'pending_review') return NextResponse.json({ error: 'This merchant already has a Story awaiting review' }, { status: 409 });
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
     return NextResponse.json({ submission: data, success: true }, { status: 201 });
-  } catch {
+  } catch (error) {
+    if (error instanceof RequestBodyTooLargeError) {
+      return NextResponse.json({ error: error.message }, { status: 413 });
+    }
+    if (error instanceof InvalidJsonBodyError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
 }
@@ -104,7 +116,7 @@ export async function PATCH(request: Request) {
   if (denied) return denied;
 
   try {
-    const body = await request.json();
+    const body = await readBoundedJson(request, MAX_SUBMISSION_BODY_BYTES);
     if (!body.id || !validEnum(body.status, statuses)) return NextResponse.json({ error: 'id and valid status are required' }, { status: 400 });
     if (body.status === 'pending_review' && body.rights_declared !== true) return NextResponse.json({ error: 'Rights declaration is required before submission' }, { status: 400 });
     const updateData: Record<string, unknown> = { status: body.status, updated_at: new Date().toISOString() };
@@ -168,8 +180,26 @@ export async function PATCH(request: Request) {
     }
     const { data, error } = await supabase.from('story_submissions').update(updateData).eq('id', body.id).select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (data.article_id) {
+      const editorialStatus = body.status === 'approved' ? 'approved' : body.status === 'rejected' ? 'rejected' : body.status === 'draft' ? 'draft' : null;
+      if (editorialStatus) {
+        const { data: article, error: articleError } = await supabase.from('articles')
+          .update({ editorial_status: editorialStatus, review_notes: body.review_notes || null, reviewed_at: new Date().toISOString(), reviewed_by: body.reviewed_by || 'admin' })
+          .eq('id', data.article_id).select().single();
+        if (articleError || !article) return NextResponse.json({ error: articleError?.message || 'Could not update linked article' }, { status: 500 });
+        const action = editorialStatus === 'approved' ? 'approved' : editorialStatus === 'rejected' ? 'rejected' : 'updated';
+        const { error: revisionError } = await supabase.from('article_revisions').insert({ article_id: article.id, action, snapshot: article, actor: body.reviewed_by || 'admin', note: body.review_notes || null });
+        if (revisionError) return NextResponse.json({ error: revisionError.message }, { status: 500 });
+      }
+    }
     return NextResponse.json({ submission: data, success: true });
-  } catch {
+  } catch (error) {
+    if (error instanceof RequestBodyTooLargeError) {
+      return NextResponse.json({ error: error.message }, { status: 413 });
+    }
+    if (error instanceof InvalidJsonBodyError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
 }

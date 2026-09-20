@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Save, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useAuth } from './auth-context';
 
@@ -33,11 +33,7 @@ export function SettingsPanel() {
   const [saved, setSaved] = useState<string | null>(null);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  const fetchSettings = async () => {
+  const fetchSettings = useCallback(async () => {
     try {
       const res = await fetch('/api/admin/settings', {
         headers: { 'x-admin-token': token || '' },
@@ -53,7 +49,11 @@ export function SettingsPanel() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    void fetchSettings();
+  }, [fetchSettings]);
 
   const updateSetting = async (key: string, value: string) => {
     setSaving(key);

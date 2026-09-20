@@ -6,6 +6,7 @@ import { DiamondSeparator } from "@/components/ui/diamond-separator";
 import { CuisineTag } from "@/components/ui/cuisine-tag";
 import type { Merchant } from "@/types";
 import type { StyleConfig } from "@/lib/styles";
+import { trackEvent } from "@/lib/analytics";
 
 interface BrandIntroProps {
   merchant: Merchant;
@@ -44,6 +45,7 @@ export function BrandIntro({ merchant, style }: BrandIntroProps) {
             href={`https://wa.me/${merchant.whatsapp.replace(/\D/g, "")}`}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => trackEvent("whatsapp_click", { slug: merchant.slug, pageType: "merchant" })}
             className="mt-8 inline-block rounded-full border-2 px-8 py-3 text-sm font-medium uppercase tracking-wider transition-all duration-300 hover:bg-[var(--hover-bg)] hover:text-[var(--hover-text)]"
             style={{ 
               borderColor: style.accent, 

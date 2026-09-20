@@ -9,8 +9,9 @@ import { ViewCountInline } from "@/components/sections/view-count-inline";
 import { ShareButtons } from "@/components/sections/share-buttons";
 import { mergeFeatures } from "@/types";
 import type { LayoutProps } from "@/types";
-import { MapPin, Phone, Mail, Instagram, ArrowLeft, MessageSquare, Clock, Banknote, Smartphone, CreditCard } from "lucide-react";
+import { MapPin, Phone, Mail, Instagram, Globe, ArrowLeft, MessageSquare, Clock, Banknote, Smartphone, CreditCard } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
+import { MenuViewTracker } from "@/components/sections/menu-view-tracker";
 import Link from "next/link";
 import { getTodayKey, formatOperatingHours, DAYS } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
@@ -21,6 +22,7 @@ export function ModernLayout({
   const resolvedFeatures = mergeFeatures(features);
   const today = getTodayKey();
   const hours = merchant.operating_hours as Record<string, string> | null;
+  const hasHours = Boolean(hours && Object.values(hours).some((value) => value?.trim()));
 
   return (
     <div className="min-h-screen bg-white text-slate-800">
@@ -38,16 +40,16 @@ export function ModernLayout({
             <div className="grid lg:grid-cols-2 gap-8 items-center">
               <div>
                 <div className="flex items-center gap-2 mb-4 flex-wrap">
-                  <span className="inline-block px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold">{merchant.cuisine_type}</span>
+                  {merchant.cuisine_type && <span className="inline-block px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold">{merchant.cuisine_type}</span>}
                   {typeof viewCount !== "undefined" && viewCount > 0 && (
                     <ViewCountInline count={viewCount} className="ml-0" />
                   )}
                 </div>
                 <h1 className="text-4xl lg:text-5xl font-bold text-slate-900 mb-4 leading-tight">{merchant.name}</h1>
-                <p className="text-slate-600 leading-relaxed">{merchant.description}</p>
-                {hours && (
+                {merchant.description && <p className="text-slate-600 leading-relaxed">{merchant.description}</p>}
+                {hasHours && (
                   <p className="mt-4 text-sm text-slate-500 flex items-center gap-2">
-                    <Clock size={16} /> Today: {formatOperatingHours(hours[today]) || "Closed"}
+                    <Clock size={16} /> Today: {formatOperatingHours(hours?.[today]) || "Closed"}
                   </p>
                 )}
               </div>
@@ -67,7 +69,8 @@ export function ModernLayout({
 
       {resolvedFeatures.menu && products.length > 0 && (
         <FadeIn>
-          <section className="py-12 px-4">
+          <MenuViewTracker slug={merchant.slug} />
+          <section id="menu-section" className="py-12 px-4">
             <div className="max-w-5xl mx-auto">
               <h2 className="text-2xl font-bold text-slate-900 mb-8">Menu</h2>
               <div className="grid md:grid-cols-2 gap-8">
@@ -111,8 +114,9 @@ export function ModernLayout({
               <h2 className="text-2xl font-bold text-slate-900 mb-6">Visit Us</h2>
               <div className="grid sm:grid-cols-2 gap-8">
                 <div className="space-y-4">
-                  {merchant.address && <a href={`https://maps.google.com/?q=${encodeURIComponent(merchant.address)}`} target="_blank" rel="noopener noreferrer" className="flex items-start gap-3 text-slate-600 hover:text-slate-900 transition-colors"><MapPin size={18} className="mt-0.5 flex-shrink-0" /><span className="text-sm">{merchant.address}</span></a>}
-                  {merchant.phone && <a href={`tel:${merchant.phone}`} className="flex items-center gap-3 text-slate-600 hover:text-slate-900 transition-colors"><Phone size={18} /><span className="text-sm">{merchant.phone}</span></a>}
+                  {merchant.address && <a href={`https://maps.google.com/?q=${encodeURIComponent(merchant.address)}`} onClick={() => trackEvent('directions_click', { slug: merchant.slug, pageType: 'merchant' })} target="_blank" rel="noopener noreferrer" className="flex items-start gap-3 text-slate-600 hover:text-slate-900 transition-colors"><MapPin size={18} className="mt-0.5 flex-shrink-0" /><span className="text-sm">{merchant.address}</span></a>}
+                  {merchant.phone && <a href={`tel:${merchant.phone}`} onClick={() => trackEvent('phone_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-3 text-slate-600 hover:text-slate-900 transition-colors"><Phone size={18} /><span className="text-sm">{merchant.phone}</span></a>}
+                  {merchant.website && <a href={merchant.website} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent('website_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-3 text-slate-600 hover:text-slate-900 transition-colors"><Globe size={18} /><span className="text-sm">Website</span></a>}
                   {merchant.whatsapp && (
                     <a
                       href={`https://wa.me/${merchant.whatsapp.replace(/\D/g, "")}`}
@@ -124,11 +128,11 @@ export function ModernLayout({
                       <MessageSquare size={18} /><span className="text-sm font-medium">WhatsApp</span>
                     </a>
                   )}
-                  {merchant.email && <a href={`mailto:${merchant.email}`} className="flex items-center gap-3 text-slate-600 hover:text-slate-900 transition-colors"><Mail size={18} /><span className="text-sm">{merchant.email}</span></a>}
+                  {merchant.email && <a href={`mailto:${merchant.email}`} onClick={() => trackEvent('email_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-3 text-slate-600 hover:text-slate-900 transition-colors"><Mail size={18} /><span className="text-sm">{merchant.email}</span></a>}
                 </div>
                 <div className="space-y-2">
-                  {hours && DAYS.map((day) => {
-                    const time = hours[day];
+                  {hasHours && DAYS.map((day) => {
+                    const time = hours?.[day];
                     if (!time) return null;
                     return (
                       <div key={day} className={`flex justify-between py-2 px-3 rounded-lg text-sm ${day === today ? "bg-white shadow-sm text-slate-900 font-medium" : "text-slate-500"}`}>

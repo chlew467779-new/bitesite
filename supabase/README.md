@@ -9,6 +9,7 @@ Only the SECURITY LOCKDOWN work lives here for now (branch `fix/security-lockdow
 | `migrations/20260919000100_security_lockdown.sql` | The lockdown. One transaction, self-checking. | Staging first; production only after CTO review + CH approval |
 | `tests/lockdown_assertions.sql` | Read-only catalog checks | Staging **and** production (after the migration) |
 | `tests/lockdown_behavior_tests.sql` | Switches to anon/authenticated/service_role and tries to read/write; rolled back at the end | **Staging only** |
+| `tests/analytics_aggregation_idempotence.sql` | Confirms rerunning the hourly analytics aggregate does not double-count buckets | **Staging only** |
 | `rollback/…STAGING_ONLY.sql` | Re-opens anonymous write access (guarded by a "NO → yes" switch) | Staging; production only as an approved emergency |
 
 Staging order: baseline → seed → (optional: run behaviour tests, expect them to FAIL = proves the tests bite) → migration → assertions → behaviour tests → `scripts/test-anon-lockdown.mjs` → `scripts/test-admin-flow.mjs`.

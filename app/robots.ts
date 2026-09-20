@@ -1,6 +1,9 @@
 /* bitesite/app/robots.ts */
 
 import { MetadataRoute } from "next";
+import { getSiteUrl } from "@/lib/site-url";
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://bitesite-pied.vercel.app';
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -8,6 +11,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
     },
-    sitemap: "https://bitesite-pied.vercel.app/sitemap.xml",
+    sitemap: `${getSiteUrl()}/sitemap.xml`,
   };
 }

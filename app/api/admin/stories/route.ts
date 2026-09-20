@@ -4,6 +4,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { verifyAdminToken } from '@/lib/admin-auth';
 import { revalidatePath } from 'next/cache';
+import { InvalidJsonBodyError, readBoundedJson, RequestBodyTooLargeError } from '@/lib/bounded-json';
+
+const MAX_STORY_BODY_BYTES = 512 * 1024;
+
+function bodyErrorResponse(error: unknown) {
+  if (error instanceof RequestBodyTooLargeError) {
+    return NextResponse.json({ error: error.message }, { status: 413 });
+  }
+  if (error instanceof InvalidJsonBodyError) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+  return null;
+}
 
 function verifyRequest(request: Request) {
   const token = request.headers.get('x-admin-token');
@@ -39,6 +52,12 @@ function normalizeEditorialStatus(value: unknown, published: boolean): Editorial
     return value as EditorialStatus;
   }
   return published ? 'published' : 'draft';
+}
+
+function normalizeEndAt(value: unknown): string | null | 'invalid' {
+  if (value === undefined || value === null || value === '') return null;
+  if (typeof value !== 'string' || !Number.isFinite(Date.parse(value))) return 'invalid';
+  return new Date(value).toISOString();
 }
 
 async function recordRevision(article: Record<string, unknown>, action: string, note?: unknown) {
@@ -95,7 +114,7 @@ export async function POST(request: Request) {
   if (authError) return authError;
 
   try {
-    const body = await request.json();
+    const body = await readBoundedJson(request, MAX_STORY_BODY_BYTES);
 
     if (!body.title || !body.content || !body.category) {
       return NextResponse.json(
@@ -114,6 +133,8 @@ export async function POST(request: Request) {
     const now = new Date().toISOString();
     const published = body.published ?? false;
     const editorialStatus = normalizeEditorialStatus(body.editorial_status, published);
+    const endAt = normalizeEndAt(body.end_at);
+    if (endAt === 'invalid') return NextResponse.json({ error: 'end_at must be a valid date' }, { status: 400 });
 
     if (editorialStatus === 'pending_review' && body.rights_declared !== true) {
       return NextResponse.json({ error: 'Rights declaration is required before submitting a Story for review' }, { status: 400 });
@@ -137,6 +158,7 @@ export async function POST(request: Request) {
         review_notes: body.review_notes || null,
         submitted_at: editorialStatus === 'pending_review' ? now : null,
         published_at: editorialStatus === 'published' ? now : null,
+        end_at: endAt,
         background_style: body.background_style || 'default',
         created_at: now,
         updated_at: now,
@@ -156,6 +178,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ article: data, success: true }, { status: 201 });
   } catch (err) {
+    const bodyError = bodyErrorResponse(err);
+    if (bodyError) return bodyError;
     console.error('Stories POST error:', err);
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
@@ -167,7 +191,7 @@ export async function PUT(request: Request) {
   if (authError) return authError;
 
   try {
-    const body = await request.json();
+    const body = await readBoundedJson(request, MAX_STORY_BODY_BYTES);
     const { id, slug, editorial_status, ...updates } = body;
 
     if (!id && !slug) {
@@ -177,10 +201,38 @@ export async function PUT(request: Request) {
       );
     }
 
+    const existingQuery = supabase.from('articles').select('*');
+    const { data: existingArticle, error: existingError } = id
+      ? await existingQuery.eq('id', id).maybeSingle()
+      : await existingQuery.eq('slug', slug).maybeSingle();
+    if (existingError || !existingArticle) {
+      return NextResponse.json({ error: 'Story not found' }, { status: 404 });
+    }
+
+    // Published Stories must pass through draft/review before material edits
+    // become public. A direct published update would silently replace content
+    // that has not gone through the editorial checks again.
+    const materialFields = ['title', 'excerpt', 'content', 'cover_image', 'category', 'tags', 'merchant_slug', 'background_style'];
+    const hasMaterialEdit = materialFields.some((field) => {
+      if (!(field in updates)) return false;
+      return JSON.stringify(existingArticle[field]) !== JSON.stringify(updates[field]);
+    });
+    if (existingArticle.published === true && hasMaterialEdit && editorial_status === 'published') {
+      return NextResponse.json(
+        { error: 'Published Story edits must be saved as draft or submitted for review before republishing' },
+        { status: 409 },
+      );
+    }
+
     const updateData: Record<string, unknown> = {
       ...updates,
       updated_at: new Date().toISOString(),
     };
+    if (updates.end_at !== undefined) {
+      const endAt = normalizeEndAt(updates.end_at);
+      if (endAt === 'invalid') return NextResponse.json({ error: 'end_at must be a valid date' }, { status: 400 });
+      updateData.end_at = endAt;
+    }
 
     if (editorial_status !== undefined || updates.published !== undefined) {
       const status = normalizeEditorialStatus(editorial_status, updates.published === true);
@@ -247,6 +299,8 @@ export async function PUT(request: Request) {
 
     return NextResponse.json({ article: data, success: true });
   } catch (err) {
+    const bodyError = bodyErrorResponse(err);
+    if (bodyError) return bodyError;
     console.error('Stories PUT error:', err);
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }

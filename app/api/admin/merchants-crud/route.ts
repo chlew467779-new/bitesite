@@ -4,6 +4,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminToken } from '@/lib/admin-auth';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { revalidatePath } from 'next/cache';
+import { InvalidJsonBodyError, readBoundedJson, RequestBodyTooLargeError } from '@/lib/bounded-json';
+
+const MAX_MERCHANT_BODY_BYTES = 128 * 1024;
+
+function bodyErrorResponse(error: unknown) {
+  if (error instanceof RequestBodyTooLargeError) {
+    return NextResponse.json({ error: error.message }, { status: 413 });
+  }
+  if (error instanceof InvalidJsonBodyError) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+  return null;
+}
 
 function generateSlug(name: string): string {
   return name
@@ -17,6 +30,89 @@ function generateSlug(name: string): string {
 
 function isValidSlug(slug: string): boolean {
   return /^[a-z0-9-]+$/.test(slug) && slug.length > 0;
+}
+
+const merchantTextFields = [
+  'name', 'slug', 'tagline', 'description', 'layout', 'cuisine_type', 'area',
+  'address', 'phone', 'whatsapp', 'email', 'website', 'instagram', 'facebook',
+  'logo_image', 'cover_image', 'menu_pdf_url', 'grabfood_url',
+] as const;
+
+const merchantTextLimits: Partial<Record<typeof merchantTextFields[number], number>> = {
+  name: 160,
+  slug: 200,
+  tagline: 300,
+  description: 10000,
+  cuisine_type: 100,
+  area: 160,
+  address: 500,
+  phone: 40,
+  whatsapp: 40,
+  email: 254,
+  website: 2048,
+  instagram: 2048,
+  facebook: 2048,
+  logo_image: 2048,
+  cover_image: 2048,
+  menu_pdf_url: 2048,
+  grabfood_url: 2048,
+};
+
+function validateMerchantPayload(body: Record<string, unknown>, requireBaseFields: boolean): string | null {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return 'Invalid request body';
+
+  for (const field of merchantTextFields) {
+    const value = body[field];
+    if (value !== undefined && value !== null && typeof value !== 'string') {
+      return `${field} must be a string`;
+    }
+    const maxLength = merchantTextLimits[field];
+    if (typeof value === 'string' && maxLength && value.length > maxLength) {
+      return `${field} must be ${maxLength} characters or fewer`;
+    }
+  }
+
+  if (requireBaseFields && (typeof body.name !== 'string' || !body.name.trim())) return 'Name is required';
+  if (requireBaseFields && (typeof body.whatsapp !== 'string' || !body.whatsapp.trim())) return 'WhatsApp is required';
+  if (!requireBaseFields && body.name !== undefined && (typeof body.name !== 'string' || !body.name.trim())) return 'Name is required';
+  if (!requireBaseFields && body.whatsapp !== undefined && (typeof body.whatsapp !== 'string' || !body.whatsapp.trim())) return 'WhatsApp is required';
+
+  if (typeof body.email === 'string' && body.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email.trim())) {
+    return 'Email must be valid';
+  }
+
+  for (const field of ['website', 'instagram', 'facebook', 'logo_image', 'cover_image', 'menu_pdf_url', 'grabfood_url']) {
+    const value = body[field];
+    if (typeof value !== 'string' || !value.trim()) continue;
+    try {
+      const url = new URL(value.trim());
+      if (url.protocol !== 'http:' && url.protocol !== 'https:') return `${field} must use http:// or https://`;
+    } catch {
+      return `${field} must be a valid URL`;
+    }
+  }
+
+  for (const [field, min, max] of [['latitude', -90, 90], ['longitude', -180, 180] ] as const) {
+    const value = body[field];
+    if (value === undefined || value === null || value === '') continue;
+    const numeric = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : Number.NaN;
+    if (!Number.isFinite(numeric) || numeric < min || numeric > max) return `${field} must be between ${min} and ${max}`;
+  }
+
+  for (const field of ['tags', 'payment_methods'] as const) {
+    const value = body[field];
+    if (value !== undefined && value !== null && (!Array.isArray(value) || value.some(item => typeof item !== 'string'))) {
+      return `${field} must be an array of strings`;
+    }
+  }
+  if (body.operating_hours !== undefined && body.operating_hours !== null && (typeof body.operating_hours !== 'object' || Array.isArray(body.operating_hours))) {
+    return 'operating_hours must be an object';
+  }
+  const platformStatuses = ['DRAFT', 'PENDING_REVIEW', 'PUBLISHED', 'SUSPENDED', 'ARCHIVED'];
+  const businessStatuses = ['OPEN', 'TEMPORARILY_CLOSED', 'MOVED', 'PERMANENTLY_CLOSED'];
+  if (body.platform_status !== undefined && !platformStatuses.includes(String(body.platform_status))) return 'Invalid platform_status';
+  if (body.business_status !== undefined && !businessStatuses.includes(String(body.business_status))) return 'Invalid business_status';
+  return null;
 }
 
 function normalizeGrabFoodUrl(value: unknown): string | null | 'invalid' {
@@ -105,14 +201,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body = await readBoundedJson(request, MAX_MERCHANT_BODY_BYTES);
 
-    if (!body.name?.trim()) {
-      return NextResponse.json({ error: 'Name is required' }, { status: 400 });
-    }
-    if (!body.whatsapp?.trim()) {
-      return NextResponse.json({ error: 'WhatsApp is required' }, { status: 400 });
-    }
+    const validationError = validateMerchantPayload(body, true);
+    if (validationError) return NextResponse.json({ error: validationError }, { status: 400 });
 
     const slug = body.slug?.trim() || generateSlug(body.name);
     if (!isValidSlug(slug)) {
@@ -153,6 +245,8 @@ export async function POST(request: NextRequest) {
       ) || null,
       is_published: body.is_published === true,
       status: body.status || 'active',
+      platform_status: body.platform_status || (body.is_published === true ? 'PUBLISHED' : 'DRAFT'),
+      business_status: body.business_status || (body.status === 'inactive' ? 'TEMPORARILY_CLOSED' : 'OPEN'),
       features: body.features || null,
       logo_image: body.logo_image?.trim() || null,
       cover_image: body.cover_image?.trim() || null,
@@ -178,6 +272,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ merchant: data }, { status: 201 });
   } catch (error) {
+    const bodyError = bodyErrorResponse(error);
+    if (bodyError) return bodyError;
     console.error('Merchants CRUD POST error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
@@ -189,19 +285,15 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body = await readBoundedJson(request, MAX_MERCHANT_BODY_BYTES);
     const { id } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'Merchant ID is required' }, { status: 400 });
     }
 
-    if (body.name !== undefined && !body.name.trim()) {
-      return NextResponse.json({ error: 'Name is required' }, { status: 400 });
-    }
-    if (body.whatsapp !== undefined && !body.whatsapp?.trim()) {
-      return NextResponse.json({ error: 'WhatsApp is required' }, { status: 400 });
-    }
+    const validationError = validateMerchantPayload(body, false);
+    if (validationError) return NextResponse.json({ error: validationError }, { status: 400 });
 
     const slug = body.slug?.trim();
     if (slug && !isValidSlug(slug)) {
@@ -247,6 +339,8 @@ export async function PUT(request: NextRequest) {
     }
     if (body.is_published !== undefined) updateData.is_published = body.is_published === true;
     if (body.status !== undefined) updateData.status = body.status;
+    if (body.platform_status !== undefined) updateData.platform_status = body.platform_status;
+    if (body.business_status !== undefined) updateData.business_status = body.business_status;
     if (body.features !== undefined) updateData.features = body.features;
     if (body.logo_image !== undefined) updateData.logo_image = body.logo_image?.trim() || null;
     if (body.cover_image !== undefined) updateData.cover_image = body.cover_image?.trim() || null;
@@ -272,6 +366,8 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ merchant: data });
   } catch (error) {
+    const bodyError = bodyErrorResponse(error);
+    if (bodyError) return bodyError;
     console.error('Merchants CRUD PUT error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

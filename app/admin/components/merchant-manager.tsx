@@ -2,9 +2,9 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './auth-context';
-import { Search, Plus, Eye, EyeOff, Store, Loader2, ExternalLink, Pencil, Circle } from 'lucide-react';
+import { Search, Plus, Eye, EyeOff, Store, Loader2, ExternalLink, Pencil, Circle, UserPlus } from 'lucide-react';
 import MerchantForm from './merchant-form';
 
 interface Merchant {
@@ -18,6 +18,8 @@ interface Merchant {
   cover_image?: string;
   is_published: boolean;
   status?: string;
+  platform_status?: string;
+  business_status?: string;
   created_at: string;
   updated_at: string;
   product_count: number;
@@ -50,12 +52,11 @@ export default function MerchantManager() {
   const [showForm, setShowForm] = useState(false);
   const [editingMerchant, setEditingMerchant] = useState<Merchant | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [linkingMerchant, setLinkingMerchant] = useState<Merchant | null>(null);
+  const [membershipEmail, setMembershipEmail] = useState('');
+  const [linking, setLinking] = useState(false);
 
-  useEffect(() => {
-    fetchMerchants();
-  }, [refreshKey]);
-
-  const fetchMerchants = async () => {
+  const fetchMerchants = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
@@ -73,7 +74,11 @@ export default function MerchantManager() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    void fetchMerchants();
+  }, [fetchMerchants, refreshKey]);
 
   const handleNew = () => {
     setEditingMerchant(null);
@@ -94,6 +99,27 @@ export default function MerchantManager() {
     setShowForm(false);
     setEditingMerchant(null);
     setRefreshKey((k) => k + 1);
+  };
+
+  const linkUser = async () => {
+    if (!token || !linkingMerchant || !membershipEmail.trim()) return;
+    setLinking(true);
+    setError('');
+    try {
+      const res = await fetch('/api/admin/merchant-memberships', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
+        body: JSON.stringify({ merchant_id: linkingMerchant.id, user_email: membershipEmail }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not link user');
+      setLinkingMerchant(null);
+      setMembershipEmail('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not link user');
+    } finally {
+      setLinking(false);
+    }
   };
 
   const filteredMerchants = merchants.filter((m) => {
@@ -160,6 +186,12 @@ export default function MerchantManager() {
 
   return (
     <div className="space-y-6">
+      {linkingMerchant && (
+        <div className="rounded-xl border border-amber-500/40 bg-slate-900 p-4 space-y-3">
+          <div className="flex items-center justify-between gap-3"><div><h2 className="font-semibold text-white">Link merchant user</h2><p className="text-xs text-slate-400">{linkingMerchant.name} — the user must have signed in with a magic link first.</p></div><button onClick={() => setLinkingMerchant(null)} className="text-slate-400 hover:text-white text-sm">Cancel</button></div>
+          <div className="flex flex-col sm:flex-row gap-2"><input type="email" value={membershipEmail} onChange={(event) => setMembershipEmail(event.target.value)} placeholder="owner@example.com" className="flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white" /><button onClick={linkUser} disabled={linking || !membershipEmail.trim()} className="rounded-lg bg-amber-500 px-3 py-2 text-sm font-medium text-slate-950 disabled:opacity-50">{linking ? 'Linking…' : 'Link user'}</button></div>
+        </div>
+      )}
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -268,7 +300,7 @@ export default function MerchantManager() {
                       <EyeOff className="w-3 h-3" /> Draft
                     </span>
                   )}
-                  {merchant.status === 'inactive' ? (
+                  {merchant.business_status === 'TEMPORARILY_CLOSED' || merchant.business_status === 'PERMANENTLY_CLOSED' || merchant.status === 'inactive' ? (
                     <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-500/10 text-red-400 text-xs rounded-full border border-red-500/20">
                       <Circle className="w-2 h-2 fill-current" /> Inactive
                     </span>
@@ -333,7 +365,7 @@ export default function MerchantManager() {
                   <span className="text-xs text-slate-500">
                     {getLayoutLabel(merchant.layout)} layout
                   </span>
-                  <a
+                  <div className="flex items-center gap-3"><button onClick={(event) => { event.stopPropagation(); setLinkingMerchant(merchant); }} className="inline-flex items-center gap-1 text-xs text-sky-400 hover:text-sky-300"><UserPlus className="w-3 h-3" /> Link user</button><a
                     href={`/store/${merchant.slug}`}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -341,7 +373,7 @@ export default function MerchantManager() {
                     onClick={(e) => e.stopPropagation()}
                   >
                     View <ExternalLink className="w-3 h-3" />
-                  </a>
+                  </a></div>
                 </div>
               </div>
             </div>

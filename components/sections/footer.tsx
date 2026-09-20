@@ -1,6 +1,7 @@
 /* bitesite/components/sections/footer.tsx */
 
 import { BiteSiteLogo } from "@/components/ui/bitesite-logo";
+import Link from "next/link";
 
 export function Footer() {
   return (
@@ -11,27 +12,27 @@ export function Footer() {
             <BiteSiteLogo showTagline={true} size="default" />
           </div>
           <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-[#6B6560]">
-            <a
+            <Link
               href="/"
               className="transition-colors duration-200 active:text-[#5A8F6E]"
               style={{ WebkitTapHighlightColor: "transparent" }}
             >
               Home
-            </a>
-            <a
+            </Link>
+            <Link
               href="/stories"
               className="transition-colors duration-200 active:text-[#5A8F6E]"
               style={{ WebkitTapHighlightColor: "transparent" }}
             >
               Stories
-            </a>
-            <a
+            </Link>
+            <Link
               href="/join-us"
               className="transition-colors duration-200 active:text-[#5A8F6E]"
               style={{ WebkitTapHighlightColor: "transparent" }}
             >
               Join Us
-            </a>
+            </Link>
             <span className="text-[#DDE5DC]">|</span>
             <span className="text-[#8A968B]" suppressHydrationWarning>
               © {new Date().getFullYear()} BiteSite

@@ -56,7 +56,7 @@ export default function StorySubmissionsManager({ onDraftCreated }: { onDraftCre
 
   useEffect(() => { load(); }, [load]);
 
-  const updateStatus = async (submission: Submission, status: 'converted' | 'draft') => {
+  const updateStatus = async (submission: Submission, status: 'converted' | 'draft' | 'approved' | 'rejected') => {
     if (!token) return;
     setWorking(submission.id);
     setError('');
@@ -64,7 +64,7 @@ export default function StorySubmissionsManager({ onDraftCreated }: { onDraftCre
       const res = await fetch('/api/admin/story-submissions', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
-        body: JSON.stringify({ id: submission.id, status, rights_declared: submission.rights_declared, review_notes: status === 'draft' ? 'Changes requested by editorial review.' : submission.review_notes || null }),
+        body: JSON.stringify({ id: submission.id, status, rights_declared: submission.rights_declared, reviewed_by: 'admin', review_notes: status === 'draft' ? 'Changes requested by editorial review.' : status === 'approved' ? 'Approved by editorial review.' : status === 'rejected' ? 'Rejected by editorial review.' : submission.review_notes || null }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Status update failed');
@@ -149,7 +149,7 @@ export default function StorySubmissionsManager({ onDraftCreated }: { onDraftCre
               <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap"><h2 className="text-lg font-semibold text-white">{submission.title}</h2><span className="text-xs px-2 py-1 rounded-full bg-sky-500/10 text-sky-300">{labels[submission.status]}</span><span className="text-xs px-2 py-1 rounded-full bg-slate-800 text-slate-400">{submission.channel === 'admin_relayed' ? 'Admin relayed' : 'Self service'}</span></div>
-                  <p className="text-xs text-slate-500 mt-1">{submission.merchant_slug ? `Merchant: ${submission.merchant_slug} · ` : ''}{submission.submitted_at ? new Date(submission.submitted_at).toLocaleString('en-MY') : new Date(submission.created_at).toLocaleString('en-MY')}</p>
+                  <p className="text-xs text-slate-500 mt-1">{submission.merchant_slug ? `Merchant: ${submission.merchant_slug} · ` : ''}{submission.submitted_at ? new Date(submission.submitted_at).toLocaleString('en-MY', { timeZone: 'Asia/Kuala_Lumpur' }) : new Date(submission.created_at).toLocaleString('en-MY', { timeZone: 'Asia/Kuala_Lumpur' })}</p>
                   {submission.excerpt && <p className="text-sm text-slate-300 mt-3">{submission.excerpt}</p>}
                   <p className="text-sm text-slate-400 mt-3 whitespace-pre-wrap line-clamp-5">{submission.content}</p>
                   <p className="text-xs mt-3"><span className={submission.rights_declared ? 'text-emerald-400' : 'text-red-400'}>{submission.rights_declared ? 'Rights declared' : 'Rights declaration missing'}</span>{submission.rights_note ? ` · ${submission.rights_note}` : ''}</p>
@@ -157,6 +157,8 @@ export default function StorySubmissionsManager({ onDraftCreated }: { onDraftCre
                   {submission.review_notes && <p className="text-xs text-amber-300 mt-2">Review: {submission.review_notes}</p>}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  <button onClick={() => updateStatus(submission, 'approved')} disabled={working === submission.id} className="px-3 py-2 rounded-lg bg-sky-500/10 text-sky-300 border border-sky-700/50 text-sm disabled:opacity-50">Approve</button>
+                  <button onClick={() => updateStatus(submission, 'rejected')} disabled={working === submission.id} className="px-3 py-2 rounded-lg bg-red-500/10 text-red-300 border border-red-700/50 text-sm disabled:opacity-50">Reject</button>
                   <button onClick={() => updateStatus(submission, 'converted')} disabled={working === submission.id} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-emerald-500/10 text-emerald-300 border border-emerald-700/50 text-sm disabled:opacity-50"><FilePlus2 className="w-4 h-4" />Create draft Story</button>
                   <button onClick={() => updateStatus(submission, 'draft')} disabled={working === submission.id} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-red-500/10 text-red-300 border border-red-700/50 text-sm disabled:opacity-50"><XCircle className="w-4 h-4" />Request changes</button>
                   {submission.merchant_slug && <button onClick={() => window.open(`/store/${submission.merchant_slug}`, '_blank')} className="p-2 rounded-lg border border-slate-700 text-slate-400 hover:text-slate-200" title="Open merchant page"><Eye className="w-4 h-4" /></button>}

@@ -3,6 +3,9 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { verifyAdminToken } from '@/lib/admin-auth';
+import { InvalidJsonBodyError, readBoundedJson, RequestBodyTooLargeError } from '@/lib/bounded-json';
+
+const MAX_SETTINGS_BODY_BYTES = 32 * 1024;
 
 function verifyRequest(request: Request) {
   const token = request.headers.get('x-admin-token');
@@ -32,7 +35,14 @@ export async function PUT(request: Request) {
   const authError = verifyRequest(request);
   if (authError) return authError;
 
-  const body = await request.json();
+  let body: { key?: unknown; value?: unknown };
+  try {
+    body = await readBoundedJson(request, MAX_SETTINGS_BODY_BYTES);
+  } catch (error) {
+    if (error instanceof RequestBodyTooLargeError) return NextResponse.json({ error: error.message }, { status: 413 });
+    if (error instanceof InvalidJsonBodyError) return NextResponse.json({ error: error.message }, { status: 400 });
+    return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+  }
   const { key, value } = body;
 
   if (!key || value === undefined) {

@@ -61,6 +61,8 @@ export interface Merchant {
   features: MerchantFeatures;
   settings: Record<string, unknown>;
   status: string;
+  platform_status?: 'DRAFT' | 'PENDING_REVIEW' | 'PUBLISHED' | 'SUSPENDED' | 'ARCHIVED' | string;
+  business_status?: 'OPEN' | 'TEMPORARILY_CLOSED' | 'MOVED' | 'PERMANENTLY_CLOSED' | string;
   area: string | null;
   tags: string[];
   payment_methods: string[];
@@ -130,6 +132,7 @@ export interface Article {
   reviewed_at?: string | null;
   reviewed_by?: string | null;
   published_at?: string | null;
+  end_at?: string | null;
   view_count: number;
   background_style?: string;  // ← 加这一行
   created_at: string;

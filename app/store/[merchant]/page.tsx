@@ -1,6 +1,7 @@
 /* bitesite/app/store/[merchant]/page.tsx */
 
 import { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   getMerchantBySlug,
@@ -18,6 +19,7 @@ import { RelatedMerchants } from "@/components/sections/related-merchants";
 import { ViewTracker } from "@/components/sections/view-tracker";
 import { PageViewTracker } from "@/app/components/page-view-tracker";
 import { GrabFoodOrderButton } from "@/components/sections/grabfood-order-button";
+import { getSiteUrl } from "@/lib/site-url";
 
 export const revalidate = 60;
 
@@ -31,6 +33,7 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const siteUrl = getSiteUrl();
   const { merchant: slug } = await params;
   if (!slug) {
     return {
@@ -46,7 +49,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   }
   
-  if (merchant.status === 'inactive') {
+  if (merchant.status === 'inactive' || ['TEMPORARILY_CLOSED', 'MOVED', 'PERMANENTLY_CLOSED'].includes(merchant.business_status || '')) {
     return {
       title: `${merchant.name} — Currently Unavailable | BiteSite`,
       description: `We're sorry, but ${merchant.name} is not taking orders or reservations at the moment.`,
@@ -62,9 +65,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const ogImage = merchant.cover_image
     ? merchant.cover_image.startsWith("http")
       ? merchant.cover_image
-      : `https://bitesite-pied.vercel.app${merchant.cover_image}`
+      : `${siteUrl}${merchant.cover_image}`
     : null;
-  const canonicalUrl = `https://bitesite-pied.vercel.app/store/${merchant.slug}`;
+  const canonicalUrl = `${siteUrl}/store/${merchant.slug}`;
   return {
     title: `${merchant.name} | ${merchant.cuisine_type ?? "Restaurant"} Menu | BiteSite`,
     description,
@@ -96,6 +99,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function MerchantPage({ params }: PageProps) {
+  const siteUrl = getSiteUrl();
   const { merchant: slug } = await params;
   if (!slug) notFound();
 
@@ -107,7 +111,7 @@ export default async function MerchantPage({ params }: PageProps) {
   if (!merchant) notFound();
 
   // Inactive merchant friendly page
-  if (merchant.status === 'inactive') {
+  if (merchant.status === 'inactive' || ['TEMPORARILY_CLOSED', 'MOVED', 'PERMANENTLY_CLOSED'].includes(merchant.business_status || '')) {
     const relatedMerchants = await getRelatedMerchants(
       merchant.slug,
       merchant.cuisine_type,
@@ -139,35 +143,35 @@ export default async function MerchantPage({ params }: PageProps) {
                   </p>
                   <div className="space-y-3">
                     {relatedMerchants.map((m) => (
-                      <a
+                      <Link
                         key={m.slug}
                         href={`/store/${m.slug}`}
                         className="block p-4 bg-white rounded-xl border border-[#DDE5DC] hover:border-[#5A8F6E] transition-colors text-left"
                       >
                         <h3 className="font-semibold text-[#2C3E2D]">{m.name}</h3>
                         <p className="text-sm text-[#8A968B]">{m.cuisine_type}</p>
-                      </a>
+                      </Link>
                     ))}
                   </div>
                 </div>
               )}
               <div className="mt-8">
-                <a
+                <Link
                   href="/"
                   className="inline-flex items-center gap-2 text-[#5A8F6E] font-medium hover:text-[#4A7A5E] transition-colors"
                 >
                   ← Back to BiteSite
-                </a>
+                </Link>
               </div>
             </div>
           </div>
           <footer className="py-8 px-4 text-center border-t border-[#DDE5DC]">
-            <a
+            <Link
               href="/"
               className="text-sm text-[#8A968B] hover:text-[#5A8F6E] transition-colors"
             >
               {settings.footer_text}
-            </a>
+            </Link>
           </footer>
         </div>
       </>
@@ -189,7 +193,7 @@ export default async function MerchantPage({ params }: PageProps) {
   const LayoutComponent = layouts[layoutKey as keyof typeof layouts];
   if (!LayoutComponent) notFound();
 
-  const canonicalUrl = `https://bitesite-pied.vercel.app/store/${merchant.slug}`;
+  const canonicalUrl = `${siteUrl}/store/${merchant.slug}`;
   const dayMap: Record<string, string> = {
     monday: "Mo", tuesday: "Tu", wednesday: "We", thursday: "Th",
     friday: "Fr", saturday: "Sa", sunday: "Su",
@@ -229,7 +233,7 @@ export default async function MerchantPage({ params }: PageProps) {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: "https://bitesite-pied.vercel.app" },
+      { "@type": "ListItem", position: 1, name: "Home", item: siteUrl },
       { "@type": "ListItem", position: 2, name: merchant.name, item: canonicalUrl },
     ],
   };

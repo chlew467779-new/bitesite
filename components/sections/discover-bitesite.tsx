@@ -1,6 +1,7 @@
 /* bitesite/components/sections/discover-bitesite.tsx */
 
 import type { StyleConfig } from "@/lib/styles";
+import Link from "next/link";
 
 interface DiscoverBiteSiteProps {
   style: StyleConfig;
@@ -12,13 +13,13 @@ export function DiscoverBiteSite({ style }: DiscoverBiteSiteProps) {
       <div className="mx-auto max-w-2xl px-4">
         <p>
           Discover more at{ " "}
-          <a
+          <Link
             href="/"
             className="underline font-medium transition-colors hover:opacity-80"
             style={{ color: style.accent }}
           >
             BiteSite
-          </a>
+          </Link>
         </p>
       </div>
     </section>

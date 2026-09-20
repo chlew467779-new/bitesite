@@ -10,9 +10,10 @@ import { ShareButtons } from "@/components/sections/share-buttons";
 import { mergeFeatures } from "@/types";
 import type { LayoutProps } from "@/types";
 import {
-  MapPin, Phone, Mail, Instagram, ArrowLeft, MessageSquare, Banknote, Smartphone, CreditCard,
+  MapPin, Phone, Mail, Instagram, Globe, ArrowLeft, MessageSquare, Banknote, Smartphone, CreditCard,
 } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
+import { MenuViewTracker } from "@/components/sections/menu-view-tracker";
 import Link from "next/link";
 import { getTodayKey, formatOperatingHours, DAYS } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
@@ -24,6 +25,7 @@ export function ElegantLayout({
 
   const today = getTodayKey();
   const hours = merchant.operating_hours as Record<string, string> | null;
+  const hasHours = Boolean(hours && Object.values(hours).some((value) => value?.trim()));
 
   const navItems = [
     { label: "Menu", id: "menu-section", show: resolvedFeatures.menu && products.length > 0 },
@@ -85,15 +87,13 @@ export function ElegantLayout({
             <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
               <div className="max-w-4xl mx-auto">
                 <div className="flex items-center gap-2 mb-3 flex-wrap">
-                  <span className="inline-block px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-semibold border border-amber-500/30">
-                    {merchant.cuisine_type}
-                  </span>
+                  {merchant.cuisine_type && <span className="inline-block px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-semibold border border-amber-500/30">{merchant.cuisine_type}</span>}
                   {typeof viewCount !== "undefined" && viewCount > 0 && (
                     <ViewCountInline count={viewCount} className="ml-0" />
                   )}
                 </div>
                 <h1 className="text-3xl sm:text-5xl font-bold text-white mb-2">{merchant.name}</h1>
-                <p className="text-slate-400 text-sm sm:text-base max-w-xl">{merchant.description}</p>
+                {merchant.description && <p className="text-slate-400 text-sm sm:text-base max-w-xl">{merchant.description}</p>}
               </div>
             </div>
           </div>
@@ -103,6 +103,7 @@ export function ElegantLayout({
       {/* Menu */}
       {resolvedFeatures.menu && products.length > 0 && (
         <FadeIn>
+          <MenuViewTracker slug={merchant.slug} />
           <section id="menu-section" className="py-10 px-4 sm:px-6">
             <div className="max-w-4xl mx-auto space-y-10">
               {categories.map((cat) => {
@@ -161,8 +162,8 @@ export function ElegantLayout({
             <div className="max-w-4xl mx-auto">
               <h2 className="text-2xl font-bold text-amber-100 mb-6">Opening Hours</h2>
               <div className="space-y-2">
-                {hours && DAYS.map((day) => {
-                  const time = hours[day];
+                {hasHours && DAYS.map((day) => {
+                  const time = hours?.[day];
                   if (!time) return null;
                   const isToday = day === today;
                   const timeSlots = time.split(",").map((t) => t.trim());
@@ -185,14 +186,24 @@ export function ElegantLayout({
               </div>
               <div className="mt-8 space-y-4">
                 {merchant.address && (
-                  <a href={`https://maps.google.com/?q=${encodeURIComponent(merchant.address)}`} target="_blank" rel="noopener noreferrer" className="flex items-start gap-3 text-slate-400 hover:text-slate-200 transition-colors">
+                  <a href={`https://maps.google.com/?q=${encodeURIComponent(merchant.address)}`} onClick={() => trackEvent('directions_click', { slug: merchant.slug, pageType: 'merchant' })} target="_blank" rel="noopener noreferrer" className="flex items-start gap-3 text-slate-400 hover:text-slate-200 transition-colors">
                     <MapPin size={18} className="mt-0.5 flex-shrink-0" />
                     <span className="text-sm">{merchant.address}</span>
                   </a>
                 )}
                 {merchant.phone && (
-                  <a href={`tel:${merchant.phone}`} className="flex items-center gap-3 text-slate-400 hover:text-slate-200 transition-colors">
+                  <a href={`tel:${merchant.phone}`} onClick={() => trackEvent('phone_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-3 text-slate-400 hover:text-slate-200 transition-colors">
                     <Phone size={18} /><span className="text-sm">{merchant.phone}</span>
+                  </a>
+                )}
+                {merchant.website && (
+                  <a href={merchant.website} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent('website_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-3 text-slate-400 hover:text-slate-200 transition-colors">
+                    <Globe size={18} /><span className="text-sm">Website</span>
+                  </a>
+                )}
+                {merchant.email && (
+                  <a href={`mailto:${merchant.email}`} onClick={() => trackEvent('email_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-3 text-slate-400 hover:text-slate-200 transition-colors">
+                    <Mail size={18} /><span className="text-sm">{merchant.email}</span>
                   </a>
                 )}
                 {merchant.whatsapp && (

@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { verifyAdminToken } from '@/lib/admin-auth';
+import { EventTypes } from '@/lib/analytics';
 
 function getDateRange(range: string) {
   const end = new Date();
@@ -10,11 +11,11 @@ function getDateRange(range: string) {
   
   switch (range) {
     case 'today': start.setHours(0,0,0,0); break;
-    case '7d': start.setDate(end.getDate() - 7); break;
-    case '30d': start.setDate(end.getDate() - 30); break;
-    case '90d': start.setDate(end.getDate() - 90); break;
-    case '365d': start.setDate(end.getDate() - 365); break;
-    default: start.setDate(end.getDate() - 7);
+    case '7d': start.setDate(end.getDate() - 6); break;
+    case '30d': start.setDate(end.getDate() - 29); break;
+    case '90d': start.setDate(end.getDate() - 89); break;
+    case '365d': start.setDate(end.getDate() - 364); break;
+    default: start.setDate(end.getDate() - 6);
   }
   
   return { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0] };
@@ -45,7 +46,9 @@ export async function GET(request: NextRequest) {
     // 汇总统计
     const eventMap = new Map<string, number>();
     const dailyMap = new Map<string, Map<string, number>>();
-    const eventTypes = ['whatsapp_click', 'booking_submit', 'share', 'search', 'map_marker_click', 'story_to_merchant', 'merchant_order_click'];
+    // Keep the chart's zero-filled series in lockstep with the public ingest
+    // allow-list. New tracked events will automatically appear in trends.
+    const eventTypes = Object.values(EventTypes).filter(type => type !== EventTypes.PAGE_VIEW);
 
     rawData?.forEach(row => {
       const type = row.event_type || 'other';
@@ -79,7 +82,7 @@ export async function GET(request: NextRequest) {
       summary: result,
       daily: dailyTrend,
       range,
-    });
+    }, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (err) {
     console.error('Events API error:', err);
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });
