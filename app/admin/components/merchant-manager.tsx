@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './auth-context';
 import { Search, Plus, Eye, EyeOff, Store, Loader2, ExternalLink, Pencil, Circle, UserPlus } from 'lucide-react';
 import MerchantForm from './merchant-form';
+import MerchantProfileChangeRequests from './merchant-profile-change-requests';
 
 interface Merchant {
   id: string;
@@ -185,7 +186,8 @@ export default function MerchantManager() {
   }
 
   return (
-    <div className="space-y-6">
+      <div className="space-y-6">
+        <MerchantProfileChangeRequests />
       {linkingMerchant && (
         <div className="rounded-xl border border-amber-500/40 bg-slate-900 p-4 space-y-3">
           <div className="flex items-center justify-between gap-3"><div><h2 className="font-semibold text-white">Link merchant user</h2><p className="text-xs text-slate-400">{linkingMerchant.name} — the user must have signed in with a magic link first.</p></div><button onClick={() => setLinkingMerchant(null)} className="text-slate-400 hover:text-white text-sm">Cancel</button></div>
