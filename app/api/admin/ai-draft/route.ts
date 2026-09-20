@@ -28,6 +28,12 @@ export async function POST(request: NextRequest) {
       title = data.title;
       facts = { ...data.facts, merchant_slug: data.merchant_slug, merchant_content: data.content, merchant_excerpt: data.excerpt };
     }
+    if (typeof body.article_id === 'string') {
+      const { data, error } = await supabase.from('articles').select('title, excerpt, content, merchant_slug').eq('id', body.article_id).single();
+      if (error || !data) return NextResponse.json({ error: 'Article not found' }, { status: 404 });
+      title = data.title;
+      facts = { ...facts, merchant_slug: data.merchant_slug, current_content: data.content, current_excerpt: data.excerpt };
+    }
     if (!title) return NextResponse.json({ error: 'title or submission_id is required' }, { status: 400 });
 
     const prompt = `You are an editorial assistant for BiteSite, a Malaysia restaurant discovery platform. Based on these merchant-provided facts, write a short editorial story (150-250 words). Language: English. Tone: friendly, factual, local. Do NOT invent prices or dates not in facts. Return only valid JSON with this exact shape: {"title":"...","excerpt":"...","content":"..."}. Suggested title: ${title}\nFacts: ${JSON.stringify(facts)}`;
@@ -35,6 +41,14 @@ export async function POST(request: NextRequest) {
     const result = await model.generateContent(prompt);
     const draft = parseDraft(result.response.text());
     if (!draft) return NextResponse.json({ error: 'AI returned an invalid draft; please edit manually' }, { status: 502 });
+    if (typeof body.submission_id === 'string') {
+      const { error: saveError } = await supabase.from('story_submissions').update({ generated_copy: draft, generated_copy_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', body.submission_id);
+      if (saveError) return NextResponse.json({ error: 'AI draft generated but could not be saved; please edit manually' }, { status: 500 });
+    }
+    if (typeof body.article_id === 'string') {
+      const { error: saveError } = await supabase.from('articles').update({ generated_copy: draft, generated_copy_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', body.article_id);
+      if (saveError) return NextResponse.json({ error: 'AI draft generated but could not be saved; please edit manually' }, { status: 500 });
+    }
     return NextResponse.json({ draft });
   } catch (error) {
     console.error('AI draft error:', error);

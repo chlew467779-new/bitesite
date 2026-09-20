@@ -77,6 +77,7 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [generatingDraft, setGeneratingDraft] = useState(false);
   const [aiGenerated, setAiGenerated] = useState(false);
+  const [articleId, setArticleId] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
 
   const [form, setForm] = useState({
@@ -152,6 +153,7 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
           const data = await res.json();
           if (data.article) {
             const a = data.article;
+            setArticleId(a.id || null);
             setForm({
               title: a.title || '',
               slug: a.slug || '',
@@ -365,7 +367,7 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
       const res = await fetch('/api/admin/ai-draft', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
-        body: JSON.stringify({ title: form.title, facts: { excerpt: form.excerpt, content: form.content, merchant_slug: form.merchant_slug } }),
+        body: JSON.stringify({ article_id: articleId, title: form.title, facts: { excerpt: form.excerpt, content: form.content, merchant_slug: form.merchant_slug } }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'AI not available, please edit manually');
