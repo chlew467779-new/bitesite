@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import imageCompression from 'browser-image-compression';
 import { supabase } from '@/lib/supabase';
@@ -25,7 +25,7 @@ export default function MerchantStoriesPage() {
   const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
   const [draftKey, setDraftKey] = useState<string | null>(null);
 
-  async function load() {
+  const load = useCallback(async () => {
     const { data } = await supabase.auth.getSession();
     const accessToken = data.session?.access_token;
     if (!accessToken) { setAuthChecked(true); setMessage('Please sign in with your merchant email first.'); return; }
@@ -50,9 +50,9 @@ export default function MerchantStoriesPage() {
     const result = await response.json();
     if (!response.ok) { setMessage(result.error || 'Unable to load submissions.'); return; }
     setSubmissions(result.submissions || []); setMessage('');
-  }
+  }, []);
 
-  useEffect(() => { void load(); }, []);
+  useEffect(() => { void load(); }, [load]);
 
   useEffect(() => {
     if (!draftKey || (!form.title && !form.content && !form.excerpt && !form.story_angle && !form.cover_image && !form.image_urls && !form.rights_note && !rights && !requestAi)) return;
