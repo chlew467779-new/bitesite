@@ -4,17 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { verifyAdminToken } from '@/lib/admin-auth';
-
-function getDateRange(range: string) {
-  const days = range === 'today' ? 1 : parseInt(range) || 7;
-  const dates: string[] = [];
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    dates.push(d.toISOString().split('T')[0]);
-  }
-  return dates;
-}
+import { getMytDateRange } from '@/lib/myt-date';
 
 export async function GET(request: NextRequest) {
   const token = request.headers.get('x-admin-token');
@@ -24,9 +14,15 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const range = searchParams.get('range') || '7d';
-  const dates = getDateRange(range);
-  const startDate = dates[0];
-  const endDate = dates[dates.length - 1];
+  const { start, end } = getMytDateRange(range);
+  const dates: string[] = [];
+  const cursor = new Date(`${start}T00:00:00+08:00`);
+  const endDate = new Date(`${end}T00:00:00+08:00`);
+  while (cursor <= endDate) {
+    dates.push(new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kuala_Lumpur' }).format(cursor));
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  const startDate = start;
 
   try {
     const { data } = await supabase

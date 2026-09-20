@@ -3,22 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { verifyAdminToken } from '@/lib/admin-auth';
-
-function getDateRange(range: string) {
-  const end = new Date();
-  const start = new Date();
-  
-  switch (range) {
-    case 'today': start.setHours(0,0,0,0); break;
-    case '7d': start.setDate(end.getDate() - 6); break;
-    case '30d': start.setDate(end.getDate() - 29); break;
-    case '90d': start.setDate(end.getDate() - 89); break;
-    case '365d': start.setDate(end.getDate() - 364); break;
-    default: start.setDate(end.getDate() - 6);
-  }
-  
-  return { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0] };
-}
+import { getMytDateRange } from '@/lib/myt-date';
 
 export async function GET(request: NextRequest) {
   const token = request.headers.get('x-admin-token');
@@ -28,12 +13,9 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const range = searchParams.get('range') || '7d';
-  const { start, end } = getDateRange(range);
+  const { startDateTime, endDateTime } = getMytDateRange(range);
 
   try {
-    const startDateTime = `${start}T00:00:00+08:00`;
-    const endDateTime = `${end}T23:59:59+08:00`;
-
     // 1. Get ALL articles from DB — match Stories Editor list
     const { data: articles } = await supabase
       .from('articles')
