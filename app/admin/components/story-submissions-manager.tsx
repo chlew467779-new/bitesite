@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Eye, FilePlus2, Inbox, Loader2, XCircle } from 'lucide-react';
+import { Eye, FilePlus2, Inbox, Loader2, Sparkles, XCircle } from 'lucide-react';
 import { useAuth } from './auth-context';
 
 type Submission = {
@@ -20,6 +20,8 @@ type Submission = {
   created_at: string;
   submitted_at: string | null;
   article_id: string | null;
+  ai_assistance_requested: boolean;
+  generated_copy: { title?: string; excerpt?: string; content?: string } | null;
 };
 
 type SubmissionStatus = Submission['status'];
@@ -33,11 +35,12 @@ export default function StorySubmissionsManager({ onDraftCreated }: { onDraftCre
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState<string | null>(null);
+  const [aiWorking, setAiWorking] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [showNew, setShowNew] = useState(false);
   const [saving, setSaving] = useState(false);
   const [statusFilter, setStatusFilter] = useState<SubmissionStatus | 'all'>('pending_review');
-  const [draft, setDraft] = useState({ title: '', content: '', excerpt: '', merchant_slug: '', cover_image: '', image_urls: '', rights_declared: false, rights_note: '' });
+  const [draft, setDraft] = useState({ title: '', content: '', excerpt: '', merchant_slug: '', cover_image: '', image_urls: '', rights_declared: false, rights_note: '', ai_assistance_requested: false });
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -57,7 +60,7 @@ export default function StorySubmissionsManager({ onDraftCreated }: { onDraftCre
 
   useEffect(() => { load(); }, [load]);
 
-  const updateStatus = async (submission: Submission, status: 'converted' | 'draft' | 'approved' | 'rejected', publish = false) => {
+  const updateStatus = async (submission: Submission, status: 'converted' | 'draft' | 'approved' | 'rejected', publish = false, publishVersion: 'original' | 'ai' = 'original') => {
     if (!token) return;
     setWorking(submission.id);
     setError('');
@@ -65,7 +68,7 @@ export default function StorySubmissionsManager({ onDraftCreated }: { onDraftCre
       const res = await fetch('/api/admin/story-submissions', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
-        body: JSON.stringify({ id: submission.id, status, publish, rights_declared: submission.rights_declared, reviewed_by: 'admin', review_notes: status === 'draft' ? 'Changes requested by editorial review.' : status === 'approved' ? 'Approved by editorial review.' : status === 'rejected' ? 'Rejected by editorial review.' : publish ? 'Published by editorial review.' : submission.review_notes || null }),
+        body: JSON.stringify({ id: submission.id, status, publish, publish_version: publishVersion, rights_declared: submission.rights_declared, reviewed_by: 'admin', review_notes: status === 'draft' ? 'Changes requested by editorial review.' : status === 'approved' ? 'Approved by editorial review.' : status === 'rejected' ? 'Rejected by editorial review.' : publish ? `Published ${publishVersion} version by editorial review.` : submission.review_notes || null }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Status update failed');
@@ -78,6 +81,18 @@ export default function StorySubmissionsManager({ onDraftCreated }: { onDraftCre
     } finally {
       setWorking(null);
     }
+  };
+
+  const generateAiDraft = async (submission: Submission) => {
+    if (!token) return;
+    setAiWorking(submission.id); setError('');
+    try {
+      const res = await fetch('/api/admin/ai-draft', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-token': token }, body: JSON.stringify({ submission_id: submission.id }) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'AI draft generation failed');
+      setSubmissions(prev => prev.map(item => item.id === submission.id ? { ...item, generated_copy: data.draft } : item));
+    } catch (err) { setError(err instanceof Error ? err.message : 'AI draft generation failed'); }
+    finally { setAiWorking(null); }
   };
 
   const createSubmission = async (event: React.FormEvent) => {
@@ -95,11 +110,12 @@ export default function StorySubmissionsManager({ onDraftCreated }: { onDraftCre
           channel: 'admin_relayed',
           status: 'pending_review',
           submitted_by: 'admin',
+          ai_assistance_requested: draft.ai_assistance_requested,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to create submission');
-      setDraft({ title: '', content: '', excerpt: '', merchant_slug: '', cover_image: '', image_urls: '', rights_declared: false, rights_note: '' });
+      setDraft({ title: '', content: '', excerpt: '', merchant_slug: '', cover_image: '', image_urls: '', rights_declared: false, rights_note: '', ai_assistance_requested: false });
       setShowNew(false);
       await load();
     } catch (err) {
@@ -136,6 +152,7 @@ export default function StorySubmissionsManager({ onDraftCreated }: { onDraftCre
           <textarea rows={3} value={draft.image_urls} onChange={e => setDraft(prev => ({ ...prev, image_urls: e.target.value }))} placeholder="Up to 3 image URLs, one per line (optional)" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white" />
           <textarea required rows={6} value={draft.content} onChange={e => setDraft(prev => ({ ...prev, content: e.target.value }))} placeholder="Facts and source material from the merchant" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white" />
           <label className="flex items-center gap-2 text-sm text-slate-300"><input type="checkbox" checked={draft.rights_declared} onChange={e => setDraft(prev => ({ ...prev, rights_declared: e.target.checked }))} className="h-4 w-4" />Merchant permission has been recorded</label>
+          <label className="flex items-start gap-2 text-sm text-slate-300"><input type="checkbox" checked={draft.ai_assistance_requested} onChange={e => setDraft(prev => ({ ...prev, ai_assistance_requested: e.target.checked }))} className="mt-1 h-4 w-4" />Merchant requested optional AI drafting help. The original material will remain unchanged.</label>
           <input value={draft.rights_note} onChange={e => setDraft(prev => ({ ...prev, rights_note: e.target.value }))} placeholder="Where/how permission was recorded (optional)" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white" />
           <button type="submit" disabled={saving || !draft.rights_declared} className="px-4 py-2 rounded-lg bg-sky-500 text-slate-950 text-sm font-medium disabled:opacity-50">{saving ? 'Submitting…' : 'Submit for review'}</button>
         </form>
@@ -149,19 +166,22 @@ export default function StorySubmissionsManager({ onDraftCreated }: { onDraftCre
             <article key={submission.id} className="rounded-xl border border-slate-800 bg-slate-900/50 p-5">
               <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                 <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap"><h2 className="text-lg font-semibold text-white">{submission.title}</h2><span className="text-xs px-2 py-1 rounded-full bg-sky-500/10 text-sky-300">{labels[submission.status]}</span><span className="text-xs px-2 py-1 rounded-full bg-slate-800 text-slate-400">{submission.channel === 'admin_relayed' ? 'Admin relayed' : 'Self service'}</span></div>
+                  <div className="flex items-center gap-2 flex-wrap"><h2 className="text-lg font-semibold text-white">{submission.title}</h2><span className="text-xs px-2 py-1 rounded-full bg-sky-500/10 text-sky-300">{labels[submission.status]}</span><span className="text-xs px-2 py-1 rounded-full bg-slate-800 text-slate-400">{submission.channel === 'admin_relayed' ? 'Admin relayed' : 'Self service'}</span>{submission.ai_assistance_requested && <span className="text-xs px-2 py-1 rounded-full bg-violet-500/10 text-violet-300">AI draft requested</span>}</div>
                   <p className="text-xs text-slate-500 mt-1">{submission.merchant_slug ? `Merchant: ${submission.merchant_slug} · ` : ''}{submission.submitted_at ? new Date(submission.submitted_at).toLocaleString('en-MY', { timeZone: 'Asia/Kuala_Lumpur' }) : new Date(submission.created_at).toLocaleString('en-MY', { timeZone: 'Asia/Kuala_Lumpur' })}</p>
                   {submission.excerpt && <p className="text-sm text-slate-300 mt-3">{submission.excerpt}</p>}
                   <p className="text-sm text-slate-400 mt-3 whitespace-pre-wrap line-clamp-5">{submission.content}</p>
                   <p className="text-xs mt-3"><span className={submission.rights_declared ? 'text-emerald-400' : 'text-red-400'}>{submission.rights_declared ? 'Rights declared' : 'Rights declaration missing'}</span>{submission.rights_note ? ` · ${submission.rights_note}` : ''}</p>
                   {(submission.cover_image || submission.image_urls?.length > 0) && <p className="text-xs text-slate-500 mt-2">Media: {submission.cover_image ? 'cover' : 'no cover'} · {submission.image_urls?.length || 0} gallery image(s)</p>}
                   {submission.review_notes && <p className="text-xs text-amber-300 mt-2">Review: {submission.review_notes}</p>}
+                  {submission.generated_copy && <p className="text-xs text-violet-300 mt-2">AI draft available for review: {submission.generated_copy.title || 'untitled'}</p>}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <button onClick={() => updateStatus(submission, 'approved')} disabled={working === submission.id} className="px-3 py-2 rounded-lg bg-sky-500/10 text-sky-300 border border-sky-700/50 text-sm disabled:opacity-50">Approve</button>
                   <button onClick={() => updateStatus(submission, 'rejected')} disabled={working === submission.id} className="px-3 py-2 rounded-lg bg-red-500/10 text-red-300 border border-red-700/50 text-sm disabled:opacity-50">Reject</button>
                   <button onClick={() => updateStatus(submission, 'converted')} disabled={working === submission.id} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-emerald-500/10 text-emerald-300 border border-emerald-700/50 text-sm disabled:opacity-50"><FilePlus2 className="w-4 h-4" />Create draft Story</button>
-                  <button onClick={() => updateStatus(submission, 'converted', true)} disabled={working === submission.id} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-amber-500/10 text-amber-300 border border-amber-700/50 text-sm disabled:opacity-50"><FilePlus2 className="w-4 h-4" />Publish Story</button>
+                  <button onClick={() => generateAiDraft(submission)} disabled={working === submission.id || aiWorking === submission.id} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-violet-500/10 text-violet-300 border border-violet-700/50 text-sm disabled:opacity-50"><Sparkles className="w-4 h-4" />{aiWorking === submission.id ? 'Generating…' : 'Generate AI draft'}</button>
+                  <button onClick={() => updateStatus(submission, 'converted', true, 'original')} disabled={working === submission.id} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-amber-500/10 text-amber-300 border border-amber-700/50 text-sm disabled:opacity-50"><FilePlus2 className="w-4 h-4" />Publish original</button>
+                  <button onClick={() => updateStatus(submission, 'converted', true, 'ai')} disabled={working === submission.id || !submission.generated_copy} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-fuchsia-500/10 text-fuchsia-300 border border-fuchsia-700/50 text-sm disabled:opacity-50"><FilePlus2 className="w-4 h-4" />Publish AI draft</button>
                   <button onClick={() => updateStatus(submission, 'draft')} disabled={working === submission.id} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-red-500/10 text-red-300 border border-red-700/50 text-sm disabled:opacity-50"><XCircle className="w-4 h-4" />Request changes</button>
                   {submission.merchant_slug && <button onClick={() => window.open(`/store/${submission.merchant_slug}`, '_blank')} className="p-2 rounded-lg border border-slate-700 text-slate-400 hover:text-slate-200" title="Open merchant page"><Eye className="w-4 h-4" /></button>}
                 </div>

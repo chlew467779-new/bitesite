@@ -66,6 +66,7 @@ export async function POST(request: NextRequest) {
       image_urls: imageUrls,
       rights_declared: true,
       rights_note: body.rights_note ? String(body.rights_note).trim() : null,
+      ai_assistance_requested: body.ai_assistance_requested === true,
       submitted_by: context.user.id,
       submitted_at: now,
       updated_at: now,
