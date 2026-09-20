@@ -84,6 +84,7 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
     title: '',
     slug: '',
     excerpt: '',
+    end_at: '',
     content: '',
     cover_image: '',
     category: '',
@@ -158,6 +159,7 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
               title: a.title || '',
               slug: a.slug || '',
               excerpt: a.excerpt || '',
+              end_at: a.end_at ? a.end_at.slice(0, 16) : '',
               content: a.content || '',
               cover_image: a.cover_image || '',
               category: a.category || '',
@@ -577,6 +579,12 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
               rows={2}
               className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-200 placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors resize-none"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-1.5">Promotion end (optional)</label>
+            <input type="datetime-local" value={form.end_at} onChange={(e) => updateField('end_at', e.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-200 focus:border-amber-500 focus:outline-none" />
+            <p className="text-xs text-slate-500 mt-1">After this time the Story remains published but shows an ended badge.</p>
           </div>
 
           {/* Cover Image with Preview */}

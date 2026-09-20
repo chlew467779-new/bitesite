@@ -54,6 +54,12 @@ function normalizeEditorialStatus(value: unknown, published: boolean): Editorial
   return published ? 'published' : 'draft';
 }
 
+function normalizeEndAt(value: unknown): string | null | 'invalid' {
+  if (value === undefined || value === null || value === '') return null;
+  if (typeof value !== 'string' || !Number.isFinite(Date.parse(value))) return 'invalid';
+  return new Date(value).toISOString();
+}
+
 async function recordRevision(article: Record<string, unknown>, action: string, note?: unknown) {
   const { error } = await supabase.from('article_revisions').insert({
     article_id: article.id,
@@ -127,6 +133,8 @@ export async function POST(request: Request) {
     const now = new Date().toISOString();
     const published = body.published ?? false;
     const editorialStatus = normalizeEditorialStatus(body.editorial_status, published);
+    const endAt = normalizeEndAt(body.end_at);
+    if (endAt === 'invalid') return NextResponse.json({ error: 'end_at must be a valid date' }, { status: 400 });
 
     if (editorialStatus === 'pending_review' && body.rights_declared !== true) {
       return NextResponse.json({ error: 'Rights declaration is required before submitting a Story for review' }, { status: 400 });
@@ -150,6 +158,7 @@ export async function POST(request: Request) {
         review_notes: body.review_notes || null,
         submitted_at: editorialStatus === 'pending_review' ? now : null,
         published_at: editorialStatus === 'published' ? now : null,
+        end_at: endAt,
         background_style: body.background_style || 'default',
         created_at: now,
         updated_at: now,
@@ -219,6 +228,11 @@ export async function PUT(request: Request) {
       ...updates,
       updated_at: new Date().toISOString(),
     };
+    if (updates.end_at !== undefined) {
+      const endAt = normalizeEndAt(updates.end_at);
+      if (endAt === 'invalid') return NextResponse.json({ error: 'end_at must be a valid date' }, { status: 400 });
+      updateData.end_at = endAt;
+    }
 
     if (editorial_status !== undefined || updates.published !== undefined) {
       const status = normalizeEditorialStatus(editorial_status, updates.published === true);

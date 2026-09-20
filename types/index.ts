@@ -132,6 +132,7 @@ export interface Article {
   reviewed_at?: string | null;
   reviewed_by?: string | null;
   published_at?: string | null;
+  end_at?: string | null;
   view_count: number;
   background_style?: string;  // ← 加这一行
   created_at: string;

@@ -103,6 +103,9 @@ export default async function StoryPage({ params }: PageProps) {
   const theme = (article.background_style as string) || 'default';
   const bgColor = bgColors[theme] || bgColors.default;
   const hashColors = hashtagColors[theme] || hashtagColors.default;
+  // Server-rendered pages intentionally evaluate promotion expiry at request time.
+  // eslint-disable-next-line react-hooks/purity
+  const isExpired = Boolean(article.end_at && new Date(article.end_at).getTime() < Date.now());
 
   const articleSchema = {
     "@context": "https://schema.org",
@@ -136,6 +139,7 @@ export default async function StoryPage({ params }: PageProps) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
       <main style={{ backgroundColor: bgColor }}>
         <StoryViewTracker slug={slug} />
+        {isExpired && <div className="mx-auto max-w-3xl px-4 pt-6 text-sm font-medium text-amber-700">This promotion has ended. The Story remains available as editorial content.</div>}
         <StoryHero article={article as Article} theme={theme} />
         <StoryContent content={article.content} articleSlug={slug} theme={theme} />
 
