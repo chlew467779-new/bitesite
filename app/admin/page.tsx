@@ -27,6 +27,8 @@ import MerchantManager from './components/merchant-manager';
 import ContentServiceManager from './components/content-service-manager';
 import { Lock, Loader2 } from 'lucide-react';
 
+const rawAnalyticsTabs = new Set(['overview', 'merchants', 'devices', 'referrers', 'search', 'events', 'map', 'hourly', 'stories-analytics']);
+
 export default function AdminPage() {
   const { isAuthenticated, isLoading, login } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
@@ -128,6 +130,11 @@ export default function AdminPage() {
 
   return (
     <AdminShell activeTab={activeTab} onTabChange={setActiveTab}>
+      {dateRange === '365d' && rawAnalyticsTabs.has(activeTab) && (
+        <div className="mb-6 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+          Yearly view trends use retained aggregates. Detailed analytics based on raw visitor logs, including unique visitors, devices, sources, search terms, events, peak hours, maps, and Story conversions, cover the most recent 90 days.
+        </div>
+      )}
       {/* Overview - Full Dashboard */}
       {activeTab === 'overview' && (
         <div className="space-y-6">
