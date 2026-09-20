@@ -89,6 +89,7 @@ export async function POST(request: Request) {
       cover_image: body.cover_image || null,
       image_urls: imageUrls,
       rights_declared: body.rights_declared === true,
+      ai_assistance_requested: body.ai_assistance_requested === true,
       rights_note: body.rights_note || null,
       submitted_by: body.submitted_by || 'admin',
       review_notes: body.review_notes || null,

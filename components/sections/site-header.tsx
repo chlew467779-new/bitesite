@@ -13,6 +13,7 @@ const navLinks = [
   { href: "/our-partner", label: "Our Partner" },
   { href: "/stories", label: "Stories" },
   { href: "/join-us", label: "Join Us" },
+  { href: "/merchant/login", label: "Merchant login" },
 ];
 
 export function SiteHeader() {

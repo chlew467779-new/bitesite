@@ -20,6 +20,7 @@ type Submission = {
   created_at: string;
   submitted_at: string | null;
   article_id: string | null;
+  ai_assistance_requested: boolean;
 };
 
 type SubmissionStatus = Submission['status'];
@@ -37,7 +38,7 @@ export default function StorySubmissionsManager({ onDraftCreated }: { onDraftCre
   const [showNew, setShowNew] = useState(false);
   const [saving, setSaving] = useState(false);
   const [statusFilter, setStatusFilter] = useState<SubmissionStatus | 'all'>('pending_review');
-  const [draft, setDraft] = useState({ title: '', content: '', excerpt: '', merchant_slug: '', cover_image: '', image_urls: '', rights_declared: false, rights_note: '' });
+  const [draft, setDraft] = useState({ title: '', content: '', excerpt: '', merchant_slug: '', cover_image: '', image_urls: '', rights_declared: false, rights_note: '', ai_assistance_requested: false });
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -95,11 +96,12 @@ export default function StorySubmissionsManager({ onDraftCreated }: { onDraftCre
           channel: 'admin_relayed',
           status: 'pending_review',
           submitted_by: 'admin',
+          ai_assistance_requested: draft.ai_assistance_requested,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to create submission');
-      setDraft({ title: '', content: '', excerpt: '', merchant_slug: '', cover_image: '', image_urls: '', rights_declared: false, rights_note: '' });
+      setDraft({ title: '', content: '', excerpt: '', merchant_slug: '', cover_image: '', image_urls: '', rights_declared: false, rights_note: '', ai_assistance_requested: false });
       setShowNew(false);
       await load();
     } catch (err) {
@@ -136,6 +138,7 @@ export default function StorySubmissionsManager({ onDraftCreated }: { onDraftCre
           <textarea rows={3} value={draft.image_urls} onChange={e => setDraft(prev => ({ ...prev, image_urls: e.target.value }))} placeholder="Up to 3 image URLs, one per line (optional)" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white" />
           <textarea required rows={6} value={draft.content} onChange={e => setDraft(prev => ({ ...prev, content: e.target.value }))} placeholder="Facts and source material from the merchant" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white" />
           <label className="flex items-center gap-2 text-sm text-slate-300"><input type="checkbox" checked={draft.rights_declared} onChange={e => setDraft(prev => ({ ...prev, rights_declared: e.target.checked }))} className="h-4 w-4" />Merchant permission has been recorded</label>
+          <label className="flex items-start gap-2 text-sm text-slate-300"><input type="checkbox" checked={draft.ai_assistance_requested} onChange={e => setDraft(prev => ({ ...prev, ai_assistance_requested: e.target.checked }))} className="mt-1 h-4 w-4" />Merchant requested optional AI drafting help. The original material will remain unchanged.</label>
           <input value={draft.rights_note} onChange={e => setDraft(prev => ({ ...prev, rights_note: e.target.value }))} placeholder="Where/how permission was recorded (optional)" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white" />
           <button type="submit" disabled={saving || !draft.rights_declared} className="px-4 py-2 rounded-lg bg-sky-500 text-slate-950 text-sm font-medium disabled:opacity-50">{saving ? 'Submitting…' : 'Submit for review'}</button>
         </form>
@@ -149,7 +152,7 @@ export default function StorySubmissionsManager({ onDraftCreated }: { onDraftCre
             <article key={submission.id} className="rounded-xl border border-slate-800 bg-slate-900/50 p-5">
               <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                 <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap"><h2 className="text-lg font-semibold text-white">{submission.title}</h2><span className="text-xs px-2 py-1 rounded-full bg-sky-500/10 text-sky-300">{labels[submission.status]}</span><span className="text-xs px-2 py-1 rounded-full bg-slate-800 text-slate-400">{submission.channel === 'admin_relayed' ? 'Admin relayed' : 'Self service'}</span></div>
+                  <div className="flex items-center gap-2 flex-wrap"><h2 className="text-lg font-semibold text-white">{submission.title}</h2><span className="text-xs px-2 py-1 rounded-full bg-sky-500/10 text-sky-300">{labels[submission.status]}</span><span className="text-xs px-2 py-1 rounded-full bg-slate-800 text-slate-400">{submission.channel === 'admin_relayed' ? 'Admin relayed' : 'Self service'}</span>{submission.ai_assistance_requested && <span className="text-xs px-2 py-1 rounded-full bg-violet-500/10 text-violet-300">AI draft requested</span>}</div>
                   <p className="text-xs text-slate-500 mt-1">{submission.merchant_slug ? `Merchant: ${submission.merchant_slug} · ` : ''}{submission.submitted_at ? new Date(submission.submitted_at).toLocaleString('en-MY', { timeZone: 'Asia/Kuala_Lumpur' }) : new Date(submission.created_at).toLocaleString('en-MY', { timeZone: 'Asia/Kuala_Lumpur' })}</p>
                   {submission.excerpt && <p className="text-sm text-slate-300 mt-3">{submission.excerpt}</p>}
                   <p className="text-sm text-slate-400 mt-3 whitespace-pre-wrap line-clamp-5">{submission.content}</p>
