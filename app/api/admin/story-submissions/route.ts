@@ -132,11 +132,30 @@ export async function PATCH(request: Request) {
       const { data: source, error: sourceError } = await supabase.from('story_submissions').select('*').eq('id', body.id).single();
       if (sourceError || !source) return NextResponse.json({ error: sourceError?.message || 'Submission not found' }, { status: 404 });
       if (!source.rights_declared) return NextResponse.json({ error: 'Rights declaration is required before conversion' }, { status: 400 });
+      if (body.publish === true && source.article_id) {
+        const publishedAt = new Date().toISOString();
+        const { data: article, error: publishError } = await supabase.from('articles').update({
+          published: true,
+          editorial_status: 'published',
+          published_at: publishedAt,
+          review_notes: body.review_notes || null,
+          reviewed_at: publishedAt,
+          reviewed_by: body.reviewed_by || 'admin',
+        }).eq('id', source.article_id).select().single();
+        if (publishError || !article) return NextResponse.json({ error: publishError?.message || 'Could not publish linked Story' }, { status: 500 });
+        const { error: revisionError } = await supabase.from('article_revisions').insert({ article_id: article.id, action: 'published', snapshot: article, actor: body.reviewed_by || 'admin', note: body.review_notes || 'Published from Story submission review.' });
+        if (revisionError) return NextResponse.json({ error: revisionError.message }, { status: 500 });
+        const { data: published, error: conversionError } = await supabase.from('story_submissions').update(updateData).eq('id', body.id).select().single();
+        if (conversionError) return NextResponse.json({ error: conversionError.message }, { status: 500 });
+        return NextResponse.json({ submission: published, article, success: true });
+      }
       const { data: existing } = await supabase.from('articles').select('slug');
       const slug = makeSlug(source.title, (existing || []).map((item) => item.slug));
       const gallery = Array.isArray(source.image_urls)
         ? source.image_urls.map((url: string, index: number) => `![${source.title} image ${index + 1}](${url})`).join('\n\n')
         : '';
+      const publishImmediately = body.publish === true;
+      const publishedAt = publishImmediately ? new Date().toISOString() : null;
       const { data: article, error: articleError } = await supabase.from('articles').insert({
         slug,
         title: source.title,
@@ -147,8 +166,9 @@ export async function PATCH(request: Request) {
         tags: [],
         merchant_slug: source.merchant_slug || null,
         author: 'BiteSite Team',
-        published: false,
-        editorial_status: 'draft',
+        published: publishImmediately,
+        editorial_status: publishImmediately ? 'published' : 'draft',
+        published_at: publishedAt,
         rights_declared: true,
         review_notes: source.review_notes || null,
         background_style: 'default',
@@ -156,10 +176,10 @@ export async function PATCH(request: Request) {
       if (articleError || !article) return NextResponse.json({ error: articleError?.message || 'Failed to create Story draft' }, { status: 500 });
       const { error: revisionError } = await supabase.from('article_revisions').insert({
         article_id: article.id,
-        action: 'created',
+        action: publishImmediately ? 'published' : 'created',
         snapshot: article,
         actor: 'admin',
-        note: `Created from Story submission ${source.id}`,
+        note: publishImmediately ? `Published from Story submission ${source.id}` : `Created from Story submission ${source.id}`,
       });
       if (revisionError) {
         await supabase.from('articles').delete().eq('id', article.id);

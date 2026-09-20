@@ -19,6 +19,7 @@ type Submission = {
   review_notes: string | null;
   created_at: string;
   submitted_at: string | null;
+  article_id: string | null;
 };
 
 type SubmissionStatus = Submission['status'];
@@ -56,7 +57,7 @@ export default function StorySubmissionsManager({ onDraftCreated }: { onDraftCre
 
   useEffect(() => { load(); }, [load]);
 
-  const updateStatus = async (submission: Submission, status: 'converted' | 'draft' | 'approved' | 'rejected') => {
+  const updateStatus = async (submission: Submission, status: 'converted' | 'draft' | 'approved' | 'rejected', publish = false) => {
     if (!token) return;
     setWorking(submission.id);
     setError('');
@@ -64,7 +65,7 @@ export default function StorySubmissionsManager({ onDraftCreated }: { onDraftCre
       const res = await fetch('/api/admin/story-submissions', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
-        body: JSON.stringify({ id: submission.id, status, rights_declared: submission.rights_declared, reviewed_by: 'admin', review_notes: status === 'draft' ? 'Changes requested by editorial review.' : status === 'approved' ? 'Approved by editorial review.' : status === 'rejected' ? 'Rejected by editorial review.' : submission.review_notes || null }),
+        body: JSON.stringify({ id: submission.id, status, publish, rights_declared: submission.rights_declared, reviewed_by: 'admin', review_notes: status === 'draft' ? 'Changes requested by editorial review.' : status === 'approved' ? 'Approved by editorial review.' : status === 'rejected' ? 'Rejected by editorial review.' : publish ? 'Published by editorial review.' : submission.review_notes || null }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Status update failed');
@@ -160,6 +161,7 @@ export default function StorySubmissionsManager({ onDraftCreated }: { onDraftCre
                   <button onClick={() => updateStatus(submission, 'approved')} disabled={working === submission.id} className="px-3 py-2 rounded-lg bg-sky-500/10 text-sky-300 border border-sky-700/50 text-sm disabled:opacity-50">Approve</button>
                   <button onClick={() => updateStatus(submission, 'rejected')} disabled={working === submission.id} className="px-3 py-2 rounded-lg bg-red-500/10 text-red-300 border border-red-700/50 text-sm disabled:opacity-50">Reject</button>
                   <button onClick={() => updateStatus(submission, 'converted')} disabled={working === submission.id} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-emerald-500/10 text-emerald-300 border border-emerald-700/50 text-sm disabled:opacity-50"><FilePlus2 className="w-4 h-4" />Create draft Story</button>
+                  <button onClick={() => updateStatus(submission, 'converted', true)} disabled={working === submission.id} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-amber-500/10 text-amber-300 border border-amber-700/50 text-sm disabled:opacity-50"><FilePlus2 className="w-4 h-4" />Publish Story</button>
                   <button onClick={() => updateStatus(submission, 'draft')} disabled={working === submission.id} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-red-500/10 text-red-300 border border-red-700/50 text-sm disabled:opacity-50"><XCircle className="w-4 h-4" />Request changes</button>
                   {submission.merchant_slug && <button onClick={() => window.open(`/store/${submission.merchant_slug}`, '_blank')} className="p-2 rounded-lg border border-slate-700 text-slate-400 hover:text-slate-200" title="Open merchant page"><Eye className="w-4 h-4" /></button>}
                 </div>
