@@ -5,6 +5,7 @@
 import { useState } from "react";
 import { Check, Copy, Share2 } from "lucide-react";
 import { trackEvent } from '@/lib/analytics';
+import { getSiteUrl } from '@/lib/site-url';
 
 type LayoutVariant = "classic" | "elegant" | "minimal" | "modern" | "rustic";
 
@@ -24,7 +25,7 @@ const buttonStyles: Record<LayoutVariant, string> = {
 
 export function ShareButtons({ slug, name, variant = "classic" }: ShareButtonsProps) {
   const [copied, setCopied] = useState(false);
-  const url = `https://bitesite-pied.vercel.app/store/${slug}`;
+  const url = `${getSiteUrl()}/store/${slug}`;
 
   const handleCopy = async () => {
     try {

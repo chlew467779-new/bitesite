@@ -104,7 +104,17 @@ function isLikelyPdfUrl(url: string): boolean {
 
 function isValidHttpUrl(url: string): boolean {
   if (!url.trim()) return true;
-  return /^https?:\/\//i.test(url);
+  try {
+    const parsed = new URL(url.trim());
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+function isValidEmail(email: string): boolean {
+  if (!email.trim()) return true;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }
 
 function generateSlug(name: string): string {
@@ -135,6 +145,7 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saveError, setSaveError] = useState('');
+  const [dirty, setDirty] = useState(false);
 
   /* Toast state */
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -326,6 +337,7 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
 
   const updateField = (field: string, value: unknown) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+    setDirty(true);
     if (errors[field]) {
       setErrors((prev) => {
         const next = { ...prev };
@@ -343,6 +355,7 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
       ...prev,
       features: { ...prev.features, [key]: checked },
     }));
+    setDirty(true);
   };
 
   /* ── Hours slot helpers ── */
@@ -351,6 +364,7 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
       ...prev,
       [day]: { ...prev[day], slots: [...prev[day].slots, { start: '', end: '' }] },
     }));
+    setDirty(true);
   };
 
   const removeSlot = (day: string, idx: number) => {
@@ -358,6 +372,7 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
       ...prev,
       [day]: { ...prev[day], slots: prev[day].slots.filter((_, i) => i !== idx) },
     }));
+    setDirty(true);
   };
 
   const updateSlot = (day: string, idx: number, field: keyof TimeSlot, value: string) => {
@@ -366,6 +381,7 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
       newSlots[idx] = { ...newSlots[idx], [field]: value };
       return { ...prev, [day]: { ...prev[day], slots: newSlots } };
     });
+    setDirty(true);
   };
 
   const setDayClosed = (day: string, closed: boolean) => {
@@ -373,6 +389,7 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
       ...prev,
       [day]: { slots: closed ? [] : [{ start: '', end: '' }], isClosed: closed },
     }));
+    setDirty(true);
   };
 
   const copyMondayToAll = () => {
@@ -386,8 +403,19 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
       }
       return next;
     });
+    setDirty(true);
     showToast('Monday hours copied to all days', 'success');
   };
+
+  useEffect(() => {
+    if (!dirty) return;
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [dirty]);
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -397,7 +425,44 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
       newErrors.slug = 'Slug can only contain lowercase letters, numbers, and hyphens';
     }
     if (!form.whatsapp.trim()) newErrors.whatsapp = 'WhatsApp is required';
+    if (!isValidEmail(form.email)) newErrors.email = 'Enter a valid email address';
+
+    const urlFields: Array<[keyof typeof form, string]> = [
+      ['grabfood_url', 'GrabFood URL'],
+      ['website', 'Website URL'],
+      ['instagram', 'Instagram URL'],
+      ['facebook', 'Facebook URL'],
+      ['logo_image', 'Logo image URL'],
+      ['cover_image', 'Cover image URL'],
+      ['menu_pdf_url', 'Menu PDF URL'],
+    ];
+    for (const [field, label] of urlFields) {
+      const value = form[field];
+      if (typeof value === 'string' && value.trim() && !isValidHttpUrl(value)) {
+        newErrors[field] = `${label} must start with http:// or https://`;
+      }
+    }
+
+    const latitude = form.latitude.trim();
+    if (latitude && (!Number.isFinite(Number(latitude)) || Number(latitude) < -90 || Number(latitude) > 90)) {
+      newErrors.latitude = 'Latitude must be between -90 and 90';
+    }
+    const longitude = form.longitude.trim();
+    if (longitude && (!Number.isFinite(Number(longitude)) || Number(longitude) < -180 || Number(longitude) > 180)) {
+      newErrors.longitude = 'Longitude must be between -180 and 180';
+    }
     setErrors(newErrors);
+    const firstError = Object.keys(newErrors)[0];
+    if (firstError) {
+      const errorTab = new Set(['name', 'slug', 'cuisine_type', 'area', 'tags', 'payment_methods']).has(firstError)
+        ? 0
+        : new Set(['whatsapp', 'phone', 'email', 'website', 'instagram', 'facebook', 'grabfood_url', 'latitude', 'longitude']).has(firstError)
+          ? 1
+          : new Set(['logo_image', 'cover_image', 'menu_pdf_url']).has(firstError)
+            ? 4
+            : 0;
+      setActiveTab(errorTab);
+    }
     return Object.keys(newErrors).length === 0;
   };
 
@@ -461,6 +526,7 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
         throw new Error(data.error || 'Save failed');
       }
       showToast(isEditing ? 'Merchant updated successfully' : 'Merchant created successfully', 'success');
+      setDirty(false);
       onSaved();
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Save failed';
@@ -469,6 +535,11 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleBack = () => {
+    if (dirty && !window.confirm('You have unsaved changes. Leave without saving?')) return;
+    onBack();
   };
 
   const handleDelete = async () => {
@@ -516,7 +587,7 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
       {/* Header */}
       <div className="flex items-center gap-4">
         <button
-          onClick={onBack}
+          onClick={handleBack}
           className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
         >
           <ChevronLeft className="w-5 h-5" />
@@ -535,6 +606,16 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
         <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
           <AlertCircle className="w-4 h-4 shrink-0" />
           {saveError}
+        </div>
+      )}
+
+      {Object.keys(errors).length > 0 && (
+        <div className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-amber-300 text-sm">
+          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+          <p>
+            Please fix the highlighted fields before saving:{' '}
+            {Object.keys(errors).map((field) => field.replace(/_/g, ' ')).join(', ')}.
+          </p>
         </div>
       )}
 
@@ -1340,7 +1421,7 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={onBack}
+            onClick={handleBack}
             className="px-4 py-2.5 text-slate-400 hover:text-white text-sm font-medium transition-colors"
           >
             Cancel

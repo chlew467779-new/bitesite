@@ -18,6 +18,10 @@ export async function POST(request: NextRequest) {
   const now = new Date();
 
   try {
+    if (Number(request.headers.get('content-length') || 0) > 1024) {
+      return NextResponse.json({ error: 'Request too large' }, { status: 413 });
+    }
+
     const { data: attemptRecord } = await supabase
       .from('login_attempts')
       .select('*')
@@ -32,7 +36,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { password } = await request.json();
+    const rawBody = await request.text();
+    if (new TextEncoder().encode(rawBody).byteLength > 1024) {
+      return NextResponse.json({ error: 'Request too large' }, { status: 413 });
+    }
+    const { password } = JSON.parse(rawBody || '{}');
     const adminPassword = process.env.ADMIN_PASSWORD;
 
     if (!adminPassword) {

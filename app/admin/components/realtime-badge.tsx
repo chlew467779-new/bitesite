@@ -1,7 +1,7 @@
 /* bitesite/app/admin/components/realtime-badge.tsx */
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './auth-context';
 import { Users } from 'lucide-react';
 
@@ -10,7 +10,7 @@ export default function RealtimeBadge() {
   const [count, setCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchRealtime = async () => {
+  const fetchRealtime = useCallback(async () => {
     if (!token) return;
     try {
       const res = await fetch('/api/admin/realtime', {
@@ -25,13 +25,13 @@ export default function RealtimeBadge() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
   useEffect(() => {
     fetchRealtime();
     const interval = setInterval(fetchRealtime, 30000); // refresh every 30s
     return () => clearInterval(interval);
-  }, [token]);
+  }, [fetchRealtime]);
 
   return (
     <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2">

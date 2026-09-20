@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from './auth-context';
-import { BookOpen, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { BookOpen, ArrowRight, Eye, EyeOff, RefreshCw } from 'lucide-react';
 
 interface StoryData {
   slug: string;
@@ -25,32 +25,35 @@ export default function StoriesChart({ range }: StoriesChartProps) {
   const [data, setData] = useState<StoryData[]>([]);
   const [totals, setTotals] = useState({ totalStoryViews: 0, totalAllTimeViews: 0, totalConversions: 0 });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
       if (!token) return;
       setLoading(true);
+      setError('');
       try {
         const res = await fetch(`/api/admin/stories-analytics?range=${range}`, {
           headers: { 'x-admin-token': token },
         });
-        if (res.ok) {
-          const json = await res.json();
-          setData(json.data || []);
-          setTotals({
-            totalStoryViews: json.totalStoryViews || 0,
-            totalAllTimeViews: json.totalAllTimeViews || 0,
-            totalConversions: json.totalConversions || 0,
-          });
-        }
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || 'Unable to load story analytics');
+        setData(json.data || []);
+        setTotals({
+          totalStoryViews: json.totalStoryViews || 0,
+          totalAllTimeViews: json.totalAllTimeViews || 0,
+          totalConversions: json.totalConversions || 0,
+        });
       } catch (err) {
         console.error('StoriesChart fetch error:', err);
+        setError(err instanceof Error ? err.message : 'Unable to load story analytics');
       } finally {
         setLoading(false);
       }
     };
     fetchData();
-  }, [range, token]);
+  }, [range, retryKey, token]);
 
   if (loading) {
     return (
@@ -60,6 +63,22 @@ export default function StoriesChart({ range }: StoriesChartProps) {
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-12 bg-slate-800/50 rounded-lg animate-pulse" />
           ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-slate-900 border border-red-500/20 rounded-xl p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h3 className="text-sm font-medium text-slate-200">Stories Performance</h3>
+            <p className="text-sm text-red-400 mt-1">{error}</p>
+          </div>
+          <button type="button" onClick={() => setRetryKey((key) => key + 1)} className="inline-flex items-center gap-2 rounded-lg bg-slate-800 px-3 py-2 text-sm text-slate-200 hover:bg-slate-700 transition-colors">
+            <RefreshCw className="w-4 h-4" /> Retry
+          </button>
         </div>
       </div>
     );

@@ -10,11 +10,11 @@ function getDateRange(range: string) {
   
   switch (range) {
     case 'today': start.setHours(0,0,0,0); break;
-    case '7d': start.setDate(end.getDate() - 7); break;
-    case '30d': start.setDate(end.getDate() - 30); break;
-    case '90d': start.setDate(end.getDate() - 90); break;
-    case '365d': start.setDate(end.getDate() - 365); break;
-    default: start.setDate(end.getDate() - 7);
+    case '7d': start.setDate(end.getDate() - 6); break;
+    case '30d': start.setDate(end.getDate() - 29); break;
+    case '90d': start.setDate(end.getDate() - 89); break;
+    case '365d': start.setDate(end.getDate() - 364); break;
+    default: start.setDate(end.getDate() - 6);
   }
   
   return { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0] };
@@ -77,7 +77,10 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({ data, range });
+    return NextResponse.json(
+      { data, range },
+      { headers: { 'Cache-Control': 'private, no-store' } },
+    );
   } catch (err) {
     console.error('Export API error:', err);
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });

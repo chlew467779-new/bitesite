@@ -77,6 +77,7 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [generatingDraft, setGeneratingDraft] = useState(false);
   const [aiGenerated, setAiGenerated] = useState(false);
+  const [dirty, setDirty] = useState(false);
 
   const [form, setForm] = useState({
     title: '',
@@ -198,9 +199,20 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
     };
   }, [form, slug, loading]);
 
+  useEffect(() => {
+    if (!dirty) return;
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [dirty]);
+
   const updateField = (field: string, value: string | boolean) => {
     setForm(prev => ({ ...prev, [field]: value }));
     setSaved(false);
+    setDirty(true);
   };
 
   // Auto-generate slug (consistent with backend, no toLowerCase)
@@ -220,6 +232,7 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
     if (draftData?.form) {
       setForm(draftData.form as typeof form);
       setShowDraftRestore(false);
+      setDirty(true);
     }
   };
 
@@ -239,6 +252,7 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
     const replacement = before + selected + after;
     const newContent = text.substring(0, start) + replacement + text.substring(end);
     setForm(prev => ({ ...prev, content: newContent }));
+    setDirty(true);
     setTimeout(() => {
       textarea.focus();
       const newCursor = start + before.length + selected.length;
@@ -271,14 +285,42 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
     }
   };
 
+  const validateBeforeSave = (requestedStatus: EditorialStatus): string | null => {
+    if (!form.title.trim()) return 'Title is required.';
+    if (!form.content.trim()) return 'Story content is required.';
+    if (!form.category.trim()) return 'Category is required.';
+    if (!form.slug.trim()) return 'Slug is required.';
+    if (form.slug.length > 100) return 'Slug must be 100 characters or fewer.';
+    if (/[\\/\s]/.test(form.slug)) return 'Slug cannot contain spaces or slashes.';
+    if (form.cover_image.trim()) {
+      try {
+        const imageUrl = new URL(form.cover_image.trim());
+        if (imageUrl.protocol !== 'http:' && imageUrl.protocol !== 'https:') {
+          return 'Cover image must use an http:// or https:// URL.';
+        }
+      } catch {
+        return 'Cover image must be a valid URL.';
+      }
+    }
+    if (requestedStatus === 'pending_review' && !form.rights_declared) {
+      return 'Declare image and content rights before submitting for review.';
+    }
+    return null;
+  };
+
   const handleSave = async (publish: boolean, requestedStatus?: EditorialStatus) => {
     if (!token) return;
+    const editorialStatus = requestedStatus || (publish ? 'published' : 'draft');
+    const validationError = validateBeforeSave(editorialStatus);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
     setSaving(true);
     setError('');
     setSaved(false);
 
     try {
-      const editorialStatus = requestedStatus || (publish ? 'published' : 'draft');
       const payload = {
         ...form,
         published: publish,
@@ -301,6 +343,7 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
       if (!res.ok) throw new Error(data.error || 'Save failed');
 
       localStorage.removeItem(getDraftKey(slug));
+      setDirty(false);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
       onSaved();
@@ -334,6 +377,10 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
       setGeneratingDraft(false);
     }
   };
+  const handleBack = () => {
+    if (dirty && !window.confirm('You have unsaved changes. Leave without saving?')) return;
+    onBack();
+  };
 
   const previewArticle: Article = {
     id: 'preview',
@@ -355,6 +402,28 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
 
   const theme = bgThemes.find(t => t.value === form.background_style) || bgThemes[0];
   const wordCount = countWords(form.content);
+  const copyChecks = [
+    {
+      label: 'Title is specific',
+      ok: form.title.trim().length >= 12 && form.title.trim().length <= 80,
+      hint: 'Aim for 12–80 characters.',
+    },
+    {
+      label: 'Excerpt is useful',
+      ok: form.excerpt.trim().length >= 40 && form.excerpt.trim().length <= 220,
+      hint: 'Add a 40–220 character summary for cards and SEO.',
+    },
+    {
+      label: 'Story has enough detail',
+      ok: wordCount >= 80,
+      hint: 'Aim for at least 80 words so readers get useful context.',
+    },
+    {
+      label: 'Cover image is ready',
+      ok: Boolean(form.cover_image.trim()),
+      hint: 'A cover image improves Story discovery and sharing.',
+    },
+  ];
 
   if (loading) {
     return (
@@ -369,7 +438,7 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 shrink-0">
         <button
-          onClick={onBack}
+          onClick={handleBack}
           className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-200 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -440,6 +509,32 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
       {aiGenerated && (
         <div className="rounded-xl border border-violet-700/50 bg-violet-950/30 p-3 text-sm text-violet-200 mb-4 shrink-0">AI Generated — requires editorial review before publishing.</div>
       )}
+
+      {/* Lightweight editorial quality guardrails. These keep AI-assisted or manually written copy reviewable. */}
+      <div className="mb-4 shrink-0 rounded-xl border border-slate-800 bg-slate-900/60 p-3">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 className="text-sm font-medium text-slate-200">Copy quality check</h2>
+            <p className="text-xs text-slate-500">Helpful guidance only — editors still approve every Story.</p>
+          </div>
+          <span className="text-xs text-slate-500">{wordCount} words</span>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {copyChecks.map((check) => (
+            <div key={check.label} className="flex items-start gap-2 rounded-lg bg-slate-950/60 px-2.5 py-2">
+              {check.ok ? (
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
+              ) : (
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+              )}
+              <div>
+                <p className={`text-xs font-medium ${check.ok ? 'text-emerald-300' : 'text-amber-300'}`}>{check.label}</p>
+                {!check.ok && <p className="mt-0.5 text-[11px] leading-snug text-slate-500">{check.hint}</p>}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* Main Editor + Preview */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1 min-h-0">

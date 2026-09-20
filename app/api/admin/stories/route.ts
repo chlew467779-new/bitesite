@@ -4,6 +4,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { verifyAdminToken } from '@/lib/admin-auth';
 import { revalidatePath } from 'next/cache';
+import { InvalidJsonBodyError, readBoundedJson, RequestBodyTooLargeError } from '@/lib/bounded-json';
+
+const MAX_STORY_BODY_BYTES = 512 * 1024;
+
+function bodyErrorResponse(error: unknown) {
+  if (error instanceof RequestBodyTooLargeError) {
+    return NextResponse.json({ error: error.message }, { status: 413 });
+  }
+  if (error instanceof InvalidJsonBodyError) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+  return null;
+}
 
 function verifyRequest(request: Request) {
   const token = request.headers.get('x-admin-token');
@@ -95,7 +108,7 @@ export async function POST(request: Request) {
   if (authError) return authError;
 
   try {
-    const body = await request.json();
+    const body = await readBoundedJson(request, MAX_STORY_BODY_BYTES);
 
     if (!body.title || !body.content || !body.category) {
       return NextResponse.json(
@@ -156,6 +169,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ article: data, success: true }, { status: 201 });
   } catch (err) {
+    const bodyError = bodyErrorResponse(err);
+    if (bodyError) return bodyError;
     console.error('Stories POST error:', err);
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
@@ -167,13 +182,36 @@ export async function PUT(request: Request) {
   if (authError) return authError;
 
   try {
-    const body = await request.json();
+    const body = await readBoundedJson(request, MAX_STORY_BODY_BYTES);
     const { id, slug, editorial_status, ...updates } = body;
 
     if (!id && !slug) {
       return NextResponse.json(
         { error: 'id or slug required for update' },
         { status: 400 }
+      );
+    }
+
+    const existingQuery = supabase.from('articles').select('*');
+    const { data: existingArticle, error: existingError } = id
+      ? await existingQuery.eq('id', id).maybeSingle()
+      : await existingQuery.eq('slug', slug).maybeSingle();
+    if (existingError || !existingArticle) {
+      return NextResponse.json({ error: 'Story not found' }, { status: 404 });
+    }
+
+    // Published Stories must pass through draft/review before material edits
+    // become public. A direct published update would silently replace content
+    // that has not gone through the editorial checks again.
+    const materialFields = ['title', 'excerpt', 'content', 'cover_image', 'category', 'tags', 'merchant_slug', 'background_style'];
+    const hasMaterialEdit = materialFields.some((field) => {
+      if (!(field in updates)) return false;
+      return JSON.stringify(existingArticle[field]) !== JSON.stringify(updates[field]);
+    });
+    if (existingArticle.published === true && hasMaterialEdit && editorial_status === 'published') {
+      return NextResponse.json(
+        { error: 'Published Story edits must be saved as draft or submitted for review before republishing' },
+        { status: 409 },
       );
     }
 
@@ -247,6 +285,8 @@ export async function PUT(request: Request) {
 
     return NextResponse.json({ article: data, success: true });
   } catch (err) {
+    const bodyError = bodyErrorResponse(err);
+    if (bodyError) return bodyError;
     console.error('Stories PUT error:', err);
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }

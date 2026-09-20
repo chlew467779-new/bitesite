@@ -5,13 +5,14 @@
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
 import { TierSections } from "@/app/components/sections/tier-sections";
-import { MapPin, Phone, Clock, Mail, Instagram, ArrowLeft, MessageSquare, Banknote, Smartphone, CreditCard } from "lucide-react";
+import { MapPin, Phone, Clock, Mail, Instagram, Globe, ArrowLeft, MessageSquare, Banknote, Smartphone, CreditCard } from "lucide-react";
 import Link from "next/link";
 import type { LayoutProps } from "@/types";
 import { mergeFeatures } from "@/types";
 import { getTodayKey, formatOperatingHours, DAYS } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
 import { trackEvent } from "@/lib/analytics";
+import { MenuViewTracker } from "@/components/sections/menu-view-tracker";
 
 export function ClassicLayout({
   merchant,
@@ -26,6 +27,7 @@ export function ClassicLayout({
 
   const today = getTodayKey();
   const hours = merchant.operating_hours as Record<string, string> | null;
+  const hasHours = Boolean(hours && Object.values(hours).some((value) => value?.trim()));
   const todayHours = formatOperatingHours(hours?.[today]) || "Closed";
 
   return (
@@ -60,15 +62,11 @@ export function ClassicLayout({
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
                   <div className="max-w-4xl mx-auto">
-                    <span className="inline-block px-3 py-1 rounded-full bg-amber-100/90 text-amber-800 text-xs font-semibold mb-3">
-                      {merchant.cuisine_type}
-                    </span>
+                    {merchant.cuisine_type && <span className="inline-block px-3 py-1 rounded-full bg-amber-100/90 text-amber-800 text-xs font-semibold mb-3">{merchant.cuisine_type}</span>}
                     <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-2">
                       {merchant.name}
                     </h1>
-                    <p className="text-white/80 text-sm sm:text-base max-w-xl">
-                      Today: {todayHours}
-                    </p>
+                    {hasHours && <p className="text-white/80 text-sm sm:text-base max-w-xl">Today: {todayHours}</p>}
                   </div>
                 </div>
               </>
@@ -81,15 +79,11 @@ export function ClassicLayout({
                 </div>
                 <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
                   <div className="max-w-4xl mx-auto">
-                    <span className="inline-block px-3 py-1 rounded-full bg-white/90 text-amber-800 text-xs font-semibold mb-3">
-                      {merchant.cuisine_type}
-                    </span>
+                    {merchant.cuisine_type && <span className="inline-block px-3 py-1 rounded-full bg-white/90 text-amber-800 text-xs font-semibold mb-3">{merchant.cuisine_type}</span>}
                     <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-amber-900 mb-2">
                       {merchant.name}
                     </h1>
-                    <p className="text-amber-800/70 text-sm sm:text-base max-w-xl">
-                      Today: {todayHours}
-                    </p>
+                    {hasHours && <p className="text-amber-800/70 text-sm sm:text-base max-w-xl">Today: {todayHours}</p>}
                   </div>
                 </div>
               </>
@@ -99,7 +93,7 @@ export function ClassicLayout({
       )}
 
       {/* About */}
-      {resolvedFeatures.about && (
+      {resolvedFeatures.about && merchant.description && (
         <FadeIn>
           <section className="py-10 px-4 sm:px-6">
             <div className="max-w-4xl mx-auto">
@@ -114,7 +108,8 @@ export function ClassicLayout({
       {/* Menu */}
       {resolvedFeatures.menu && products.length > 0 && (
         <FadeIn>
-          <section className="py-10 px-4 sm:px-6">
+          <MenuViewTracker slug={merchant.slug} />
+          <section id="menu-section" className="py-10 px-4 sm:px-6">
             <div className="max-w-4xl mx-auto">
               <h2 className="text-2xl font-bold text-amber-900 mb-6">Menu</h2>
               <div className="space-y-8">
@@ -198,8 +193,8 @@ export function ClassicLayout({
               <h2 className="text-2xl font-bold text-amber-900 mb-6">Opening Hours</h2>
               <div className="grid sm:grid-cols-2 gap-6">
                 <div className="space-y-3">
-                  {hours && DAYS.map((day) => {
-                    const time = hours[day];
+                {hasHours && DAYS.map((day) => {
+                    const time = hours?.[day];
                     if (!time) return null;
                     return (
                       <div
@@ -222,6 +217,7 @@ export function ClassicLayout({
                       href={`https://maps.google.com/?q=${encodeURIComponent(merchant.address)}`}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={() => trackEvent('directions_click', { slug: merchant.slug, pageType: 'merchant' })}
                       className="flex items-start gap-3 text-amber-800 active:scale-[0.98] transition-transform"
                       style={{ WebkitTapHighlightColor: "transparent" }}
                     >
@@ -232,11 +228,17 @@ export function ClassicLayout({
                   {merchant.phone && (
                     <a
                       href={`tel:${merchant.phone}`}
+                      onClick={() => trackEvent('phone_click', { slug: merchant.slug, pageType: 'merchant' })}
                       className="flex items-center gap-3 text-amber-800 active:scale-[0.98] transition-transform"
                       style={{ WebkitTapHighlightColor: "transparent" }}
                     >
                       <Phone size={18} />
                       <span className="text-sm">{merchant.phone}</span>
+                    </a>
+                  )}
+                  {merchant.website && (
+                    <a href={merchant.website} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent('website_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-3 text-amber-800 active:scale-[0.98] transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}>
+                      <Globe size={18} /><span className="text-sm">Website</span>
                     </a>
                   )}
                   {merchant.whatsapp && (
@@ -255,6 +257,7 @@ export function ClassicLayout({
                   {merchant.email && (
                     <a
                       href={`mailto:${merchant.email}`}
+                      onClick={() => trackEvent('email_click', { slug: merchant.slug, pageType: 'merchant' })}
                       className="flex items-center gap-3 text-amber-800 active:scale-[0.98] transition-transform"
                       style={{ WebkitTapHighlightColor: "transparent" }}
                     >
