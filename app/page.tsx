@@ -16,18 +16,57 @@ import { trackEvent } from "@/lib/analytics";
 import { CUISINE_TYPES } from "@/lib/presets";
 import type { Merchant } from "@/types";
 
+function readHomeFilters() {
+  if (typeof window === "undefined") {
+    return { cuisines: [] as string[], area: null as string | null, more: [] as string[], openNow: false, search: "" };
+  }
+  const params = new URLSearchParams(window.location.search);
+  return {
+    cuisines: params.get("cuisine")?.split(",").map(value => value.trim()).filter(Boolean) || [],
+    area: params.get("area") || null,
+    more: params.get("more")?.split(",").map(value => value.trim()).filter(Boolean) || [],
+    openNow: params.get("open") === "1",
+    search: params.get("q") || "",
+  };
+}
+
 export default function HomePage() {
   const [merchants, setMerchants] = useState<Merchant[]>([]);
   const [merchantStats, setMerchantStats] = useState<Map<string, number>>(new Map());
   const [loading, setLoading] = useState(true);
-  const [activeCuisines, setActiveCuisines] = useState<string[]>([]);
-  const [activeArea, setActiveArea] = useState<string | null>(null);
-  const [activeMore, setActiveMore] = useState<string[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [openNow, setOpenNow] = useState(false);
+  const [activeCuisines, setActiveCuisines] = useState<string[]>(() => readHomeFilters().cuisines);
+  const [activeArea, setActiveArea] = useState<string | null>(() => readHomeFilters().area);
+  const [activeMore, setActiveMore] = useState<string[]>(() => readHomeFilters().more);
+  const [searchQuery, setSearchQuery] = useState(() => readHomeFilters().search);
+  const [openNow, setOpenNow] = useState(() => readHomeFilters().openNow);
   const [isSearching, setIsSearching] = useState(false);
   const [productIndex, setProductIndex] = useState<Map<string, string[]>>(new Map());
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Keep discovery state shareable and restore it when users navigate back.
+  useEffect(() => {
+    const onPopState = () => {
+      const filters = readHomeFilters();
+      setActiveCuisines(filters.cuisines);
+      setActiveArea(filters.area);
+      setActiveMore(filters.more);
+      setSearchQuery(filters.search);
+      setOpenNow(filters.openNow);
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (searchQuery.trim()) params.set("q", searchQuery.trim());
+    if (activeCuisines.length > 0) params.set("cuisine", activeCuisines.join(","));
+    if (activeArea && activeArea !== "All Areas") params.set("area", activeArea);
+    if (activeMore.length > 0) params.set("more", activeMore.join(","));
+    if (openNow) params.set("open", "1");
+    const query = params.toString();
+    window.history.replaceState(window.history.state, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
+  }, [activeCuisines, activeArea, activeMore, searchQuery, openNow]);
 
   // Fetch merchants + stats + products on mount
   useEffect(() => {
