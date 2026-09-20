@@ -61,6 +61,8 @@ export interface Merchant {
   features: MerchantFeatures;
   settings: Record<string, unknown>;
   status: string;
+  platform_status?: 'DRAFT' | 'PENDING_REVIEW' | 'PUBLISHED' | 'SUSPENDED' | 'ARCHIVED' | string;
+  business_status?: 'OPEN' | 'TEMPORARILY_CLOSED' | 'MOVED' | 'PERMANENTLY_CLOSED' | string;
   area: string | null;
   tags: string[];
   payment_methods: string[];

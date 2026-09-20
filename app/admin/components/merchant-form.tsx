@@ -57,6 +57,8 @@ interface MerchantFormProps {
     operating_hours?: Record<string, string> | null;
     is_published?: boolean;
     status?: string;
+    platform_status?: string;
+    business_status?: string;
     features?: Record<string, boolean> | null;
     logo_image?: string;
     cover_image?: string;
@@ -188,6 +190,8 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
     },
     is_published: false,
     status: 'active',
+    platform_status: 'DRAFT',
+    business_status: 'OPEN',
     features: {
       hero: true,
       about: true,
@@ -304,6 +308,8 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
         },
         is_published: merchant.is_published ?? false,
         status: merchant.status || 'active',
+        platform_status: merchant.platform_status || (merchant.is_published ? 'PUBLISHED' : 'DRAFT'),
+        business_status: merchant.business_status || (merchant.status === 'inactive' ? 'TEMPORARILY_CLOSED' : 'OPEN'),
         features: {
           hero: merchant.features?.hero ?? true,
           about: merchant.features?.about ?? true,
@@ -500,6 +506,8 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
       operating_hours: operatingHoursPayload,
       is_published: form.is_published,
       status: form.status,
+      platform_status: form.platform_status,
+      business_status: form.business_status,
       features: form.features,
       logo_image: form.logo_image || null,
       cover_image: form.cover_image || null,
@@ -1260,6 +1268,21 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
               <p className="mt-1 text-xs text-slate-500">
                 Inactive merchants show a friendly &quot;Unavailable&quot; page instead of their menu.
               </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label className="block text-sm font-medium text-slate-300">Platform status
+                <select value={form.platform_status} onChange={(e) => updateField('platform_status', e.target.value)} className="mt-1.5 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white">
+                  <option value="DRAFT">Draft</option><option value="PENDING_REVIEW">Pending review</option><option value="PUBLISHED">Published</option><option value="SUSPENDED">Suspended</option><option value="ARCHIVED">Archived</option>
+                </select>
+                <span className="mt-1 block text-xs font-normal text-slate-500">Controls BiteSite listing visibility.</span>
+              </label>
+              <label className="block text-sm font-medium text-slate-300">Business status
+                <select value={form.business_status} onChange={(e) => updateField('business_status', e.target.value)} className="mt-1.5 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white">
+                  <option value="OPEN">Open</option><option value="TEMPORARILY_CLOSED">Temporarily closed</option><option value="MOVED">Moved</option><option value="PERMANENTLY_CLOSED">Permanently closed</option>
+                </select>
+                <span className="mt-1 block text-xs font-normal text-slate-500">Describes the merchant in the real world.</span>
+              </label>
             </div>
 
             <div>

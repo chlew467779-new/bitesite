@@ -108,6 +108,10 @@ function validateMerchantPayload(body: Record<string, unknown>, requireBaseField
   if (body.operating_hours !== undefined && body.operating_hours !== null && (typeof body.operating_hours !== 'object' || Array.isArray(body.operating_hours))) {
     return 'operating_hours must be an object';
   }
+  const platformStatuses = ['DRAFT', 'PENDING_REVIEW', 'PUBLISHED', 'SUSPENDED', 'ARCHIVED'];
+  const businessStatuses = ['OPEN', 'TEMPORARILY_CLOSED', 'MOVED', 'PERMANENTLY_CLOSED'];
+  if (body.platform_status !== undefined && !platformStatuses.includes(String(body.platform_status))) return 'Invalid platform_status';
+  if (body.business_status !== undefined && !businessStatuses.includes(String(body.business_status))) return 'Invalid business_status';
   return null;
 }
 
@@ -241,6 +245,8 @@ export async function POST(request: NextRequest) {
       ) || null,
       is_published: body.is_published === true,
       status: body.status || 'active',
+      platform_status: body.platform_status || (body.is_published === true ? 'PUBLISHED' : 'DRAFT'),
+      business_status: body.business_status || (body.status === 'inactive' ? 'TEMPORARILY_CLOSED' : 'OPEN'),
       features: body.features || null,
       logo_image: body.logo_image?.trim() || null,
       cover_image: body.cover_image?.trim() || null,
@@ -333,6 +339,8 @@ export async function PUT(request: NextRequest) {
     }
     if (body.is_published !== undefined) updateData.is_published = body.is_published === true;
     if (body.status !== undefined) updateData.status = body.status;
+    if (body.platform_status !== undefined) updateData.platform_status = body.platform_status;
+    if (body.business_status !== undefined) updateData.business_status = body.business_status;
     if (body.features !== undefined) updateData.features = body.features;
     if (body.logo_image !== undefined) updateData.logo_image = body.logo_image?.trim() || null;
     if (body.cover_image !== undefined) updateData.cover_image = body.cover_image?.trim() || null;

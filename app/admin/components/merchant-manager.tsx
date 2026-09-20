@@ -18,6 +18,8 @@ interface Merchant {
   cover_image?: string;
   is_published: boolean;
   status?: string;
+  platform_status?: string;
+  business_status?: string;
   created_at: string;
   updated_at: string;
   product_count: number;
@@ -298,7 +300,7 @@ export default function MerchantManager() {
                       <EyeOff className="w-3 h-3" /> Draft
                     </span>
                   )}
-                  {merchant.status === 'inactive' ? (
+                  {merchant.business_status === 'TEMPORARILY_CLOSED' || merchant.business_status === 'PERMANENTLY_CLOSED' || merchant.status === 'inactive' ? (
                     <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-500/10 text-red-400 text-xs rounded-full border border-red-500/20">
                       <Circle className="w-2 h-2 fill-current" /> Inactive
                     </span>

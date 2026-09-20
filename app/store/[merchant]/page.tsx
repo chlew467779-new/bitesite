@@ -49,7 +49,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   }
   
-  if (merchant.status === 'inactive') {
+  if (merchant.status === 'inactive' || ['TEMPORARILY_CLOSED', 'MOVED', 'PERMANENTLY_CLOSED'].includes(merchant.business_status || '')) {
     return {
       title: `${merchant.name} — Currently Unavailable | BiteSite`,
       description: `We're sorry, but ${merchant.name} is not taking orders or reservations at the moment.`,
@@ -111,7 +111,7 @@ export default async function MerchantPage({ params }: PageProps) {
   if (!merchant) notFound();
 
   // Inactive merchant friendly page
-  if (merchant.status === 'inactive') {
+  if (merchant.status === 'inactive' || ['TEMPORARILY_CLOSED', 'MOVED', 'PERMANENTLY_CLOSED'].includes(merchant.business_status || '')) {
     const relatedMerchants = await getRelatedMerchants(
       merchant.slug,
       merchant.cuisine_type,
