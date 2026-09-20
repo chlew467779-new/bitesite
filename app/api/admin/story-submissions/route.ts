@@ -1,6 +1,7 @@
 /* bitesite/app/api/admin/story-submissions/route.ts */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { verifyAdminToken } from '@/lib/admin-auth';
 import { InvalidJsonBodyError, readBoundedJson, RequestBodyTooLargeError } from '@/lib/bounded-json';
@@ -155,6 +156,8 @@ export async function PATCH(request: Request) {
         if (revisionError) return NextResponse.json({ error: revisionError.message }, { status: 500 });
         const { data: published, error: conversionError } = await supabase.from('story_submissions').update(updateData).eq('id', body.id).select().single();
         if (conversionError) return NextResponse.json({ error: conversionError.message }, { status: 500 });
+        revalidatePath('/stories');
+        revalidatePath(`/stories/${article.slug}`);
         return NextResponse.json({ submission: published, article, success: true });
       }
       const { data: existing } = await supabase.from('articles').select('slug');
@@ -207,6 +210,10 @@ export async function PATCH(request: Request) {
       updateData.article_id = article.id;
       const { data: converted, error: conversionError } = await supabase.from('story_submissions').update(updateData).eq('id', body.id).select().single();
       if (conversionError) return NextResponse.json({ error: conversionError.message }, { status: 500 });
+      if (publishImmediately) {
+        revalidatePath('/stories');
+        revalidatePath(`/stories/${article.slug}`);
+      }
       return NextResponse.json({ submission: converted, article, success: true });
     }
     const { data, error } = await supabase.from('story_submissions').update(updateData).eq('id', body.id).select().single();

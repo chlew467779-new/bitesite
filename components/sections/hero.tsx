@@ -60,6 +60,7 @@ export function Hero({ searchQuery, onSearch }: HeroProps) {
               <Search className="ml-4 h-4 w-4 flex-shrink-0 text-[#8A968B]" />
               <input
                 type="text"
+                aria-label="Search restaurants"
                 placeholder="Search restaurants, cuisines, dishes..."
                 value={searchQuery}
                 onChange={handleChange}
@@ -69,6 +70,8 @@ export function Hero({ searchQuery, onSearch }: HeroProps) {
               />
               {searchQuery && (
                 <button
+                  type="button"
+                  aria-label="Clear restaurant search"
                   onClick={handleClear}
                   className="mr-3 flex h-6 w-6 items-center justify-center rounded-full bg-[#DDE5DC] text-[#6B6560] active:scale-90 transition-transform duration-150"
                   style={{ WebkitTapHighlightColor: "transparent" }}
