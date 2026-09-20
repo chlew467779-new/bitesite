@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import imageCompression from 'browser-image-compression';
 
 const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
 const businessStatuses = ['OPEN', 'TEMPORARILY_CLOSED', 'MOVED', 'PERMANENTLY_CLOSED'] as const;
@@ -23,6 +24,8 @@ export default function MerchantDashboardPage() {
   const [requesting, setRequesting] = useState(false);
   const [message, setMessage] = useState('Loading your merchant account…');
   const [requestMessage, setRequestMessage] = useState('');
+  const [profileImages, setProfileImages] = useState({ logo: '', cover: '' });
+  const [uploadingImage, setUploadingImage] = useState<'logo' | 'cover' | null>(null);
 
   const load = useCallback(async (accessToken?: string) => {
     const currentToken = accessToken || token;
@@ -35,9 +38,35 @@ export default function MerchantDashboardPage() {
     const requestsData = await requestsResponse.json();
     if (!profileResponse.ok) { setMessage(profileData.error || 'Merchant account not found.'); return; }
     setMerchant(profileData.merchant);
+    setProfileImages({ logo: profileData.merchant.logo_image || '', cover: profileData.merchant.cover_image || '' });
     setRequests(requestsResponse.ok ? requestsData.requests || [] : []);
     setMessage('');
   }, [token]);
+
+  async function uploadProfileImage(field: 'logo' | 'cover', file: File) {
+    if (!token) return;
+    setUploadingImage(field);
+    setMessage(`Uploading ${field} image…`);
+    try {
+      const compressed = await imageCompression(file, { maxWidthOrHeight: 1600, initialQuality: 0.8, useWebWorker: true, fileType: 'image/webp' });
+      const response = await fetch('/api/merchant/media/upload-url', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind: 'merchant', contentType: compressed.type || 'image/webp', size: compressed.size }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Could not prepare upload');
+      const { error } = await supabase.storage.from(result.bucket).uploadToSignedUrl(result.path, result.token, compressed);
+      if (error) throw error;
+      const url = supabase.storage.from(result.bucket).getPublicUrl(result.path).data.publicUrl;
+      setProfileImages(current => ({ ...current, [field]: url }));
+      setMessage(`${field === 'logo' ? 'Logo' : 'Cover'} uploaded. Save your listing to publish it.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Image upload failed.');
+    } finally {
+      setUploadingImage(null);
+    }
+  }
 
   useEffect(() => {
     let active = true;
@@ -113,7 +142,7 @@ export default function MerchantDashboardPage() {
       <label id="tagline" className="block text-sm font-medium text-[#2C3E2D]">Tagline<input name="tagline" defaultValue={merchant.tagline || ''} className="mt-1.5 w-full rounded-lg border border-[#DDE5DC] px-3 py-2 text-sm" /></label>
       <label id="description" className="block text-sm font-medium text-[#2C3E2D]">About your restaurant<textarea name="description" defaultValue={merchant.description || ''} rows={5} className="mt-1.5 w-full rounded-lg border border-[#DDE5DC] px-3 py-2 text-sm" /></label>
       <div id="contact" className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <label className="text-sm font-medium text-[#2C3E2D]">Phone<input name="phone" defaultValue={merchant.phone || ''} className="mt-1.5 w-full rounded-lg border border-[#DDE5DC] px-3 py-2 text-sm" /></label><label className="text-sm font-medium text-[#2C3E2D]">WhatsApp<input name="whatsapp" defaultValue={merchant.whatsapp || ''} className="mt-1.5 w-full rounded-lg border border-[#DDE5DC] px-3 py-2 text-sm" /></label><label className="text-sm font-medium text-[#2C3E2D]">Email<input name="email" type="email" defaultValue={merchant.email || ''} className="mt-1.5 w-full rounded-lg border border-[#DDE5DC] px-3 py-2 text-sm" /></label><label className="text-sm font-medium text-[#2C3E2D]">Website<input name="website" type="url" defaultValue={merchant.website || ''} className="mt-1.5 w-full rounded-lg border border-[#DDE5DC] px-3 py-2 text-sm" /></label><label className="text-sm font-medium text-[#2C3E2D]">Instagram URL<input name="instagram" type="url" defaultValue={merchant.instagram || ''} className="mt-1.5 w-full rounded-lg border border-[#DDE5DC] px-3 py-2 text-sm" /></label><label className="text-sm font-medium text-[#2C3E2D]">Facebook URL<input name="facebook" type="url" defaultValue={merchant.facebook || ''} className="mt-1.5 w-full rounded-lg border border-[#DDE5DC] px-3 py-2 text-sm" /></label><label id="images" className="text-sm font-medium text-[#2C3E2D]">Logo image URL<input name="logo_image" type="url" defaultValue={merchant.logo_image || ''} className="mt-1.5 w-full rounded-lg border border-[#DDE5DC] px-3 py-2 text-sm" /></label><label className="text-sm font-medium text-[#2C3E2D]">Cover image URL<input name="cover_image" type="url" defaultValue={merchant.cover_image || ''} className="mt-1.5 w-full rounded-lg border border-[#DDE5DC] px-3 py-2 text-sm" /></label>
+        <label className="text-sm font-medium text-[#2C3E2D]">Phone<input name="phone" defaultValue={merchant.phone || ''} className="mt-1.5 w-full rounded-lg border border-[#DDE5DC] px-3 py-2 text-sm" /></label><label className="text-sm font-medium text-[#2C3E2D]">WhatsApp<input name="whatsapp" defaultValue={merchant.whatsapp || ''} className="mt-1.5 w-full rounded-lg border border-[#DDE5DC] px-3 py-2 text-sm" /></label><label className="text-sm font-medium text-[#2C3E2D]">Email<input name="email" type="email" defaultValue={merchant.email || ''} className="mt-1.5 w-full rounded-lg border border-[#DDE5DC] px-3 py-2 text-sm" /></label><label className="text-sm font-medium text-[#2C3E2D]">Website<input name="website" type="url" defaultValue={merchant.website || ''} className="mt-1.5 w-full rounded-lg border border-[#DDE5DC] px-3 py-2 text-sm" /></label><label className="text-sm font-medium text-[#2C3E2D]">Instagram URL<input name="instagram" type="url" defaultValue={merchant.instagram || ''} className="mt-1.5 w-full rounded-lg border border-[#DDE5DC] px-3 py-2 text-sm" /></label><label className="text-sm font-medium text-[#2C3E2D]">Facebook URL<input name="facebook" type="url" defaultValue={merchant.facebook || ''} className="mt-1.5 w-full rounded-lg border border-[#DDE5DC] px-3 py-2 text-sm" /></label><div id="images" className="space-y-2"><label className="block text-sm font-medium text-[#2C3E2D]">Logo image URL<input name="logo_image" type="url" value={profileImages.logo} onChange={event => setProfileImages(current => ({ ...current, logo: event.target.value }))} className="mt-1.5 w-full rounded-lg border border-[#DDE5DC] px-3 py-2 text-sm" /></label><label className="block text-xs text-[#6B6560]">Upload logo<input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploadingImage !== null} onChange={event => { const file = event.target.files?.[0]; if (file) void uploadProfileImage('logo', file); event.currentTarget.value = ''; }} className="mt-1 block w-full text-xs" /></label>{profileImages.logo && <img src={profileImages.logo} alt="Logo preview" className="h-16 w-16 rounded-lg border border-[#DDE5DC] object-cover" />}</div><div className="space-y-2"><label className="block text-sm font-medium text-[#2C3E2D]">Cover image URL<input name="cover_image" type="url" value={profileImages.cover} onChange={event => setProfileImages(current => ({ ...current, cover: event.target.value }))} className="mt-1.5 w-full rounded-lg border border-[#DDE5DC] px-3 py-2 text-sm" /></label><label className="block text-xs text-[#6B6560]">Upload cover<input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploadingImage !== null} onChange={event => { const file = event.target.files?.[0]; if (file) void uploadProfileImage('cover', file); event.currentTarget.value = ''; }} className="mt-1 block w-full text-xs" /></label>{profileImages.cover && <img src={profileImages.cover} alt="Cover preview" className="h-20 w-32 rounded-lg border border-[#DDE5DC] object-cover" />}</div>
       </div>
       <label id="menu" className="block text-sm font-medium text-[#2C3E2D]">Menu PDF URL<input name="menu_pdf_url" type="url" defaultValue={merchant.menu_pdf_url || ''} className="mt-1.5 w-full rounded-lg border border-[#DDE5DC] px-3 py-2 text-sm" /></label>
       <fieldset id="hours"><legend className="text-sm font-medium text-[#2C3E2D]">Opening hours</legend><p className="mt-1 text-xs text-[#6B6560]">For example: 10:00 AM – 10:00 PM. Leave a day blank if closed.</p><div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">{days.map(day => <label key={day} className="text-sm capitalize text-[#2C3E2D]">{day}<input name={`hours-${day}`} defaultValue={merchant.operating_hours?.[day] || ''} className="mt-1 w-full rounded-lg border border-[#DDE5DC] px-3 py-2 text-sm" /></label>)}</div></fieldset>
