@@ -17,6 +17,9 @@ dist/
 .env*.local
 .env
 
+# Supabase CLI local connection metadata
+supabase/.temp/
+
 # Vercel
 .vercel
 

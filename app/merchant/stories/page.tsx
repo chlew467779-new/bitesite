@@ -16,6 +16,7 @@ export default function MerchantStoriesPage() {
   const [rights, setRights] = useState(false);
   const [requestAi, setRequestAi] = useState(false);
   const [message, setMessage] = useState('Loading…');
+  const [showSubmissionLink, setShowSubmissionLink] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [coverFileName, setCoverFileName] = useState('');
@@ -42,8 +43,13 @@ export default function MerchantStoriesPage() {
     setSaving(true); setMessage('');
     const response = await fetch('/api/merchant/story-submissions', { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ ...form, image_urls: form.image_urls.split(/[\n,]/).map(value => value.trim()).filter(Boolean), rights_declared: rights, ai_assistance_requested: requestAi }) });
     const result = await response.json();
-    if (!response.ok) setMessage(result.error || 'Unable to submit Story.');
-    else { setForm({ title: '', excerpt: '', story_angle: '', content: '', cover_image: '', image_urls: '', rights_note: '' }); setRights(false); setRequestAi(false); setCoverFileName(''); setGalleryFileNames([]); setCoverPreview(''); setGalleryPreviews([]); setMessage('Submitted for editorial review.'); await load(); }
+    if (!response.ok) {
+      const alreadyPending = response.status === 409;
+      if (alreadyPending) await load();
+      setMessage(alreadyPending ? 'You already have a Story awaiting review. You can view it below.' : result.error || 'Unable to submit Story.');
+      setShowSubmissionLink(alreadyPending);
+    }
+    else { setForm({ title: '', excerpt: '', story_angle: '', content: '', cover_image: '', image_urls: '', rights_note: '' }); setRights(false); setRequestAi(false); setCoverFileName(''); setGalleryFileNames([]); setCoverPreview(''); setGalleryPreviews([]); await load(); setShowSubmissionLink(false); setMessage('Submitted for editorial review. You can track its status below.'); }
     setSaving(false);
   }
 
@@ -80,5 +86,5 @@ export default function MerchantStoriesPage() {
     <button disabled={saving || uploading || !rights} className="rounded-lg bg-[#2C3E2D] px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{saving ? 'Submitting…' : 'Submit for review'}</button>
   </form>;
 
-  return <main className="min-h-screen bg-[#FAFBF7] px-4 py-16"><div className="mx-auto max-w-3xl"><Link href="/merchant" className="text-sm text-emerald-700 underline">← Merchant dashboard</Link><h1 className="mt-5 font-serif text-3xl text-[#2C3E2D]">Submit a Story</h1><p className="mt-2 text-sm text-[#6B6560]">Share facts and photos. BiteSite will review and publish approved Stories.</p>{message && <p aria-live="polite" className="mt-4 rounded-lg bg-white p-3 text-sm text-[#6B6560]">{message}</p>}{authChecked && token ? formContent : authChecked ? <div className="mt-6 rounded-2xl border border-[#DDE5DC] bg-white p-6 text-sm text-[#6B6560]">Please <Link href="/merchant/login" className="text-emerald-700 underline">sign in as a Merchant</Link> before submitting a Story.</div> : null}{authChecked && token && <section className="mt-8"><h2 className="font-semibold text-[#2C3E2D]">Your submissions</h2><div className="mt-3 space-y-2">{submissions.map(item => <div key={item.id} className="rounded-lg border border-[#DDE5DC] bg-white p-4 text-sm"><div className="flex items-center justify-between gap-3"><span className="font-medium text-[#2C3E2D]">{item.title}</span><span className="text-[#6B6560]">{labels[item.status] || item.status}</span></div>{item.review_notes && <p className="mt-2 text-[#6B6560]">Review note: {item.review_notes}</p>}</div>)}{submissions.length === 0 && <p className="text-sm text-[#6B6560]">No submissions yet.</p>}</div></section>}</div></main>;
+  return <main className="min-h-screen bg-[#FAFBF7] px-4 py-16"><div className="mx-auto max-w-3xl"><Link href="/merchant" className="text-sm text-emerald-700 underline">← Merchant dashboard</Link><h1 className="mt-5 font-serif text-3xl text-[#2C3E2D]">Submit a Story</h1><p className="mt-2 text-sm text-[#6B6560]">Share facts and photos. BiteSite will review and publish approved Stories.</p>{message && <p aria-live="polite" className="mt-4 rounded-lg bg-white p-3 text-sm text-[#6B6560]">{message}{showSubmissionLink && <Link href="#your-submissions" className="ml-2 font-medium text-emerald-700 underline">View your pending submission</Link>}</p>}{authChecked && token ? formContent : authChecked ? <div className="mt-6 rounded-2xl border border-[#DDE5DC] bg-white p-6 text-sm text-[#6B6560]">Please <Link href="/merchant/login" className="text-emerald-700 underline">sign in as a Merchant</Link> before submitting a Story.</div> : null}{authChecked && token && <section id="your-submissions" className="mt-8 scroll-mt-6"><h2 className="font-semibold text-[#2C3E2D]">Your submissions</h2><div className="mt-3 space-y-2">{submissions.map(item => <div key={item.id} className="rounded-lg border border-[#DDE5DC] bg-white p-4 text-sm"><div className="flex items-center justify-between gap-3"><span className="font-medium text-[#2C3E2D]">{item.title}</span><span className="text-[#6B6560]">{labels[item.status] || item.status}</span></div>{item.review_notes && <details className="mt-2 text-[#6B6560]"><summary className="cursor-pointer font-medium text-[#2C3E2D]">Review note</summary><p className="mt-2 whitespace-pre-wrap">{item.review_notes}</p></details>}</div>)}{submissions.length === 0 && <p className="text-sm text-[#6B6560]">No submissions yet.</p>}</div></section>}</div></main>;
 }
