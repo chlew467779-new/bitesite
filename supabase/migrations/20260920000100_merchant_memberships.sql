@@ -20,21 +20,9 @@ drop policy if exists merchant_memberships_self on public.merchant_memberships;
 create policy merchant_memberships_self on public.merchant_memberships
   for select to authenticated using (user_id = auth.uid());
 
+-- Merchant profile mutations must go through the server-side API.
+-- Do not allow authenticated users to update merchants directly.
 drop policy if exists merchants_owner_write on public.merchants;
-create policy merchants_owner_write on public.merchants
-  for update to authenticated
-  using (exists (
-    select 1 from public.merchant_memberships mm
-    where mm.merchant_id = merchants.id
-      and mm.user_id = auth.uid()
-      and mm.status = 'active'
-  ))
-  with check (exists (
-    select 1 from public.merchant_memberships mm
-    where mm.merchant_id = merchants.id
-      and mm.user_id = auth.uid()
-      and mm.status = 'active'
-  ));
+revoke update on public.merchants from authenticated;
 
-grant update on public.merchants to authenticated;
 commit;
