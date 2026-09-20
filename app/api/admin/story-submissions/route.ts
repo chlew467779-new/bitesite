@@ -133,9 +133,16 @@ export async function PATCH(request: Request) {
       const { data: source, error: sourceError } = await supabase.from('story_submissions').select('*').eq('id', body.id).single();
       if (sourceError || !source) return NextResponse.json({ error: sourceError?.message || 'Submission not found' }, { status: 404 });
       if (!source.rights_declared) return NextResponse.json({ error: 'Rights declaration is required before conversion' }, { status: 400 });
+      const publishVersion = body.publish_version === 'ai' ? 'ai' : 'original';
+      const aiCopy = source.generated_copy && typeof source.generated_copy === 'object' ? source.generated_copy as { title?: unknown; excerpt?: unknown; content?: unknown } : null;
+      if (publishVersion === 'ai' && (!aiCopy || typeof aiCopy.title !== 'string' || typeof aiCopy.excerpt !== 'string' || typeof aiCopy.content !== 'string' || !aiCopy.content.trim())) {
+        return NextResponse.json({ error: 'Generate and review an AI draft before publishing the AI version' }, { status: 400 });
+      }
       if (body.publish === true && source.article_id) {
         const publishedAt = new Date().toISOString();
+        const versionFields = publishVersion === 'ai' ? { title: aiCopy?.title, excerpt: aiCopy?.excerpt, content: aiCopy?.content } : {};
         const { data: article, error: publishError } = await supabase.from('articles').update({
+          ...versionFields,
           published: true,
           editorial_status: 'published',
           published_at: publishedAt,
@@ -144,7 +151,7 @@ export async function PATCH(request: Request) {
           reviewed_by: body.reviewed_by || 'admin',
         }).eq('id', source.article_id).select().single();
         if (publishError || !article) return NextResponse.json({ error: publishError?.message || 'Could not publish linked Story' }, { status: 500 });
-        const { error: revisionError } = await supabase.from('article_revisions').insert({ article_id: article.id, action: 'published', snapshot: article, actor: body.reviewed_by || 'admin', note: body.review_notes || 'Published from Story submission review.' });
+        const { error: revisionError } = await supabase.from('article_revisions').insert({ article_id: article.id, action: 'published', snapshot: article, actor: body.reviewed_by || 'admin', note: body.review_notes || `Published ${publishVersion} version from Story submission review.` });
         if (revisionError) return NextResponse.json({ error: revisionError.message }, { status: 500 });
         const { data: published, error: conversionError } = await supabase.from('story_submissions').update(updateData).eq('id', body.id).select().single();
         if (conversionError) return NextResponse.json({ error: conversionError.message }, { status: 500 });
@@ -157,11 +164,14 @@ export async function PATCH(request: Request) {
         : '';
       const publishImmediately = body.publish === true;
       const publishedAt = publishImmediately ? new Date().toISOString() : null;
+      const title = publishVersion === 'ai' ? String(aiCopy?.title) : source.title;
+      const excerpt = publishVersion === 'ai' ? String(aiCopy?.excerpt) : source.excerpt || null;
+      const content = publishVersion === 'ai' ? String(aiCopy?.content) : gallery ? `${source.content}\n\n${gallery}` : source.content;
       const { data: article, error: articleError } = await supabase.from('articles').insert({
         slug,
-        title: source.title,
-        excerpt: source.excerpt || null,
-        content: gallery ? `${source.content}\n\n${gallery}` : source.content,
+        title,
+        excerpt,
+        content,
         cover_image: source.cover_image || null,
         category: 'Merchant Story',
         tags: [],
@@ -180,7 +190,7 @@ export async function PATCH(request: Request) {
         action: publishImmediately ? 'published' : 'created',
         snapshot: article,
         actor: 'admin',
-        note: publishImmediately ? `Published from Story submission ${source.id}` : `Created from Story submission ${source.id}`,
+        note: publishImmediately ? `Published ${publishVersion} version from Story submission ${source.id}` : `Created from Story submission ${source.id}`,
       });
       if (revisionError) {
         await supabase.from('articles').delete().eq('id', article.id);

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Eye, FilePlus2, Inbox, Loader2, XCircle } from 'lucide-react';
+import { Eye, FilePlus2, Inbox, Loader2, Sparkles, XCircle } from 'lucide-react';
 import { useAuth } from './auth-context';
 
 type Submission = {
@@ -21,6 +21,7 @@ type Submission = {
   submitted_at: string | null;
   article_id: string | null;
   ai_assistance_requested: boolean;
+  generated_copy: { title?: string; excerpt?: string; content?: string } | null;
 };
 
 type SubmissionStatus = Submission['status'];
@@ -34,6 +35,7 @@ export default function StorySubmissionsManager({ onDraftCreated }: { onDraftCre
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState<string | null>(null);
+  const [aiWorking, setAiWorking] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [showNew, setShowNew] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -58,7 +60,7 @@ export default function StorySubmissionsManager({ onDraftCreated }: { onDraftCre
 
   useEffect(() => { load(); }, [load]);
 
-  const updateStatus = async (submission: Submission, status: 'converted' | 'draft' | 'approved' | 'rejected', publish = false) => {
+  const updateStatus = async (submission: Submission, status: 'converted' | 'draft' | 'approved' | 'rejected', publish = false, publishVersion: 'original' | 'ai' = 'original') => {
     if (!token) return;
     setWorking(submission.id);
     setError('');
@@ -66,7 +68,7 @@ export default function StorySubmissionsManager({ onDraftCreated }: { onDraftCre
       const res = await fetch('/api/admin/story-submissions', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
-        body: JSON.stringify({ id: submission.id, status, publish, rights_declared: submission.rights_declared, reviewed_by: 'admin', review_notes: status === 'draft' ? 'Changes requested by editorial review.' : status === 'approved' ? 'Approved by editorial review.' : status === 'rejected' ? 'Rejected by editorial review.' : publish ? 'Published by editorial review.' : submission.review_notes || null }),
+        body: JSON.stringify({ id: submission.id, status, publish, publish_version: publishVersion, rights_declared: submission.rights_declared, reviewed_by: 'admin', review_notes: status === 'draft' ? 'Changes requested by editorial review.' : status === 'approved' ? 'Approved by editorial review.' : status === 'rejected' ? 'Rejected by editorial review.' : publish ? `Published ${publishVersion} version by editorial review.` : submission.review_notes || null }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Status update failed');
@@ -79,6 +81,18 @@ export default function StorySubmissionsManager({ onDraftCreated }: { onDraftCre
     } finally {
       setWorking(null);
     }
+  };
+
+  const generateAiDraft = async (submission: Submission) => {
+    if (!token) return;
+    setAiWorking(submission.id); setError('');
+    try {
+      const res = await fetch('/api/admin/ai-draft', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-token': token }, body: JSON.stringify({ submission_id: submission.id }) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'AI draft generation failed');
+      setSubmissions(prev => prev.map(item => item.id === submission.id ? { ...item, generated_copy: data.draft } : item));
+    } catch (err) { setError(err instanceof Error ? err.message : 'AI draft generation failed'); }
+    finally { setAiWorking(null); }
   };
 
   const createSubmission = async (event: React.FormEvent) => {
@@ -159,12 +173,15 @@ export default function StorySubmissionsManager({ onDraftCreated }: { onDraftCre
                   <p className="text-xs mt-3"><span className={submission.rights_declared ? 'text-emerald-400' : 'text-red-400'}>{submission.rights_declared ? 'Rights declared' : 'Rights declaration missing'}</span>{submission.rights_note ? ` · ${submission.rights_note}` : ''}</p>
                   {(submission.cover_image || submission.image_urls?.length > 0) && <p className="text-xs text-slate-500 mt-2">Media: {submission.cover_image ? 'cover' : 'no cover'} · {submission.image_urls?.length || 0} gallery image(s)</p>}
                   {submission.review_notes && <p className="text-xs text-amber-300 mt-2">Review: {submission.review_notes}</p>}
+                  {submission.generated_copy && <p className="text-xs text-violet-300 mt-2">AI draft available for review: {submission.generated_copy.title || 'untitled'}</p>}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <button onClick={() => updateStatus(submission, 'approved')} disabled={working === submission.id} className="px-3 py-2 rounded-lg bg-sky-500/10 text-sky-300 border border-sky-700/50 text-sm disabled:opacity-50">Approve</button>
                   <button onClick={() => updateStatus(submission, 'rejected')} disabled={working === submission.id} className="px-3 py-2 rounded-lg bg-red-500/10 text-red-300 border border-red-700/50 text-sm disabled:opacity-50">Reject</button>
                   <button onClick={() => updateStatus(submission, 'converted')} disabled={working === submission.id} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-emerald-500/10 text-emerald-300 border border-emerald-700/50 text-sm disabled:opacity-50"><FilePlus2 className="w-4 h-4" />Create draft Story</button>
-                  <button onClick={() => updateStatus(submission, 'converted', true)} disabled={working === submission.id} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-amber-500/10 text-amber-300 border border-amber-700/50 text-sm disabled:opacity-50"><FilePlus2 className="w-4 h-4" />Publish Story</button>
+                  <button onClick={() => generateAiDraft(submission)} disabled={working === submission.id || aiWorking === submission.id} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-violet-500/10 text-violet-300 border border-violet-700/50 text-sm disabled:opacity-50"><Sparkles className="w-4 h-4" />{aiWorking === submission.id ? 'Generating…' : 'Generate AI draft'}</button>
+                  <button onClick={() => updateStatus(submission, 'converted', true, 'original')} disabled={working === submission.id} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-amber-500/10 text-amber-300 border border-amber-700/50 text-sm disabled:opacity-50"><FilePlus2 className="w-4 h-4" />Publish original</button>
+                  <button onClick={() => updateStatus(submission, 'converted', true, 'ai')} disabled={working === submission.id || !submission.generated_copy} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-fuchsia-500/10 text-fuchsia-300 border border-fuchsia-700/50 text-sm disabled:opacity-50"><FilePlus2 className="w-4 h-4" />Publish AI draft</button>
                   <button onClick={() => updateStatus(submission, 'draft')} disabled={working === submission.id} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-red-500/10 text-red-300 border border-red-700/50 text-sm disabled:opacity-50"><XCircle className="w-4 h-4" />Request changes</button>
                   {submission.merchant_slug && <button onClick={() => window.open(`/store/${submission.merchant_slug}`, '_blank')} className="p-2 rounded-lg border border-slate-700 text-slate-400 hover:text-slate-200" title="Open merchant page"><Eye className="w-4 h-4" /></button>}
                 </div>
