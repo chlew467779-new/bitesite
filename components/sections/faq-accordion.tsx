@@ -24,6 +24,9 @@ function AccordionItem({
     <StaggerItem index={index}>
       <div className="border-b border-[#DDE5DC]">
         <button
+          type="button"
+          aria-expanded={isOpen}
+          aria-controls={`faq-answer-${index}`}
           onClick={() => setIsOpen(!isOpen)}
           className="flex w-full items-center justify-between py-5 text-left transition-colors"
           style={{ WebkitTapHighlightColor: "transparent" }}
@@ -38,6 +41,7 @@ function AccordionItem({
           />
         </button>
         <div
+          id={`faq-answer-${index}`}
           className={`overflow-hidden transition-all duration-300 ${
             isOpen ? "max-h-[800px] pb-5" : "max-h-0"
           }`}
@@ -53,34 +57,34 @@ function AccordionItem({
 
 const faqs = [
   {
-    question: "Can I update my menu?",
+    question: "Is it really free?",
     answer:
-      "Yes — monthly content updates are included in your plan. Just send us your new menu items, photos, or changes via WhatsApp and we will update your page within 48 hours. Easy! ✨",
+      "Yes. There is no setup fee, monthly fee, or commission for the BiteSite partner programme. Partners agree to keep their listing useful by sharing Stories regularly.",
+  },
+  {
+    question: "What do partners need to contribute?",
+    answer:
+      "Partners should share useful restaurant updates regularly, such as new menus, launches, offers, events, behind-the-scenes moments, or founder stories. Original information and image rights remain important.",
+  },
+  {
+    question: "Will BiteSite promote my Stories?",
+    answer:
+      "BiteSite may reshare suitable Stories on our Facebook, Instagram, and other social channels. We will choose content that fits the channel and cannot guarantee that every Story will be reshared.",
   },
   {
     question: "Do I need to download an app?",
     answer:
-      "Nope! Your customers simply open a link or scan a QR code. No app downloads, no sign-ups, no friction. Just tap and go! 👆",
+      "No. Customers simply open your BiteSite link. Partners can work with us through the web and WhatsApp.",
   },
   {
-    question: "Any hidden cost?",
+    question: "Can I update my listing?",
     answer:
-      "Zero hidden costs! You pay exactly RM599 one-time setup + RM149/month. That is it. No commission, no transaction fees, no surprises. 🎉",
+      "Yes. Merchants can update approved listing details from the Merchant dashboard. Name, address, slug, and business status changes go through a review request.",
   },
   {
-    question: "Can I customize my restaurant page?",
+    question: "How do I join?",
     answer:
-      "Absolutely! You can choose from 5 beautiful layout styles: Classic, Elegant, Minimal, Modern, and Rustic. Want something extra unique? Advanced customization is available with an additional fee. ✨",
-  },
-  {
-    question: "How long does it take to go live?",
-    answer:
-      "Typically 3–5 business days after we receive your menu, photos, and business details. Then boom — you are live! 🚀",
-  },
-  {
-    question: "What if I want to cancel?",
-    answer:
-      "No worries! You can cancel anytime with 30 days notice. There is no lock-in contract. We are here when you need us. 🤝",
+      "Send us a WhatsApp message with your restaurant name, area, and best contact email. We will explain the next steps and invite you when ready.",
   },
 ];
 

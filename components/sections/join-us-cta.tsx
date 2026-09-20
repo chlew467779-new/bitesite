@@ -14,7 +14,7 @@ export function JoinUsCta() {
       >
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="mb-6 font-serif text-2xl font-bold text-[#2C3E2D] md:text-3xl">
-            Ready to get started?
+            Ready to join BiteSite for free?
           </h2>
           <a
             href={BITESITE_WHATSAPP_URL}
@@ -25,7 +25,7 @@ export function JoinUsCta() {
             style={{ WebkitTapHighlightColor: "transparent" }}
           >
             <MessageCircle size={20} />
-            Chat with us on WhatsApp
+            Talk to us about becoming a partner
           </a>
         </div>
       </section>

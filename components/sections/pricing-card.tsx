@@ -14,23 +14,11 @@ export function PricingCard() {
       >
         <div className="mx-auto max-w-md">
           <div className="rounded-xl border-2 border-[#5A8F6E] bg-white p-8 text-center sm:p-10">
-            <p className="mb-4 text-sm font-medium uppercase tracking-wider text-[#8A968B]">
-              Pricing
-            </p>
-            <div className="mb-2 font-serif text-5xl font-bold text-[#2C3E2D]">
-              RM 599
-            </div>
-            <p className="mb-6 text-sm text-[#6B6560]">One-time Setup</p>
-            <div className="mb-8 flex items-center justify-center gap-3">
-              <span className="h-px w-12 bg-[#DDE5DC]" />
-              <span className="text-sm text-[#8A968B]">plus</span>
-              <span className="h-px w-12 bg-[#DDE5DC]" />
-            </div>
-            <div className="mb-8 font-serif text-3xl font-bold text-[#2C3E2D]">
-              RM 149
-              <span className="ml-1 text-base font-normal text-[#6B6560]">
-                / month
-              </span>
+            <p className="mb-4 text-sm font-medium uppercase tracking-wider text-[#8A968B]">Free partner programme</p>
+            <div className="mb-2 font-serif text-5xl font-bold text-[#2C3E2D]">RM 0</div>
+            <p className="mb-6 text-sm text-[#6B6560]">No setup fee. No monthly fee. No commission.</p>
+            <div className="mb-8 rounded-xl bg-[#F0F4EC] p-4 text-left text-sm leading-6 text-[#6B6560]">
+              In return, partners keep their listing useful by sharing Stories regularly: new menus, launches, events, offers, or moments from the team.
             </div>
             <a
               href={BITESITE_WHATSAPP_URL}
@@ -41,7 +29,7 @@ export function PricingCard() {
               style={{ WebkitTapHighlightColor: "transparent" }}
             >
               <MessageCircle size={18} />
-              Chat on WhatsApp
+              Ask about joining
             </a>
           </div>
         </div>
