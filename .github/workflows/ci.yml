@@ -29,5 +29,3 @@ jobs:
         run: npm ci
       - name: Verify code and security checks
         run: npm run verify
-      - name: Production build
-        run: npm run build

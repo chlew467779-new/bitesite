@@ -131,7 +131,7 @@ Production build verification is separate because Next.js may need network acces
 npm run build
 ```
 
-The repository CI workflow runs both verification and build for every pull request.
+The repository CI workflow runs verification for every pull request. Vercel Preview remains the production-build check because it has the configured Supabase/Vercel environment variables; GitHub Actions must not receive production secrets just to reproduce that build.
 
 ## 9. Change reporting
 
