@@ -7,11 +7,12 @@ import { Eye, Users, MousePointerClick, Store, RefreshCw } from 'lucide-react';
 
 interface OverviewData {
   totalViews: number;
-  totalUnique: number;
+  totalUnique: number | null;
   totalEvents: number;
   merchantCount: number;
   todayViews: number;
   range: string;
+  rawVisitorDataAvailable: boolean;
 }
 
 interface StatCardsProps {
@@ -65,8 +66,8 @@ export default function StatCards({ range }: StatCardsProps) {
     },
     {
       label: 'Unique Visitors',
-      description: 'Distinct IPs; an approximate visitor count',
-      value: data?.totalUnique ?? 0,
+      description: data?.rawVisitorDataAvailable === false ? 'Available for up to 90 days of raw analytics' : 'Distinct IPs; an approximate visitor count',
+      value: data ? data.totalUnique : 0,
       icon: Users,
       color: 'text-emerald-400',
       bg: 'bg-emerald-500/10',
@@ -133,7 +134,7 @@ export default function StatCards({ range }: StatCardsProps) {
               {loading ? (
                 <span className="inline-block w-16 h-8 bg-slate-800 rounded animate-pulse" />
               ) : (
-                formatNumber(card.value)
+                card.value === null ? '—' : formatNumber(card.value)
               )}
             </p>
             <p className="text-sm text-slate-300" title={card.description}>{card.label}</p>

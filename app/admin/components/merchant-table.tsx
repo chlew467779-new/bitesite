@@ -8,7 +8,7 @@ import { Eye, MessageCircle, CalendarCheck, RefreshCw } from 'lucide-react';
 interface MerchantData {
   slug: string;
   views: number;
-  unique_ips: number;
+  unique_ips: number | null;
   whatsapp: number;
   bookings: number;
   grabfoodClicks: number;
@@ -31,6 +31,7 @@ export default function MerchantTable({ range }: MerchantTableProps) {
   const [sortBy, setSortBy] = useState<keyof Pick<MerchantData, 'views' | 'unique_ips' | 'menuViews' | 'storyViews' | 'grabfoodClicks' | 'directionsClicks' | 'phoneClicks' | 'websiteClicks' | 'emailClicks' | 'whatsapp' | 'bookings'>>('views');
   const [error, setError] = useState('');
   const [retryKey, setRetryKey] = useState(0);
+  const [rawVisitorDataAvailable, setRawVisitorDataAvailable] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -44,6 +45,9 @@ export default function MerchantTable({ range }: MerchantTableProps) {
         const json = await res.json();
         if (!res.ok) throw new Error(json.error || 'Unable to load merchant analytics');
         setData(json.data || []);
+        const rawAvailable = json.rawVisitorDataAvailable !== false;
+        setRawVisitorDataAvailable(rawAvailable);
+        if (!rawAvailable) setSortBy(current => current === 'unique_ips' ? 'views' : current);
       } catch (err) {
         console.error('MerchantTable fetch error:', err);
         setError(err instanceof Error ? err.message : 'Unable to load merchant analytics');
@@ -55,7 +59,7 @@ export default function MerchantTable({ range }: MerchantTableProps) {
   }, [range, retryKey, token]);
 
   const sortedData = [...data].sort((a, b) => {
-    return b[sortBy] - a[sortBy];
+    return (b[sortBy] ?? -1) - (a[sortBy] ?? -1);
   });
 
   const formatNumber = (n: number) => n.toLocaleString();
@@ -96,7 +100,7 @@ export default function MerchantTable({ range }: MerchantTableProps) {
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
       <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
-        <h3 className="text-sm font-medium text-slate-300">Merchant Performance</h3>
+        <div><h3 className="text-sm font-medium text-slate-300">Merchant Performance</h3>{!rawVisitorDataAvailable && <p className="mt-1 text-xs text-amber-300">Unique visitor ranking is available for up to 90 days of raw analytics.</p>}</div>
         <div className="flex items-center gap-2">
           <label htmlFor="merchant-sort" className="text-xs text-slate-500">Sort by:</label>
           <select
@@ -106,7 +110,7 @@ export default function MerchantTable({ range }: MerchantTableProps) {
             className="rounded-md border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs text-slate-300 focus:border-amber-500 focus:outline-none"
           >
             <option value="views">Views</option>
-            <option value="unique_ips">Unique visitors</option>
+            <option value="unique_ips" disabled={!rawVisitorDataAvailable}>Unique visitors{!rawVisitorDataAvailable ? ' (90-day limit)' : ''}</option>
             <option value="menuViews">Menu views</option>
             <option value="storyViews">Story views</option>
             <option value="grabfoodClicks">GrabFood</option>

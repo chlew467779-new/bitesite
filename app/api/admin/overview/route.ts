@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const range = searchParams.get('range') || '7d';
   const { start, end, startDateTime, endDateTime } = getMytDateRange(range);
+  const rawVisitorDataAvailable = range !== '365d';
 
   try {
     // FIX: Unique Visitors 直接从 page_views 查 DISTINCT ip，绕过聚合表维度拆分问题
@@ -25,7 +26,9 @@ export async function GET(request: NextRequest) {
       { data: todayData },
     ] = await Promise.all([
       supabase.from('merchant_daily_views').select('count').eq('event_type', 'page_view').gte('view_date', start).lte('view_date', end),
-      supabase.from('page_views').select('ip').eq('event_type', 'page_view').gte('created_at', startDateTime).lte('created_at', endDateTime),
+      rawVisitorDataAvailable
+        ? supabase.from('page_views').select('ip').eq('event_type', 'page_view').gte('created_at', startDateTime).lte('created_at', endDateTime)
+        : Promise.resolve({ data: [] as { ip: string | null }[] }),
       supabase.from('merchant_daily_views').select('count').neq('event_type', 'page_view').gte('view_date', start).lte('view_date', end),
       supabase.from('merchants').select('*', { count: 'exact', head: true }).eq('is_published', true),
       supabase.from('merchant_daily_views').select('count').eq('event_type', 'page_view').eq('view_date', getMytToday()),
@@ -33,9 +36,9 @@ export async function GET(request: NextRequest) {
 
     const totalViews = viewsData?.reduce((sum, r) => sum + (r.count || 0), 0) || 0;
 
-    const totalUnique = new Set(
-      uniqueData?.map(r => r.ip).filter((ip): ip is string => Boolean(ip))
-    ).size;
+    const totalUnique = rawVisitorDataAvailable
+      ? new Set(uniqueData?.map(r => r.ip).filter((ip): ip is string => Boolean(ip))).size
+      : null;
 
     const totalEvents = eventsData?.reduce((sum, r) => sum + (r.count || 0), 0) || 0;
 
@@ -48,6 +51,7 @@ export async function GET(request: NextRequest) {
       merchantCount: merchantCount || 0,
       todayViews,
       range,
+      rawVisitorDataAvailable,
     }, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (err) {
     console.error('Overview API error:', err);

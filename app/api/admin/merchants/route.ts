@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const range = searchParams.get('range') || '7d';
   const { start, end } = getDateRange(range);
+  const rawVisitorDataAvailable = range !== '365d';
 
   try {
     const startDateTime = `${start}T00:00:00+08:00`;
@@ -61,7 +62,9 @@ export async function GET(request: NextRequest) {
       supabase.from('merchant_daily_views').select('slug, count').eq('event_type', 'email_click').gte('view_date', start).lte('view_date', end),
       supabase.from('merchant_daily_views').select('slug, count').eq('event_type', 'page_view').eq('page_type', 'story').gte('view_date', start).lte('view_date', end),
       supabase.from('articles').select('slug, merchant_slug').not('merchant_slug', 'is', null),
-      supabase.from('page_views').select('slug, ip').eq('page_type', 'merchant').eq('event_type', 'page_view').gte('created_at', startDateTime).lte('created_at', endDateTime),
+      rawVisitorDataAvailable
+        ? supabase.from('page_views').select('slug, ip').eq('page_type', 'merchant').eq('event_type', 'page_view').gte('created_at', startDateTime).lte('created_at', endDateTime)
+        : Promise.resolve({ data: [] as { slug: string | null; ip: string | null }[] }),
     ]);
 
     // Aggregated unique_ips are split by device/location dimensions and must
@@ -226,14 +229,16 @@ export async function GET(request: NextRequest) {
       .map(merchant => ({
         ...merchant,
         emailClicks: merchant.emailClicks || 0,
-        unique_ips: visitorIpsByMerchant.has(merchant.slug)
-          ? visitorIpsByMerchant.get(merchant.slug)!.size
-          : merchant.unique_ips,
+        unique_ips: rawVisitorDataAvailable
+          ? visitorIpsByMerchant.has(merchant.slug)
+            ? visitorIpsByMerchant.get(merchant.slug)!.size
+            : merchant.unique_ips
+          : null,
       }))
       .sort((a, b) => b.views - a.views);
 
     return NextResponse.json(
-      { data: result, range },
+      { data: result, range, rawVisitorDataAvailable },
       { headers: { 'Cache-Control': 'private, no-store' } },
     );
   } catch (err) {
