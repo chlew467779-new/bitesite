@@ -23,12 +23,29 @@ export default function MerchantStoriesPage() {
   const [galleryFileNames, setGalleryFileNames] = useState<string[]>([]);
   const [coverPreview, setCoverPreview] = useState('');
   const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
+  const [draftKey, setDraftKey] = useState<string | null>(null);
 
   async function load() {
     const { data } = await supabase.auth.getSession();
     const accessToken = data.session?.access_token;
     if (!accessToken) { setAuthChecked(true); setMessage('Please sign in with your merchant email first.'); return; }
     setToken(accessToken); setAuthChecked(true);
+    const nextDraftKey = data.session?.user?.id ? `bitesite:merchant-story-draft:${data.session.user.id}` : null;
+    setDraftKey(nextDraftKey);
+    if (nextDraftKey) {
+      try {
+        const savedDraft = window.localStorage.getItem(nextDraftKey);
+        if (savedDraft) {
+          const parsed = JSON.parse(savedDraft) as { form?: typeof form; rights?: boolean; requestAi?: boolean };
+          if (parsed.form && typeof parsed.form === 'object') setForm(current => ({ ...current, ...parsed.form }));
+          if (typeof parsed.rights === 'boolean') setRights(parsed.rights);
+          if (typeof parsed.requestAi === 'boolean') setRequestAi(parsed.requestAi);
+          setMessage('Your saved Story draft has been restored.');
+        }
+      } catch {
+        window.localStorage.removeItem(nextDraftKey);
+      }
+    }
     const response = await fetch('/api/merchant/story-submissions', { headers: { Authorization: `Bearer ${accessToken}` } });
     const result = await response.json();
     if (!response.ok) { setMessage(result.error || 'Unable to load submissions.'); return; }
@@ -36,6 +53,11 @@ export default function MerchantStoriesPage() {
   }
 
   useEffect(() => { void load(); }, []);
+
+  useEffect(() => {
+    if (!draftKey || (!form.title && !form.content && !form.excerpt && !form.story_angle && !form.cover_image && !form.image_urls && !form.rights_note && !rights && !requestAi)) return;
+    window.localStorage.setItem(draftKey, JSON.stringify({ form, rights, requestAi }));
+  }, [draftKey, form, rights, requestAi]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -49,7 +71,7 @@ export default function MerchantStoriesPage() {
       setMessage(alreadyPending ? 'You already have a Story awaiting review. You can view it below.' : result.error || 'Unable to submit Story.');
       setShowSubmissionLink(alreadyPending);
     }
-    else { setForm({ title: '', excerpt: '', story_angle: '', content: '', cover_image: '', image_urls: '', rights_note: '' }); setRights(false); setRequestAi(false); setCoverFileName(''); setGalleryFileNames([]); setCoverPreview(''); setGalleryPreviews([]); await load(); setShowSubmissionLink(false); setMessage('Submitted for editorial review. You can track its status below.'); }
+    else { if (draftKey) window.localStorage.removeItem(draftKey); setForm({ title: '', excerpt: '', story_angle: '', content: '', cover_image: '', image_urls: '', rights_note: '' }); setRights(false); setRequestAi(false); setCoverFileName(''); setGalleryFileNames([]); setCoverPreview(''); setGalleryPreviews([]); await load(); setShowSubmissionLink(false); setMessage('Submitted for editorial review. You can track its status below.'); }
     setSaving(false);
   }
 
