@@ -83,6 +83,9 @@ export default function StorySubmissionsManager({ onDraftCreated }: { onDraftCre
     }
   };
 
+  const confirmIrreversibleAction = (submission: Submission, action: string) =>
+    window.confirm(`${action} “${submission.title}”? This cannot be undone from the Story queue.`);
+
   const generateAiDraft = async (submission: Submission) => {
     if (!token) return;
     setAiWorking(submission.id); setError('');
@@ -177,11 +180,11 @@ export default function StorySubmissionsManager({ onDraftCreated }: { onDraftCre
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <button onClick={() => updateStatus(submission, 'approved')} disabled={working === submission.id} className="px-3 py-2 rounded-lg bg-sky-500/10 text-sky-300 border border-sky-700/50 text-sm disabled:opacity-50">Approve</button>
-                  <button onClick={() => updateStatus(submission, 'rejected')} disabled={working === submission.id} className="px-3 py-2 rounded-lg bg-red-500/10 text-red-300 border border-red-700/50 text-sm disabled:opacity-50">Reject</button>
+                  <button onClick={() => { if (confirmIrreversibleAction(submission, 'Reject')) void updateStatus(submission, 'rejected'); }} disabled={working === submission.id} className="px-3 py-2 rounded-lg bg-red-500/10 text-red-300 border border-red-700/50 text-sm disabled:opacity-50">Reject</button>
                   <button onClick={() => updateStatus(submission, 'converted')} disabled={working === submission.id} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-emerald-500/10 text-emerald-300 border border-emerald-700/50 text-sm disabled:opacity-50"><FilePlus2 className="w-4 h-4" />Create draft Story</button>
                   <button onClick={() => generateAiDraft(submission)} disabled={working === submission.id || aiWorking === submission.id} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-violet-500/10 text-violet-300 border border-violet-700/50 text-sm disabled:opacity-50"><Sparkles className="w-4 h-4" />{aiWorking === submission.id ? 'Generating…' : 'Generate AI draft'}</button>
-                  <button onClick={() => updateStatus(submission, 'converted', true, 'original')} disabled={working === submission.id} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-amber-500/10 text-amber-300 border border-amber-700/50 text-sm disabled:opacity-50"><FilePlus2 className="w-4 h-4" />Publish original</button>
-                  <button onClick={() => updateStatus(submission, 'converted', true, 'ai')} disabled={working === submission.id || !submission.generated_copy} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-fuchsia-500/10 text-fuchsia-300 border border-fuchsia-700/50 text-sm disabled:opacity-50"><FilePlus2 className="w-4 h-4" />Publish AI draft</button>
+                  <button onClick={() => { if (confirmIrreversibleAction(submission, 'Publish the original version of')) void updateStatus(submission, 'converted', true, 'original'); }} disabled={working === submission.id} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-amber-500/10 text-amber-300 border border-amber-700/50 text-sm disabled:opacity-50"><FilePlus2 className="w-4 h-4" />Publish original</button>
+                  <button onClick={() => { if (confirmIrreversibleAction(submission, 'Publish the AI draft of')) void updateStatus(submission, 'converted', true, 'ai'); }} disabled={working === submission.id || !submission.generated_copy} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-fuchsia-500/10 text-fuchsia-300 border border-fuchsia-700/50 text-sm disabled:opacity-50"><FilePlus2 className="w-4 h-4" />Publish AI draft</button>
                   <button onClick={() => updateStatus(submission, 'draft')} disabled={working === submission.id} className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-red-500/10 text-red-300 border border-red-700/50 text-sm disabled:opacity-50"><XCircle className="w-4 h-4" />Request changes</button>
                   {submission.merchant_slug && <button onClick={() => window.open(`/store/${submission.merchant_slug}`, '_blank')} className="p-2 rounded-lg border border-slate-700 text-slate-400 hover:text-slate-200" title="Open merchant page"><Eye className="w-4 h-4" /></button>}
                 </div>
