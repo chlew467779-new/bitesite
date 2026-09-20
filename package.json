@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "check:security": "node scripts/check-service-role-usage.mjs"
+    "check:security": "node scripts/check-service-role-usage.mjs",
+    "verify": "npm run typecheck && npm run lint && npm run check:security && git diff --check"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

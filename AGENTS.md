@@ -119,6 +119,20 @@ For every code change:
 
 If tests cannot be run, say exactly why.
 
+The standard local/PR verification command is:
+
+```text
+npm run verify
+```
+
+Production build verification is separate because Next.js may need network access to fetch configured Google Fonts:
+
+```text
+npm run build
+```
+
+The repository CI workflow runs verification for every pull request. Vercel Preview remains the production-build check because it has the configured Supabase/Vercel environment variables; GitHub Actions must not receive production secrets just to reproduce that build.
+
 ## 9. Change reporting
 
 At the end of a coding task, report:
