@@ -75,6 +75,8 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
   const [showDraftRestore, setShowDraftRestore] = useState(false);
   const [draftData, setDraftData] = useState<Record<string, unknown> | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
+  const [generatingDraft, setGeneratingDraft] = useState(false);
+  const [aiGenerated, setAiGenerated] = useState(false);
 
   const [form, setForm] = useState({
     title: '',
@@ -309,6 +311,30 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
     }
   };
 
+  const generateAiDraft = async () => {
+    if (!token || !form.title.trim()) {
+      setError('Add a title before generating an AI draft.');
+      return;
+    }
+    setGeneratingDraft(true);
+    setError('');
+    try {
+      const res = await fetch('/api/admin/ai-draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
+        body: JSON.stringify({ title: form.title, facts: { excerpt: form.excerpt, content: form.content, merchant_slug: form.merchant_slug } }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'AI not available, please edit manually');
+      setForm((current) => ({ ...current, title: data.draft.title, excerpt: data.draft.excerpt, content: data.draft.content }));
+      setAiGenerated(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'AI not available, please edit manually');
+    } finally {
+      setGeneratingDraft(false);
+    }
+  };
+
   const previewArticle: Article = {
     id: 'preview',
     slug: form.slug || 'preview',
@@ -360,6 +386,9 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
               <CheckCircle2 className="w-3.5 h-3.5" /> Saved
           </span>
           )}
+          <button onClick={generateAiDraft} disabled={generatingDraft || saving} className="inline-flex items-center gap-1.5 rounded-lg border border-violet-700/60 px-3 py-2 text-sm text-violet-300 hover:bg-violet-950/40 disabled:opacity-50">
+            {generatingDraft ? <Loader2 className="w-4 h-4 animate-spin" /> : null}{generatingDraft ? 'Generating…' : 'Generate AI Draft'}
+          </button>
           <button
             onClick={() => handleSave(false, 'draft')}
             disabled={saving}
@@ -407,6 +436,9 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
           <AlertCircle className="w-4 h-4" />
           {error}
         </div>
+      )}
+      {aiGenerated && (
+        <div className="rounded-xl border border-violet-700/50 bg-violet-950/30 p-3 text-sm text-violet-200 mb-4 shrink-0">AI Generated — requires editorial review before publishing.</div>
       )}
 
       {/* Main Editor + Preview */}

@@ -92,7 +92,10 @@ export async function POST(request: Request) {
       submitted_at: status === 'pending_review' ? now : null,
       updated_at: now,
     }).select().single();
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      if (error.code === '23505' && status === 'pending_review') return NextResponse.json({ error: 'This merchant already has a Story awaiting review' }, { status: 409 });
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
     return NextResponse.json({ submission: data, success: true }, { status: 201 });
   } catch {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
@@ -168,6 +171,18 @@ export async function PATCH(request: Request) {
     }
     const { data, error } = await supabase.from('story_submissions').update(updateData).eq('id', body.id).select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (data.article_id) {
+      const editorialStatus = body.status === 'approved' ? 'approved' : body.status === 'rejected' ? 'rejected' : body.status === 'draft' ? 'draft' : null;
+      if (editorialStatus) {
+        const { data: article, error: articleError } = await supabase.from('articles')
+          .update({ editorial_status: editorialStatus, review_notes: body.review_notes || null, reviewed_at: new Date().toISOString(), reviewed_by: body.reviewed_by || 'admin' })
+          .eq('id', data.article_id).select().single();
+        if (articleError || !article) return NextResponse.json({ error: articleError?.message || 'Could not update linked article' }, { status: 500 });
+        const action = editorialStatus === 'approved' ? 'approved' : editorialStatus === 'rejected' ? 'rejected' : 'updated';
+        const { error: revisionError } = await supabase.from('article_revisions').insert({ article_id: article.id, action, snapshot: article, actor: body.reviewed_by || 'admin', note: body.review_notes || null });
+        if (revisionError) return NextResponse.json({ error: revisionError.message }, { status: 500 });
+      }
+    }
     return NextResponse.json({ submission: data, success: true });
   } catch {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
