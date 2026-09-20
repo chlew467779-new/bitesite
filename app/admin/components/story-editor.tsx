@@ -25,6 +25,7 @@ import {
 import { StoryHero } from '@/components/sections/story-hero';
 import { StoryContent } from '@/components/sections/story-content';
 import type { Article } from '@/types';
+import ImageUpload from './image-upload';
 
 type EditorialStatus = NonNullable<Article['editorial_status']>;
 
@@ -612,6 +613,7 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
                 <p className="hidden text-xs text-red-400 mt-1">Failed to load image. Check the URL.</p>
               </div>
             )}
+            <div className="mt-3"><ImageUpload kind="story" value={form.cover_image} onChange={(value) => updateField('cover_image', value)} label="Or upload Story cover" help="JPG, PNG, or WebP; compressed to 1200px and max 5MB." /></div>
           </div>
 
           {/* Category (with datalist) & Author */}

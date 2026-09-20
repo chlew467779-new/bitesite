@@ -32,6 +32,7 @@ import {
   type TimeSlot,
 } from '@/lib/hours';
 import { CUISINE_TYPES, AREAS, TAGS_PRESETS, PAYMENT_METHODS } from '@/lib/presets';
+import ImageUpload from './image-upload';
 
 interface MerchantFormProps {
   merchant?: {
@@ -1366,6 +1367,7 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
                   )}
                 </div>
               )}
+              <div className="mt-3"><ImageUpload kind="merchant" value={form.logo_image} onChange={(value) => updateField('logo_image', value)} label="Or upload logo" help="JPG, PNG, or WebP; compressed to 1200px and max 5MB." /></div>
             </div>
 
             <div>
@@ -1404,6 +1406,7 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
                   )}
                 </div>
               )}
+              <div className="mt-3"><ImageUpload kind="merchant" value={form.cover_image} onChange={(value) => updateField('cover_image', value)} label="Or upload cover" help="JPG, PNG, or WebP; compressed to 1200px and max 5MB." /></div>
             </div>
 
             <div>
