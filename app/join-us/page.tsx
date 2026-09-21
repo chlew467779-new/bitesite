@@ -8,6 +8,7 @@ import { FaqAccordion } from "@/components/sections/faq-accordion";
 import { JoinUsCta } from "@/components/sections/join-us-cta";
 import { Footer } from "@/components/sections/footer";
 import { PageViewTracker } from "@/app/components/page-view-tracker";
+import { safeJsonLd } from "@/lib/safe-json-ld.mjs";
 
 export const metadata: Metadata = {
   title: "Join BiteSite — Every Bite Tells a Story",
@@ -80,7 +81,7 @@ export default function JoinUsPage() {
   return (
     <>
       <PageViewTracker pageType="join_us" />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(faqSchema) }} />
       <main>
         <JoinUsHero />
         <HowItWorks />

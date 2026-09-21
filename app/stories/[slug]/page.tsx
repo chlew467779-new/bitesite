@@ -12,6 +12,7 @@ import { PageViewTracker } from "@/app/components/page-view-tracker";
 import { Footer } from "@/components/sections/footer";
 import type { Article } from "@/types";
 import { getSiteUrl } from "@/lib/site-url";
+import { safeJsonLd } from "@/lib/safe-json-ld.mjs";
 
 export const revalidate = 60;
 
@@ -136,7 +137,7 @@ export default async function StoryPage({ params }: PageProps) {
   return (
     <>
       <PageViewTracker pageType="story" slug={slug} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(articleSchema) }} />
       <main style={{ backgroundColor: bgColor }}>
         <StoryViewTracker slug={slug} />
         {isExpired && <div className="mx-auto max-w-3xl px-4 pt-6 text-sm font-medium text-amber-700">This promotion has ended. The Story remains available as editorial content.</div>}

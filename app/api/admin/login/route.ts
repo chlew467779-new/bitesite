@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     const { password } = JSON.parse(rawBody || '{}');
     const adminPassword = process.env.ADMIN_PASSWORD;
 
-    if (!adminPassword) {
+    if (!adminPassword || !process.env.ADMIN_SESSION_SECRET) {
       return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
     }
 
