@@ -20,6 +20,7 @@ import { ViewTracker } from "@/components/sections/view-tracker";
 import { PageViewTracker } from "@/app/components/page-view-tracker";
 import { GrabFoodOrderButton } from "@/components/sections/grabfood-order-button";
 import { getSiteUrl } from "@/lib/site-url";
+import { safeJsonLd } from "@/lib/safe-json-ld.mjs";
 
 export const revalidate = 60;
 
@@ -243,8 +244,8 @@ export default async function MerchantPage({ params }: PageProps) {
       <PageViewTracker pageType="merchant" slug={merchant.slug} />
       <ViewTracker slug={merchant.slug} />
       {externalLinksRes.data?.url && <GrabFoodOrderButton url={externalLinksRes.data.url} slug={merchant.slug} />}
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaData) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(schemaData) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbSchema) }} />
       <LayoutComponent
         merchant={merchant}
         categories={categories}

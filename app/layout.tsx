@@ -5,6 +5,7 @@ import { Inter, Playfair_Display, Noto_Sans_JP } from "next/font/google";
 import { SiteHeader } from "@/components/sections/site-header";
 import { getSettings } from "@/lib/settings";
 import { getSiteUrl } from "@/lib/site-url";
+import { safeJsonLd } from "@/lib/safe-json-ld.mjs";
 import "./globals.css";
 
 const inter = Inter({
@@ -98,13 +99,13 @@ export default async function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(organizationSchema),
+            __html: safeJsonLd(organizationSchema),
           }}
         />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(websiteSchema),
+            __html: safeJsonLd(websiteSchema),
           }}
         />
       </body>
