@@ -62,7 +62,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     ? merchant.description.length > 155
       ? merchant.description.slice(0, 155) + "..."
       : merchant.description
-    : `View the full menu, photos and opening hours for ${merchant.name} in Kuala Lumpur.`;
+    : `View the full menu, photos and opening hours for ${merchant.name} on BiteSite.`;
   const ogImage = merchant.cover_image
     ? merchant.cover_image.startsWith("http")
       ? merchant.cover_image
@@ -76,10 +76,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       merchant.name,
       merchant.cuisine_type ?? "restaurant",
       "menu",
-      "Kuala Lumpur",
       "restaurant",
       "cafe",
-      "KL food",
+      "Malaysia restaurants",
     ],
     alternates: { canonical: canonicalUrl },
     openGraph: {
@@ -212,7 +211,7 @@ export default async function MerchantPage({ params }: PageProps) {
     schemaData.address = {
       "@type": "PostalAddress",
       streetAddress: merchant.address,
-      addressLocality: "Kuala Lumpur",
+      ...(merchant.area ? { addressLocality: merchant.area } : {}),
       addressCountry: "MY",
     };
   }

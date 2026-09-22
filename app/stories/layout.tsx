@@ -6,15 +6,15 @@ import { getSiteUrl } from "@/lib/site-url";
 const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
-  title: "Stories | BiteSite — KL Restaurant News & Openings",
+  title: "Stories | BiteSite — Restaurant News & Openings",
   description:
-    "Discover the best new restaurant openings, hidden gems, and food stories in Kuala Lumpur. BiteSite Stories covers KL's vibrant dining scene.",
+    "Discover new restaurant openings, hidden gems, and food stories from Klang Valley and beyond.",
   alternates: {
     canonical: `${siteUrl}/stories`,
   },
   openGraph: {
     title: "Stories | BiteSite",
-    description: "Discover local restaurants, new openings & hidden gems in Kuala Lumpur.",
+    description: "Discover local restaurants, new openings & hidden gems from Klang Valley and beyond.",
     url: `${siteUrl}/stories`,
     type: "website",
   },

@@ -50,8 +50,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const ogImage = article.cover_image || undefined;
   const keywords = [
     "restaurant",
-    "KL cafe",
-    "Kuala Lumpur food",
+    "Malaysia cafe",
+    "Malaysia food",
     article.title,
     article.category,
     ...(article.tags || []),

@@ -44,8 +44,8 @@ export function Hero({ searchQuery, onSearch }: HeroProps) {
             Beautiful Menus for Local Restaurants
           </h1>
           <p className="mb-8 max-w-lg text-base leading-relaxed text-[#6B6560] md:text-lg">
-            Discover cafes and restaurants in Kuala Lumpur. Browse photos,
-            explore menus, and find your next favorite spot.
+            Discover cafes and restaurants across Klang Valley and beyond.
+            Browse photos, explore menus, and find your next favorite spot.
           </p>
 
           {/* Search Bar */}
