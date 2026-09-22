@@ -24,6 +24,7 @@ import {
   X,
   Copy,
   Clock,
+  UtensilsCrossed,
 } from 'lucide-react';
 import {
   parseOperatingHoursString,
@@ -34,6 +35,7 @@ import {
 } from '@/lib/hours';
 import { AMENITY_TAGS, AREAS, CUISINE_TAGS, OCCASION_TAGS, PAYMENT_METHODS } from '@/lib/presets';
 import ImageUpload from './image-upload';
+import MenuEditor from './menu-editor';
 
 interface MerchantFormProps {
   merchant?: {
@@ -610,6 +612,7 @@ export default function MerchantForm({ merchant, onBack, onSaved, loadWarning }:
     { label: 'Hours', icon: MapPin },
     { label: 'Settings', icon: Globe },
     { label: 'Images', icon: ImageIcon },
+    { label: 'Menu', icon: UtensilsCrossed },
   ];
 
   /* URL warning helpers */
@@ -1385,6 +1388,20 @@ export default function MerchantForm({ merchant, onBack, onSaved, loadWarning }:
                 </p>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Tab 6: Menu (categories + products) */}
+        {activeTab === 5 && (
+          <div>
+            {isEditing && merchant ? (
+              <MenuEditor merchantId={merchant.id} merchantName={merchant.name} />
+            ) : (
+              <div className="text-center py-12 bg-slate-950 border border-slate-800 rounded-xl">
+                <UtensilsCrossed className="w-8 h-8 text-slate-700 mx-auto mb-3" />
+                <p className="text-slate-500 text-sm">Save this merchant first, then come back here to add menu categories and dishes.</p>
+              </div>
+            )}
           </div>
         )}
       </div>
