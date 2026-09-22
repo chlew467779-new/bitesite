@@ -78,9 +78,11 @@ interface MenuEditorProps {
  * Admin Menu Editor: category and product (dish) CRUD for one merchant.
  *
  * Scope notes (see PR description / handoff for the full write-up):
- * - `show_prices` is stored and editable here but is not currently read by any of the 5 public
- *   layout renderers (classic/elegant/minimal/modern/rustic) — toggling it has no public effect
- *   yet. That is a pre-existing gap in the repository, not something this editor silently fixes.
+ * - `show_prices` is written on every save (carried over from the existing product row, or the
+ *   EMPTY_DRAFT default of true for a new dish) but has no checkbox in this editor, because no
+ *   public layout renderer (classic/elegant/minimal/modern/rustic) reads it yet — a control that
+ *   changed nothing on the public site would be more confusing than no control at all. Wire it up
+ *   here once a layout actually renders it.
  * - No public layout renders products with category_id = null ("uncategorized") at all — such
  *   products are invisible on the live menu. This editor surfaces that explicitly rather than
  *   letting it be a silent trap.
@@ -410,6 +412,11 @@ export default function MenuEditor({ merchantId, merchantName }: MenuEditorProps
 
   return (
     <div className="space-y-6">
+      <p className="text-sm text-slate-400">
+        Categories group your dishes and set the order they appear in on your public menu (e.g. Starters, Mains, Drinks).
+        Add a category below, then add dishes under it.
+      </p>
+
       {actionError && (
         <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
           <AlertCircle className="w-4 h-4 shrink-0" />
@@ -483,6 +490,7 @@ export default function MenuEditor({ merchantId, merchantName }: MenuEditorProps
                     disabled={catIndex === 0 || busyId === category.id}
                     className="p-1.5 text-slate-500 hover:text-white disabled:opacity-30 disabled:hover:text-slate-500"
                     title="Move up"
+                    aria-label={`Move ${category.name} up`}
                   >
                     <ChevronUp className="w-4 h-4" />
                   </button>
@@ -491,6 +499,7 @@ export default function MenuEditor({ merchantId, merchantName }: MenuEditorProps
                     disabled={catIndex === categories.length - 1 || busyId === category.id}
                     className="p-1.5 text-slate-500 hover:text-white disabled:opacity-30 disabled:hover:text-slate-500"
                     title="Move down"
+                    aria-label={`Move ${category.name} down`}
                   >
                     <ChevronDown className="w-4 h-4" />
                   </button>
@@ -498,6 +507,7 @@ export default function MenuEditor({ merchantId, merchantName }: MenuEditorProps
                     onClick={() => startRenameCategory(category)}
                     className="p-1.5 text-slate-500 hover:text-amber-400"
                     title="Rename category"
+                    aria-label={`Rename ${category.name}`}
                   >
                     <Pencil className="w-3.5 h-3.5" />
                   </button>
@@ -505,6 +515,7 @@ export default function MenuEditor({ merchantId, merchantName }: MenuEditorProps
                     onClick={() => setConfirmDelete({ type: 'category', id: category.id, label: category.name })}
                     className="p-1.5 text-slate-500 hover:text-red-400"
                     title="Delete category"
+                    aria-label={`Delete ${category.name}`}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -658,6 +669,8 @@ function ProductRow({
           onClick={() => onMove(-1)}
           disabled={index === 0 || busy}
           className="p-0.5 text-slate-600 hover:text-white disabled:opacity-30"
+          title="Move up"
+          aria-label={`Move ${product.name} up`}
         >
           <ChevronUp className="w-3.5 h-3.5" />
         </button>
@@ -665,12 +678,14 @@ function ProductRow({
           onClick={() => onMove(1)}
           disabled={index === count - 1 || busy}
           className="p-0.5 text-slate-600 hover:text-white disabled:opacity-30"
+          title="Move down"
+          aria-label={`Move ${product.name} down`}
         >
           <ChevronDown className="w-3.5 h-3.5" />
         </button>
       </div>
       {product.image_url ? (
-        <img src={product.image_url} alt="" className="w-10 h-10 rounded-lg object-cover border border-slate-700 shrink-0" />
+        <img src={product.image_url} alt={product.name} className="w-10 h-10 rounded-lg object-cover border border-slate-700 shrink-0" />
       ) : (
         <div className="w-10 h-10 rounded-lg bg-slate-800 border border-slate-700 shrink-0" />
       )}
@@ -704,13 +719,14 @@ function ProductRow({
             ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
             : 'bg-red-500/10 text-red-400 border-red-500/20'
         }`}
+        title={product.is_available ? 'Shown as in stock on your public menu — click to mark sold out' : 'Shown as sold out on your public menu — click to mark available'}
       >
         {product.is_available ? 'Available' : 'Unavailable'}
       </button>
-      <button onClick={onEdit} className="shrink-0 p-1.5 text-slate-500 hover:text-amber-400">
+      <button onClick={onEdit} className="shrink-0 p-1.5 text-slate-500 hover:text-amber-400" title="Edit dish" aria-label={`Edit ${product.name}`}>
         <Pencil className="w-3.5 h-3.5" />
       </button>
-      <button onClick={onDelete} className="shrink-0 p-1.5 text-slate-500 hover:text-red-400">
+      <button onClick={onDelete} className="shrink-0 p-1.5 text-slate-500 hover:text-red-400" title="Delete dish" aria-label={`Delete ${product.name}`}>
         <Trash2 className="w-3.5 h-3.5" />
       </button>
     </div>
@@ -797,6 +813,7 @@ function ProductEditPanel({
               placeholder="Optional"
               className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white focus:border-amber-500 focus:outline-none"
             />
+            <p className="mt-1 text-xs text-slate-500">If set, shows as a discount with the regular price struck through. Must not be higher than the price above.</p>
           </div>
         </div>
 
@@ -822,12 +839,15 @@ function ProductEditPanel({
 
         <div className="flex flex-col gap-3 pt-2">
           <label className="flex items-center justify-between">
-            <span className="text-sm text-slate-300">Available</span>
+            <span className="text-sm text-slate-300">
+              Available
+              <span className="block text-xs font-normal text-slate-500">Uncheck to mark sold out — the dish stays on your menu, just shown as unavailable. It won&apos;t be deleted.</span>
+            </span>
             <input
               type="checkbox"
               checked={draft.is_available}
               onChange={(e) => update('is_available', e.target.checked)}
-              className="w-4 h-4 accent-amber-500"
+              className="w-4 h-4 accent-amber-500 shrink-0 ml-3"
             />
           </label>
           <label className="flex items-center justify-between">
