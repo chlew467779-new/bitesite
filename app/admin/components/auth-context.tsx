@@ -20,6 +20,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [token, setToken] = useState<string | null>(null);
+  const [expiresAt, setExpiresAt] = useState<number | null>(null);
+
+  const clearSession = useCallback(() => {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(TOKEN_KEY);
+    setToken(null);
+    setExpiresAt(null);
+    setIsAuthenticated(false);
+  }, []);
 
   useEffect(() => {
     // Check existing session on mount
@@ -29,21 +38,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (stored && storedToken) {
       try {
         const session = JSON.parse(stored);
-        if (session.expiresAt && new Date(session.expiresAt) > new Date()) {
+        const expiry = Date.parse(session.expiresAt);
+        if (Number.isFinite(expiry) && expiry > Date.now()) {
           setIsAuthenticated(true);
           setToken(storedToken);
+          setExpiresAt(expiry);
         } else {
-          // Expired, clear
-          localStorage.removeItem(STORAGE_KEY);
-          localStorage.removeItem(TOKEN_KEY);
+          clearSession();
         }
       } catch {
-        localStorage.removeItem(STORAGE_KEY);
-        localStorage.removeItem(TOKEN_KEY);
+        clearSession();
       }
     }
     setIsLoading(false);
-  }, []);
+  }, [clearSession]);
+
+  useEffect(() => {
+    if (!expiresAt) return;
+
+    const expireIfNeeded = () => {
+      if (Date.now() >= expiresAt) clearSession();
+    };
+    const timeout = window.setTimeout(expireIfNeeded, Math.max(0, expiresAt - Date.now()));
+    window.addEventListener('focus', expireIfNeeded);
+    document.addEventListener('visibilitychange', expireIfNeeded);
+    return () => {
+      window.clearTimeout(timeout);
+      window.removeEventListener('focus', expireIfNeeded);
+      document.removeEventListener('visibilitychange', expireIfNeeded);
+    };
+  }, [clearSession, expiresAt]);
 
   const login = useCallback(async (password: string): Promise<{ success: boolean; error?: string }> => {
     try {
@@ -67,6 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }));
 
       setToken(data.token);
+      setExpiresAt(Date.parse(data.expiresAt));
       setIsAuthenticated(true);
       return { success: true };
     } catch {
@@ -75,11 +100,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(TOKEN_KEY);
-    setToken(null);
-    setIsAuthenticated(false);
-  }, []);
+    clearSession();
+  }, [clearSession]);
 
   return (
     <AuthContext.Provider value={{ isAuthenticated, isLoading, login, logout, token }}>
