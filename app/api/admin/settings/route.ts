@@ -1,6 +1,7 @@
 /* bitesite/app/api/admin/settings/route.ts */
 
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { verifyAdminToken } from '@/lib/admin-auth';
 import { InvalidJsonBodyError, readBoundedJson, RequestBodyTooLargeError } from '@/lib/bounded-json';
@@ -59,6 +60,10 @@ export async function PUT(request: Request) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  // Settings are read by the root layout and merchant pages. Invalidate the
+  // layout cache so an Admin edit is reflected in metadata and footer copy.
+  revalidatePath('/', 'layout');
 
   return NextResponse.json({ success: true });
 }
