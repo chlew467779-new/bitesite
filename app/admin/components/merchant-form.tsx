@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from './auth-context';
 import {
   Save,
@@ -217,6 +217,8 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
   const [hoursSlots, setHoursSlots] = useState<Record<string, DayHours>>(() =>
     Object.fromEntries(DAYS.map((d) => [d, { ...DEFAULT_DAY_HOURS }]))
   );
+  const originalOperatingHoursRef = useRef<Record<string, string>>({});
+  const initialHoursSlotsRef = useRef<Record<string, DayHours>>({});
 
   /* Image preview error states */
   const [logoError, setLogoError] = useState(false);
@@ -309,6 +311,8 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
       for (const day of DAYS) {
         parsed[day] = parseOperatingHoursString(merchant.operating_hours?.[day]);
       }
+      originalOperatingHoursRef.current = { ...(merchant.operating_hours || {}) };
+      initialHoursSlotsRef.current = JSON.parse(JSON.stringify(parsed)) as Record<string, DayHours>;
       setHoursSlots(parsed);
 
       setLogoError(false);
@@ -412,6 +416,28 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [dirty]);
 
+  const hasUnchangedLegacyHours = (day: string): boolean => {
+    const original = originalOperatingHoursRef.current[day];
+    return Boolean(
+      original
+      && !isValidOperatingHours(original)
+      && JSON.stringify(hoursSlots[day]) === JSON.stringify(initialHoursSlotsRef.current[day])
+    );
+  };
+
+  const buildOperatingHoursPayload = (): Record<string, string> => {
+    const payload: Record<string, string> = {};
+    for (const day of DAYS) {
+      if (hasUnchangedLegacyHours(day)) {
+        payload[day] = originalOperatingHoursRef.current[day];
+        continue;
+      }
+      const value = formatOperatingHoursToString(hoursSlots[day]);
+      if (value) payload[day] = value;
+    }
+    return payload;
+  };
+
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
     if (!form.name.trim()) newErrors.name = 'Name is required';
@@ -428,7 +454,7 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
       const slots = hoursSlots[day].slots;
       const hasPartialSlot = slots.some((slot) => Boolean(slot.start.trim()) !== Boolean(slot.end.trim()));
       const value = formatOperatingHoursToString(hoursSlots[day]);
-      if (hasPartialSlot || (value && !isValidOperatingHours(value))) {
+      if (hasPartialSlot || (value && !isValidOperatingHours(value) && !hasUnchangedLegacyHours(day))) {
         newErrors.operating_hours = 'Each opening-hours slot must use a valid start and end time (for example, 09:00 - 18:00).';
         break;
       }
@@ -481,11 +507,7 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
     setSaveError('');
 
     /* Build operating_hours from structured slots */
-    const operatingHoursPayload: Record<string, string> = {};
-    for (const day of DAYS) {
-      const str = formatOperatingHoursToString(hoursSlots[day]);
-      if (str) operatingHoursPayload[day] = str;
-    }
+    const operatingHoursPayload = buildOperatingHoursPayload();
 
     const payload: Record<string, unknown> = {
       name: form.name,
