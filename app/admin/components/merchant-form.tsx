@@ -70,6 +70,10 @@ interface MerchantFormProps {
   } | null;
   onBack: () => void;
   onSaved: () => void;
+  /** Non-blocking warning shown when the caller could not confirm this record is server-fresh
+   *  (e.g. the pre-edit refresh in MerchantManager failed) — the form still opens with the
+   *  best-available data rather than staying blank. */
+  loadWarning?: string;
 }
 
 const LAYOUTS = [
@@ -141,7 +145,7 @@ interface Toast {
 
 const DEFAULT_DAY_HOURS: DayHours = { slots: [{ start: '', end: '' }], isClosed: false };
 
-export default function MerchantForm({ merchant, onBack, onSaved }: MerchantFormProps) {
+export default function MerchantForm({ merchant, onBack, onSaved, loadWarning }: MerchantFormProps) {
   const { token } = useAuth();
   const isEditing = !!merchant;
   const [activeTab, setActiveTab] = useState(0);
@@ -635,6 +639,13 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
           </p>
         </div>
       </div>
+
+      {loadWarning && (
+        <div className="flex items-center gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-amber-300 text-sm">
+          <AlertTriangle className="w-4 h-4 shrink-0" />
+          {loadWarning}
+        </div>
+      )}
 
       {saveError && (
         <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
