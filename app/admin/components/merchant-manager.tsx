@@ -42,6 +42,62 @@ interface Merchant {
   menu_pdf_url?: string;
 }
 
+/*
+ * Primary platform-status badge for a Merchant Manager card. This reads `platform_status`
+ * directly so PENDING_REVIEW / SUSPENDED / ARCHIVED are visually distinct from DRAFT instead
+ * of all collapsing into a generic "Draft" pill. `is_published` is the actual public
+ * visibility gate (unchanged by this function) — PUBLISHED + is_published=false is a real,
+ * possible state (the two fields can disagree) and must never be labeled "Live".
+ * Active/Inactive stays a separate badge rendered alongside this one; do not merge them.
+ */
+function getPlatformStatusBadge(merchant: Merchant) {
+  const platformStatus = merchant.platform_status || (merchant.is_published ? 'PUBLISHED' : 'DRAFT');
+
+  if (platformStatus === 'PUBLISHED' && merchant.is_published) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-500/10 text-emerald-400 text-xs rounded-full border border-emerald-500/20">
+        <Eye className="w-3 h-3" /> Live
+      </span>
+    );
+  }
+  if (platformStatus === 'PUBLISHED' && !merchant.is_published) {
+    return (
+      <span
+        className="inline-flex items-center gap-1 px-2 py-1 bg-violet-500/10 text-violet-400 text-xs rounded-full border border-violet-500/20"
+        title="Platform status is Published, but Published is off — this merchant is not publicly visible."
+      >
+        <EyeOff className="w-3 h-3" /> Published / hidden
+      </span>
+    );
+  }
+  if (platformStatus === 'PENDING_REVIEW') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-1 bg-sky-500/10 text-sky-400 text-xs rounded-full border border-sky-500/20">
+        <EyeOff className="w-3 h-3" /> Pending review
+      </span>
+    );
+  }
+  if (platformStatus === 'SUSPENDED') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-500/10 text-red-400 text-xs rounded-full border border-red-500/20">
+        <EyeOff className="w-3 h-3" /> Suspended
+      </span>
+    );
+  }
+  if (platformStatus === 'ARCHIVED') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-1 bg-slate-600/20 text-slate-400 text-xs rounded-full border border-slate-500/30">
+        <EyeOff className="w-3 h-3" /> Archived
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-500/10 text-amber-400 text-xs rounded-full border border-amber-500/20">
+      <EyeOff className="w-3 h-3" /> Draft
+    </span>
+  );
+}
+
 export default function MerchantManager() {
   const { token } = useAuth();
   const [merchants, setMerchants] = useState<Merchant[]>([]);
@@ -52,6 +108,8 @@ export default function MerchantManager() {
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingMerchant, setEditingMerchant] = useState<Merchant | null>(null);
+  const [editLoadWarning, setEditLoadWarning] = useState('');
+  const [refreshingId, setRefreshingId] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [linkingMerchant, setLinkingMerchant] = useState<Merchant | null>(null);
   const [membershipEmail, setMembershipEmail] = useState('');
@@ -83,22 +141,62 @@ export default function MerchantManager() {
 
   const handleNew = () => {
     setEditingMerchant(null);
+    setEditLoadWarning('');
     setShowForm(true);
   };
 
-  const handleEdit = (merchant: Merchant) => {
-    setEditingMerchant(merchant);
-    setShowForm(true);
+  /*
+   * Edit must never trust the list's local `merchants` array as-is: that array can be
+   * momentarily stale (e.g. right after a Create/Update, before this component's own
+   * list state has settled), and MerchantForm only initializes its Status/Platform
+   * status/Published fields from whatever `merchant` object it is handed. So before
+   * opening the form we re-fetch the merchant list from the server and hand MerchantForm
+   * the freshly-fetched record for this id. If that refresh fails (or the record has
+   * disappeared), we fall back to the originally-clicked record rather than opening a
+   * blank form, and surface a visible warning so the operator knows the data may be stale.
+   */
+  const handleEdit = async (merchant: Merchant) => {
+    setEditLoadWarning('');
+    setRefreshingId(merchant.id);
+    try {
+      const res = await fetch('/api/admin/merchants-crud', {
+        headers: { 'x-admin-token': token || '' },
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Failed to refresh merchant');
+      }
+      const data = await res.json();
+      const freshList: Merchant[] = data.merchants || [];
+      setMerchants(freshList);
+      const fresh = freshList.find((m) => m.id === merchant.id);
+      if (fresh) {
+        setEditingMerchant(fresh);
+      } else {
+        setEditingMerchant(merchant);
+        setEditLoadWarning('Could not find this merchant in the latest server data — showing the last loaded values. Reload before changing status fields.');
+      }
+    } catch (err) {
+      setEditingMerchant(merchant);
+      setEditLoadWarning(
+        `Could not refresh this merchant from the server (${err instanceof Error ? err.message : 'unknown error'}) — showing the last loaded values. Reload before changing status fields.`
+      );
+    } finally {
+      setRefreshingId(null);
+      setShowForm(true);
+    }
   };
 
   const handleBack = () => {
     setShowForm(false);
     setEditingMerchant(null);
+    setEditLoadWarning('');
   };
 
   const handleSaved = () => {
     setShowForm(false);
     setEditingMerchant(null);
+    setEditLoadWarning('');
     setRefreshKey((k) => k + 1);
   };
 
@@ -159,6 +257,7 @@ export default function MerchantManager() {
         merchant={editingMerchant}
         onBack={handleBack}
         onSaved={handleSaved}
+        loadWarning={editLoadWarning}
       />
     );
   }
@@ -293,15 +392,7 @@ export default function MerchantManager() {
                   </div>
                 )}
                 <div className="absolute top-3 right-3 flex gap-1.5">
-                  {merchant.is_published ? (
-                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-500/10 text-emerald-400 text-xs rounded-full border border-emerald-500/20">
-                      <Eye className="w-3 h-3" /> Live
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-500/10 text-amber-400 text-xs rounded-full border border-amber-500/20">
-                      <EyeOff className="w-3 h-3" /> Draft
-                    </span>
-                  )}
+                  {getPlatformStatusBadge(merchant)}
                   {merchant.business_status === 'TEMPORARILY_CLOSED' || merchant.business_status === 'PERMANENTLY_CLOSED' || merchant.status === 'inactive' ? (
                     <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-500/10 text-red-400 text-xs rounded-full border border-red-500/20">
                       <Circle className="w-2 h-2 fill-current" /> Inactive
@@ -312,10 +403,20 @@ export default function MerchantManager() {
                     </span>
                   )}
                 </div>
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 backdrop-blur text-white text-xs rounded-full">
-                    <Pencil className="w-3 h-3" /> Click to edit
-                  </span>
+                <div
+                  className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity ${
+                    refreshingId === merchant.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                  }`}
+                >
+                  {refreshingId === merchant.id ? (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 backdrop-blur text-white text-xs rounded-full">
+                      <Loader2 className="w-3 h-3 animate-spin" /> Loading latest data…
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 backdrop-blur text-white text-xs rounded-full">
+                      <Pencil className="w-3 h-3" /> Click to edit
+                    </span>
+                  )}
                 </div>
               </div>
 
