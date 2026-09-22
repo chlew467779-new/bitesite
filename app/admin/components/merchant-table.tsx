@@ -44,7 +44,13 @@ export default function MerchantTable({ range }: MerchantTableProps) {
         });
         const json = await res.json();
         if (!res.ok) throw new Error(json.error || 'Unable to load merchant analytics');
-        setData(json.data || []);
+        // Historical site-wide events may not carry a merchant slug. Keep a
+        // malformed API row from taking down the entire Admin dashboard.
+        setData((json.data || []).filter((row: unknown): row is MerchantData => {
+          if (!row || typeof row !== 'object') return false;
+          const slug = (row as { slug?: unknown }).slug;
+          return typeof slug === 'string' && slug.trim().length > 0;
+        }));
         const rawAvailable = json.rawVisitorDataAvailable !== false;
         setRawVisitorDataAvailable(rawAvailable);
         if (!rawAvailable) setSortBy(current => current === 'unique_ips' ? 'views' : current);

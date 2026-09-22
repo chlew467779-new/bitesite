@@ -108,6 +108,7 @@ export async function GET(request: NextRequest) {
     }>();
 
     viewData?.forEach(row => {
+      if (!row.slug) return;
       const existing = merchantMap.get(row.slug) || {
         slug: row.slug,
         views: 0,
@@ -127,6 +128,7 @@ export async function GET(request: NextRequest) {
     });
 
     waData?.forEach(row => {
+      if (!row.slug) return;
       const existing = merchantMap.get(row.slug) || {
         slug: row.slug,
         views: 0,
@@ -145,6 +147,7 @@ export async function GET(request: NextRequest) {
     });
 
     bookData?.forEach(row => {
+      if (!row.slug) return;
       const existing = merchantMap.get(row.slug) || {
         slug: row.slug,
         views: 0,
@@ -163,6 +166,7 @@ export async function GET(request: NextRequest) {
     });
 
     orderClickData?.forEach(row => {
+      if (!row.slug) return;
       const existing = merchantMap.get(row.slug) || {
         slug: row.slug, views: 0, unique_ips: 0, whatsapp: 0, bookings: 0,
         grabfoodClicks: 0, directionsClicks: 0, phoneClicks: 0, menuViews: 0, websiteClicks: 0, storyViews: 0, emailClicks: 0,
@@ -172,6 +176,7 @@ export async function GET(request: NextRequest) {
     });
 
     directionsData?.forEach(row => {
+      if (!row.slug) return;
       const existing = merchantMap.get(row.slug) || {
         slug: row.slug, views: 0, unique_ips: 0, whatsapp: 0, bookings: 0,
         grabfoodClicks: 0, directionsClicks: 0, phoneClicks: 0, menuViews: 0, websiteClicks: 0, storyViews: 0, emailClicks: 0,
@@ -181,6 +186,7 @@ export async function GET(request: NextRequest) {
     });
 
     phoneData?.forEach(row => {
+      if (!row.slug) return;
       const existing = merchantMap.get(row.slug) || {
         slug: row.slug, views: 0, unique_ips: 0, whatsapp: 0, bookings: 0,
         grabfoodClicks: 0, directionsClicks: 0, phoneClicks: 0, menuViews: 0, websiteClicks: 0, storyViews: 0, emailClicks: 0,
@@ -190,6 +196,7 @@ export async function GET(request: NextRequest) {
     });
 
     menuData?.forEach(row => {
+      if (!row.slug) return;
       const existing = merchantMap.get(row.slug) || {
         slug: row.slug, views: 0, unique_ips: 0, whatsapp: 0, bookings: 0,
         grabfoodClicks: 0, directionsClicks: 0, phoneClicks: 0, menuViews: 0, websiteClicks: 0, storyViews: 0, emailClicks: 0,
@@ -199,6 +206,7 @@ export async function GET(request: NextRequest) {
     });
 
     websiteData?.forEach(row => {
+      if (!row.slug) return;
       const existing = merchantMap.get(row.slug) || {
         slug: row.slug, views: 0, unique_ips: 0, whatsapp: 0, bookings: 0,
         grabfoodClicks: 0, directionsClicks: 0, phoneClicks: 0, menuViews: 0, websiteClicks: 0, storyViews: 0, emailClicks: 0,
@@ -208,6 +216,7 @@ export async function GET(request: NextRequest) {
     });
 
     emailData?.forEach(row => {
+      if (!row.slug) return;
       const existing = merchantMap.get(row.slug) || {
         slug: row.slug, views: 0, unique_ips: 0, whatsapp: 0, bookings: 0,
         grabfoodClicks: 0, directionsClicks: 0, phoneClicks: 0, menuViews: 0, websiteClicks: 0, storyViews: 0, emailClicks: 0,

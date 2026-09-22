@@ -18,16 +18,42 @@ export function getTodayKey(): string {
 /**
  * Parse time string like "9:00 AM" or "14:00" to minutes from midnight
  */
-function parseTime(timeStr: string): number {
-  const clean = timeStr.trim().toUpperCase();
-  let [time, period] = clean.split(" ");
-  let [hours, minutes] = time.split(":").map(Number);
-  minutes = minutes || 0;
+function parseTime(timeStr: string): number | null {
+  const match = /^(\d{1,2}):(\d{2})(?:\s*([AP]M))?$/i.exec(timeStr.trim());
+  if (!match) return null;
 
-  if (period === "PM" && hours !== 12) hours += 12;
-  if (period === "AM" && hours === 12) hours = 0;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  const period = match[3]?.toUpperCase();
+  if (minutes > 59) return null;
+  if (period && (hours < 1 || hours > 12)) return null;
+  if (!period && hours > 23) return null;
 
-  return hours * 60 + minutes;
+  const normalizedHours = period === "PM" && hours !== 12
+    ? hours + 12
+    : period === "AM" && hours === 12
+      ? 0
+      : hours;
+  return normalizedHours * 60 + minutes;
+}
+
+function parseTimeRange(value: string): { open: number; close: number } | null {
+  const parts = value.split("-").map((part) => part.trim());
+  if (parts.length !== 2) return null;
+  const open = parseTime(parts[0]);
+  const close = parseTime(parts[1]);
+  return open === null || close === null ? null : { open, close };
+}
+
+/**
+ * Accept the formats supported by the Admin editor: 24-hour HH:MM or
+ * 12-hour H:MM AM/PM ranges, with optional comma, slash, or ampersand slots.
+ */
+export function isValidOperatingHours(raw: string | null | undefined): boolean {
+  if (!raw || !raw.trim()) return false;
+  if (raw.trim().toLowerCase() === "closed") return true;
+  const slots = raw.split(/,|\/|&/).map((slot) => slot.trim()).filter(Boolean);
+  return slots.length > 0 && slots.every((slot) => parseTimeRange(slot) !== null);
 }
 
 /**
@@ -35,7 +61,7 @@ function parseTime(timeStr: string): number {
  * Forces Asia/Kuala_Lumpur timezone to prevent hydration mismatch.
  */
 export function isCurrentlyOpen(hoursStr: string): boolean {
-  if (!hoursStr || hoursStr.toLowerCase().includes("closed")) return false;
+  if (!hoursStr || hoursStr.trim().toLowerCase() === "closed" || !isValidOperatingHours(hoursStr)) return false;
 
   // Force KL timezone for consistent server/client behavior
   const formatter = new Intl.DateTimeFormat("en-US", {
@@ -49,22 +75,17 @@ export function isCurrentlyOpen(hoursStr: string): boolean {
   const minutePart = parts.find((p) => p.type === "minute")?.value;
   const currentMinutes = parseInt(hourPart || "0") * 60 + parseInt(minutePart || "0");
 
-  // Handle formats: "9:00 AM - 10:00 PM" or "09:00 - 22:00"
-  const parts2 = hoursStr.split("-").map((s) => s.trim());
-  if (parts2.length !== 2) return true; // Can't parse, assume open
-
-  try {
-    const openMinutes = parseTime(parts2[0]);
-    const closeMinutes = parseTime(parts2[1]);
-
-    if (closeMinutes < openMinutes) {
-      // Overnight (e.g., 6PM - 2AM)
-      return currentMinutes >= openMinutes || currentMinutes <= closeMinutes;
-    }
-    return currentMinutes >= openMinutes && currentMinutes <= closeMinutes;
-  } catch {
-    return true; // Can't parse, assume open
-  }
+  return hoursStr
+    .split(/,|\/|&/)
+    .map((slot) => parseTimeRange(slot.trim()))
+    .some((range) => {
+      if (!range) return false;
+      if (range.close < range.open) {
+        // Overnight (e.g., 6 PM - 2 AM)
+        return currentMinutes >= range.open || currentMinutes <= range.close;
+      }
+      return currentMinutes >= range.open && currentMinutes <= range.close;
+    });
 }
 
 /**
@@ -79,6 +100,10 @@ export function getTodayHours(operatingHours: Record<string, string> | null): {
   const todayHours = operatingHours?.[todayKey];
 
   if (!todayHours) {
+    return { isOpen: false, hoursText: "Hours unavailable", todayKey };
+  }
+
+  if (!isValidOperatingHours(todayHours)) {
     return { isOpen: false, hoursText: "Hours unavailable", todayKey };
   }
 
@@ -148,7 +173,9 @@ export function formatOperatingHoursToString(dayHours: DayHours): string {
 export function formatOperatingHours(raw: string | null | undefined): string {
   if (!raw || !raw.trim()) return '';
   const lower = raw.trim().toLowerCase();
-  if (lower === 'closed' || lower.includes('closed')) return 'Closed';
+  if (lower === 'closed') return 'Closed';
+
+  if (!isValidOperatingHours(raw)) return 'Hours unavailable';
 
   // Normalize AM/PM variations
   let formatted = raw
@@ -173,7 +200,7 @@ export function formatOperatingHours(raw: string | null | undefined): string {
     return timeLike.test(parts[0]) && timeLike.test(parts[1]);
   });
 
-  if (validSlots.length === 0) return raw.trim(); // Can't parse, return original
+  if (validSlots.length === 0) return 'Hours unavailable';
 
   return validSlots.join(', ');
 }

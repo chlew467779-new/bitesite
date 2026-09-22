@@ -6,6 +6,7 @@ import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { revalidatePath } from 'next/cache';
 import { InvalidJsonBodyError, readBoundedJson, RequestBodyTooLargeError } from '@/lib/bounded-json';
 import { AMENITY_TAGS, CUISINE_TAGS, OCCASION_TAGS } from '@/lib/presets';
+import { DAYS, isValidOperatingHours } from '@/lib/hours';
 
 const MAX_MERCHANT_BODY_BYTES = 128 * 1024;
 
@@ -128,8 +129,18 @@ function validateMerchantPayload(body: Record<string, unknown>, requireBaseField
     const unique = normalizeControlledTags(value, values);
     if (unique.length > max) return `${field} can contain at most ${max} tags`;
   }
-  if (body.operating_hours !== undefined && body.operating_hours !== null && (typeof body.operating_hours !== 'object' || Array.isArray(body.operating_hours))) {
-    return 'operating_hours must be an object';
+  if (body.operating_hours !== undefined && body.operating_hours !== null) {
+    if (typeof body.operating_hours !== 'object' || Array.isArray(body.operating_hours)) {
+      return 'operating_hours must be an object';
+    }
+    for (const [day, value] of Object.entries(body.operating_hours)) {
+      if (!DAYS.includes(day)) return `operating_hours has an invalid day: ${day}`;
+      if (typeof value !== 'string') return `operating_hours.${day} must be a string`;
+      if (value.length > 200) return `operating_hours.${day} must be 200 characters or fewer`;
+      if (value.trim() && !isValidOperatingHours(value)) {
+        return `operating_hours.${day} must use valid HH:MM or H:MM AM/PM ranges`;
+      }
+    }
   }
   const platformStatuses = ['DRAFT', 'PENDING_REVIEW', 'PUBLISHED', 'SUSPENDED', 'ARCHIVED'];
   const businessStatuses = ['OPEN', 'TEMPORARILY_CLOSED', 'MOVED', 'PERMANENTLY_CLOSED'];

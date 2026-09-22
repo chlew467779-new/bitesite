@@ -28,6 +28,7 @@ import {
 import {
   parseOperatingHoursString,
   formatOperatingHoursToString,
+  isValidOperatingHours,
   type DayHours,
   type TimeSlot,
 } from '@/lib/hours';
@@ -423,6 +424,15 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
     if (form.amenities.length > 5) newErrors.amenities = 'Choose at most 5 amenity tags';
     if (form.occasion.length > 3) newErrors.occasion = 'Choose at most 3 occasion tags';
     if (!isValidEmail(form.email)) newErrors.email = 'Enter a valid email address';
+    for (const day of DAYS) {
+      const slots = hoursSlots[day].slots;
+      const hasPartialSlot = slots.some((slot) => Boolean(slot.start.trim()) !== Boolean(slot.end.trim()));
+      const value = formatOperatingHoursToString(hoursSlots[day]);
+      if (hasPartialSlot || (value && !isValidOperatingHours(value))) {
+        newErrors.operating_hours = 'Each opening-hours slot must use a valid start and end time (for example, 09:00 - 18:00).';
+        break;
+      }
+    }
 
     const urlFields: Array<[keyof typeof form, string]> = [
       ['grabfood_url', 'GrabFood URL'],
@@ -455,6 +465,8 @@ export default function MerchantForm({ merchant, onBack, onSaved }: MerchantForm
         ? 0
         : new Set(['whatsapp', 'phone', 'email', 'website', 'instagram', 'facebook', 'grabfood_url', 'latitude', 'longitude']).has(firstError)
           ? 1
+          : firstError === 'operating_hours'
+            ? 2
           : new Set(['logo_image', 'cover_image', 'menu_pdf_url']).has(firstError)
             ? 4
             : 0;
