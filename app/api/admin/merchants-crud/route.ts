@@ -73,7 +73,11 @@ function normalizeControlledTags(value: unknown, allowed: readonly string[]): st
   return normalizeStringArray(value).filter(item => allowed.includes(item));
 }
 
-function validateMerchantPayload(body: Record<string, unknown>, requireBaseFields: boolean): string | null {
+function validateMerchantPayload(
+  body: Record<string, unknown>,
+  requireBaseFields: boolean,
+  existingOperatingHours?: Record<string, unknown> | null,
+): string | null {
   if (!body || typeof body !== 'object' || Array.isArray(body)) return 'Invalid request body';
 
   for (const field of merchantTextFields) {
@@ -137,7 +141,8 @@ function validateMerchantPayload(body: Record<string, unknown>, requireBaseField
       if (!DAYS.includes(day)) return `operating_hours has an invalid day: ${day}`;
       if (typeof value !== 'string') return `operating_hours.${day} must be a string`;
       if (value.length > 200) return `operating_hours.${day} must be 200 characters or fewer`;
-      if (value.trim() && !isValidOperatingHours(value)) {
+      const unchangedLegacyValue = existingOperatingHours?.[day] === value;
+      if (value.trim() && !isValidOperatingHours(value) && !unchangedLegacyValue) {
         return `operating_hours.${day} must use valid HH:MM or H:MM AM/PM ranges`;
       }
     }
@@ -327,7 +332,24 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Merchant ID is required' }, { status: 400 });
     }
 
-    const validationError = validateMerchantPayload(body, false);
+    const { data: existingMerchant, error: existingMerchantError } = await supabase
+      .from('merchants')
+      .select('operating_hours')
+      .eq('id', id)
+      .single();
+
+    if (existingMerchantError || !existingMerchant) {
+      return NextResponse.json({ error: 'Merchant not found' }, { status: 404 });
+    }
+
+    const existingOperatingHours =
+      existingMerchant.operating_hours
+      && typeof existingMerchant.operating_hours === 'object'
+      && !Array.isArray(existingMerchant.operating_hours)
+        ? existingMerchant.operating_hours as Record<string, unknown>
+        : null;
+
+    const validationError = validateMerchantPayload(body, false, existingOperatingHours);
     if (validationError) return NextResponse.json({ error: validationError }, { status: 400 });
 
     const slug = body.slug?.trim();
