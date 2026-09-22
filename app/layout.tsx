@@ -36,8 +36,8 @@ export async function generateMetadata(): Promise<Metadata> {
     description: settings.site_description,
     keywords: [
       "restaurant",
-      "KL cafe",
-      "Kuala Lumpur food",
+      "Malaysia cafe",
+      "Malaysia food",
       "discover restaurants",
       "local dining",
       "food stories",

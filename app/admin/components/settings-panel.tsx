@@ -21,8 +21,8 @@ const settingLabels: Record<string, string> = {
 
 const settingPlaceholders: Record<string, string> = {
   site_title: 'BiteSite',
-  site_description: 'Discover the best restaurants in Kuala Lumpur',
-  footer_text: 'Discover more restaurants on BiteSite',
+  site_description: 'Discover local restaurants across Klang Valley and beyond',
+  footer_text: 'Discover more restaurants across Klang Valley and beyond',
 };
 
 export function SettingsPanel() {

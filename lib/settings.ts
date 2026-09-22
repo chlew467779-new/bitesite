@@ -14,11 +14,11 @@ export interface SiteSettings {
 const defaultSettings: SiteSettings = {
   site_title: "BiteSite",
   site_description:
-    "Discover the best local restaurants, cafes, and hidden gems in Kuala Lumpur. Browse menus, photos, and stories — every bite tells a story.",
+    "Discover local restaurants, cafes, and hidden gems across Klang Valley and beyond. Browse menus, photos, and stories — every bite tells a story.",
   contact_email: "hello@bitesite.my",
   contact_phone: "+60 16-566 0239",
   whatsapp_number: "60165660239",
-  footer_text: "Discover more restaurants on BiteSite",
+  footer_text: "Discover more restaurants across Klang Valley and beyond",
 };
 
 export async function getSettings(): Promise<SiteSettings> {

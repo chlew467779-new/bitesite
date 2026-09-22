@@ -8,7 +8,7 @@ const siteUrl = getSiteUrl();
 export const metadata: Metadata = {
   title: "Our Partner | BiteSite",
   description:
-    "Explore all BiteSite partner restaurants on the map. Find cafes, bakeries, and restaurants near you in Kuala Lumpur.",
+    "Explore BiteSite partner restaurants on the map. Find cafes, bakeries, and restaurants across Klang Valley and beyond.",
   alternates: {
     canonical: `${siteUrl}/our-partner`,
   },
