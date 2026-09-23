@@ -77,4 +77,36 @@ assert.doesNotMatch(
   "the dead duplicate stays untouched; cleaning it up belongs to the legacy cleanup PR",
 );
 
+/* ── admin menu editor ─────────────────────────────────────────────────────────────────────── */
+
+const editorSource = await read("app/admin/components/menu-editor.tsx");
+
+assert.match(
+  editorSource,
+  /checked=\{draft\.show_prices\}/,
+  "the editor exposes a real show_prices control instead of only carrying the value through",
+);
+assert.match(editorSource, /Show price on public menu/, "the control says what it does");
+assert.match(
+  editorSource,
+  /availability is unchanged/,
+  "the help text says this is about display, not whether the dish can be ordered",
+);
+assert.match(
+  editorSource,
+  /Hidden publicly/,
+  "the product list flags a hidden price while still showing the operator the stored price",
+);
+assert.match(
+  editorSource,
+  /import \{ shouldShowPrice \} from '@\/lib\/menu-display\.mjs';/,
+  "the editor's public preview uses the same rule as the real layouts",
+);
+assert.match(editorSource, /Uncategorized/, "the editor identifies uncategorized dishes");
+assert.match(
+  editorSource,
+  /not shown on the public menu/,
+  "the uncategorized warning states the public consequence",
+);
+
 console.log("show_prices checks passed");

@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './auth-context';
 import ImageUpload from './image-upload';
+import { shouldShowPrice } from '@/lib/menu-display.mjs';
 import {
   Plus,
   Trash2,
@@ -78,11 +79,11 @@ interface MenuEditorProps {
  * Admin Menu Editor: category and product (dish) CRUD for one merchant.
  *
  * Scope notes (see PR description / handoff for the full write-up):
- * - `show_prices` is written on every save (carried over from the existing product row, or the
- *   EMPTY_DRAFT default of true for a new dish) but has no checkbox in this editor, because no
- *   public layout renderer (classic/elegant/minimal/modern/rustic) reads it yet — a control that
- *   changed nothing on the public site would be more confusing than no control at all. Wire it up
- *   here once a layout actually renders it.
+ * - `show_prices` is now honoured by every public layout, so it has a real control here. Turning
+ *   it off hides the regular price, the discount price and the currency symbol on the public menu
+ *   (including the Featured/Seasonal section); the dish, its description, image and availability
+ *   still render. The product list below keeps showing operators the stored price with a "Hidden
+ *   publicly" badge — only the preview mirrors what a customer sees.
  * - No public layout renders products with category_id = null ("uncategorized") at all — such
  *   products are invisible on the live menu. This editor surfaces that explicitly rather than
  *   letting it be a silent trap.
@@ -555,7 +556,7 @@ export default function MenuEditor({ merchantId, merchantName }: MenuEditorProps
           <div className="flex items-center gap-2 px-4 py-3 border-b border-amber-500/20 bg-amber-500/5">
             <EyeOff className="w-4 h-4 text-amber-400 shrink-0" />
             <h3 className="font-semibold text-amber-300">Uncategorized ({uncategorized.length})</h3>
-            <span className="text-xs text-amber-400/80 ml-2">Not shown on the public menu — assign a category to publish.</span>
+            <span className="text-xs text-amber-400/80 ml-2">Uncategorized dishes are not shown on the public menu. Assign a category to publish them.</span>
           </div>
           <div className="p-4 space-y-2">
             {uncategorized.map((product, prodIndex) => (
@@ -698,16 +699,32 @@ function ProductRow({
             </span>
           )}
         </div>
-        <p className="text-xs text-slate-500">
-          {product.discount_price ? (
-            <>
-              <span className="line-through mr-1">RM {product.price}</span>
-              RM {product.discount_price}
-            </>
-          ) : product.price !== null ? (
-            `RM ${product.price}`
-          ) : (
-            'No price set'
+        {/* The stored price stays visible to admins even when it is hidden publicly — they still
+            need to see and edit it. Only the badge says what the public menu does. */}
+        <p className="text-xs text-slate-500 flex items-center gap-1.5 flex-wrap">
+          <span>
+            {product.discount_price ? (
+              <>
+                <span className="line-through mr-1">RM {product.price}</span>
+                RM {product.discount_price}
+              </>
+            ) : product.price !== null ? (
+              `RM ${product.price}`
+            ) : (
+              'No price set'
+            )}
+          </span>
+          {!shouldShowPrice(product) && (
+            <span
+              className="text-[10px] px-1.5 py-0.5 rounded bg-slate-700/60 text-slate-300 border border-slate-600 shrink-0"
+              title={
+                product.discount_price
+                  ? 'Neither the regular price nor the discount price is shown on the public menu.'
+                  : 'This price is not shown on the public menu.'
+              }
+            >
+              Hidden publicly
+            </span>
           )}
         </p>
       </div>
@@ -859,6 +876,21 @@ function ProductEditPanel({
               className="w-4 h-4 accent-amber-500"
             />
           </label>
+          <label className="flex items-center justify-between">
+            <span className="text-sm text-slate-300">
+              Show price on public menu
+              <span className="block text-xs font-normal text-slate-500">
+                Turn off to hide the regular and discount price from the public menu. The dish remains visible, and its
+                availability is unchanged.
+              </span>
+            </span>
+            <input
+              type="checkbox"
+              checked={draft.show_prices}
+              onChange={(e) => update('show_prices', e.target.checked)}
+              className="w-4 h-4 accent-amber-500 shrink-0 ml-3"
+            />
+          </label>
         </div>
 
         <div className="flex justify-end gap-3 pt-2">
@@ -914,18 +946,22 @@ function MenuPreview({
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start gap-2">
                         <h4 className="font-semibold text-amber-900">{product.name}</h4>
-                        <span className="font-bold text-amber-700 whitespace-nowrap">
-                          {product.discount_price ? (
-                            <>
-                              <span className="line-through opacity-50 text-sm mr-1">RM {product.price}</span>
-                              RM {product.discount_price}
-                            </>
-                          ) : product.price !== null ? (
-                            `RM ${product.price}`
-                          ) : (
-                            ''
-                          )}
-                        </span>
+                        {/* This mirrors the public menu, so a dish with prices hidden shows none
+                            here either — the stored price stays visible in the editor list above. */}
+                        {shouldShowPrice(product) && (
+                          <span className="font-bold text-amber-700 whitespace-nowrap">
+                            {product.discount_price ? (
+                              <>
+                                <span className="line-through opacity-50 text-sm mr-1">RM {product.price}</span>
+                                RM {product.discount_price}
+                              </>
+                            ) : product.price !== null ? (
+                              `RM ${product.price}`
+                            ) : (
+                              ''
+                            )}
+                          </span>
+                        )}
                       </div>
                       {product.description && <p className="text-sm text-amber-800/60 mt-1">{product.description}</p>}
                       {!product.is_available && (
