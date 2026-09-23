@@ -296,6 +296,46 @@ assert.match(
 );
 assert.match(merchantsCrudSource, /from '@\/lib\/layout-registry\.mjs'/, "…using the shared registry, not a local copy");
 
+/* ── admin surfaces read the registry and never resubmit an invalid stored value ───────────── */
+
+const merchantFormSource = await read("app/admin/components/merchant-form.tsx");
+assert.match(
+  merchantFormSource,
+  /const LAYOUTS = getPersistableLayouts\(\)/,
+  "the admin layout selector lists registry layouts, so unfinished ones are never offered",
+);
+assert.doesNotMatch(
+  merchantFormSource,
+  /value: 'classic', label: 'Classic'/,
+  "the hand-maintained LAYOUTS array is gone",
+);
+assert.match(
+  merchantFormSource,
+  /if \(isPersistableLayout\(form\.layout\)\) \{\s*payload\.layout = form\.layout;/,
+  "layout is only submitted when it is a value the API will accept",
+);
+assert.doesNotMatch(
+  merchantFormSource,
+  /^\s*layout: form\.layout,$/m,
+  "layout is no longer unconditionally part of the save payload",
+);
+assert.match(
+  merchantFormSource,
+  /layout: merchant\.layout \?\? 'classic'/,
+  "a blank stored layout stays visible as bad data instead of being normalised to classic",
+);
+assert.match(merchantFormSource, /Unknown saved layout\./, "operators are told when a stored layout is unknown");
+assert.match(merchantFormSource, /not yet public-ready/, "operators are told when a stored layout is not public-ready");
+
+const merchantManagerSource = await read("app/admin/components/merchant-manager.tsx");
+assert.doesNotMatch(
+  merchantManagerSource,
+  /classic: 'Classic',\s*elegant: 'Elegant'/,
+  "the merchant list no longer keeps its own copy of the layout labels",
+);
+assert.match(merchantManagerSource, /getLayoutMeta\(layout\)\.displayName/, "…it reads labels from the registry");
+assert.match(merchantManagerSource, /renders as Classic/, "…and flags stored values the public page will not honour");
+
 /* ── no hand-written layout unions left in live code ───────────────────────────────────────── */
 
 // The two files below are dead duplicates (nothing imports them); they are left untouched here

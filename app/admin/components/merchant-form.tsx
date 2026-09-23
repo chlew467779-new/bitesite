@@ -34,6 +34,7 @@ import {
   type TimeSlot,
 } from '@/lib/hours';
 import { AMENITY_TAGS, AREAS, CUISINE_TAGS, OCCASION_TAGS, PAYMENT_METHODS } from '@/lib/presets';
+import { getPersistableLayouts, isLayoutKey, isPersistableLayout } from '@/lib/layout-registry.mjs';
 import ImageUpload from './image-upload';
 import MenuEditor from './menu-editor';
 
@@ -78,13 +79,9 @@ interface MerchantFormProps {
   loadWarning?: string;
 }
 
-const LAYOUTS = [
-  { value: 'classic', label: 'Classic', desc: 'Warm cafe / bakery' },
-  { value: 'elegant', label: 'Elegant', desc: 'Dark luxury fine-dining' },
-  { value: 'minimal', label: 'Minimal', desc: 'Clean zen / Japanese' },
-  { value: 'modern', label: 'Modern', desc: 'Contemporary urban' },
-  { value: 'rustic', label: 'Rustic', desc: 'Earthy farm-to-table' },
-];
+/** Layout choices come from lib/layout-registry.mjs — only production-ready layouts may be
+ *  saved onto a merchant row, so unfinished layouts never appear here. */
+const LAYOUTS = getPersistableLayouts();
 
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
@@ -267,7 +264,9 @@ export default function MerchantForm({ merchant, onBack, onSaved, loadWarning }:
         slug: merchant.slug || '',
         tagline: merchant.tagline || '',
         description: merchant.description || '',
-        layout: merchant.layout || 'classic',
+        // `??` not `||`: a null layout is the ordinary default and normalises to classic, but an
+        // empty string is bad data and must stay visible rather than silently becoming classic.
+        layout: merchant.layout ?? 'classic',
         cuisine: merchant.cuisine || [],
         amenities: merchant.amenities || [],
         occasion: merchant.occasion || [],
@@ -520,7 +519,6 @@ export default function MerchantForm({ merchant, onBack, onSaved, loadWarning }:
       slug: form.slug,
       tagline: form.tagline || null,
       description: form.description || null,
-      layout: form.layout,
       cuisine: form.cuisine,
       amenities: form.amenities,
       occasion: form.occasion,
@@ -546,6 +544,13 @@ export default function MerchantForm({ merchant, onBack, onSaved, loadWarning }:
       menu_pdf_url: form.menu_pdf_url || null,
       grabfood_url: form.grabfood_url || null,
     };
+
+    // The API whitelists layout strictly. If this merchant still holds a historical value that is
+    // unknown or not public-ready, omit the field instead of resubmitting it: every other field
+    // keeps saving normally, and the bad value is only corrected once an operator picks a layout.
+    if (isPersistableLayout(form.layout)) {
+      payload.layout = form.layout;
+    }
 
     if (isEditing) {
       payload.id = merchant!.id;
@@ -785,19 +790,29 @@ export default function MerchantForm({ merchant, onBack, onSaved, loadWarning }:
 
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1.5">Layout</label>
+              {!isPersistableLayout(form.layout) && (
+                <p className="mb-2 flex items-start gap-2 text-xs text-amber-400">
+                  <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                  <span>
+                    {isLayoutKey(form.layout)
+                      ? 'Saved layout is not yet public-ready. Public page currently renders as Classic. Choose a layout to correct this value.'
+                      : 'Unknown saved layout. Public page currently renders as Classic. Choose a layout to correct this value.'}
+                  </span>
+                </p>
+              )}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {LAYOUTS.map((l) => (
                   <button
-                    key={l.value}
-                    onClick={() => updateField('layout', l.value)}
+                    key={l.key}
+                    onClick={() => updateField('layout', l.key)}
                     className={`p-3 rounded-lg border text-left transition-colors ${
-                      form.layout === l.value
+                      form.layout === l.key
                         ? 'bg-amber-500/10 border-amber-500/30 text-amber-400'
                         : 'bg-slate-950 border-slate-700 text-slate-400 hover:border-slate-600'
                     }`}
                   >
-                    <div className="font-medium text-sm">{l.label}</div>
-                    <div className="text-xs mt-0.5 opacity-70">{l.desc}</div>
+                    <div className="font-medium text-sm">{l.displayName}</div>
+                    <div className="text-xs mt-0.5 opacity-70">{l.shortDescription}</div>
                   </button>
                 ))}
               </div>
