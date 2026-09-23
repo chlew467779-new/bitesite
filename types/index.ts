@@ -107,7 +107,9 @@ export interface Product {
   created_at: string;
   is_available: boolean;
   discount_price: number | null;
-  show_prices: boolean;
+  /** Nullable in the database. Only an explicit `false` hides prices publicly — resolve it with
+   *  `shouldShowPrice` from lib/menu-display.mjs rather than reading it directly. */
+  show_prices: boolean | null;
 }
 
 export interface MerchantVideo {
