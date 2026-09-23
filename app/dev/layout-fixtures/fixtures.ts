@@ -1,6 +1,6 @@
 /* bitesite/app/dev/layout-fixtures/fixtures.ts */
 
-import type { Category, Merchant, Product } from "@/types";
+import type { Category, EventItem, Merchant, Product, Review } from "@/types";
 
 /**
  * In-memory data for the development-only layout fixtures page.
@@ -13,10 +13,13 @@ import type { Category, Merchant, Product } from "@/types";
 export const PRICE_STATES = ["normal", "discount", "hidden"] as const;
 export const DISH_STATES = ["default", "soldout-hidden", "featured-hidden"] as const;
 export const IMAGE_STATES = ["with", "without"] as const;
+/** "all" also switches on the reviews, appointment and events sections, which are off by default. */
+export const SECTION_STATES = ["default", "all"] as const;
 
 export type PriceState = (typeof PRICE_STATES)[number];
 export type DishState = (typeof DISH_STATES)[number];
 export type ImageState = (typeof IMAGE_STATES)[number];
+export type SectionState = (typeof SECTION_STATES)[number];
 
 export function pick<T extends string>(value: string | string[] | undefined, allowed: readonly T[], fallback: T): T {
   return typeof value === "string" && (allowed as readonly string[]).includes(value) ? (value as T) : fallback;
@@ -97,7 +100,43 @@ export function buildProducts(price: PriceState, dish: DishState, image: ImageSt
   ];
 }
 
-export function buildMerchant(layoutKey: string, image: ImageState): Merchant {
+export const FIXTURE_REVIEWS: Review[] = [
+  {
+    author: "Fixture Reviewer A",
+    rating: 5,
+    text: "Invented review text used to check the reviews section on every layout.",
+    date: "2026-01-10",
+  },
+  {
+    author: "Fixture Reviewer B — 长名字测试 Nama Panjang",
+    rating: 3,
+    text: "A second invented review, so the carousel dots and arrows render.",
+    date: "2026-01-12",
+  },
+];
+
+export function buildEvents(sections: SectionState, image: ImageState): EventItem[] {
+  if (sections !== "all") return [];
+  return [
+    {
+      id: "event-1",
+      title: "Fixture tasting night",
+      description: "An invented event used to check the events section on every layout.",
+      date: "2026-12-05",
+      time: "19:00",
+      location: "1 Fixture Street",
+      image: image === "with" ? FIXTURE_IMAGE : undefined,
+    },
+    {
+      id: "event-2",
+      title: "Second fixture event with no image or location",
+      date: "2026-12-19",
+    },
+  ];
+}
+
+export function buildMerchant(layoutKey: string, image: ImageState, sections: SectionState = "default"): Merchant {
+  const allSections = sections === "all";
   return {
     id: "fixture-merchant",
     slug: "__dev-fixture__",
@@ -139,10 +178,10 @@ export function buildMerchant(layoutKey: string, image: ImageState): Merchant {
       menu: true,
       contact: true,
       gallery: true,
-      reviews: false,
-      appointment: false,
+      reviews: allSections,
+      appointment: allSections,
       seasonal_popup: true,
-      events: false,
+      events: allSections,
     },
     settings: {},
     status: "active",
@@ -156,6 +195,6 @@ export function buildMerchant(layoutKey: string, image: ImageState): Merchant {
     payment_methods: ["Cash", "Cashless"],
     latitude: null,
     longitude: null,
-    reviews: null,
+    reviews: allSections ? FIXTURE_REVIEWS : null,
   };
 }

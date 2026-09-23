@@ -90,9 +90,23 @@ assert.doesNotMatch(
 
 /* ── the fixture covers the states the visual QA needs ─────────────────────────────────────── */
 
-for (const state of ["normal", "discount", "hidden", "soldout-hidden", "featured-hidden", "with", "without"]) {
+for (const state of ["normal", "discount", "hidden", "soldout-hidden", "featured-hidden", "with", "without", "all"]) {
   assert.ok(both.includes(`"${state}"`), `the fixtures offer the ${state} state`);
 }
 assert.match(fixtures, /category_id: null/, "an uncategorized dish is present, to show it never renders publicly");
+
+// sections=all adds the reviews, appointment and events sections so every themed section can be
+// reviewed on every layout. Their data is in-memory too, and the switch is a fixed state.
+assert.match(
+  source,
+  /const sections = pick\(params\.sections, SECTION_STATES, "default"\);/,
+  "the sections parameter is narrowed to a fixed set of states",
+);
+assert.match(fixtures, /export const FIXTURE_REVIEWS: Review\[\] = \[/, "reviews are in-memory literals");
+assert.match(fixtures, /export function buildEvents\(/, "events are built in-memory");
+for (const feature of ["reviews", "appointment", "events"]) {
+  assert.match(fixtures, new RegExp(`${feature}: allSections,`), `${feature} is only switched on by sections=all`);
+}
+assert.match(source, /events=\{events\}/, "the fixture events reach the layout");
 
 console.log("layout fixtures safety checks passed");
