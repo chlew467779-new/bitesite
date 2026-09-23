@@ -42,6 +42,8 @@
 | SYNC-024 | Menu | `show_prices = false` hides the regular price, discount price, strikethrough original and currency symbol on every public surface, including the Featured/Seasonal section. Name, description, image, featured and availability still render. | DECIDED |
 | SYNC-025 | Menu | A `show_prices` value of null/undefined is treated as true, preserving the behaviour of every row written before the column was honoured. | DECIDED |
 | SYNC-026 | Menu | Dishes with `category_id = null` remain unrendered on the public menu; Admin surfaces must state that consequence explicitly. Publishing them is a separate future decision. | DECIDED |
+| SYNC-027 | Layouts | Per-layout styling for the shared sections (gallery, seasonal, reviews, appointment, events, share buttons, related merchants) lives in `lib/layout-theme.mjs`, separate from the registry. The registry still decides which layouts exist; every registered layout must supply a complete theme. Each layout file keeps its own structure and hero/menu/footer styling. | DECIDED |
+| SYNC-028 | Layouts | The theme keeps one slot per style that existed before (38 per layout), with the five original layouts copied character for character and no per-layout branches left in components. Collapsing slots into shared semantic roles is deferred to the new-layout work (PR2B), because it would change existing colours. | DECIDED |
 
 ## Confirmed product principles
 
