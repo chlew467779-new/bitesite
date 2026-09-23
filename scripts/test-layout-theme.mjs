@@ -378,4 +378,44 @@ for (const key of LAYOUT_KEYS) {
 for (const value of [undefined, null, "", "Classic", "unknown", "__proto__", "constructor", "toString", 42, {}]) {
   assert.equal(getLayoutTheme(value), LAYOUT_THEMES.classic, `${String(value)} falls back to the Classic theme`);
 }
+
+/* ── the shared sections read from the theme ───────────────────────────────────────────────── */
+
+const THEMED_COMPONENTS = {
+  "app/components/sections/gallery-section.tsx": "gallery",
+  "app/components/sections/seasonal-section.tsx": "seasonal",
+  "app/components/sections/reviews-section.tsx": "reviews",
+  "app/components/sections/appointment-section.tsx": "appointment",
+  "app/components/sections/events-section.tsx": "events",
+};
+for (const [relPath, group] of Object.entries(THEMED_COMPONENTS)) {
+  const source = await read(relPath);
+  assert.match(
+    source,
+    /import \{ getLayoutTheme \} from "@\/lib\/layout-theme\.mjs";/,
+    `${relPath} imports the shared theme`,
+  );
+  assert.match(
+    source,
+    new RegExp(`const theme = getLayoutTheme\\(variant\\)\\.${group};`),
+    `${relPath} reads the ${group} theme group`,
+  );
+  assert.doesNotMatch(source, /Record<(LayoutVariant|LayoutKey)/, `${relPath} keeps no per-layout map of its own`);
+  assert.doesNotMatch(source, /\[variant\]/, `${relPath} does not index anything by layout key`);
+  assert.doesNotMatch(source, /variant\s*[!=]==/, `${relPath} has no hidden per-layout branch`);
+  for (const slot of LAYOUT_THEME_SLOTS[group]) {
+    assert.ok(source.includes(`theme.${slot}`), `${relPath} uses the ${group}.${slot} slot`);
+  }
+}
+
+// The appointment input keeps its shared sizing/shape classes in front of the themed colours,
+// which is exactly the string the old per-layout map produced.
+const appointmentSource = await read("app/components/sections/appointment-section.tsx");
+assert.match(
+  appointmentSource,
+  /const inputBase = "w-full px-4 py-3 rounded-xl border outline-none transition-all duration-200 text-base";/,
+  "the shared input classes are unchanged",
+);
+assert.match(appointmentSource, /const inputStyles = `\$\{inputBase\} \$\{theme\.input\}`;/, "…and still come first");
+
 console.log("layout theme checks passed");

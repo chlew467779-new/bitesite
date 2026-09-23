@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { trackEvent } from '@/lib/analytics';
 import type { LayoutVariant } from "./gallery-section";
+import { getLayoutTheme } from "@/lib/layout-theme.mjs";
 
 interface AppointmentSectionProps {
   merchantName: string;
@@ -20,47 +21,7 @@ interface AppointmentSectionProps {
   slug?: string;
 }
 
-const sectionBg: Record<LayoutVariant, string> = {
-  classic: "bg-amber-50",
-  elegant: "bg-slate-950",
-  minimal: "bg-white",
-  modern:  "bg-slate-50",
-  rustic:  "bg-orange-50",
-};
-
-const cardBg: Record<LayoutVariant, string> = {
-  classic: "bg-white border-amber-200",
-  elegant: "bg-slate-900 border-slate-700",
-  minimal: "bg-stone-50 border-stone-200",
-  modern:  "bg-white border-slate-200 shadow-lg",
-  rustic:  "bg-white border-orange-200",
-};
-
-const textColor: Record<LayoutVariant, string> = {
-  classic: "text-amber-900",
-  elegant: "text-slate-100",
-  minimal: "text-stone-800",
-  modern:  "text-slate-800",
-  rustic:  "text-orange-900",
-};
-
 const inputBase = "w-full px-4 py-3 rounded-xl border outline-none transition-all duration-200 text-base";
-const inputStyles: Record<LayoutVariant, string> = {
-  classic: `${inputBase} bg-white border-amber-200 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20`,
-  elegant:   `${inputBase} bg-slate-800 border-slate-600 text-white placeholder:text-slate-500 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20`,
-  minimal:   `${inputBase} bg-white border-stone-200 focus:border-stone-400 focus:ring-2 focus:ring-stone-400/20`,
-  modern:    `${inputBase} bg-white border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-400/20`,
-  rustic:    `${inputBase} bg-white border-orange-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-400/20`,
-};
-
-const btnPrimary: Record<LayoutVariant, string> = {
-  classic: "bg-amber-700 hover:bg-amber-800",
-  elegant: "bg-amber-600 hover:bg-amber-700",
-  minimal: "bg-stone-800 hover:bg-stone-900",
-  modern:  "bg-slate-900 hover:bg-slate-800",
-  rustic:  "bg-orange-700 hover:bg-orange-800",
-};
-
 export function AppointmentSection({
   merchantName,
   phone,
@@ -70,6 +31,8 @@ export function AppointmentSection({
   id,
   slug,
 }: AppointmentSectionProps) {
+  const theme = getLayoutTheme(variant).appointment;
+  const inputStyles = `${inputBase} ${theme.input}`;
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -123,12 +86,12 @@ export function AppointmentSection({
   if (submitted) {
     return (
       <FadeIn>
-        <section id={id} className={`py-16 px-4 sm:px-6 lg:px-8 ${sectionBg[variant]}`}>
+        <section id={id} className={`py-16 px-4 sm:px-6 lg:px-8 ${theme.sectionBg}`}>
           <div className="max-w-md mx-auto">
-            <div className={`p-8 rounded-2xl border text-center ${cardBg[variant]}`}>
-              <CheckCircle2 size={48} className={`mx-auto mb-4 ${variant === "elegant" ? "text-amber-400" : "text-green-500"}`} />
-              <h3 className={`text-2xl font-bold mb-3 ${textColor[variant]}`}>Request Sent!</h3>
-              <p className={`opacity-70 leading-relaxed mb-6 ${textColor[variant]}`}>
+            <div className={`p-8 rounded-2xl border text-center ${theme.card}`}>
+              <CheckCircle2 size={48} className={`mx-auto mb-4 ${theme.successIcon}`} />
+              <h3 className={`text-2xl font-bold mb-3 ${theme.text}`}>Request Sent!</h3>
+              <p className={`opacity-70 leading-relaxed mb-6 ${theme.text}`}>
                 We&apos;ve opened WhatsApp for you.<br />
                 Please send the pre-filled message to confirm your reservation.
               </p>
@@ -152,62 +115,62 @@ export function AppointmentSection({
 
   return (
     <FadeIn>
-      <section id={id} className={`py-16 px-4 sm:px-6 lg:px-8 ${sectionBg[variant]}`}>
+      <section id={id} className={`py-16 px-4 sm:px-6 lg:px-8 ${theme.sectionBg}`}>
         <div className="max-w-2xl mx-auto">
-          <h2 className={`text-3xl font-bold text-center mb-3 ${textColor[variant]}`}>{title}</h2>
-          <p className={`text-center mb-10 opacity-60 ${textColor[variant]}`}>
+          <h2 className={`text-3xl font-bold text-center mb-3 ${theme.text}`}>{title}</h2>
+          <p className={`text-center mb-10 opacity-60 ${theme.text}`}>
             Fill in your details and we&apos;ll send your request via WhatsApp
           </p>
-          <div className={`p-6 sm:p-8 rounded-2xl border ${cardBg[variant]}`}>
+          <div className={`p-6 sm:p-8 rounded-2xl border ${theme.card}`}>
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="grid sm:grid-cols-2 gap-5">
                 <div>
-                  <label className={`block text-sm font-medium mb-1.5 ${textColor[variant]}`}>
+                  <label className={`block text-sm font-medium mb-1.5 ${theme.text}`}>
                     <User size={14} className="inline mr-1.5 -mt-0.5 opacity-60" />Name
                   </label>
-                  <input type="text" required value={formData.name} onChange={(e) => updateField("name", e.target.value)} className={inputStyles[variant]} placeholder="Your name" />
+                  <input type="text" required value={formData.name} onChange={(e) => updateField("name", e.target.value)} className={inputStyles} placeholder="Your name" />
                 </div>
                 <div>
-                  <label className={`block text-sm font-medium mb-1.5 ${textColor[variant]}`}>
+                  <label className={`block text-sm font-medium mb-1.5 ${theme.text}`}>
                     <Phone size={14} className="inline mr-1.5 -mt-0.5 opacity-60" />Phone
                   </label>
-                  <input type="tel" required value={formData.phone} onChange={(e) => updateField("phone", e.target.value)} className={inputStyles[variant]} placeholder="+60 12-345 6789" />
+                  <input type="tel" required value={formData.phone} onChange={(e) => updateField("phone", e.target.value)} className={inputStyles} placeholder="+60 12-345 6789" />
                 </div>
               </div>
               <div className="grid sm:grid-cols-2 gap-5">
                 <div>
-                  <label className={`block text-sm font-medium mb-1.5 ${textColor[variant]}`}>
+                  <label className={`block text-sm font-medium mb-1.5 ${theme.text}`}>
                     <Calendar size={14} className="inline mr-1.5 -mt-0.5 opacity-60" />Date
                   </label>
-                  <input type="date" required value={formData.date} onChange={(e) => updateField("date", e.target.value)} className={inputStyles[variant]} min={new Date().toISOString().split("T")[0]} />
+                  <input type="date" required value={formData.date} onChange={(e) => updateField("date", e.target.value)} className={inputStyles} min={new Date().toISOString().split("T")[0]} />
                 </div>
                 <div>
-                  <label className={`block text-sm font-medium mb-1.5 ${textColor[variant]}`}>
+                  <label className={`block text-sm font-medium mb-1.5 ${theme.text}`}>
                     <Clock size={14} className="inline mr-1.5 -mt-0.5 opacity-60" />Time
                   </label>
-                  <input type="time" required value={formData.time} onChange={(e) => updateField("time", e.target.value)} className={inputStyles[variant]} />
+                  <input type="time" required value={formData.time} onChange={(e) => updateField("time", e.target.value)} className={inputStyles} />
                 </div>
               </div>
               <div>
-                <label className={`block text-sm font-medium mb-1.5 ${textColor[variant]}`}>
+                <label className={`block text-sm font-medium mb-1.5 ${theme.text}`}>
                   <Users size={14} className="inline mr-1.5 -mt-0.5 opacity-60" />Number of Guests
                 </label>
-                <select value={formData.guests} onChange={(e) => updateField("guests", e.target.value)} className={inputStyles[variant]}>
+                <select value={formData.guests} onChange={(e) => updateField("guests", e.target.value)} className={inputStyles}>
                   {[1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 15, 20].map((n) => (
                     <option key={n} value={n}>{n} {n === 1 ? "person" : "people"}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className={`block text-sm font-medium mb-1.5 ${textColor[variant]}`}>
+                <label className={`block text-sm font-medium mb-1.5 ${theme.text}`}>
                   <MessageSquare size={14} className="inline mr-1.5 -mt-0.5 opacity-60" />Special Requests
                 </label>
-                <textarea value={formData.notes} onChange={(e) => updateField("notes", e.target.value)} className={`${inputStyles[variant]} resize-none`} rows={3} placeholder="Any dietary requirements or special occasions?" />
+                <textarea value={formData.notes} onChange={(e) => updateField("notes", e.target.value)} className={`${inputStyles} resize-none`} rows={3} placeholder="Any dietary requirements or special occasions?" />
               </div>
               <button
                 type="submit"
                 disabled={submitting}
-                className={`w-full py-3.5 rounded-xl font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-60 disabled:active:scale-100 flex items-center justify-center gap-2 ${btnPrimary[variant]}`}
+                className={`w-full py-3.5 rounded-xl font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-60 disabled:active:scale-100 flex items-center justify-center gap-2 ${theme.buttonPrimary}`}
                 style={{ WebkitTapHighlightColor: "transparent" }}
               >
                 {submitting ? (
