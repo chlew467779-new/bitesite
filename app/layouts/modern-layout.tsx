@@ -12,6 +12,7 @@ import type { LayoutProps } from "@/types";
 import { MapPin, Phone, Mail, Instagram, Globe, ArrowLeft, MessageSquare, Clock, Banknote, Smartphone, CreditCard } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { MenuViewTracker } from "@/components/sections/menu-view-tracker";
+import { shouldShowPrice } from "@/lib/menu-display.mjs";
 import Link from "next/link";
 import { getTodayKey, formatOperatingHours, DAYS } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
@@ -85,11 +86,13 @@ export function ModernLayout({
                           <div key={product.id} className="group">
                             <div className="flex justify-between items-baseline gap-3">
                               <h4 className="font-semibold text-slate-800 group-hover:text-slate-600 transition-colors">{product.name}</h4>
-                              <span className="font-bold text-slate-900 whitespace-nowrap">
-                                {product.discount_price ? (
-                                  <><span className="line-through opacity-40 text-sm mr-1">RM {product.price}</span>RM {product.discount_price}</>
-                                ) : `RM ${product.price}`}
-                              </span>
+                              {shouldShowPrice(product) && (
+                                <span className="font-bold text-slate-900 whitespace-nowrap">
+                                  {product.discount_price ? (
+                                    <><span className="line-through opacity-40 text-sm mr-1">RM {product.price}</span>RM {product.discount_price}</>
+                                  ) : `RM ${product.price}`}
+                                </span>
+                              )}
                             </div>
                             {product.description && <p className="text-sm text-slate-500 mt-1">{product.description}</p>}
                             {!product.is_available && <span className="text-xs text-red-500 mt-1 block">Currently Unavailable</span>}
