@@ -14,7 +14,8 @@
     "test:layout": "node scripts/test-layout-registry.mjs",
     "test:preview-safety": "node scripts/test-preview-analytics-safety.mjs",
     "test:prices": "node scripts/test-show-prices.mjs",
-    "verify": "npm run typecheck && npm run lint && npm run check:security && npm run test:security && npm run test:menu && npm run test:layout && npm run test:preview-safety && npm run test:prices && git diff --check"
+    "test:fixtures": "node scripts/test-layout-fixtures-safety.mjs",
+    "verify": "npm run typecheck && npm run lint && npm run check:security && npm run test:security && npm run test:menu && npm run test:layout && npm run test:preview-safety && npm run test:prices && npm run test:fixtures && git diff --check"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

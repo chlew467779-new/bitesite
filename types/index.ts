@@ -94,7 +94,9 @@ export interface Category {
 
 export interface Product {
   id: string;
-  category_id: string;
+  /** Nullable in the database: a dish with no category ("uncategorized") is saved but is not
+   *  rendered by any public layout. The Admin Menu Editor surfaces that explicitly. */
+  category_id: string | null;
   merchant_id: string;
   name: string;
   description: string | null;
