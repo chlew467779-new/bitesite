@@ -57,7 +57,9 @@ export interface Merchant {
   style: string;
   is_published: boolean;
   created_at: string;
-  layout: string;
+  /** Raw stored value: nullable in the database and not constrained to registered keys for
+   *  historical rows. Resolve it with lib/layout-registry.mjs rather than indexing directly. */
+  layout: string | null;
   features: MerchantFeatures;
   settings: Record<string, unknown>;
   status: string;

@@ -6,8 +6,9 @@ import { useState } from "react";
 import { Check, Copy, Share2 } from "lucide-react";
 import { trackEvent } from '@/lib/analytics';
 import { getSiteUrl } from '@/lib/site-url';
+import type { LayoutKey } from "@/lib/layout-registry.mjs";
 
-type LayoutVariant = "classic" | "elegant" | "minimal" | "modern" | "rustic";
+type LayoutVariant = LayoutKey;
 
 interface ShareButtonsProps {
   slug: string;

@@ -35,6 +35,10 @@
 | SYNC-017 | Halal / pork-free | No dedicated Halal/pork-free field, badge, verification workflow, ranking/filter, or special product logic in current scope. Merchant self-onboarding may provide related information if they choose, under normal review rules. | DECIDED / OUT OF SCOPE |
 | SYNC-018 | Assisted Content pricing | Malaysia: RM20. Singapore: S$10 when Singapore is enabled. These are market-specific prices; no live FX conversion logic in V1. | DECIDED |
 | SYNC-019 | Story ↔ Menu | Stories are ordinary promotional/editorial posts. A Story may mention a new menu item, but Story publishing does not create, edit, sync, price, archive, or otherwise mutate Menu System data. | DECIDED |
+| SYNC-020 | Layouts | `lib/layout-registry.mjs` is the single source of truth for layout keys and their metadata; Admin and Merchant surfaces read their layout options from it. | DECIDED |
+| SYNC-021 | Layouts | Unknown, blank or not-public-ready stored layout values render Classic with a sanitised server-side warning; they never 404 a store page. | DECIDED |
+| SYNC-022 | Layouts | Only registered, production-ready layouts may be persisted to a merchant row, for Admin and Merchant self-service alike. Unfinished layouts stay on internal surfaces. | DECIDED |
+| SYNC-023 | Legacy style | The unused legacy `style`/`custom_style`/fresh-luxury-jp token system is not removed in this phase; new layout work must not reuse its namespace. | DECIDED |
 
 ## Confirmed product principles
 
@@ -76,6 +80,8 @@
 | OQ-RLS | Exact authorization model for Merchant/Admin Story submissions, especially `admin_relayed`. | PENDING: repository/RLS audit |
 | OQ-Upload | Exact media upload/compression path. | PENDING: repository/storage audit |
 | OQ-RM20Ops | Exact operational receipt/reference tracking for Assisted Content payments. | RECOMMENDATION: simple admin-only tracking first |
+| OQ-LegacyStyle | When and how to remove the unused legacy style system and the two dead duplicate section components. | PENDING: separate cleanup PR after a read-only reference audit |
+| OQ-PreviewToken | Merchant draft preview via a short-lived signed token exchanged for an HttpOnly cookie. | PENDING: architecture agreed in principle, to be specified and reviewed in its own PR |
 
 ## Explicitly out of scope for current planning
 

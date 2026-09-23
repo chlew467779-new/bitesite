@@ -6,6 +6,7 @@ import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { revalidatePath } from 'next/cache';
 import { InvalidJsonBodyError, readBoundedJson, RequestBodyTooLargeError } from '@/lib/bounded-json';
 import { AMENITY_TAGS, CUISINE_TAGS, OCCASION_TAGS } from '@/lib/presets';
+import { isPersistableLayout } from '@/lib/layout-registry.mjs';
 import { DAYS, isValidOperatingHours } from '@/lib/hours';
 
 const MAX_MERCHANT_BODY_BYTES = 128 * 1024;
@@ -147,6 +148,11 @@ function validateMerchantPayload(
       }
     }
   }
+  // Strict whitelist: only registered, production-ready layouts may be written to a merchant row,
+  // so an unfinished layout can never reach a public page. Historical bad values are not allowed
+  // through either — the Admin form omits the field instead of resubmitting an invalid value.
+  if (body.layout !== undefined && !isPersistableLayout(body.layout)) return 'Invalid layout';
+
   const platformStatuses = ['DRAFT', 'PENDING_REVIEW', 'PUBLISHED', 'SUSPENDED', 'ARCHIVED'];
   const businessStatuses = ['OPEN', 'TEMPORARILY_CLOSED', 'MOVED', 'PERMANENTLY_CLOSED'];
   if (body.platform_status !== undefined && !platformStatuses.includes(String(body.platform_status))) return 'Invalid platform_status';
@@ -375,7 +381,7 @@ export async function PUT(request: NextRequest) {
     if (body.slug !== undefined) updateData.slug = slug;
     if (body.tagline !== undefined) updateData.tagline = body.tagline?.trim() || null;
     if (body.description !== undefined) updateData.description = body.description?.trim() || null;
-    if (body.layout !== undefined) updateData.layout = body.layout;
+    if (body.layout !== undefined) updateData.layout = body.layout; // whitelisted in validateMerchantPayload
     if (body.cuisine !== undefined) updateData.cuisine = normalizeControlledTags(body.cuisine, CUISINE_TAGS);
     if (body.amenities !== undefined) updateData.amenities = normalizeControlledTags(body.amenities, AMENITY_TAGS);
     if (body.occasion !== undefined) updateData.occasion = normalizeControlledTags(body.occasion, OCCASION_TAGS);

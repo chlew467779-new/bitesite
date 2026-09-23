@@ -15,6 +15,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { getSettings } from "@/lib/settings";
 import { layouts } from "@/app/layouts";
+import { describeLayoutValueForLog, resolvePublicLayoutKey } from "@/lib/layout-registry.mjs";
 import { RelatedMerchants } from "@/components/sections/related-merchants";
 import { ViewTracker } from "@/components/sections/view-tracker";
 import { PageViewTracker } from "@/app/components/page-view-tracker";
@@ -189,9 +190,18 @@ export default async function MerchantPage({ params }: PageProps) {
   ]);
 
   const viewCount = statsRes.data?.view_count || 0;
-  const layoutKey = merchant.layout || "classic";
-  const LayoutComponent = layouts[layoutKey as keyof typeof layouts];
-  if (!LayoutComponent) notFound();
+  // Unknown, blank or not-yet-public-ready layout values render Classic instead of 404ing
+  // the storefront. A null value is the ordinary default and stays silent; anything else is
+  // bad data worth a server warning (sanitised: it comes from the database unvalidated).
+  const { key: layoutKey, reason: layoutReason } = resolvePublicLayoutKey(merchant.layout);
+  if (layoutReason !== "ok" && layoutReason !== "missing") {
+    console.warn("[layout] invalid merchants.layout; rendering classic", {
+      merchantId: merchant.id,
+      reason: layoutReason,
+      layoutValue: describeLayoutValueForLog(merchant.layout),
+    });
+  }
+  const LayoutComponent = layouts[layoutKey];
 
   const canonicalUrl = `${siteUrl}/store/${merchant.slug}`;
   const dayMap: Record<string, string> = {
@@ -255,10 +265,7 @@ export default async function MerchantPage({ params }: PageProps) {
         events={events}
         footerText={settings.footer_text}
       />
-      <RelatedMerchants
-        merchants={relatedMerchants}
-        variant={layoutKey as "classic" | "elegant" | "minimal" | "modern" | "rustic"}
-      />
+      <RelatedMerchants merchants={relatedMerchants} variant={layoutKey} />
     </>
   );
 }

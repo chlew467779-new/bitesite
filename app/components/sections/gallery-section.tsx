@@ -7,7 +7,11 @@ import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 
-export type LayoutVariant = "classic" | "elegant" | "minimal" | "modern" | "rustic";
+import type { LayoutKey } from "@/lib/layout-registry.mjs";
+
+/** Shared styling variant for section components. Sourced from the layout registry so new
+ *  layout keys cannot be forgotten here (adding one makes these Record maps fail typecheck). */
+export type LayoutVariant = LayoutKey;
 
 interface GallerySectionProps {
   images: string[];
