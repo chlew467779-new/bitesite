@@ -9,6 +9,7 @@ import { SeasonalSection } from "./seasonal-section";
 import { EventsSection } from "./events-section";
 import { mergeFeatures, type MerchantFeatures } from "@/types";
 import type { Merchant, Product, EventItem } from "@/types";
+import { shouldShowPrice } from "@/lib/menu-display.mjs";
 import type { LayoutVariant } from "./gallery-section";
 
 interface TierSectionsProps {
@@ -42,7 +43,11 @@ export function TierSections({
       name: p.name,
       description: p.description ?? undefined,
       image: p.image_url ?? undefined,
-      price: p.discount_price
+      // A dish with prices hidden must not leak its price here either. SeasonalSection skips the
+      // price element entirely when this is undefined, so nothing empty is left behind.
+      price: !shouldShowPrice(p)
+        ? undefined
+        : p.discount_price
         ? `RM ${p.discount_price}`
         : p.price
         ? `RM ${p.price}`

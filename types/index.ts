@@ -94,7 +94,9 @@ export interface Category {
 
 export interface Product {
   id: string;
-  category_id: string;
+  /** Nullable in the database: a dish with no category ("uncategorized") is saved but is not
+   *  rendered by any public layout. The Admin Menu Editor surfaces that explicitly. */
+  category_id: string | null;
   merchant_id: string;
   name: string;
   description: string | null;
@@ -105,7 +107,9 @@ export interface Product {
   created_at: string;
   is_available: boolean;
   discount_price: number | null;
-  show_prices: boolean;
+  /** Nullable in the database. Only an explicit `false` hides prices publicly — resolve it with
+   *  `shouldShowPrice` from lib/menu-display.mjs rather than reading it directly. */
+  show_prices: boolean | null;
 }
 
 export interface MerchantVideo {

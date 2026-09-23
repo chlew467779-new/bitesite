@@ -12,6 +12,7 @@ import type { LayoutProps } from "@/types";
 import { MapPin, Phone, Mail, Instagram, Globe, ArrowLeft, MessageSquare, Banknote, Smartphone, CreditCard } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { MenuViewTracker } from "@/components/sections/menu-view-tracker";
+import { shouldShowPrice } from "@/lib/menu-display.mjs";
 import Link from "next/link";
 import { getTodayKey, formatOperatingHours, DAYS } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
@@ -79,11 +80,13 @@ export function MinimalLayout({
                               {product.description && <p className="text-xs text-stone-500 mt-0.5">{product.description}</p>}
                               {!product.is_available && <span className="text-xs text-red-500 mt-0.5 block">Unavailable</span>}
                             </div>
-                            <span className="text-sm font-medium text-stone-600 whitespace-nowrap">
-                              {product.discount_price ? (
-                                <><span className="line-through opacity-50 text-xs mr-1">RM {product.price}</span>RM {product.discount_price}</>
-                              ) : `RM ${product.price}`}
-                            </span>
+                            {shouldShowPrice(product) && (
+                              <span className="text-sm font-medium text-stone-600 whitespace-nowrap">
+                                {product.discount_price ? (
+                                  <><span className="line-through opacity-50 text-xs mr-1">RM {product.price}</span>RM {product.discount_price}</>
+                                ) : `RM ${product.price}`}
+                              </span>
+                            )}
                           </div>
                         ))}
                       </div>

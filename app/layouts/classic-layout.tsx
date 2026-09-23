@@ -13,6 +13,7 @@ import { getTodayKey, formatOperatingHours, DAYS } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
 import { trackEvent } from "@/lib/analytics";
 import { MenuViewTracker } from "@/components/sections/menu-view-tracker";
+import { shouldShowPrice } from "@/lib/menu-display.mjs";
 
 export function ClassicLayout({
   merchant,
@@ -140,18 +141,20 @@ export function ClassicLayout({
                             <div className="flex-1 min-w-0">
                               <div className="flex justify-between items-start gap-2">
                                 <h4 className="font-semibold text-amber-900">{product.name}</h4>
-                                <span className="font-bold text-amber-700 whitespace-nowrap">
-                                  {product.discount_price ? (
-                                    <>
-                                      <span className="line-through opacity-50 text-sm mr-1">
-                                        RM {product.price}
-                                      </span>
-                                      RM {product.discount_price}
-                                    </>
-                                  ) : (
-                                    `RM ${product.price}`
-                                  )}
-                                </span>
+                                {shouldShowPrice(product) && (
+                                  <span className="font-bold text-amber-700 whitespace-nowrap">
+                                    {product.discount_price ? (
+                                      <>
+                                        <span className="line-through opacity-50 text-sm mr-1">
+                                          RM {product.price}
+                                        </span>
+                                        RM {product.discount_price}
+                                      </>
+                                    ) : (
+                                      `RM ${product.price}`
+                                    )}
+                                  </span>
+                                )}
                               </div>
                               {product.description && (
                                 <p className="text-sm text-amber-800/60 mt-1 line-clamp-2">
