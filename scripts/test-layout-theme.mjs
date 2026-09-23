@@ -418,4 +418,22 @@ assert.match(
 );
 assert.match(appointmentSource, /const inputStyles = `\$\{inputBase\} \$\{theme\.input\}`;/, "…and still come first");
 
+// Share buttons and related merchants sit outside the tier sections but follow the same rule.
+const OTHER_THEMED = {
+  "components/sections/share-buttons.tsx": /const buttonStyles = getLayoutTheme\(variant\)\.share\.button;/,
+  "components/sections/related-merchants.tsx": /const s = getLayoutTheme\(variant\)\.related;/,
+};
+for (const [relPath, lookup] of Object.entries(OTHER_THEMED)) {
+  const source = await read(relPath);
+  assert.match(source, /import \{ getLayoutTheme \} from "@\/lib\/layout-theme\.mjs";/, `${relPath} imports the shared theme`);
+  assert.match(source, lookup, `${relPath} reads its theme group`);
+  assert.doesNotMatch(source, /Record<(LayoutVariant|LayoutKey)/, `${relPath} keeps no per-layout map of its own`);
+  assert.doesNotMatch(source, /\[variant\]/, `${relPath} does not index anything by layout key`);
+  assert.doesNotMatch(source, /variant\s*[!=]==/, `${relPath} has no hidden per-layout branch`);
+}
+const relatedSource = await read("components/sections/related-merchants.tsx");
+for (const slot of LAYOUT_THEME_SLOTS.related) {
+  assert.ok(relatedSource.includes(`s.${slot}`), `related-merchants uses the related.${slot} slot`);
+}
+
 console.log("layout theme checks passed");

@@ -7,6 +7,7 @@ import { Check, Copy, Share2 } from "lucide-react";
 import { trackEvent } from '@/lib/analytics';
 import { getSiteUrl } from '@/lib/site-url';
 import type { LayoutKey } from "@/lib/layout-registry.mjs";
+import { getLayoutTheme } from "@/lib/layout-theme.mjs";
 
 type LayoutVariant = LayoutKey;
 
@@ -16,15 +17,8 @@ interface ShareButtonsProps {
   variant?: LayoutVariant;
 }
 
-const buttonStyles: Record<LayoutVariant, string> = {
-  classic: "bg-white border-amber-200 text-amber-800 hover:bg-amber-50",
-  elegant: "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700",
-  minimal: "bg-white border-stone-200 text-stone-700 hover:bg-stone-50",
-  modern: "bg-white border-slate-200 text-slate-700 hover:bg-slate-50",
-  rustic: "bg-white border-orange-200 text-orange-800 hover:bg-orange-50",
-};
-
 export function ShareButtons({ slug, name, variant = "classic" }: ShareButtonsProps) {
+  const buttonStyles = getLayoutTheme(variant).share.button;
   const [copied, setCopied] = useState(false);
   const url = `${getSiteUrl()}/store/${slug}`;
 
@@ -58,7 +52,7 @@ export function ShareButtons({ slug, name, variant = "classic" }: ShareButtonsPr
     <div className="flex flex-wrap items-center gap-2">
       <button
         onClick={handleNativeShare}
-        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all active:scale-95 ${buttonStyles[variant]}`}
+        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all active:scale-95 ${buttonStyles}`}
         style={{ WebkitTapHighlightColor: "transparent" }}
       >
         <Share2 className="h-3.5 w-3.5" />
@@ -67,7 +61,7 @@ export function ShareButtons({ slug, name, variant = "classic" }: ShareButtonsPr
 
       <button
         onClick={handleCopy}
-        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all active:scale-95 ${buttonStyles[variant]}`}
+        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all active:scale-95 ${buttonStyles}`}
         style={{ WebkitTapHighlightColor: "transparent" }}
       >
         {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
