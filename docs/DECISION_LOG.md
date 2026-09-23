@@ -39,6 +39,9 @@
 | SYNC-021 | Layouts | Unknown, blank or not-public-ready stored layout values render Classic with a sanitised server-side warning; they never 404 a store page. | DECIDED |
 | SYNC-022 | Layouts | Only registered, production-ready layouts may be persisted to a merchant row, for Admin and Merchant self-service alike. Unfinished layouts stay on internal surfaces. | DECIDED |
 | SYNC-023 | Legacy style | The unused legacy `style`/`custom_style`/fresh-luxury-jp token system is not removed in this phase; new layout work must not reuse its namespace. | DECIDED |
+| SYNC-024 | Menu | `show_prices = false` hides the regular price, discount price, strikethrough original and currency symbol on every public surface, including the Featured/Seasonal section. Name, description, image, featured and availability still render. | DECIDED |
+| SYNC-025 | Menu | A `show_prices` value of null/undefined is treated as true, preserving the behaviour of every row written before the column was honoured. | DECIDED |
+| SYNC-026 | Menu | Dishes with `category_id = null` remain unrendered on the public menu; Admin surfaces must state that consequence explicitly. Publishing them is a separate future decision. | DECIDED |
 
 ## Confirmed product principles
 
