@@ -46,10 +46,40 @@ export function classifyReferrer(referrer: string): string {
   return 'other';
 }
 
+/**
+ * Boundary marker for surfaces that render real public layout components but must never record
+ * analytics: the development layout fixtures, and (later) Admin/Merchant preview.
+ *
+ * The layouts themselves embed trackers — MenuViewTracker fires a `menu_view` beacon as soon as
+ * the menu scrolls into view, with no user interaction — so "just don't click anything" is not
+ * enough, and a preview opened against a production database would otherwise write real rows.
+ *
+ * The marker is an attribute on a wrapper element rendered *around* the layout, so it is present
+ * in the same DOM commit as the trackers themselves: their effects run after that commit, so the
+ * lookup below always sees it. It is deliberately not module state (module state would leak
+ * between client-side navigations) and not written from an effect (that would race the trackers).
+ */
+export const ANALYTICS_SUPPRESSED_ATTRIBUTE = 'data-bs-analytics';
+export const ANALYTICS_SUPPRESSED_VALUE = 'off';
+/** Spread onto the wrapper element that encloses a non-recording surface. */
+export const analyticsSuppressedProps = { [ANALYTICS_SUPPRESSED_ATTRIBUTE]: ANALYTICS_SUPPRESSED_VALUE } as const;
+
+export function isAnalyticsSuppressed(): boolean {
+  if (typeof document === 'undefined') return false;
+  try {
+    return document.querySelector(`[${ANALYTICS_SUPPRESSED_ATTRIBUTE}="${ANALYTICS_SUPPRESSED_VALUE}"]`) !== null;
+  } catch {
+    // A failed lookup must never silently enable tracking on a preview surface.
+    return true;
+  }
+}
+
 export async function trackEvent(
   eventType: EventType,
   data: { slug?: string; path?: string; pageType?: string; detail?: string }
 ) {
+  if (isAnalyticsSuppressed()) return;
+
   const payload = {
     eventType,
     slug: data.slug,
