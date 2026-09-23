@@ -7,6 +7,13 @@ import { useAuth } from './auth-context';
 import { Search, Plus, Eye, EyeOff, Store, Loader2, ExternalLink, Pencil, Circle, UserPlus } from 'lucide-react';
 import MerchantForm from './merchant-form';
 import MerchantProfileChangeRequests from './merchant-profile-change-requests';
+import { describeLayoutValueForLog, getLayoutMeta, isLayoutKey, isPersistableLayout } from '@/lib/layout-registry.mjs';
+
+/** A stored value the public page renders as intended: a production-ready key, or null, which is
+ *  the ordinary "no layout chosen yet" default and legitimately means Classic. An empty string or
+ *  any other value is bad data and gets flagged in the UI. */
+const isPublishableLayoutValue = (layout?: string | null) =>
+  layout === null || layout === undefined ? true : isPersistableLayout(layout);
 
 interface Merchant {
   id: string;
@@ -240,15 +247,13 @@ export default function MerchantManager() {
     return matchesSearch && matchesFilter && matchesStatus;
   });
 
-  const getLayoutLabel = (layout?: string) => {
-    const labels: Record<string, string> = {
-      classic: 'Classic',
-      elegant: 'Elegant',
-      minimal: 'Minimal',
-      modern: 'Modern',
-      rustic: 'Rustic',
-    };
-    return labels[layout || ''] || layout || 'Classic';
+  /** Labels come from the layout registry. A stored value that cannot be published is called out
+   *  here, because the public page silently renders Classic for it. */
+  const getLayoutLabel = (layout?: string | null) => {
+    if (layout === null || layout === undefined) return 'Classic layout';
+    if (isPersistableLayout(layout)) return `${getLayoutMeta(layout).displayName} layout`;
+    if (isLayoutKey(layout)) return `${getLayoutMeta(layout).displayName} layout — not public-ready, renders as Classic`;
+    return 'Unknown layout — renders as Classic';
   };
 
   if (showForm) {
@@ -465,8 +470,11 @@ export default function MerchantManager() {
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-slate-800 flex items-center justify-between">
-                  <span className="text-xs text-slate-500">
-                    {getLayoutLabel(merchant.layout)} layout
+                  <span
+                    className={isPublishableLayoutValue(merchant.layout) ? 'text-xs text-slate-500' : 'text-xs text-amber-400'}
+                    title={isPublishableLayoutValue(merchant.layout) ? undefined : `Stored value: ${describeLayoutValueForLog(merchant.layout).value ?? 'not a string'}`}
+                  >
+                    {getLayoutLabel(merchant.layout)}
                   </span>
                   <div className="flex items-center gap-3"><button onClick={(event) => { event.stopPropagation(); setLinkingMerchant(merchant); }} className="inline-flex items-center gap-1 text-xs text-sky-400 hover:text-sky-300"><UserPlus className="w-3 h-3" /> Link user</button><a
                     href={`/store/${merchant.slug}`}

@@ -7,8 +7,9 @@ import { ArrowRight } from "lucide-react";
 import { SafeImage } from "@/app/components/safe-image";
 import { getTodayHours } from "@/lib/hours";
 import type { Merchant } from "@/types";
+import type { LayoutKey } from "@/lib/layout-registry.mjs";
 
-type LayoutVariant = "classic" | "elegant" | "minimal" | "modern" | "rustic";
+type LayoutVariant = LayoutKey;
 
 interface RelatedMerchantsProps {
   merchants: Merchant[];

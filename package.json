@@ -11,7 +11,8 @@
     "check:security": "node scripts/check-service-role-usage.mjs",
     "test:security": "node scripts/test-safe-json-ld.mjs",
     "test:menu": "node scripts/test-menu-editor-safety.mjs",
-    "verify": "npm run typecheck && npm run lint && npm run check:security && npm run test:security && npm run test:menu && git diff --check"
+    "test:layout": "node scripts/test-layout-registry.mjs",
+    "verify": "npm run typecheck && npm run lint && npm run check:security && npm run test:security && npm run test:menu && npm run test:layout && git diff --check"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
