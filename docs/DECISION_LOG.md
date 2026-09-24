@@ -44,6 +44,8 @@
 | SYNC-026 | Menu | Dishes with `category_id = null` remain unrendered on the public menu; Admin surfaces must state that consequence explicitly. Publishing them is a separate future decision. | DECIDED |
 | SYNC-027 | Layouts | Per-layout styling for the shared sections (gallery, seasonal, reviews, appointment, events, share buttons, related merchants) lives in `lib/layout-theme.mjs`, separate from the registry. The registry still decides which layouts exist; every registered layout must supply a complete theme. Each layout file keeps its own structure and hero/menu/footer styling. | DECIDED |
 | SYNC-028 | Layouts | The theme keeps one slot per style that existed before (38 per layout), with the five original layouts copied character for character and no per-layout branches left in components. Collapsing slots into shared semantic roles is deferred to the new-layout work (PR2B), because it would change existing colours. | DECIDED |
+| SYNC-029 | Layouts | New layouts land registered with `productionReady: false` (internal surfaces only: public pages render Classic, Admin cannot save them) and are switched to production-ready in a separate small PR after visual sign-off. Chinese and Malay (PR2B) follow this. | RECOMMENDATION |
+| SYNC-030 | Layouts | New layouts fill the 38 theme slots directly; the shared semantic-role layer from SYNC-028 is deferred again until after PR2D, when all ten layouts can be compared. Shared-section headings stay in English; layouts change visual style, not language. | RECOMMENDATION |
 
 ## Confirmed product principles
 
@@ -87,6 +89,7 @@
 | OQ-RM20Ops | Exact operational receipt/reference tracking for Assisted Content payments. | RECOMMENDATION: simple admin-only tracking first |
 | OQ-LegacyStyle | When and how to remove the unused legacy style system and the two dead duplicate section components. | PENDING: separate cleanup PR after a read-only reference audit |
 | OQ-PreviewToken | Merchant draft preview via a short-lived signed token exchanged for an HttpOnly cookie. | PENDING: architecture agreed in principle, to be specified and reviewed in its own PR |
+| OQ-SharedSectionA11y | Pre-existing accessibility gaps in shared sections, found while checking PR2B: the booking form's date, time and guests fields are not linked to their labels; the review date uses 50% opacity (below WCAG AA on any colour); Elegant overflows by 9px at 320px when there is no cover image. Fixing them changes the live layouts, so it is not part of PR2B. | PENDING: separate small PR |
 
 ## Explicitly out of scope for current planning
 
