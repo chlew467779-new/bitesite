@@ -228,4 +228,18 @@ assert.match(pageSource, /data\.fieldErrors/, "server field errors are shown nex
 assert.match(pageSource, /Your changes are still here/, "a failed save says the typed values are kept");
 assert.doesNotMatch(pageSource, /event\.currentTarget\.reset\(\)/, "a save never clears the form");
 
+/* ── feedback: entry point only, nothing is sent (CH_REQUIRED) ───────────────────────────────── */
+
+const feedbackSource = await read("app/merchant/components/feedback-panel.tsx");
+assert.match(feedbackSource, /export const FEEDBACK_SENDING_ENABLED = false;/, "sending is off until a destination is approved");
+assert.match(feedbackSource, /CH_REQUIRED/, "the open decision is marked in the code");
+for (const forbidden of ["fetch(", "mailto:", "localStorage", "sessionStorage", "supabase", "sendBeacon", "XMLHttpRequest"]) {
+  assert.ok(!feedbackSource.includes(forbidden), `the feedback form does not use ${forbidden}`);
+}
+assert.match(feedbackSource, /disabled=\{!FEEDBACK_SENDING_ENABLED\}/, "the send button is disabled");
+assert.match(feedbackSource, /event\.preventDefault\(\);\s*\}/, "submitting does nothing");
+assert.match(feedbackSource, /Nothing you type here is sent or saved/, "merchants are told nothing is sent");
+const formEnd = pageSource.indexOf("</form>");
+assert.ok(formEnd > 0 && pageSource.indexOf("<FeedbackPanel />") > formEnd, "feedback sits outside the listing form");
+
 console.log("merchant dashboard checks passed");

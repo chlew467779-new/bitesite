@@ -23,6 +23,7 @@ import {
   type WeekDay,
   type WeekEditorState,
 } from '@/lib/merchant-hours.mjs';
+import { FeedbackPanel } from './components/feedback-panel';
 import { HoursEditor } from './components/hours-editor';
 import { TextField } from './components/text-field';
 
@@ -54,6 +55,7 @@ const SECTIONS = [
   { id: 'photos', label: 'Photos' },
   { id: 'menu', label: 'Menu' },
   { id: 'hours', label: 'Opening hours' },
+  { id: 'feedback', label: 'Feedback' },
 ] as const;
 
 const cardClass = 'scroll-mt-24 rounded-2xl border border-[#DDE5DC] bg-white p-5 shadow-sm sm:p-7';
@@ -474,6 +476,11 @@ export default function MerchantDashboardPage() {
               <HoursEditor week={week} errors={hoursErrors} onChange={setDay} onCopyMondayToAll={copyMondayToAll} />
             </SectionCard>
           </form>
+
+          {/* Outside the listing form: feedback is never part of a listing save. */}
+          <SectionCard id="feedback" title="Feedback" description="Tell the BiteSite team what would make the dashboard or your page work better for you.">
+            <FeedbackPanel />
+          </SectionCard>
 
           <p className="text-xs leading-relaxed text-[#6B6560] lg:hidden">
             Your restaurant name, address, web address and business status are managed by the BiteSite team.
