@@ -8,6 +8,7 @@ import { ElegantLayout } from "./elegant-layout";
 import { MinimalLayout } from "./minimal-layout";
 import { ModernLayout } from "./modern-layout";
 import { RusticLayout } from "./rustic-layout";
+import { ChineseLayout } from "./chinese-layout";
 
 /**
  * Key → component map. `satisfies` makes typecheck fail if a key registered in
@@ -21,6 +22,7 @@ export const layouts = {
   minimal: MinimalLayout,
   modern: ModernLayout,
   rustic: RusticLayout,
+  chinese: ChineseLayout,
 } satisfies Record<LayoutKey, ComponentType<LayoutProps>>;
 
 export type { LayoutKey };
