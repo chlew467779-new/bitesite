@@ -8,7 +8,7 @@
  * two against each other and against the component map; `satisfies Record<LayoutKey, ...>` in
  * app/layouts/index.ts makes typecheck fail if a component is missing.
  */
-export type LayoutKey = "classic" | "elegant" | "minimal" | "modern" | "rustic" | "chinese";
+export type LayoutKey = "classic" | "elegant" | "minimal" | "modern" | "rustic" | "chinese" | "malay";
 
 export type LayoutResolutionReason =
   | "ok"
