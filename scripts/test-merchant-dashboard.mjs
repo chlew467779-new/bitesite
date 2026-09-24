@@ -206,4 +206,26 @@ for (const field of ["name", "slug", "address", "business_status", "platform_sta
   assert.ok(!PROFILE_TEXT_FIELDS.includes(field), `${field} is not merchant-editable`);
 }
 
+/* ── dashboard page ────────────────────────────────────────────────────────────────────────── */
+
+const pageSource = await read("app/merchant/page.tsx");
+const hoursSource = await read("app/merchant/components/hours-editor.tsx");
+assert.doesNotMatch(pageSource, /Request a controlled change|requestControlledChange/, "the controlled-change block is not shown");
+assert.doesNotMatch(pageSource, /profile-change-requests/, "the dashboard no longer calls the change-request API");
+assert.match(pageSource, /from '@\/lib\/merchant-profile-validation\.mjs'/, "the form uses the same field rules as the API");
+assert.match(pageSource, /from '@\/lib\/merchant-hours\.mjs'/, "the form uses the shared hours rules");
+assert.doesNotMatch(pageSource, /name=\{`hours-/, "there is no free-text hours field");
+const hoursInputs = [...hoursSource.matchAll(/<input\b[\s\S]*?\/>/g)].map((match) => match[0]);
+assert.ok(hoursInputs.length > 0 && hoursInputs.every((input) => /type="time"/.test(input)), "the hours editor only has time pickers");
+assert.equal((pageSource.match(/\.json\(\)/g) || []).length, 1, "responses are parsed in one place only");
+assert.match(
+  pageSource,
+  /async function readJson\(response: Response\)[\s\S]*?try \{\s*const data = await response\.json\(\);[\s\S]*?\} catch \{\s*return \{\};/,
+  "…and that place tolerates a non-JSON error page instead of crashing the form",
+);
+assert.match(pageSource, /catch \{\s*setSave\(\{ kind: 'error'/, "a network failure is reported, not thrown");
+assert.match(pageSource, /data\.fieldErrors/, "server field errors are shown next to their fields");
+assert.match(pageSource, /Your changes are still here/, "a failed save says the typed values are kept");
+assert.doesNotMatch(pageSource, /event\.currentTarget\.reset\(\)/, "a save never clears the form");
+
 console.log("merchant dashboard checks passed");

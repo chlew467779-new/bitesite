@@ -26,5 +26,6 @@ export declare function normalizeUrlInput(value: unknown): string;
 export declare function validateProfileField(field: string, value: unknown, checkFormat?: boolean): string | null;
 export declare function validateProfile(
   values: Partial<Record<string, string | null>>,
-  previous?: Partial<Record<string, string | null | undefined>>,
+  /** The stored row; non-string columns are ignored. */
+  previous?: Readonly<Record<string, unknown>>,
 ): ProfileFieldErrors;
