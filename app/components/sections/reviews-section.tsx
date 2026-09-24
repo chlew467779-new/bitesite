@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { FadeIn } from "@/app/components/animations";
 import { Star, ChevronLeft, ChevronRight, Quote } from "lucide-react";
 import type { LayoutVariant } from "./gallery-section";
+import { getLayoutTheme } from "@/lib/layout-theme.mjs";
 import type { Review } from "@/types";
 
 interface ReviewsSectionProps {
@@ -15,60 +16,13 @@ interface ReviewsSectionProps {
   id?: string;
 }
 
-const sectionBg: Record<LayoutVariant, string> = {
-  classic: "bg-white",
-  elegant: "bg-slate-900",
-  minimal: "bg-stone-100",
-  modern:  "bg-slate-50",
-  rustic:  "bg-amber-50",
-};
-
-const cardBg: Record<LayoutVariant, string> = {
-  classic: "bg-amber-50/80 border-amber-200",
-  elegant: "bg-slate-800 border-slate-700",
-  minimal: "bg-white border-stone-200",
-  modern:  "bg-white border-slate-200 shadow-sm",
-  rustic:  "bg-white border-orange-200",
-};
-
-const textColor: Record<LayoutVariant, string> = {
-  classic: "text-amber-900",
-  elegant: "text-slate-200",
-  minimal: "text-stone-700",
-  modern:  "text-slate-700",
-  rustic:  "text-orange-900",
-};
-
-const dotActive: Record<LayoutVariant, string> = {
-  classic: "bg-amber-700",
-  elegant: "bg-amber-400",
-  minimal: "bg-stone-800",
-  modern:  "bg-slate-900",
-  rustic:  "bg-orange-700",
-};
-
-const dotInactive: Record<LayoutVariant, string> = {
-  classic: "bg-amber-200",
-  elegant: "bg-slate-700",
-  minimal: "bg-stone-200",
-  modern:  "bg-slate-200",
-  rustic:  "bg-orange-200",
-};
-
-const arrowBg: Record<LayoutVariant, string> = {
-  classic: "bg-white border-amber-200 text-amber-900 hover:bg-amber-50",
-  elegant: "bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700",
-  minimal: "bg-white border-stone-200 text-stone-800 hover:bg-stone-50",
-  modern:  "bg-white border-slate-200 text-slate-800 hover:bg-slate-50",
-  rustic:  "bg-white border-orange-200 text-orange-900 hover:bg-orange-50",
-};
-
 export function ReviewsSection({
   reviews,
   title = "What Our Guests Say",
   variant = "classic",
   id,
 }: ReviewsSectionProps) {
+  const theme = getLayoutTheme(variant).reviews;
   const [current, setCurrent] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const touchStartX = useRef<number | null>(null);
@@ -112,12 +66,12 @@ export function ReviewsSection({
     <FadeIn>
       <section
         id={id}
-        className={`py-16 px-4 sm:px-6 lg:px-8 ${sectionBg[variant]}`}
+        className={`py-16 px-4 sm:px-6 lg:px-8 ${theme.sectionBg}`}
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
       >
         <div className="max-w-3xl mx-auto">
-          <h2 className={`text-3xl font-bold text-center mb-10 ${textColor[variant]}`}>
+          <h2 className={`text-3xl font-bold text-center mb-10 ${theme.text}`}>
             {title}
           </h2>
 
@@ -126,8 +80,8 @@ export function ReviewsSection({
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           >
-            <div className={`p-6 sm:p-10 rounded-2xl border ${cardBg[variant]} text-center transition-all duration-500`}>
-              <Quote size={32} className={`mx-auto mb-4 opacity-20 ${textColor[variant]}`} strokeWidth={2.5} />
+            <div className={`p-6 sm:p-10 rounded-2xl border ${theme.card} text-center transition-all duration-500`}>
+              <Quote size={32} className={`mx-auto mb-4 opacity-20 ${theme.text}`} strokeWidth={2.5} />
 
               <div className="flex justify-center gap-1 mb-5">
                 {Array.from({ length: 5 }).map((_, i) => (
@@ -139,13 +93,13 @@ export function ReviewsSection({
                 ))}
               </div>
 
-              <p className={`text-lg sm:text-xl leading-relaxed mb-6 ${textColor[variant]}`}>
+              <p className={`text-lg sm:text-xl leading-relaxed mb-6 ${theme.text}`}>
                 &ldquo;{review.text}&rdquo;
               </p>
 
               <div>
-                <p className={`font-semibold text-sm ${textColor[variant]}`}>{review.author}</p>
-                <p className={`text-xs opacity-50 ${textColor[variant]}`}>{review.date}</p>
+                <p className={`font-semibold text-sm ${theme.text}`}>{review.author}</p>
+                <p className={`text-xs opacity-50 ${theme.text}`}>{review.date}</p>
               </div>
             </div>
 
@@ -153,7 +107,7 @@ export function ReviewsSection({
               <>
                 <button
                   onClick={goPrev}
-                  className={`hidden sm:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 lg:-translate-x-6 h-10 w-10 items-center justify-center rounded-full border transition-all active:scale-90 ${arrowBg[variant]}`}
+                  className={`hidden sm:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 lg:-translate-x-6 h-10 w-10 items-center justify-center rounded-full border transition-all active:scale-90 ${theme.arrow}`}
                   style={{ WebkitTapHighlightColor: "transparent" }}
                   aria-label="Previous review"
                 >
@@ -161,7 +115,7 @@ export function ReviewsSection({
                 </button>
                 <button
                   onClick={goNext}
-                  className={`hidden sm:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 lg:translate-x-6 h-10 w-10 items-center justify-center rounded-full border transition-all active:scale-90 ${arrowBg[variant]}`}
+                  className={`hidden sm:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 lg:translate-x-6 h-10 w-10 items-center justify-center rounded-full border transition-all active:scale-90 ${theme.arrow}`}
                   style={{ WebkitTapHighlightColor: "transparent" }}
                   aria-label="Next review"
                 >
@@ -178,7 +132,7 @@ export function ReviewsSection({
                   key={i}
                   onClick={() => setCurrent(i)}
                   className={`h-2 rounded-full transition-all duration-300 ${
-                    i === current ? `${dotActive[variant]} w-6` : `${dotInactive[variant]} w-2`
+                    i === current ? `${theme.dotActive} w-6` : `${theme.dotInactive} w-2`
                   }`}
                   style={{ WebkitTapHighlightColor: "transparent" }}
                   aria-label={`Go to review ${i + 1}`}

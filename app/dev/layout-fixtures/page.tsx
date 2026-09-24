@@ -9,7 +9,9 @@ import {
   DISH_STATES,
   IMAGE_STATES,
   PRICE_STATES,
+  SECTION_STATES,
   FIXTURE_CATEGORIES,
+  buildEvents,
   buildMerchant,
   buildProducts,
   pick,
@@ -56,13 +58,15 @@ export default async function LayoutFixturesPage({ searchParams }: PageProps) {
   const price = pick(params.price, PRICE_STATES, "normal");
   const dish = pick(params.state, DISH_STATES, "default");
   const image = pick(params.image, IMAGE_STATES, "with");
+  const sections = pick(params.sections, SECTION_STATES, "default");
 
   const LayoutComponent = layouts[layoutKey];
-  const merchant = buildMerchant(layoutKey, image);
+  const merchant = buildMerchant(layoutKey, image, sections);
   const products = buildProducts(price, dish, image);
+  const events = buildEvents(sections, image);
 
   const href = (next: Record<string, string>) => {
-    const query = new URLSearchParams({ layout: layoutKey, price, state: dish, image, ...next });
+    const query = new URLSearchParams({ layout: layoutKey, price, state: dish, image, sections, ...next });
     return `/dev/layout-fixtures?${query.toString()}`;
   };
 
@@ -71,8 +75,9 @@ export default async function LayoutFixturesPage({ searchParams }: PageProps) {
     { label: "Price", options: PRICE_STATES.map((value) => ({ value, param: "price" })) },
     { label: "Dish state", options: DISH_STATES.map((value) => ({ value, param: "state" })) },
     { label: "Image", options: IMAGE_STATES.map((value) => ({ value, param: "image" })) },
+    { label: "Sections", options: SECTION_STATES.map((value) => ({ value, param: "sections" })) },
   ];
-  const current: Record<string, string> = { layout: layoutKey, price, state: dish, image };
+  const current: Record<string, string> = { layout: layoutKey, price, state: dish, image, sections };
 
   return (
     <div className="min-h-screen bg-slate-950">
@@ -83,7 +88,8 @@ export default async function LayoutFixturesPage({ searchParams }: PageProps) {
         <p>
           Rendering <strong>{getLayoutMeta(layoutKey).displayName}</strong>. Resize the browser for mobile (375px) and
           desktop (1440px) checks. Uncategorized dishes are not shown on the public menu, so dish-4 is expected to be
-          absent below.
+          absent below. Use Sections → all to also show reviews, booking and events; the booking form&apos;s
+          submit button opens WhatsApp, so do not submit it.
         </p>
         {groups.map((group) => (
           <div key={group.label} className="flex items-center gap-2 flex-wrap">
@@ -112,6 +118,7 @@ export default async function LayoutFixturesPage({ searchParams }: PageProps) {
           categories={FIXTURE_CATEGORIES}
           products={products}
           features={merchant.features}
+          events={events}
           footerText="Development fixtures"
         />
       </div>

@@ -8,9 +8,11 @@ import { FadeIn } from "@/app/components/animations";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 
 import type { LayoutKey } from "@/lib/layout-registry.mjs";
+import { getLayoutTheme } from "@/lib/layout-theme.mjs";
 
-/** Shared styling variant for section components. Sourced from the layout registry so new
- *  layout keys cannot be forgotten here (adding one makes these Record maps fail typecheck). */
+/** Shared styling variant for section components. Sourced from the layout registry; the
+ *  per-layout class strings live in lib/layout-theme.mjs, whose test fails if a registered
+ *  layout has no complete theme. */
 export type LayoutVariant = LayoutKey;
 
 interface GallerySectionProps {
@@ -20,28 +22,13 @@ interface GallerySectionProps {
   id?: string;
 }
 
-const sectionBg: Record<LayoutVariant, string> = {
-  classic: "bg-amber-50/60",
-  elegant: "bg-slate-950",
-  minimal: "bg-stone-50",
-  modern:  "bg-white",
-  rustic:  "bg-orange-50/60",
-};
-
-const titleColor: Record<LayoutVariant, string> = {
-  classic: "text-amber-900",
-  elegant: "text-amber-100",
-  minimal: "text-stone-800",
-  modern:  "text-slate-900",
-  rustic:  "text-orange-900",
-};
-
 export function GallerySection({
   images,
   title = "Gallery",
   variant = "classic",
   id,
 }: GallerySectionProps) {
+  const theme = getLayoutTheme(variant).gallery;
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const validImages = images
@@ -77,9 +64,9 @@ export function GallerySection({
   return (
     <>
       <FadeIn>
-        <section id={id} className={`py-16 px-4 sm:px-6 lg:px-8 ${sectionBg[variant]}`}>
+        <section id={id} className={`py-16 px-4 sm:px-6 lg:px-8 ${theme.sectionBg}`}>
           <div className="max-w-6xl mx-auto">
-            <h2 className={`text-3xl font-bold text-center mb-10 ${titleColor[variant]}`}>
+            <h2 className={`text-3xl font-bold text-center mb-10 ${theme.title}`}>
               {title}
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
