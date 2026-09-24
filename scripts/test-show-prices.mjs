@@ -9,6 +9,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { shouldShowPrice } from "../lib/menu-display.mjs";
+import { LAYOUT_KEYS } from "../lib/layout-registry.mjs";
 
 async function read(relPath) {
   return readFile(new URL(`../${relPath}`, import.meta.url), "utf8");
@@ -30,7 +31,8 @@ assert.equal(shouldShowPrice({ show_prices: "false" }), true, "the string 'false
 
 /* ── public layouts ────────────────────────────────────────────────────────────────────────── */
 
-const LAYOUTS = ["classic", "elegant", "minimal", "modern", "rustic"];
+// Every registered layout, including ones not yet public, so a new layout cannot skip the guard.
+const LAYOUTS = LAYOUT_KEYS;
 
 for (const layout of LAYOUTS) {
   const relPath = `app/layouts/${layout}-layout.tsx`;

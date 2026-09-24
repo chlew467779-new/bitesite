@@ -15,11 +15,14 @@ export const DISH_STATES = ["default", "soldout-hidden", "featured-hidden"] as c
 export const IMAGE_STATES = ["with", "without"] as const;
 /** "all" also switches on the reviews, appointment and events sections, which are off by default. */
 export const SECTION_STATES = ["default", "all"] as const;
+/** "long" swaps in a long mixed Chinese/Malay name and description, to check wrapping at 320px. */
+export const NAME_STATES = ["default", "long"] as const;
 
 export type PriceState = (typeof PRICE_STATES)[number];
 export type DishState = (typeof DISH_STATES)[number];
 export type ImageState = (typeof IMAGE_STATES)[number];
 export type SectionState = (typeof SECTION_STATES)[number];
+export type NameState = (typeof NAME_STATES)[number];
 
 export function pick<T extends string>(value: string | string[] | undefined, allowed: readonly T[], fallback: T): T {
   return typeof value === "string" && (allowed as readonly string[]).includes(value) ? (value as T) : fallback;
@@ -135,13 +138,25 @@ export function buildEvents(sections: SectionState, image: ImageState): EventIte
   ];
 }
 
-export function buildMerchant(layoutKey: string, image: ImageState, sections: SectionState = "default"): Merchant {
+const LONG_NAME = "老街坊茶餐室 Restoran Warisan Kampung Baru Kedai Kopi Bistarimakmur Sdn. Bhd.";
+const LONG_DESCRIPTION =
+  "Kedai kopi keluarga sejak 1968 — 三代传承的老字号，roti bakar, kopi-O kaw, nasi lemak bungkus and kuih-muih buatan sendiri setiap pagi. Fictional text for layout review only.";
+
+export function buildMerchant(
+  layoutKey: string,
+  image: ImageState,
+  sections: SectionState = "default",
+  name: NameState = "default",
+): Merchant {
   const allSections = sections === "all";
+  const longName = name === "long";
   return {
     id: "fixture-merchant",
     slug: "__dev-fixture__",
-    name: "Fixture Kopitiam",
-    description: "A fictional shop used to review layouts. No real merchant data is involved.",
+    name: longName ? LONG_NAME : "Fixture Kopitiam",
+    description: longName
+      ? LONG_DESCRIPTION
+      : "A fictional shop used to review layouts. No real merchant data is involved.",
     cuisine_type: "Malaysian",
     address: "1 Fixture Street, Kuala Lumpur",
     phone: "+60 3-0000 0000",
