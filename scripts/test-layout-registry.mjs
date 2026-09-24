@@ -65,11 +65,23 @@ const NON_KEYS = [
 
 /* ── registry shape ────────────────────────────────────────────────────────────────────────── */
 
+// Layouts customers can see, and registered layouts still waiting for visual sign-off. A new
+// layout lands in UNFINISHED (productionReady: false) and moves across in its own small PR.
+const PRODUCTION_READY = ["classic", "elegant", "minimal", "modern", "rustic"];
+const UNFINISHED = [];
+
 assert.deepEqual(
   [...LAYOUT_KEYS],
-  ["classic", "elegant", "minimal", "modern", "rustic"],
-  "PR1A registers exactly the five pre-existing layouts (new keys arrive with their components)",
+  [...PRODUCTION_READY, ...UNFINISHED],
+  "exactly these layouts are registered, in registry order (new keys arrive with their components)",
 );
+for (const key of LAYOUT_KEYS) {
+  assert.equal(
+    LAYOUT_REGISTRY[key].productionReady,
+    PRODUCTION_READY.includes(key),
+    `${key}: productionReady matches the list above`,
+  );
+}
 assert.equal(DEFAULT_LAYOUT_KEY, "classic", "classic is the fallback layout");
 
 const orders = new Set();
@@ -117,7 +129,12 @@ assert.throws(
 
 for (const key of LAYOUT_KEYS) {
   assert.ok(isLayoutKey(key), `${key} is a registered key`);
-  assert.ok(isPersistableLayout(key), `${key} is persistable (all five are production-ready)`);
+}
+for (const key of PRODUCTION_READY) {
+  assert.ok(isPersistableLayout(key), `${key} is persistable`);
+}
+for (const key of UNFINISHED) {
+  assert.ok(!isPersistableLayout(key), `${key} is not finished, so it can never be written to a merchant row`);
 }
 for (const value of [...NON_KEYS, null, undefined, ""]) {
   assert.ok(!isLayoutKey(value), `${String(value)} is not a registered key`);
@@ -126,11 +143,18 @@ for (const value of [...NON_KEYS, null, undefined, ""]) {
 
 /* ── public resolver ───────────────────────────────────────────────────────────────────────── */
 
-for (const key of LAYOUT_KEYS) {
+for (const key of PRODUCTION_READY) {
   assert.deepEqual(
     resolvePublicLayoutKey(key),
     { key, fellBack: false, reason: "ok" },
     `${key} resolves to itself on a public page`,
+  );
+}
+for (const key of UNFINISHED) {
+  assert.deepEqual(
+    resolvePublicLayoutKey(key),
+    { key: "classic", fellBack: true, reason: "not_public_ready" },
+    `${key} never renders on a public page, even if written straight to the database`,
   );
 }
 for (const value of [null, undefined]) {
@@ -159,8 +183,8 @@ for (const value of [...NON_KEYS, null, undefined, ""]) {
 }
 assert.deepEqual(
   getPersistableLayouts().map((meta) => meta.key),
-  [...LAYOUT_KEYS],
-  "all five current layouts are offered as choices, ordered by their registry order",
+  PRODUCTION_READY,
+  "only production-ready layouts are offered as choices, ordered by their registry order",
 );
 
 /* ── synthetic registry: an unfinished layout (the PR2 state, tested now) ──────────────────── */
@@ -220,7 +244,7 @@ assert.throws(
   "the fallback layout itself must be production-ready",
 );
 
-// The default registry's public resolver must agree with the synthetic one for registered keys.
+// Internal surfaces (dev fixtures, Admin Preview) render every registered layout, finished or not.
 for (const key of LAYOUT_KEYS) {
   assert.deepEqual(resolveRegisteredLayoutKey(key), { key, fellBack: false, reason: "ok" });
 }
