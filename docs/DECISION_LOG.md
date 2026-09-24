@@ -46,6 +46,9 @@
 | SYNC-028 | Layouts | The theme keeps one slot per style that existed before (38 per layout), with the five original layouts copied character for character and no per-layout branches left in components. Collapsing slots into shared semantic roles is deferred to the new-layout work (PR2B), because it would change existing colours. | DECIDED |
 | SYNC-029 | Layouts | New layouts land registered with `productionReady: false` (internal surfaces only: public pages render Classic, Admin cannot save them) and are switched to production-ready in a separate small PR after visual sign-off. Chinese and Malay (PR2B) follow this. | RECOMMENDATION |
 | SYNC-030 | Layouts | New layouts fill the 38 theme slots directly; the shared semantic-role layer from SYNC-028 is deferred again until after PR2D, when all ten layouts can be compared. Shared-section headings stay in English; layouts change visual style, not language. | RECOMMENDATION |
+| SYNC-031 | Merchant | Merchants edit opening hours per day (Monday–Sunday) as Open with picked times (up to 3 ranges) or Closed; no free-text hours. The stored `operating_hours` shape is unchanged (day → "HH:MM - HH:MM" / "Closed"; no migration). Days the merchant does not change, including older free text, are saved back unchanged, and the API rejects new free text. | DECIDED |
+| SYNC-032 | Merchant | The "Request a controlled change" block is hidden from the Merchant dashboard. Name, address, web address and business status stay managed by the BiteSite team. The change-request API and its table are kept for now. | DECIDED |
+| SYNC-033 | Merchant | Merchant profile fields are validated per field by one shared module used by both the dashboard and the API. Empty optional fields are valid. Format rules apply to changed values, so an older stored value never blocks saving other fields. | DECIDED |
 
 ## Confirmed product principles
 
@@ -90,6 +93,7 @@
 | OQ-LegacyStyle | When and how to remove the unused legacy style system and the two dead duplicate section components. | PENDING: separate cleanup PR after a read-only reference audit |
 | OQ-PreviewToken | Merchant draft preview via a short-lived signed token exchanged for an HttpOnly cookie. | PENDING: architecture agreed in principle, to be specified and reviewed in its own PR |
 | OQ-SharedSectionA11y | Pre-existing accessibility gaps in shared sections, found while checking PR2B: the booking form's date, time and guests fields are not linked to their labels; the review date uses 50% opacity (below WCAG AA on any colour); Elegant overflows by 9px at 320px when there is no cover image. Fixing them changes the live layouts, so it is not part of PR2B. | PENDING: separate small PR |
+| OQ-MerchantFeedback | Where Merchant Feedback goes: a new table (needs a migration and RLS) or a receiving inbox. Until decided, the dashboard shows the form but sends and stores nothing. | CH_REQUIRED |
 
 ## Explicitly out of scope for current planning
 
