@@ -90,7 +90,7 @@ assert.doesNotMatch(
 
 /* ── the fixture covers the states the visual QA needs ─────────────────────────────────────── */
 
-for (const state of ["normal", "discount", "hidden", "soldout-hidden", "featured-hidden", "with", "without", "all"]) {
+for (const state of ["normal", "discount", "hidden", "soldout-hidden", "featured-hidden", "with", "without", "all", "long"]) {
   assert.ok(both.includes(`"${state}"`), `the fixtures offer the ${state} state`);
 }
 assert.match(fixtures, /category_id: null/, "an uncategorized dish is present, to show it never renders publicly");
@@ -103,6 +103,11 @@ assert.match(
   "the sections parameter is narrowed to a fixed set of states",
 );
 assert.match(fixtures, /export const FIXTURE_REVIEWS: Review\[\] = \[/, "reviews are in-memory literals");
+assert.match(
+  source,
+  /const name = pick\(params\.name, NAME_STATES, "default"\);/,
+  "the name parameter only switches between fixed fixture names",
+);
 assert.match(fixtures, /export function buildEvents\(/, "events are built in-memory");
 for (const feature of ["reviews", "appointment", "events"]) {
   assert.match(fixtures, new RegExp(`${feature}: allSections,`), `${feature} is only switched on by sections=all`);
