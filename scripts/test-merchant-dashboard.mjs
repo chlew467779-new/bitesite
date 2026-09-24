@@ -12,6 +12,7 @@
  *    field-level rules; stored legacy values do not block saving other fields.
  */
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import {
   CLOSED_VALUE,
   WEEK_DAYS,
@@ -178,5 +179,31 @@ assert.deepEqual(
 assert.deepEqual(Object.keys(validateProfile({ whatsapp: "012-999 9999" }, { whatsapp: "012-345 6789" })), ["whatsapp"]);
 assert.deepEqual(Object.keys(validateProfile({ tagline: "x".repeat(301) }, { tagline: "x".repeat(301) })), ["tagline"]);
 assert.deepEqual(validateProfile({}, {}), {}, "fields that are not submitted are not checked");
+assert.deepEqual(validateProfile({ whatsapp: "012-345 6789" }, { whatsapp: " 012-345 6789 " }), {}, "stored values are compared trimmed, as submitted values are");
+assert.deepEqual(validateProfile({ website: null }, { website: "https://old.example" }), {}, "clearing a field is always allowed");
+
+/* ── API: same auth boundary, shared rules ─────────────────────────────────────────────────── */
+
+async function read(relPath) {
+  return readFile(new URL(`../${relPath}`, import.meta.url), "utf8");
+}
+
+const routeSource = await read("app/api/merchant/me/route.ts");
+const putBody = /export async function PUT\(request: NextRequest\) \{([\s\S]*?)\n\}\n?$/.exec(routeSource);
+assert.ok(putBody, "the PUT handler is readable");
+assert.match(putBody[1], /supabase\.auth\.getUser\(token\)/, "PUT still requires a signed-in Supabase user");
+assert.match(
+  putBody[1],
+  /from\('merchant_memberships'\)\.select\('merchant_id'\)\.eq\('user_id', userData\.user\.id\)\.eq\('status', 'active'\)/,
+  "PUT still resolves the merchant from the caller's own active membership",
+);
+assert.match(putBody[1], /\.update\(updateData\)\.eq\('id', membership\.merchant_id\)/, "the update is scoped to that merchant only");
+assert.doesNotMatch(putBody[1], /body\.(merchant_id|id|slug)\b/, "the merchant is never taken from the request body");
+assert.match(routeSource, /from '@\/lib\/merchant-profile-validation\.mjs'/, "the API uses the shared field rules");
+assert.match(routeSource, /isEditorHoursValue\(value\)/, "the API enforces the hours format for changed days");
+assert.match(routeSource, /fieldErrors/, "validation failures are reported per field");
+for (const field of ["name", "slug", "address", "business_status", "platform_status", "is_published", "layout", "status"]) {
+  assert.ok(!PROFILE_TEXT_FIELDS.includes(field), `${field} is not merchant-editable`);
+}
 
 console.log("merchant dashboard checks passed");
