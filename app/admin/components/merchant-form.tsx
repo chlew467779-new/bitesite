@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from './auth-context';
+import { normalizeBookingWhatsApp } from '@/lib/merchant-booking-target.mjs';
 import {
   Save,
   Trash2,
@@ -450,7 +451,13 @@ export default function MerchantForm({ merchant, onBack, onSaved, loadWarning }:
     else if (!/^[a-z0-9-]+$/.test(form.slug)) {
       newErrors.slug = 'Slug can only contain lowercase letters, numbers, and hyphens';
     }
-    if (!form.whatsapp.trim()) newErrors.whatsapp = 'WhatsApp is required';
+    if (
+      form.whatsapp.trim()
+      && form.whatsapp.trim() !== (merchant?.whatsapp || '').trim()
+      && !normalizeBookingWhatsApp(form.whatsapp)
+    ) {
+      newErrors.whatsapp = 'Enter an international number with the country code (for example 60123456789), or leave it empty';
+    }
     if (form.cuisine.length > 3) newErrors.cuisine = 'Choose at most 3 cuisine tags';
     if (form.amenities.length > 5) newErrors.amenities = 'Choose at most 5 amenity tags';
     if (form.occasion.length > 3) newErrors.occasion = 'Choose at most 3 occasion tags';
@@ -984,7 +991,7 @@ export default function MerchantForm({ merchant, onBack, onSaved, loadWarning }:
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-1.5">
-                  WhatsApp <span className="text-red-400">*</span>
+                  WhatsApp <span className="text-slate-500 font-normal">(optional)</span>
                 </label>
                 <input
                   type="text"
@@ -996,7 +1003,7 @@ export default function MerchantForm({ merchant, onBack, onSaved, loadWarning }:
                   }`}
                 />
                 {errors.whatsapp && <p className="mt-1 text-xs text-red-400">{errors.whatsapp}</p>}
-                <p className="mt-1 text-xs text-slate-500">Digits only, no + or spaces. Used for booking form.</p>
+                <p className="mt-1 text-xs text-slate-500">The restaurant&apos;s own WhatsApp, with country code (for example 60123456789). Leave empty if it has none: Book a Table is then hidden on the public page.</p>
               </div>
             </div>
 
