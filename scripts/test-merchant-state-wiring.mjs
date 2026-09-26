@@ -46,10 +46,25 @@ const migrations = (await readdir(new URL("../supabase/migrations/", import.meta
 assert.equal(migrations.length, 1, "exactly one D1a migration");
 const migration = await read(`supabase/migrations/${migrations[0]}`);
 assert.match(migration, /add column state_source\s+text\s+not null default 'legacy'/, "existing and old-Admin rows start as legacy (nothing published or hidden)");
-assert.doesNotMatch(migration, /update public\.merchants\s+set\s+(review_status|listing_visibility|state_source)/i, "no bulk approval, publication or state switch in the migration");
+// The owner-only conversion function holds the one legitimate state switch; outside it there is none.
+const migrationOutsideConversion = migration.replace(/create or replace function private\.convert_merchant_to_managed[\s\S]*?\n\$\$;/, "");
+assert.notEqual(migrationOutsideConversion, migration, "the conversion function body was found");
+assert.doesNotMatch(migrationOutsideConversion, /update public\.merchants\s+set\s+(review_status|listing_visibility|state_source)/i, "no bulk approval, publication or state switch in the migration");
 assert.match(migration, /create or replace function private\.merchant_is_public/, "the predicate lives outside the PostgREST-exposed schema");
 assert.match(migration, /revoke select on table public\.merchant_stats from anon, authenticated;/, "view counts are no longer public");
 assert.match(migration, /^commit;\s*$/m, "one transaction");
+
+// legacy → managed only through the owner-only conversion function; the migration never converts.
+assert.match(migration, /STATE_SOURCE_CONVERSION_FORBIDDEN/, "the trigger refuses an ordinary legacy → managed update");
+assert.match(migration, /create or replace function private\.convert_merchant_to_managed\([\s\S]*?security definer\s+set search_path = ''/,
+  "the conversion function pins its search_path");
+assert.match(migration, /revoke all on function private\.convert_merchant_to_managed\([^)]*\)\s+from public, anon, authenticated, service_role;/,
+  "no application role may convert");
+assert.doesNotMatch(migration, /grant execute on function private\.convert_merchant_to_managed/, "and none is granted it later");
+assert.doesNotMatch(migration, /(select|perform)\s+private\.convert_merchant_to_managed\(/i, "the migration converts no merchant");
+assert.match(migration, /revoke all on table private\.merchant_state_conversion_tickets from public, anon, authenticated, service_role;/,
+  "conversion tickets are invisible to the API roles");
+assert.doesNotMatch(migration, /set_config\(\s*'app\.(allow|conversion|state)/i, "no session-variable switch authorises a conversion");
 
 /* ── Admin gets a clear refusal instead of a raw 500 ───────────────────────────────────────── */
 

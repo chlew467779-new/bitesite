@@ -15,13 +15,16 @@
 --                    is_published / platform_status are derived mirrors and
 --                    cannot be written directly.
 --    Moving a row from legacy to managed is a separate, per-merchant,
---    CH-approved operation. It is never done here.
+--    CH-approved operation. It is never done here, and an ordinary UPDATE
+--    cannot do it: only private.convert_merchant_to_managed(), which only the
+--    database owner may run, writes the one-time ticket the trigger requires.
 -- 2. private.merchant_is_public(merchants) is the single public predicate.
 --    Legacy rows are no longer public while SUSPENDED or ARCHIVED (AUD-04).
 -- 3. Every public read policy (merchants, categories, products, videos,
 --    external links, events) uses that predicate. merchant_stats is no longer
 --    publicly readable (DEC-29).
--- 4. merchant_change_log records state changes (private, service_role only).
+-- 4. public.merchant_change_log records state changes (table in schema public;
+--    no anon/authenticated privileges, RLS on without policies; service_role only).
 -- 5. At most one active owner per merchant.
 --
 -- Staging first; production only after CTO review and explicit CH approval.
@@ -118,7 +121,7 @@ revoke all on function private.merchant_is_public(public.merchants) from public;
 grant execute on function private.merchant_is_public(public.merchants) to anon, authenticated, service_role;
 
 -- ---------------------------------------------------------------------
--- 3) Audit log (private)
+-- 3) Audit log (schema public, closed to anon/authenticated by revoke + RLS)
 -- ---------------------------------------------------------------------
 create table public.merchant_change_log (
   id            uuid        primary key default gen_random_uuid(),
@@ -130,11 +133,14 @@ create table public.merchant_change_log (
   before        jsonb,
   after         jsonb,
   revision      bigint      not null,
+  reason        text,
   created_at    timestamptz not null default now(),
   constraint merchant_change_log_actor_type_check
     check (actor_type in ('owner', 'admin', 'system', 'unknown')),
   constraint merchant_change_log_action_check
-    check (action in ('insert', 'update'))
+    check (action in ('insert', 'update')),
+  constraint merchant_change_log_reason_length
+    check (reason is null or char_length(reason) <= 1000)
 );
 
 create index merchant_change_log_merchant_created_idx
@@ -145,7 +151,59 @@ revoke all on table public.merchant_change_log from anon, authenticated;
 grant select, insert on table public.merchant_change_log to service_role;
 
 comment on table public.merchant_change_log is
-  'Private audit of merchant changes. before/after hold only state fields; changed_paths lists every changed column name. No secrets or tokens.';
+  'Private audit of merchant changes (public schema; no anon/authenticated privileges, RLS on, no policies). before/after hold only state fields; changed_paths lists every changed column name. No secrets or tokens.';
+comment on column public.merchant_change_log.reason is
+  'Why the change was made, when the operation supplies one (e.g. the approved legacy-to-managed mapping). Audit metadata only, never an authorization.';
+
+-- ---------------------------------------------------------------------
+-- 3b) legacy -> managed conversion tickets
+-- ---------------------------------------------------------------------
+-- The before-write trigger lets a row change from legacy to managed only when
+-- a ticket for this transaction, this merchant and exactly this state exists.
+-- Tickets are written only by private.convert_merchant_to_managed() and are
+-- consumed by the trigger, so they never outlive the transaction. No API role
+-- can read or write them.
+create table private.merchant_state_conversion_tickets (
+  txid                 xid8 not null,
+  merchant_id          uuid not null,
+  review_status        text not null,
+  listing_visibility   text not null,
+  platform_restriction text not null,
+  business_status      text not null,
+  primary key (txid, merchant_id)
+);
+alter table private.merchant_state_conversion_tickets enable row level security;
+revoke all on table private.merchant_state_conversion_tickets from public, anon, authenticated, service_role;
+
+-- Consumes the matching ticket. Called by the trigger as the writing role, so service_role may
+-- execute it; it can only remove a ticket, never create one.
+create or replace function private.take_state_conversion_ticket(
+  p_merchant_id uuid,
+  p_review_status text,
+  p_listing_visibility text,
+  p_platform_restriction text,
+  p_business_status text
+)
+returns boolean
+language sql
+security definer
+set search_path = ''
+as $$
+  with taken as (
+    delete from private.merchant_state_conversion_tickets t
+     where t.txid = pg_current_xact_id()
+       and t.merchant_id = p_merchant_id
+       and t.review_status = p_review_status
+       and t.listing_visibility = p_listing_visibility
+       and t.platform_restriction = p_platform_restriction
+       and t.business_status = p_business_status
+    returning 1
+  )
+  select exists (select 1 from taken);
+$$;
+
+revoke all on function private.take_state_conversion_ticket(uuid, text, text, text, text) from public, anon, authenticated;
+grant execute on function private.take_state_conversion_ticket(uuid, text, text, text, text) to service_role;
 
 -- ---------------------------------------------------------------------
 -- 4) Triggers: revision / updated_at, managed-state mirrors, audit
@@ -162,6 +220,12 @@ begin
   if tg_op = 'UPDATE' then
     if old.state_source = 'managed' and new.state_source = 'legacy' then
       raise exception 'STATE_SOURCE_DOWNGRADE: a managed merchant cannot return to legacy state'
+        using errcode = 'P0001';
+    end if;
+    if old.state_source = 'legacy' and new.state_source = 'managed'
+       and not private.take_state_conversion_ticket(new.id, new.review_status, new.listing_visibility,
+                                                    new.platform_restriction, new.business_status) then
+      raise exception 'STATE_SOURCE_CONVERSION_FORBIDDEN: use private.convert_merchant_to_managed with an approved per-merchant state'
         using errcode = 'P0001';
     end if;
 
@@ -254,7 +318,7 @@ begin
   end if;
 
   insert into public.merchant_change_log
-    (merchant_id, actor_type, actor_id, action, changed_paths, before, after, revision)
+    (merchant_id, actor_type, actor_id, action, changed_paths, before, after, revision, reason)
   values (
     new.id,
     actor,
@@ -265,7 +329,8 @@ begin
       (select coalesce(jsonb_object_agg(k, old_json -> k), '{}') from unnest(state_keys) k)
     end,
     (select coalesce(jsonb_object_agg(k, new_json -> k), '{}') from unnest(state_keys) k),
-    new.revision
+    new.revision,
+    left(nullif(current_setting('app.change_reason', true), ''), 1000)
   );
   return null;
 end;
@@ -277,6 +342,96 @@ create trigger merchants_after_write_audit
 
 revoke all on function private.merchants_before_write() from public, anon, authenticated, service_role;
 revoke all on function private.merchants_after_write_audit() from public, anon, authenticated, service_role;
+
+-- The only way to move a row from legacy to managed. One call per merchant, with the complete
+-- approved state, the revision it was approved against, who approved it and why. Executable by
+-- the database owner only (a CH-approved operation), never by the application roles.
+create or replace function private.convert_merchant_to_managed(
+  p_merchant_id uuid,
+  p_expected_revision bigint,
+  p_review_status text,
+  p_listing_visibility text,
+  p_platform_restriction text,
+  p_business_status text,
+  p_actor_id text,
+  p_reason text
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  current_row public.merchants;
+  converted public.merchants;
+  prev_actor_type text := coalesce(current_setting('app.actor_type', true), '');
+  prev_actor_id text := coalesce(current_setting('app.actor_id', true), '');
+  prev_reason text := coalesce(current_setting('app.change_reason', true), '');
+begin
+  if p_merchant_id is null or p_expected_revision is null
+     or p_review_status is null or p_listing_visibility is null
+     or p_platform_restriction is null or p_business_status is null
+     or nullif(btrim(p_actor_id), '') is null or nullif(btrim(p_reason), '') is null then
+    raise exception 'STATE_CONVERSION_INVALID: merchant, expected revision, the complete state, actor and reason are all required'
+      using errcode = 'P0001';
+  end if;
+  if p_review_status not in ('draft', 'pending', 'rejected', 'approved')
+     or p_listing_visibility not in ('hidden', 'public')
+     or p_platform_restriction not in ('none', 'suspended', 'archived')
+     or p_business_status not in ('OPEN', 'TEMPORARILY_CLOSED', 'MOVED', 'PERMANENTLY_CLOSED')
+     or char_length(p_actor_id) > 200 or char_length(p_reason) > 1000 then
+    raise exception 'STATE_CONVERSION_INVALID: unknown state value or over-long actor/reason'
+      using errcode = 'P0001';
+  end if;
+
+  select * into current_row from public.merchants where id = p_merchant_id for update;
+  if not found then
+    raise exception 'STATE_CONVERSION_NOT_FOUND: merchant % does not exist', p_merchant_id using errcode = 'P0001';
+  end if;
+  if current_row.state_source <> 'legacy' then
+    raise exception 'STATE_CONVERSION_NOT_LEGACY: merchant % is already managed', p_merchant_id using errcode = 'P0001';
+  end if;
+  if current_row.revision <> p_expected_revision then
+    raise exception 'STATE_CONVERSION_REVISION_CONFLICT: merchant % is at revision %, not %',
+      p_merchant_id, current_row.revision, p_expected_revision using errcode = 'P0001';
+  end if;
+
+  insert into private.merchant_state_conversion_tickets
+    (txid, merchant_id, review_status, listing_visibility, platform_restriction, business_status)
+  values (pg_current_xact_id(), p_merchant_id, p_review_status, p_listing_visibility, p_platform_restriction, p_business_status);
+
+  perform set_config('app.actor_type', 'admin', true);
+  perform set_config('app.actor_id', btrim(p_actor_id), true);
+  perform set_config('app.change_reason', btrim(p_reason), true);
+
+  update public.merchants
+     set state_source         = 'managed',
+         review_status        = p_review_status,
+         listing_visibility   = p_listing_visibility,
+         platform_restriction = p_platform_restriction,
+         business_status      = p_business_status
+   where id = p_merchant_id
+  returning * into converted;
+
+  perform set_config('app.actor_type', prev_actor_type, true);
+  perform set_config('app.actor_id', prev_actor_id, true);
+  perform set_config('app.change_reason', prev_reason, true);
+
+  if exists (select 1 from private.merchant_state_conversion_tickets where txid = pg_current_xact_id()) then
+    raise exception 'STATE_CONVERSION_INVALID: the conversion ticket was not consumed' using errcode = 'P0001';
+  end if;
+
+  return jsonb_build_object(
+    'merchant_id', converted.id,
+    'revision', converted.revision,
+    'is_published', converted.is_published,
+    'platform_status', converted.platform_status
+  );
+end;
+$$;
+
+revoke all on function private.convert_merchant_to_managed(uuid, bigint, text, text, text, text, text, text)
+  from public, anon, authenticated, service_role;
 
 -- ---------------------------------------------------------------------
 -- 5) One active owner per merchant
@@ -390,6 +545,14 @@ begin
   end if;
   if to_regclass('public.merchant_memberships_one_active_owner') is null then
     raise exception 'D1a self-check: one-active-owner index missing';
+  end if;
+  if exists (select 1 from private.merchant_state_conversion_tickets) then
+    raise exception 'D1a self-check: no conversion ticket may exist after the migration';
+  end if;
+  if has_function_privilege('service_role', 'private.convert_merchant_to_managed(uuid, bigint, text, text, text, text, text, text)', 'EXECUTE')
+     or has_function_privilege('authenticated', 'private.convert_merchant_to_managed(uuid, bigint, text, text, text, text, text, text)', 'EXECUTE')
+     or has_function_privilege('anon', 'private.convert_merchant_to_managed(uuid, bigint, text, text, text, text, text, text)', 'EXECUTE') then
+    raise exception 'D1a self-check: application roles must not be able to convert merchants';
   end if;
 end $$;
 

@@ -130,6 +130,142 @@ select d1a_test.assert_true((select not is_published from public.merchants where
 update public.merchants set is_published = true where slug = 'zz-d1a-legacy-published';
 
 -- ---------------------------------------------------------------------
+-- legacy → managed only through private.convert_merchant_to_managed
+-- ---------------------------------------------------------------------
+select d1a_test.assert_true(
+  (select count(*) > 0 and bool_and(state_source = 'legacy') from public.merchants where slug like 'zz-sec-test-%'),
+  'the migration converted no existing merchant (seeded rows are still legacy)');
+
+insert into public.merchants (id, slug, name, state_source, is_published, platform_status, business_status) values
+  ('00000000-0000-4000-8000-0000000d1a12', 'zz-d1a-legacy-convert', 'ZZ D1a Legacy Convert', 'legacy', true, 'PUBLISHED', 'OPEN');
+create temp table d1a_convert_before as
+  select to_jsonb(m) as row_json from public.merchants m where slug = 'zz-d1a-legacy-convert';
+create function d1a_test.convert_target_unchanged() returns boolean
+language sql as $f$
+  select (select to_jsonb(m) from public.merchants m where slug = 'zz-d1a-legacy-convert') = (select row_json from d1a_convert_before)
+     and not exists (select 1 from private.merchant_state_conversion_tickets)
+     and (select count(*) from public.merchant_change_log where merchant_id = '00000000-0000-4000-8000-0000000d1a12') = 1;  -- the insert only
+$f$;
+
+-- Ordinary UPDATEs cannot convert, whoever runs them.
+select d1a_test.assert_error(
+  $q$update public.merchants set state_source = 'managed' where slug = 'zz-d1a-legacy-convert'$q$,
+  'STATE_SOURCE_CONVERSION_FORBIDDEN', null, 'postgres: plain UPDATE of state_source');
+select d1a_test.assert_error(
+  $q$update public.merchants set state_source = 'managed', review_status = 'approved', listing_visibility = 'public'
+     where slug = 'zz-d1a-legacy-convert'$q$,
+  'STATE_SOURCE_CONVERSION_FORBIDDEN', null, 'postgres: plain UPDATE with a complete state');
+set local role service_role;
+select d1a_test.assert_error(
+  $q$update public.merchants set state_source = 'managed', review_status = 'approved', listing_visibility = 'public'
+     where slug = 'zz-d1a-legacy-convert'$q$,
+  'STATE_SOURCE_CONVERSION_FORBIDDEN', null, 'service_role: plain UPDATE');
+select d1a_test.assert_error(
+  $q$select private.convert_merchant_to_managed('00000000-0000-4000-8000-0000000d1a12', 0, 'approved', 'public', 'none', 'OPEN', 'zz', 'zz')$q$,
+  null, '42501', 'service_role runs the conversion');
+select d1a_test.assert_error($q$select 1 from private.merchant_state_conversion_tickets$q$, null, '42501', 'service_role reads tickets');
+select d1a_test.assert_error(
+  $q$insert into private.merchant_state_conversion_tickets (txid, merchant_id, review_status, listing_visibility, platform_restriction, business_status)
+     values (pg_current_xact_id(), '00000000-0000-4000-8000-0000000d1a12', 'approved', 'public', 'none', 'OPEN')$q$,
+  null, '42501', 'service_role forges a ticket');
+select d1a_test.assert_true(
+  private.take_state_conversion_ticket('00000000-0000-4000-8000-0000000d1a12', 'approved', 'public', 'none', 'OPEN') is false,
+  'service_role cannot obtain a conversion by calling the ticket check');
+reset role;
+set local role anon;
+select d1a_test.assert_error(
+  $q$select private.convert_merchant_to_managed('00000000-0000-4000-8000-0000000d1a12', 0, 'approved', 'public', 'none', 'OPEN', 'zz', 'zz')$q$,
+  null, '42501', 'anon runs the conversion');
+select d1a_test.assert_error(
+  $q$select private.take_state_conversion_ticket('00000000-0000-4000-8000-0000000d1a12', 'approved', 'public', 'none', 'OPEN')$q$,
+  null, '42501', 'anon calls the ticket check');
+reset role;
+set local role authenticated;
+select d1a_test.assert_error(
+  $q$select private.convert_merchant_to_managed('00000000-0000-4000-8000-0000000d1a12', 0, 'approved', 'public', 'none', 'OPEN', 'zz', 'zz')$q$,
+  null, '42501', 'authenticated runs the conversion');
+select d1a_test.assert_error($q$select 1 from private.merchant_state_conversion_tickets$q$, null, '42501', 'authenticated reads tickets');
+reset role;
+select d1a_test.assert_true(d1a_test.convert_target_unchanged(), 'refused conversions left the merchant, tickets and audit log untouched');
+
+-- The conversion needs a complete, valid state, the current revision and a legacy row.
+do $$
+declare
+  v_id constant uuid := '00000000-0000-4000-8000-0000000d1a12';
+  rev bigint := (select m.revision from public.merchants m where m.id = '00000000-0000-4000-8000-0000000d1a12');
+  call_sql constant text := 'select private.convert_merchant_to_managed(%L, %L, %L, %L, %L, %L, %L, %L)';
+begin
+  perform d1a_test.assert_error(format(call_sql, v_id, rev, null, 'hidden', 'none', 'OPEN', 'CH', 'zz reason'), 'STATE_CONVERSION_INVALID', null, 'missing review_status');
+  perform d1a_test.assert_error(format(call_sql, v_id, rev, 'approved', null, 'none', 'OPEN', 'CH', 'zz reason'), 'STATE_CONVERSION_INVALID', null, 'missing listing_visibility');
+  perform d1a_test.assert_error(format(call_sql, v_id, rev, 'approved', 'hidden', null, 'OPEN', 'CH', 'zz reason'), 'STATE_CONVERSION_INVALID', null, 'missing platform_restriction');
+  perform d1a_test.assert_error(format(call_sql, v_id, rev, 'approved', 'hidden', 'none', null, 'CH', 'zz reason'), 'STATE_CONVERSION_INVALID', null, 'missing business_status');
+  perform d1a_test.assert_error(format(call_sql, v_id, rev, 'approved', 'hidden', 'none', 'OPEN', ' ', 'zz reason'), 'STATE_CONVERSION_INVALID', null, 'blank actor');
+  perform d1a_test.assert_error(format(call_sql, v_id, rev, 'approved', 'hidden', 'none', 'OPEN', 'CH', '  '), 'STATE_CONVERSION_INVALID', null, 'blank reason');
+  perform d1a_test.assert_error(format(call_sql, v_id, rev, 'published', 'hidden', 'none', 'OPEN', 'CH', 'zz reason'), 'STATE_CONVERSION_INVALID', null, 'unknown review_status');
+  perform d1a_test.assert_error(format(call_sql, v_id, rev, 'approved', 'visible', 'none', 'OPEN', 'CH', 'zz reason'), 'STATE_CONVERSION_INVALID', null, 'unknown listing_visibility');
+  perform d1a_test.assert_error(format(call_sql, v_id, rev, 'approved', 'hidden', 'none', 'CLOSED', 'CH', 'zz reason'), 'STATE_CONVERSION_INVALID', null, 'unknown business_status');
+  perform d1a_test.assert_error(format(call_sql, v_id, null, 'approved', 'hidden', 'none', 'OPEN', 'CH', 'zz reason'), 'STATE_CONVERSION_INVALID', null, 'missing expected revision');
+  perform d1a_test.assert_error(format(call_sql, v_id, rev + 1, 'approved', 'hidden', 'none', 'OPEN', 'CH', 'zz reason'), 'STATE_CONVERSION_REVISION_CONFLICT', null, 'stale expected revision');
+  perform d1a_test.assert_error(format(call_sql, '00000000-0000-4000-8000-00000000dead', 0, 'approved', 'hidden', 'none', 'OPEN', 'CH', 'zz reason'), 'STATE_CONVERSION_NOT_FOUND', null, 'unknown merchant');
+  perform d1a_test.assert_error(
+    format(call_sql, '00000000-0000-4000-8000-0000000d1a02', (select revision from public.merchants where slug = 'zz-d1a-hidden'), 'approved', 'public', 'none', 'OPEN', 'CH', 'zz reason'),
+    'STATE_CONVERSION_NOT_LEGACY', null, 'converting a managed merchant again');
+
+  -- A conversion inside a transaction that fails later is rolled back with it (ticket, row, audit).
+  begin
+    perform private.convert_merchant_to_managed(v_id, rev, 'approved', 'public', 'none', 'OPEN', 'CH', 'zz reason');
+    perform d1a_test.assert_true((select state_source = 'managed' from public.merchants where id = '00000000-0000-4000-8000-0000000d1a12'), 'conversion took effect inside the transaction');
+    raise exception 'zz forced failure after conversion';
+  exception when others then
+    if sqlerrm <> 'zz forced failure after conversion' then raise; end if;
+  end;
+end $$;
+select d1a_test.assert_true(d1a_test.convert_target_unchanged(), 'failed conversions (and a rolled-back one) left no trace');
+
+-- A ticket only unlocks the exact merchant and state it was written for. (Writing a ticket by hand
+-- needs the database owner; this documents the trigger's matching, not an application path.)
+insert into private.merchant_state_conversion_tickets (txid, merchant_id, review_status, listing_visibility, platform_restriction, business_status)
+  values (pg_current_xact_id(), '00000000-0000-4000-8000-0000000d1a11', 'approved', 'hidden', 'none', 'OPEN');
+select d1a_test.assert_error(
+  $q$update public.merchants set state_source = 'managed', review_status = 'approved', listing_visibility = 'hidden' where slug = 'zz-d1a-legacy-convert'$q$,
+  'STATE_SOURCE_CONVERSION_FORBIDDEN', null, 'a ticket for another merchant');
+select d1a_test.assert_error(
+  $q$update public.merchants set state_source = 'managed', review_status = 'approved', listing_visibility = 'public' where slug = 'zz-d1a-legacy-published'$q$,
+  'STATE_SOURCE_CONVERSION_FORBIDDEN', null, 'a ticket for a different state');
+delete from private.merchant_state_conversion_tickets;
+
+-- The successful path.
+do $$
+declare rev bigint := (select revision from public.merchants where slug = 'zz-d1a-legacy-convert');
+begin
+  perform private.convert_merchant_to_managed('00000000-0000-4000-8000-0000000d1a12', rev, 'approved', 'hidden', 'none', 'OPEN',
+                                              'CH', 'zz per-merchant mapping approved by CH');
+  perform d1a_test.assert_true(
+    (select state_source = 'managed' and review_status = 'approved' and listing_visibility = 'hidden'
+            and platform_restriction = 'none' and business_status = 'OPEN'
+            and not is_published and platform_status = 'PUBLISHED' and revision = rev + 1
+       from public.merchants where slug = 'zz-d1a-legacy-convert'),
+    'conversion writes exactly the given state, derives the mirrors and bumps revision once');
+end $$;
+select d1a_test.assert_true(not exists (select 1 from private.merchant_state_conversion_tickets), 'the ticket is consumed');
+select d1a_test.assert_true(
+  (select count(*) = 1 from public.merchant_change_log
+    where merchant_id = '00000000-0000-4000-8000-0000000d1a12' and action = 'update'
+      and actor_type = 'admin' and actor_id = 'CH' and reason = 'zz per-merchant mapping approved by CH'
+      and before ->> 'state_source' = 'legacy' and after ->> 'state_source' = 'managed'
+      and 'state_source' = any (changed_paths) and 'is_published' = any (changed_paths)),
+  'the conversion is audited with actor, reason and before/after state');
+select d1a_test.assert_true(
+  current_setting('app.actor_type', true) is distinct from 'admin' and coalesce(current_setting('app.change_reason', true), '') = '',
+  'the conversion does not leave its audit settings behind for later statements');
+select d1a_test.assert_error(
+  $q$update public.merchants set is_published = true where slug = 'zz-d1a-legacy-convert'$q$,
+  'LEGACY_STATE_WRITE_FORBIDDEN', null, 'a converted merchant follows the managed rules');
+select d1a_test.assert_error(
+  $q$update public.merchants set state_source = 'legacy' where slug = 'zz-d1a-legacy-convert'$q$,
+  'STATE_SOURCE_DOWNGRADE', null, 'a converted merchant cannot return to legacy');
+
+-- ---------------------------------------------------------------------
 -- revision / updated_at are server-owned
 -- ---------------------------------------------------------------------
 do $$
@@ -252,7 +388,7 @@ select d1a_test.assert_error(
 reset role;
 
 set local role service_role;
-select d1a_test.assert_true((select count(*) from public.merchants where slug like 'zz-d1a-%') = 9, 'service_role sees every merchant');
+select d1a_test.assert_true((select count(*) from public.merchants where slug like 'zz-d1a-%') = 10, 'service_role sees every merchant');
 select d1a_test.assert_true((select count(*) from public.merchant_change_log) > 0, 'service_role reads the audit log');
 update public.merchants set review_status = 'approved' where slug = 'zz-d1a-pending';
 select d1a_test.assert_true(

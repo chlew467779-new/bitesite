@@ -56,6 +56,9 @@ drop trigger if exists merchants_before_write on public.merchants;
 drop function if exists private.merchants_after_write_audit();
 drop function if exists private.merchants_before_write();
 drop function if exists private.merchant_is_public(public.merchants);
+drop function if exists private.convert_merchant_to_managed(uuid, bigint, text, text, text, text, text, text);
+drop function if exists private.take_state_conversion_ticket(uuid, text, text, text, text);
+drop table if exists private.merchant_state_conversion_tickets;
 drop table if exists public.merchant_change_log;
 
 alter table public.merchants

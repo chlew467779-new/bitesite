@@ -82,6 +82,98 @@ begin
     bad := bad || ' [one-active-owner partial unique index missing]';
   end if;
 
+  -- ---- private schema: usage only, and a fixed EXECUTE matrix for every function in it ----
+  foreach c in array array['anon','authenticated'] loop
+    if not has_schema_privilege(c, 'private', 'USAGE') then
+      bad := bad || format(' [%s needs USAGE on private to evaluate the RLS predicate]', c);
+    end if;
+  end loop;
+  foreach c in array array['anon','authenticated','service_role'] loop
+    if has_schema_privilege(c, 'private', 'CREATE') then
+      bad := bad || format(' [%s can CREATE in schema private]', c);
+    end if;
+  end loop;
+  declare
+    fn record;
+    expected_exec text[];
+    actual_exec text[];
+  begin
+    for fn in
+      select p.oid, p.proname::text as sig, p.prosecdef, p.proconfig
+        from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+       where n.nspname = 'private'
+    loop
+      expected_exec := case fn.sig
+        when 'merchant_is_public' then array['anon','authenticated','service_role']
+        when 'merchants_before_write' then array[]::text[]
+        when 'merchants_after_write_audit' then array[]::text[]
+        when 'convert_merchant_to_managed' then array[]::text[]
+        when 'take_state_conversion_ticket' then array['service_role']
+      end;
+      if expected_exec is null then
+        -- Later packages add their functions to this list (or to their own assertions file).
+        if fn.sig not in ('merchant_id_is_public') then
+          bad := bad || format(' [unreviewed function %s in schema private]', fn.sig);
+        end if;
+        continue;
+      end if;
+      select coalesce(array_agg(r order by r), '{}') into actual_exec
+        from unnest(array['anon','authenticated','service_role']) r
+       where has_function_privilege(r, fn.oid, 'EXECUTE');
+      if actual_exec <> (select coalesce(array_agg(x order by x), '{}') from unnest(expected_exec) x) then
+        bad := bad || format(' [%s EXECUTE is %s, expected %s]', fn.sig, actual_exec, expected_exec);
+      end if;
+      if has_function_privilege('public', fn.oid, 'EXECUTE') then
+        bad := bad || format(' [PUBLIC can EXECUTE %s]', fn.sig);
+      end if;
+      if not coalesce(fn.proconfig @> array['search_path=""'], false) then
+        bad := bad || format(' [%s must pin an empty search_path]', fn.sig);
+      end if;
+      if fn.prosecdef and fn.sig not in ('convert_merchant_to_managed', 'take_state_conversion_ticket') then
+        bad := bad || format(' [%s must not be SECURITY DEFINER]', fn.sig);
+      end if;
+    end loop;
+  end;
+  foreach t in array array['private.convert_merchant_to_managed(uuid,bigint,text,text,text,text,text,text)',
+                           'private.take_state_conversion_ticket(uuid,text,text,text,text)'] loop
+    if to_regprocedure(t) is null then
+      bad := bad || format(' [%s missing]', t);
+    elsif not (select prosecdef from pg_proc where oid = to_regprocedure(t)) then
+      bad := bad || format(' [%s must be SECURITY DEFINER]', t);
+    end if;
+  end loop;
+
+  -- ---- conversion tickets are invisible to every API role ----
+  if to_regclass('private.merchant_state_conversion_tickets') is null then
+    bad := bad || ' [private.merchant_state_conversion_tickets missing]';
+  else
+    if not (select relrowsecurity from pg_class where oid = 'private.merchant_state_conversion_tickets'::regclass) then
+      bad := bad || ' [RLS off on merchant_state_conversion_tickets]';
+    end if;
+    foreach c in array array['anon','authenticated','service_role'] loop
+      foreach t in array array['SELECT','INSERT','UPDATE'] loop
+        if has_any_column_privilege(c, 'private.merchant_state_conversion_tickets', t) then
+          bad := bad || format(' [%s can %s conversion tickets]', c, t);
+        end if;
+      end loop;
+      if has_table_privilege(c, 'private.merchant_state_conversion_tickets', 'DELETE') then
+        bad := bad || format(' [%s can DELETE conversion tickets]', c);
+      end if;
+    end loop;
+  end if;
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'merchant_change_log' and column_name = 'reason') then
+    bad := bad || ' [merchant_change_log.reason missing]';
+  end if;
+
+  -- ---- private is not a Data API schema (when PostgREST reads its config from the database) ----
+  if exists (
+    select 1
+      from pg_db_role_setting s join pg_roles r on r.oid = s.setrole, unnest(s.setconfig) cfg
+     where r.rolname = 'authenticator' and cfg like 'pgrst.db_schemas=%' and cfg ~ '(=|,)\s*private\s*(,|$)'
+  ) then
+    bad := bad || ' [schema private is listed in pgrst.db_schemas]';
+  end if;
+
   if bad <> '' then raise exception 'D1A STATE ASSERTIONS FAILED:%', bad; end if;
 end $$;
 select 'ALL D1A STATE ASSERTIONS PASSED' as result;
