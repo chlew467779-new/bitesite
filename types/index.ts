@@ -65,6 +65,16 @@ export interface Merchant {
   status: string;
   platform_status?: 'DRAFT' | 'PENDING_REVIEW' | 'PUBLISHED' | 'SUSPENDED' | 'ARCHIVED' | string;
   business_status?: 'OPEN' | 'TEMPORARILY_CLOSED' | 'MOVED' | 'PERMANENTLY_CLOSED' | string;
+  /** Canonical state (D1a). For `state_source: 'managed'` rows these decide publication and
+   *  is_published/platform_status are derived mirrors; for 'legacy' rows the old fields still rule.
+   *  Public visibility is enforced in the database (private.merchant_is_public). */
+  review_status?: 'draft' | 'pending' | 'rejected' | 'approved';
+  listing_visibility?: 'hidden' | 'public';
+  platform_restriction?: 'none' | 'suspended' | 'archived';
+  state_source?: 'legacy' | 'managed';
+  revision?: number;
+  updated_at?: string;
+  first_published_at?: string | null;
   area: string | null;
   cuisine: string[];
   amenities: string[];
@@ -154,7 +164,6 @@ export interface LayoutProps {
   products: Product[];
   videos?: MerchantVideo[];
   features?: MerchantFeatures;
-  viewCount?: number;
   events?: EventItem[];
   footerText?: string;
 }

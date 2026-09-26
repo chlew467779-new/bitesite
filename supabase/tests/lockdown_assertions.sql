@@ -6,8 +6,9 @@
 do $$
 declare
   t text; r text; p text; bad text := '';
-  public_read_tables text[] := array['merchants','categories','products','merchant_videos','events','articles','merchant_stats','settings'];
-  server_only_tables text[] := array['page_views','login_attempts','merchant_daily_views','merchant_monthly_views'];
+  public_read_tables text[] := array['merchants','categories','products','merchant_videos','events','articles','settings'];
+  -- merchant_stats became server-only in D1a (view counts are private, DEC-29); it keeps no policy.
+  server_only_tables text[] := array['page_views','login_attempts','merchant_daily_views','merchant_monthly_views','merchant_stats'];
   n int;
 begin
   -- RLS enabled on every public table

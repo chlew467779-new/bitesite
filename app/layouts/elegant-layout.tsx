@@ -5,7 +5,6 @@
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
 import { TierSections } from "@/app/components/sections/tier-sections";
-import { ViewCountInline } from "@/components/sections/view-count-inline";
 import { ShareButtons } from "@/components/sections/share-buttons";
 import { mergeFeatures } from "@/types";
 import type { LayoutProps } from "@/types";
@@ -21,7 +20,7 @@ import { getTodayKey, formatOperatingHours, DAYS } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
 
 export function ElegantLayout({
-  merchant, categories, products, videos, features, viewCount, events, footerText,
+  merchant, categories, products, videos, features, events, footerText,
 }: LayoutProps) {
   const resolvedFeatures = mergeFeatures(features);
 
@@ -89,9 +88,6 @@ export function ElegantLayout({
               <div className="max-w-4xl mx-auto">
                 <div className="flex items-center gap-2 mb-3 flex-wrap">
                   {merchant.cuisine_type && <span className="inline-block px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-semibold border border-amber-500/30">{merchant.cuisine_type}</span>}
-                  {typeof viewCount !== "undefined" && viewCount > 0 && (
-                    <ViewCountInline count={viewCount} className="ml-0" />
-                  )}
                 </div>
                 <h1 className="text-3xl sm:text-5xl font-bold text-white mb-2">{merchant.name}</h1>
                 {merchant.description && <p className="text-slate-400 text-sm sm:text-base max-w-xl">{merchant.description}</p>}

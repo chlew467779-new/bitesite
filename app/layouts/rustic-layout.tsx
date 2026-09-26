@@ -5,7 +5,6 @@
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
 import { TierSections } from "@/app/components/sections/tier-sections";
-import { ViewCountInline } from "@/components/sections/view-count-inline";
 import { ShareButtons } from "@/components/sections/share-buttons";
 import { mergeFeatures } from "@/types";
 import type { LayoutProps } from "@/types";
@@ -18,7 +17,7 @@ import { getTodayKey, formatOperatingHours, DAYS } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
 
 export function RusticLayout({
-  merchant, categories, products, videos, features, viewCount, events, footerText,
+  merchant, categories, products, videos, features, events, footerText,
 }: LayoutProps) {
   const resolvedFeatures = mergeFeatures(features);
   const today = getTodayKey();
@@ -54,9 +53,6 @@ export function RusticLayout({
               <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-lg border border-orange-100">
                 <div className="flex items-center gap-2 mb-3 flex-wrap">
                   {merchant.cuisine_type && <span className="inline-block px-3 py-1 rounded-full bg-orange-100 text-orange-800 text-xs font-semibold">{merchant.cuisine_type}</span>}
-                  {typeof viewCount !== "undefined" && viewCount > 0 && (
-                    <ViewCountInline count={viewCount} className="ml-0" />
-                  )}
                 </div>
                 <h1 className="text-3xl sm:text-4xl font-bold text-orange-900 mb-3">{merchant.name}</h1>
                 {merchant.description && <p className="text-orange-800/70 leading-relaxed">{merchant.description}</p>}

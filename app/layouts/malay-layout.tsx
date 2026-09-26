@@ -6,7 +6,6 @@ import type { ReactNode } from "react";
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
 import { TierSections } from "@/app/components/sections/tier-sections";
-import { ViewCountInline } from "@/components/sections/view-count-inline";
 import { ShareButtons } from "@/components/sections/share-buttons";
 import { mergeFeatures } from "@/types";
 import type { LayoutProps } from "@/types";
@@ -54,7 +53,7 @@ function SectionHeading({ children }: { children: ReactNode }) {
 }
 
 export function MalayLayout({
-  merchant, categories, products, features, viewCount, events, footerText,
+  merchant, categories, products, features, events, footerText,
 }: LayoutProps) {
   const resolvedFeatures = mergeFeatures(features);
   const today = getTodayKey();
@@ -83,11 +82,6 @@ export function MalayLayout({
                 </div>
               ) : (
                 <div aria-hidden="true" className="absolute inset-0 opacity-25" style={songketPattern} />
-              )}
-              {typeof viewCount !== "undefined" && viewCount > 0 && (
-                <div className="absolute top-4 right-4">
-                  <ViewCountInline count={viewCount} className="ml-0" />
-                </div>
               )}
             </div>
             <SongketBand />
