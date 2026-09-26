@@ -8,6 +8,7 @@ import { InvalidJsonBodyError, readBoundedJson, RequestBodyTooLargeError } from 
 import { AMENITY_TAGS, CUISINE_TAGS, OCCASION_TAGS } from '@/lib/presets';
 import { isPersistableLayout } from '@/lib/layout-registry.mjs';
 import { DAYS, isValidOperatingHours } from '@/lib/hours';
+import { normalizeBookingWhatsApp } from '@/lib/merchant-booking-target.mjs';
 
 const MAX_MERCHANT_BODY_BYTES = 128 * 1024;
 
@@ -74,10 +75,14 @@ function normalizeControlledTags(value: unknown, allowed: readonly string[]): st
   return normalizeStringArray(value).filter(item => allowed.includes(item));
 }
 
+const WHATSAPP_FORMAT_MESSAGE =
+  'WhatsApp must be an international number with the country code (for example 60123456789), or left empty';
+
 function validateMerchantPayload(
   body: Record<string, unknown>,
   requireBaseFields: boolean,
   existingOperatingHours?: Record<string, unknown> | null,
+  existingWhatsapp?: string | null,
 ): string | null {
   if (!body || typeof body !== 'object' || Array.isArray(body)) return 'Invalid request body';
 
@@ -93,9 +98,15 @@ function validateMerchantPayload(
   }
 
   if (requireBaseFields && (typeof body.name !== 'string' || !body.name.trim())) return 'Name is required';
-  if (requireBaseFields && (typeof body.whatsapp !== 'string' || !body.whatsapp.trim())) return 'WhatsApp is required';
   if (!requireBaseFields && body.name !== undefined && (typeof body.name !== 'string' || !body.name.trim())) return 'Name is required';
-  if (!requireBaseFields && body.whatsapp !== undefined && (typeof body.whatsapp !== 'string' || !body.whatsapp.trim())) return 'WhatsApp is required';
+
+  // WhatsApp is optional (DEC-21: without a valid number the public page simply has no Book a Table).
+  // A new or changed number must be an international WhatsApp number; an unchanged stored value is
+  // not re-validated, so an old entry never blocks saving unrelated fields.
+  if (typeof body.whatsapp === 'string' && body.whatsapp.trim()) {
+    const unchanged = typeof existingWhatsapp === 'string' && body.whatsapp.trim() === existingWhatsapp.trim();
+    if (!unchanged && !normalizeBookingWhatsApp(body.whatsapp)) return WHATSAPP_FORMAT_MESSAGE;
+  }
 
   if (typeof body.email === 'string' && body.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email.trim())) {
     return 'Email must be valid';
@@ -296,7 +307,7 @@ export async function POST(request: NextRequest) {
       payment_methods: body.payment_methods?.length ? body.payment_methods : null,
       address: body.address?.trim() || null,
       phone: body.phone?.trim() || null,
-      whatsapp: body.whatsapp.trim(),
+      whatsapp: body.whatsapp?.trim() || null,
       email: body.email?.trim() || null,
       website: body.website?.trim() || null,
       instagram: body.instagram?.trim() || null,
@@ -357,7 +368,7 @@ export async function PUT(request: NextRequest) {
 
     const { data: existingMerchant, error: existingMerchantError } = await supabase
       .from('merchants')
-      .select('operating_hours')
+      .select('operating_hours, whatsapp')
       .eq('id', id)
       .single();
 
@@ -372,7 +383,7 @@ export async function PUT(request: NextRequest) {
         ? existingMerchant.operating_hours as Record<string, unknown>
         : null;
 
-    const validationError = validateMerchantPayload(body, false, existingOperatingHours);
+    const validationError = validateMerchantPayload(body, false, existingOperatingHours, existingMerchant.whatsapp);
     if (validationError) return NextResponse.json({ error: validationError }, { status: 400 });
 
     const slug = body.slug?.trim();
@@ -406,7 +417,7 @@ export async function PUT(request: NextRequest) {
     if (body.payment_methods !== undefined) updateData.payment_methods = body.payment_methods?.length ? body.payment_methods : null;
     if (body.address !== undefined) updateData.address = body.address?.trim() || null;
     if (body.phone !== undefined) updateData.phone = body.phone?.trim() || null;
-    if (body.whatsapp !== undefined) updateData.whatsapp = body.whatsapp.trim();
+    if (body.whatsapp !== undefined) updateData.whatsapp = body.whatsapp?.trim() || null;
     if (body.email !== undefined) updateData.email = body.email?.trim() || null;
     if (body.website !== undefined) updateData.website = body.website?.trim() || null;
     if (body.instagram !== undefined) updateData.instagram = body.instagram?.trim() || null;
