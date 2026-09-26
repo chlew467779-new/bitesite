@@ -6,7 +6,6 @@ import type { ReactNode } from "react";
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
 import { TierSections } from "@/app/components/sections/tier-sections";
-import { ViewCountInline } from "@/components/sections/view-count-inline";
 import { ShareButtons } from "@/components/sections/share-buttons";
 import { mergeFeatures } from "@/types";
 import type { LayoutProps } from "@/types";
@@ -43,7 +42,7 @@ function SectionHeading({ children }: { children: ReactNode }) {
 }
 
 export function ChineseLayout({
-  merchant, categories, products, features, viewCount, events, footerText,
+  merchant, categories, products, features, events, footerText,
 }: LayoutProps) {
   const resolvedFeatures = mergeFeatures(features);
   const today = getTodayKey();
@@ -84,9 +83,6 @@ export function ChineseLayout({
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-2 flex-wrap">
                     {merchant.cuisine_type && <span className="inline-block px-3 py-1 rounded-full bg-amber-300 text-red-950 text-xs font-semibold">{merchant.cuisine_type}</span>}
-                    {typeof viewCount !== "undefined" && viewCount > 0 && (
-                      <ViewCountInline count={viewCount} className="ml-0" />
-                    )}
                   </div>
                   <h1 className="text-[1.625rem] leading-tight sm:text-4xl lg:text-5xl font-bold text-white break-words">{merchant.name}</h1>
                   {hasHours && <p className="mt-2 text-sm sm:text-base text-amber-100 flex items-center gap-2"><Clock size={16} /> Today: {formatOperatingHours(hours?.[today]) || "Closed"}</p>}

@@ -18,7 +18,8 @@
     "test:theme": "node scripts/test-layout-theme.mjs",
     "test:merchant": "node scripts/test-merchant-dashboard.mjs",
     "test:booking-safety": "node scripts/test-merchant-booking-safety.mjs",
-    "verify": "npm run typecheck && npm run lint && npm run check:security && npm run test:security && npm run test:menu && npm run test:layout && npm run test:preview-safety && npm run test:prices && npm run test:fixtures && npm run test:theme && npm run test:merchant && npm run test:booking-safety && git diff --check"
+    "test:merchant-state": "node scripts/test-merchant-state-wiring.mjs",
+    "verify": "npm run typecheck && npm run lint && npm run check:security && npm run test:security && npm run test:menu && npm run test:layout && npm run test:preview-safety && npm run test:prices && npm run test:fixtures && npm run test:theme && npm run test:merchant && npm run test:booking-safety && npm run test:merchant-state && git diff --check"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

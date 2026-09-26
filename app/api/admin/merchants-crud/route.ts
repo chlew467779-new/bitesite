@@ -192,6 +192,23 @@ async function verifyToken(request: NextRequest): Promise<boolean> {
   return verifyAdminToken(token);
 }
 
+// Managed merchants (D1a) derive is_published / platform_status from their canonical state, and
+// the database refuses direct writes of those two fields. The old form still sends them, so say
+// clearly why the save was refused instead of returning a raw 500.
+const MERCHANT_STATE_ERRORS: Record<string, string> = {
+  LEGACY_STATE_WRITE_FORBIDDEN:
+    'This restaurant uses the new review and publishing workflow, so "Published" and "Platform status" cannot be set from this form.',
+  STATE_SOURCE_DOWNGRADE: 'This restaurant cannot be moved back to the old publishing workflow.',
+};
+
+function merchantWriteError(error: { message: string }) {
+  const code = Object.keys(MERCHANT_STATE_ERRORS).find((key) => error.message.startsWith(key));
+  if (code) {
+    return NextResponse.json({ error: MERCHANT_STATE_ERRORS[code], code }, { status: 422 });
+  }
+  return NextResponse.json({ error: error.message }, { status: 500 });
+}
+
 export async function GET(request: NextRequest) {
   try {
     if (!(await verifyToken(request))) {
@@ -306,7 +323,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return merchantWriteError(error);
     }
 
     const linkError = await saveGrabFoodLink(data.id, body.grabfood_url);
@@ -418,7 +435,7 @@ export async function PUT(request: NextRequest) {
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return merchantWriteError(error);
     }
 
     const linkError = await saveGrabFoodLink(data.id, body.grabfood_url);

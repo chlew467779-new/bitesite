@@ -5,16 +5,14 @@ import { ArrowRight, Clock } from "lucide-react";
 import { SafeImage } from "@/app/components/safe-image";
 import { CuisineTag } from "@/components/ui/cuisine-tag";
 import { ShareMenu } from "@/components/sections/share-menu";
-import { ViewCountInline } from "@/components/sections/view-count-inline";
 import { getTodayHours } from "@/lib/hours";
 import type { Merchant } from "@/types";
 
 interface MerchantCardProps {
   merchant: Merchant;
-  viewCount?: number;
 }
 
-export function MerchantCard({ merchant, viewCount = 0 }: MerchantCardProps) {
+export function MerchantCard({ merchant }: MerchantCardProps) {
   const { isOpen, hoursText } = getTodayHours(merchant.operating_hours);
 
   return (
@@ -89,13 +87,6 @@ export function MerchantCard({ merchant, viewCount = 0 }: MerchantCardProps) {
       <div className="absolute top-3 right-3 z-20">
         <ShareMenu slug={merchant.slug} name={merchant.name} />
       </div>
-
-      {/* View Count - 放在 Link 外面，绝对定位覆盖在图片上 */}
-      {viewCount > 0 && (
-        <div className="absolute top-[calc(100%-3rem-12px)] right-3 z-10">
-          <ViewCountInline count={viewCount} size="sm" />
-        </div>
-      )}
     </div>
   );
 }

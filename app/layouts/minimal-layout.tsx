@@ -5,7 +5,6 @@
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
 import { TierSections } from "@/app/components/sections/tier-sections";
-import { ViewCountInline } from "@/components/sections/view-count-inline";
 import { ShareButtons } from "@/components/sections/share-buttons";
 import { mergeFeatures } from "@/types";
 import type { LayoutProps } from "@/types";
@@ -18,7 +17,7 @@ import { getTodayKey, formatOperatingHours, DAYS } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
 
 export function MinimalLayout({
-  merchant, categories, products, videos, features, viewCount, events, footerText,
+  merchant, categories, products, videos, features, events, footerText,
 }: LayoutProps) {
   const resolvedFeatures = mergeFeatures(features);
   const today = getTodayKey();
@@ -49,9 +48,6 @@ export function MinimalLayout({
             )}
             <div className="flex items-center gap-2 flex-wrap">
               {merchant.cuisine_type && <span className="text-xs font-medium tracking-widest uppercase text-stone-500">{merchant.cuisine_type}</span>}
-              {typeof viewCount !== "undefined" && viewCount > 0 && (
-                <ViewCountInline count={viewCount} className="ml-0" />
-              )}
             </div>
             <h1 className="text-3xl font-light mt-2 mb-4">{merchant.name}</h1>
             {merchant.description && <p className="text-stone-600 leading-relaxed text-sm">{merchant.description}</p>}

@@ -184,17 +184,15 @@ export default async function MerchantPage({ params }: PageProps) {
     );
   }
 
-  const [categories, products, videos, relatedMerchants, statsRes, events, externalLinksRes] = await Promise.all([
+  const [categories, products, videos, relatedMerchants, events, externalLinksRes] = await Promise.all([
     getCategoriesByMerchant(merchant.id),
     getProductsByMerchant(merchant.id),
     getVideosByMerchant(merchant.id),
     getRelatedMerchants(merchant.slug, merchant.cuisine_type, merchant.tags, merchant.area, 3),
-    supabase.from("merchant_stats").select("view_count").eq("slug", slug).single(),
     getEventsByMerchant(merchant.id),
     supabase.from("merchant_external_links").select("url").eq("merchant_id", merchant.id).eq("link_type", "grabfood").eq("is_active", true).maybeSingle(),
   ]);
 
-  const viewCount = statsRes.data?.view_count || 0;
   // Unknown, blank or not-yet-public-ready layout values render Classic instead of 404ing
   // the storefront. A null value is the ordinary default and stays silent; anything else is
   // bad data worth a server warning (sanitised: it comes from the database unvalidated).
@@ -270,7 +268,6 @@ export default async function MerchantPage({ params }: PageProps) {
         products={products}
         videos={videos}
         features={merchant.features}
-        viewCount={viewCount}
         events={events}
         footerText={settings.footer_text}
       />

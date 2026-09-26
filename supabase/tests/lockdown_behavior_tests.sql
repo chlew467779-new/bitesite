@@ -100,7 +100,7 @@ select lockdown_test.assert_true((select count(*) from public.products where nam
 select lockdown_test.assert_true((select count(*) from public.articles where slug = 'zz-sec-test-story-published') = 1, 'anon sees published story');
 select lockdown_test.assert_true((select count(*) from public.articles where slug = 'zz-sec-test-story-draft') = 0,     'anon must NOT see draft story');
 select lockdown_test.assert_true((select count(*) from public.events where title = 'ZZ Published Event') = 1,       'anon can read events');
-select lockdown_test.assert_true((select count(*) from public.merchant_stats where slug = 'zz-sec-test-published') = 1, 'anon can read merchant_stats');
+select lockdown_test.assert_denied($q$select 1 from public.merchant_stats limit 1$q$, 'anon SELECT merchant_stats (private since D1a, DEC-29)');
 select lockdown_test.assert_true((select count(*) from public.settings where key = 'site_title') = 1,              'anon can read public settings');
 select lockdown_test.assert_true((select count(*) from public.settings where key = 'zz_private_test_key') = 0,      'anon must NOT read non-allow-listed settings');
 reset role;
@@ -173,7 +173,7 @@ select lockdown_test.assert_true((select count(*) from public.products where nam
 select lockdown_test.assert_true((select count(*) from public.articles where slug = 'zz-sec-test-story-published') = 1, 'authenticated sees published story');
 select lockdown_test.assert_true((select count(*) from public.articles where slug = 'zz-sec-test-story-draft') = 0,     'authenticated must NOT see draft story');
 select lockdown_test.assert_true((select count(*) from public.events where title = 'ZZ Published Event') = 1,       'authenticated can read events');
-select lockdown_test.assert_true((select count(*) from public.merchant_stats where slug = 'zz-sec-test-published') = 1, 'authenticated can read merchant_stats');
+select lockdown_test.assert_denied($q$select 1 from public.merchant_stats limit 1$q$, 'authenticated SELECT merchant_stats (private since D1a, DEC-29)');
 select lockdown_test.assert_true((select count(*) from public.settings where key = 'site_title') = 1,              'authenticated can read public settings');
 select lockdown_test.assert_true((select count(*) from public.settings where key = 'zz_private_test_key') = 0,      'authenticated must NOT read non-allow-listed settings');
 reset role;

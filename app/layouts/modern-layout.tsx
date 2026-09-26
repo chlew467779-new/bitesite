@@ -5,7 +5,6 @@
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
 import { TierSections } from "@/app/components/sections/tier-sections";
-import { ViewCountInline } from "@/components/sections/view-count-inline";
 import { ShareButtons } from "@/components/sections/share-buttons";
 import { mergeFeatures } from "@/types";
 import type { LayoutProps } from "@/types";
@@ -18,7 +17,7 @@ import { getTodayKey, formatOperatingHours, DAYS } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
 
 export function ModernLayout({
-  merchant, categories, products, videos, features, viewCount, events, footerText,
+  merchant, categories, products, videos, features, events, footerText,
 }: LayoutProps) {
   const resolvedFeatures = mergeFeatures(features);
   const today = getTodayKey();
@@ -42,9 +41,6 @@ export function ModernLayout({
               <div>
                 <div className="flex items-center gap-2 mb-4 flex-wrap">
                   {merchant.cuisine_type && <span className="inline-block px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold">{merchant.cuisine_type}</span>}
-                  {typeof viewCount !== "undefined" && viewCount > 0 && (
-                    <ViewCountInline count={viewCount} className="ml-0" />
-                  )}
                 </div>
                 <h1 className="text-4xl lg:text-5xl font-bold text-slate-900 mb-4 leading-tight">{merchant.name}</h1>
                 {merchant.description && <p className="text-slate-600 leading-relaxed">{merchant.description}</p>}

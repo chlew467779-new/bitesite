@@ -32,7 +32,6 @@ function readHomeFilters() {
 
 export default function HomePage() {
   const [merchants, setMerchants] = useState<Merchant[]>([]);
-  const [merchantStats, setMerchantStats] = useState<Map<string, number>>(new Map());
   const [loading, setLoading] = useState(true);
   const [activeCuisines, setActiveCuisines] = useState<string[]>(() => readHomeFilters().cuisines);
   const [activeArea, setActiveArea] = useState<string | null>(() => readHomeFilters().area);
@@ -68,18 +67,15 @@ export default function HomePage() {
     window.history.replaceState(window.history.state, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
   }, [activeCuisines, activeArea, activeMore, searchQuery, openNow]);
 
-  // Fetch merchants + stats + products on mount
+  // Fetch merchants + products on mount. View counts are private (DEC-29) and not read here.
   useEffect(() => {
     async function fetchData() {
-      const [{ data: merchantsData, error: merchantsError }, { data: statsData }, { data: productsData }] = await Promise.all([
+      const [{ data: merchantsData, error: merchantsError }, { data: productsData }] = await Promise.all([
         supabase
           .from("merchants")
           .select("*")
           .eq("is_published", true)
           .order("created_at", { ascending: false }),
-        supabase
-          .from("merchant_stats")
-          .select("slug, view_count"),
         supabase
           .from("products")
           .select("merchant_id, name")
@@ -88,14 +84,6 @@ export default function HomePage() {
 
       if (!merchantsError && merchantsData) {
         setMerchants(merchantsData as Merchant[]);
-      }
-
-      if (statsData) {
-        const map = new Map<string, number>();
-        statsData.forEach((s: { slug: string; view_count: number }) => {
-          map.set(s.slug, s.view_count || 0);
-        });
-        setMerchantStats(map);
       }
 
       if (productsData) {
@@ -359,10 +347,7 @@ export default function HomePage() {
                   duration={0.4}
                   direction="up"
                 >
-                  <MerchantCard 
-                    merchant={merchant} 
-                    viewCount={merchantStats.get(merchant.slug) || 0}
-                  />
+                  <MerchantCard merchant={merchant} />
                 </FadeIn>
               ))}
             </div>
