@@ -3,10 +3,10 @@
 import { SafeImage } from "@/app/components/safe-image";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import type { Article } from "@/types";
+import type { PublicArticle } from "@/types";
 
 interface StoryHeroProps {
-  article: Article;
+  article: PublicArticle;
   theme?: string;
 }
 
@@ -91,10 +91,6 @@ export function StoryHero({ article, theme = 'default' }: StoryHeroProps) {
     }
   );
 
-  const viewCount =
-    article.view_count >= 1000
-      ? `${(article.view_count / 1000).toFixed(1)}k`
-      : `${article.view_count}`;
 
   return (
     <section className="px-4 pt-6 pb-6 sm:px-6 lg:px-8">
@@ -141,21 +137,6 @@ export function StoryHero({ article, theme = 'default' }: StoryHeroProps) {
           <span className="font-medium" style={{ color: colors.body }}>{article.author}</span>
           <span>·</span>
           <span>{formattedDate}</span>
-          <span>·</span>
-          <span className="flex items-center gap-1">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-              <circle cx="12" cy="12" r="3" />
-            </svg>
-            {viewCount} views
-          </span>
         </div>
 
         {/* Cover Image */}

@@ -10,7 +10,8 @@ import { StoryViewTracker } from "@/components/sections/story-view-tracker";
 import { StoryMerchantLink } from "@/components/sections/story-merchant-link";
 import { PageViewTracker } from "@/app/components/page-view-tracker";
 import { Footer } from "@/components/sections/footer";
-import type { Article } from "@/types";
+import type { PublicArticle } from "@/types";
+import { PUBLIC_ARTICLE_SELECT } from "@/lib/public-article-projection.mjs";
 import { getSiteUrl } from "@/lib/site-url";
 import { safeJsonLd } from "@/lib/safe-json-ld.mjs";
 
@@ -24,7 +25,7 @@ export async function generateStaticParams() {
   const { data: articles } = await supabase
     .from("articles")
     .select("slug")
-    .eq("published", true);
+    .returns<{ slug: string }[]>();
 
   return (articles || []).map((a) => ({ slug: a.slug }));
 }
@@ -35,7 +36,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     .from("articles")
     .select("title, excerpt, cover_image, category, tags")
     .eq("slug", slug)
-    .eq("published", true)
     .single();
 
   if (!article) {
@@ -94,9 +94,9 @@ export default async function StoryPage({ params }: PageProps) {
 
   const { data: article } = await supabase
     .from("articles")
-    .select("*")
+    .select(PUBLIC_ARTICLE_SELECT)
     .eq("slug", slug)
-    .eq("published", true)
+    .returns<PublicArticle[]>()
     .single();
 
   if (!article) notFound();
@@ -141,7 +141,7 @@ export default async function StoryPage({ params }: PageProps) {
       <main style={{ backgroundColor: bgColor }}>
         <StoryViewTracker slug={slug} />
         {isExpired && <div className="mx-auto max-w-3xl px-4 pt-6 text-sm font-medium text-amber-700">This promotion has ended. The Story remains available as editorial content.</div>}
-        <StoryHero article={article as Article} theme={theme} />
+        <StoryHero article={article} theme={theme} />
         <StoryContent content={article.content} articleSlug={slug} theme={theme} />
 
         {article.merchant_slug && (

@@ -23,6 +23,10 @@ Only the SECURITY LOCKDOWN work lives here for now (branch `fix/security-lockdow
 | `operations/analytics_nulls_impact.READ_ONLY.sql` | One read-only SELECT: duplicated buckets, rows the migration would archive, reported vs corrected counts. Run before the migration | Any environment CH has approved reading |
 | `tests/analytics_nulls_assertions.sql` | Read-only checks for the new bucket key, no duplicate buckets, archive locked down | Local, staging **and** production (after the migration) |
 | `rollback/20260926121244_…STAGING_ONLY.sql` | Restores the old NULLS DISTINCT key (re-opens the double counting); archived rows stay in the archive | Staging; production only as an approved emergency |
+| `migrations/20260926131040_article_public_projection.sql` | D1c: anon/authenticated may read only the public `articles` columns; a Story is public only when `published` and `editorial_status = 'published'` (`private.article_is_public`). Lists, as a NOTICE, any Story this hides. **Deploy the D1c application code first** | Local → staging → production, each after review/approval |
+| `tests/d1c_projection_assertions.sql` | Read-only catalog checks for D1c | Local, staging **and** production (after the migration) |
+| `tests/d1c_projection_behavior_tests.sql` | Role-switching tests for D1c (synthetic `zz-d1c-*` rows, rolled back) | Local / staging only |
+| `rollback/20260926131040_…STAGING_ONLY.sql` | Undoes D1c; every articles column and the old `published`-only rule come back. The D1c code keeps working | Staging; production only as an approved emergency |
 
 **Local database (Docker)**: create a throw-away Supabase project outside the repo (`supabase init` in a temp folder), put `create extension pg_cron;`, `staging/00_baseline_schema.sql`, `staging/10_synthetic_seed.sql` and then every file in `migrations/` into its `supabase/migrations/` in that order, run `supabase start`, and pipe each `tests/*.sql` into `docker exec -i supabase_db_<project> psql -U postgres -d postgres -v ON_ERROR_STOP=1`. Nothing in that flow touches staging or production.
 

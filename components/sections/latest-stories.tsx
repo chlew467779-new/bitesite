@@ -7,20 +7,21 @@ import Link from "next/link";
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
 import { supabase } from "@/lib/supabase";
-import type { Article } from "@/types";
+import type { PublicArticle } from "@/types";
+import { PUBLIC_ARTICLE_SELECT } from "@/lib/public-article-projection.mjs";
 
 export function LatestStories() {
-  const [articles, setArticles] = useState<Article[]>([]);
+  const [articles, setArticles] = useState<PublicArticle[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchArticles() {
       const { data } = await supabase
         .from("articles")
-        .select("*")
-        .eq("published", true)
+        .select(PUBLIC_ARTICLE_SELECT)
         .order("created_at", { ascending: false })
-        .limit(3);
+        .limit(3)
+        .returns<PublicArticle[]>();
 
       setArticles(data || []);
       setLoading(false);

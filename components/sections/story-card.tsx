@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { SafeImage } from "@/app/components/safe-image";
-import type { Article } from "@/types";
+import type { PublicArticle } from "@/types";
 
 interface StoryCardProps {
-  article: Article;
+  article: PublicArticle;
   featured?: boolean;
 }
 
@@ -19,10 +19,6 @@ export function StoryCard({ article, featured = false }: StoryCardProps) {
     }
   );
 
-  const viewCount =
-    article.view_count >= 1000
-      ? `${(article.view_count / 1000).toFixed(1)}k`
-      : `${article.view_count}`;
 
   if (featured) {
     return (
@@ -55,21 +51,6 @@ export function StoryCard({ article, featured = false }: StoryCardProps) {
             )}
             <div className="flex items-center gap-3 text-xs text-[#8A968B]">
               <span>{formattedDate}</span>
-              <span>·</span>
-              <span className="flex items-center gap-1">
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
-                {viewCount}
-              </span>
             </div>
           </div>
         </article>
@@ -102,21 +83,6 @@ export function StoryCard({ article, featured = false }: StoryCardProps) {
           </h3>
           <div className="flex items-center gap-2 text-xs text-[#8A968B]">
             <span>{formattedDate}</span>
-            <span>·</span>
-            <span className="flex items-center gap-1">
-              <svg
-                width="10"
-                height="10"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
-              {viewCount}
-            </span>
           </div>
         </div>
       </article>

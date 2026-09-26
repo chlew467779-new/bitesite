@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { SafeImage } from "@/app/components/safe-image";
 import { supabase } from "@/lib/supabase";
+import { PUBLIC_ARTICLE_SELECT } from "@/lib/public-article-projection.mjs";
+import type { PublicArticle } from "@/types";
 
 interface StoryRelatedProps {
   currentSlug: string;
@@ -12,22 +14,22 @@ interface StoryRelatedProps {
 export async function StoryRelated({ currentSlug, category }: StoryRelatedProps) {
   const { data: related } = await supabase
     .from("articles")
-    .select("*")
-    .eq("published", true)
+    .select(PUBLIC_ARTICLE_SELECT)
     .eq("category", category)
     .neq("slug", currentSlug)
     .order("created_at", { ascending: false })
-    .limit(3);
+    .limit(3)
+    .returns<PublicArticle[]>();
 
   let articles = related || [];
   if (articles.length === 0) {
     const { data: fallback } = await supabase
       .from("articles")
-      .select("*")
-      .eq("published", true)
+      .select(PUBLIC_ARTICLE_SELECT)
       .neq("slug", currentSlug)
       .order("created_at", { ascending: false })
-      .limit(3);
+      .limit(3)
+      .returns<PublicArticle[]>();
     articles = fallback || [];
   }
 

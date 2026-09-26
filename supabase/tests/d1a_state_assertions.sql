@@ -113,7 +113,7 @@ begin
       end;
       if expected_exec is null then
         -- Later packages add their functions to this list (or to their own assertions file).
-        if fn.sig not in ('merchant_id_is_public') then
+        if fn.sig not in ('merchant_id_is_public', 'article_is_public') then
           bad := bad || format(' [unreviewed function %s in schema private]', fn.sig);
         end if;
         continue;
