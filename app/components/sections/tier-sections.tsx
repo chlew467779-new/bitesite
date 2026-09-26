@@ -7,13 +7,13 @@ import { AppointmentSection } from "./appointment-section";
 import { SeasonalSection } from "./seasonal-section";
 import { EventsSection } from "./events-section";
 import { mergeFeatures, type MerchantFeatures } from "@/types";
-import type { Merchant, Product, EventItem } from "@/types";
+import type { PublicMerchant, Product, EventItem } from "@/types";
 import { shouldShowPrice } from "@/lib/menu-display.mjs";
 import { normalizeBookingWhatsApp } from "@/lib/merchant-booking-target.mjs";
 import type { LayoutVariant } from "./gallery-section";
 
 interface TierSectionsProps {
-  merchant: Merchant;
+  merchant: PublicMerchant;
   products: Product[];
   features?: Partial<MerchantFeatures>;
   variant: LayoutVariant;

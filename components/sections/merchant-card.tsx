@@ -6,10 +6,10 @@ import { SafeImage } from "@/app/components/safe-image";
 import { CuisineTag } from "@/components/ui/cuisine-tag";
 import { ShareMenu } from "@/components/sections/share-menu";
 import { getTodayHours } from "@/lib/hours";
-import type { Merchant } from "@/types";
+import type { PublicMerchant } from "@/types";
 
 interface MerchantCardProps {
-  merchant: Merchant;
+  merchant: PublicMerchant;
 }
 
 export function MerchantCard({ merchant }: MerchantCardProps) {

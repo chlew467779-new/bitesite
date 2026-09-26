@@ -12,10 +12,10 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://bitesite-pied.verc
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const siteUrl = getSiteUrl();
+  // Row level security returns only public merchants; is_published is not a public column.
   const { data: merchants } = await supabase
     .from("merchants")
-    .select("slug, updated_at")
-    .eq("is_published", true);
+    .select("slug, updated_at");
 
   const merchantUrls = (merchants || []).map((m) => ({
     url: `${siteUrl}/store/${m.slug}`,

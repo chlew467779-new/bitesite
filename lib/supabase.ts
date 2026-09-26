@@ -2,30 +2,35 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { isCurrentlyOpen, getTodayKey } from "@/lib/hours";   // ← 新增
-import type { Merchant, Category, Product, MerchantVideo, EventItem } from "@/types";
+import { PUBLIC_MERCHANT_SELECT } from "@/lib/public-merchant-projection.mjs";
+import type { PublicMerchant, Category, Product, MerchantVideo, EventItem } from "@/types";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-export async function getPublishedMerchants(): Promise<Merchant[]> {
+// Public merchant reads: only the granted columns (PUBLIC_MERCHANT_SELECT), and no is_published
+// filter. Row level security (private.merchant_is_public) decides which merchants are visible, so
+// hidden, draft, suspended and archived merchants never come back from these queries.
+
+export async function getPublishedMerchants(): Promise<PublicMerchant[]> {
   const { data, error } = await supabase
     .from("merchants")
-    .select("*")
-    .eq("is_published", true)
-    .order("created_at", { ascending: false });
+    .select(PUBLIC_MERCHANT_SELECT)
+    .order("created_at", { ascending: false })
+    .returns<PublicMerchant[]>();
 
   if (error) throw error;
   return data || [];
 }
 
-export async function getMerchantBySlug(slug: string): Promise<Merchant | null> {
+export async function getMerchantBySlug(slug: string): Promise<PublicMerchant | null> {
   const { data, error } = await supabase
     .from("merchants")
-    .select("*")
+    .select(PUBLIC_MERCHANT_SELECT)
     .eq("slug", slug)
-    .eq("is_published", true)
+    .returns<PublicMerchant[]>()
     .single();
 
   if (error) return null;
@@ -72,15 +77,14 @@ export async function getRelatedMerchants(
   tags: string[] | null,
   area: string | null,
   limit: number = 3
-): Promise<Merchant[]> {
-  const { data: allMerchants, error } = await supabase
+): Promise<PublicMerchant[]> {
+  const { data: merchants, error } = await supabase
     .from("merchants")
-    .select("*")
-    .eq("is_published", true)
-    .neq("slug", currentSlug);
+    .select(PUBLIC_MERCHANT_SELECT)
+    .neq("slug", currentSlug)
+    .returns<PublicMerchant[]>();
 
-  if (error || !allMerchants) return [];
-  const merchants = allMerchants as Merchant[];
+  if (error || !merchants) return [];
 
   const todayKey = getTodayKey();
 
@@ -118,16 +122,30 @@ export async function getRelatedMerchants(
   return scored.slice(0, limit).map((s) => s.merchant);
 }
 
-export async function getMerchantsForMap(): Promise<Merchant[]> {
+export async function getMerchantsForMap(): Promise<PublicMerchant[]> {
   const { data, error } = await supabase
     .from("merchants")
-    .select("*")
-    .eq("is_published", true)
+    .select(PUBLIC_MERCHANT_SELECT)
     .not("latitude", "is", null)
-    .not("longitude", "is", null);
+    .not("longitude", "is", null)
+    .returns<PublicMerchant[]>();
 
   if (error) throw error;
   return data || [];
+}
+
+/**
+ * Whether a slug belongs to a merchant the public may see. Server code that uses the service role
+ * (analytics ingest) calls this so it applies the same rule as the public pages instead of
+ * accepting hidden, draft or suspended merchants. Errors count as "not public".
+ */
+export async function isPublicMerchantSlug(slug: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("merchants")
+    .select("id")
+    .eq("slug", slug)
+    .maybeSingle();
+  return !error && data !== null;
 }
 
 export async function getEventsByMerchant(merchantId: string): Promise<EventItem[]> {

@@ -4,12 +4,12 @@
 
 import { DiamondSeparator } from "@/components/ui/diamond-separator";
 import { CuisineTag } from "@/components/ui/cuisine-tag";
-import type { Merchant } from "@/types";
+import type { PublicMerchant } from "@/types";
 import type { StyleConfig } from "@/lib/styles";
 import { trackEvent } from "@/lib/analytics";
 
 interface BrandIntroProps {
-  merchant: Merchant;
+  merchant: PublicMerchant;
   style: StyleConfig;
 }
 

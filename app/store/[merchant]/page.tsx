@@ -22,11 +22,12 @@ import { PageViewTracker } from "@/app/components/page-view-tracker";
 import { GrabFoodOrderButton } from "@/components/sections/grabfood-order-button";
 import { getSiteUrl } from "@/lib/site-url";
 import { safeJsonLd } from "@/lib/safe-json-ld.mjs";
-import type { Merchant } from "@/types";
+import type { PublicMerchant } from "@/types";
 
 export const revalidate = 60;
 
-function withoutLegacyReviews(merchant: Merchant): Merchant {
+// Since D1b the public read cannot return reviews at all (column grants); this stays as a second guard.
+function withoutLegacyReviews<T extends PublicMerchant>(merchant: T): T {
   return { ...merchant, reviews: null };
 }
 

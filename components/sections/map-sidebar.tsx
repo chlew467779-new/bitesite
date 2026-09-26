@@ -6,14 +6,14 @@ import { useEffect, useRef } from "react";
 import { SafeImage } from "@/app/components/safe-image";
 import { getTodayHours } from "@/lib/hours";
 import { getMarkerColor } from "@/lib/map-colors";
-import type { Merchant } from "@/types";
+import type { PublicMerchant } from "@/types";
 import { Clock, MapPin, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 interface MapSidebarProps {
-  merchants: Merchant[];
-  selected: Merchant | null;
-  onSelect: (merchant: Merchant | null) => void;
+  merchants: PublicMerchant[];
+  selected: PublicMerchant | null;
+  onSelect: (merchant: PublicMerchant | null) => void;
 }
 
 export function MapSidebar({ merchants, selected, onSelect }: MapSidebarProps) {
