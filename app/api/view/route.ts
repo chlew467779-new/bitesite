@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
+import { isPublicMerchantSlug } from "@/lib/supabase";
 import { allowAnalyticsRequest, getClientIp, isDuplicateAnalyticsEvent } from "@/lib/analytics-rate-limit";
 
 const SLUG_PATTERN = /^[a-z0-9-]{1,200}$/;
@@ -32,12 +33,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, deduplicated: true }, { status: 202 });
     }
 
-    const { data: merchant } = await supabase
-      .from("merchants")
-      .select("slug")
-      .eq("slug", slug)
-      .maybeSingle();
-    if (!merchant) {
+    // Checked with the public client so hidden, draft and suspended merchants are refused, using
+    // the same database rule as the public pages (the service role would see every merchant).
+    if (!(await isPublicMerchantSlug(slug))) {
       return NextResponse.json({ error: "Unknown merchant" }, { status: 400 });
     }
 

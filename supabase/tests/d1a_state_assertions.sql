@@ -49,12 +49,13 @@ begin
     if not exists (
       select 1 from pg_policies
        where schemaname = 'public' and tablename = split_part(t, '.', 1) and policyname = split_part(t, '.', 2)
-         and cmd = 'SELECT' and qual like '%private.merchant_is_public%'
+         -- D1b moved the child tables to private.merchant_id_is_public(merchant_id), a wrapper of the same rule.
+         and cmd = 'SELECT' and qual ~ 'private\.merchant_(id_)?is_public\('
     ) then
       bad := bad || format(' [%s does not use the shared predicate]', t);
     end if;
   end loop;
-  if exists (select 1 from pg_policies where schemaname = 'public' and tablename in ('merchants','categories','products','merchant_videos','merchant_external_links','events') and cmd = 'SELECT' and qual not like '%merchant_is_public%') then
+  if exists (select 1 from pg_policies where schemaname = 'public' and tablename in ('merchants','categories','products','merchant_videos','merchant_external_links','events') and cmd = 'SELECT' and qual !~ 'private\.merchant_(id_)?is_public\(') then
     bad := bad || ' [another SELECT policy bypasses the shared predicate]';
   end if;
   if exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'merchant_stats') then

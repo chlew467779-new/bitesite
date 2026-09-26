@@ -35,6 +35,7 @@ export interface Merchant {
   id: string;
   slug: string;
   name: string;
+  tagline?: string | null;
   description: string | null;
   cuisine_type: string | null;
   address: string | null;
@@ -85,6 +86,13 @@ export interface Merchant {
   longitude: number | null;
   reviews?: Review[] | null;
 }
+
+/** A merchant column the public database roles may read (D1b column grants). */
+export type PublicMerchantColumn = (typeof import("@/lib/public-merchant-projection.mjs").PUBLIC_MERCHANT_COLUMNS)[number];
+
+/** What public pages receive: only the publicly granted columns, never reviews, settings or
+ *  review / visibility / audit state. Select it with PUBLIC_MERCHANT_SELECT. */
+export type PublicMerchant = Pick<Merchant, PublicMerchantColumn>;
 
 export interface MerchantExternalLink {
   id: string;
@@ -159,7 +167,7 @@ export interface Article {
 }
 
 export interface LayoutProps {
-  merchant: Merchant;
+  merchant: PublicMerchant;
   categories: Category[];
   products: Product[];
   videos?: MerchantVideo[];

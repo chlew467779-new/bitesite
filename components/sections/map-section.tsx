@@ -7,15 +7,15 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import Link from "next/link";
 import { X, ArrowRight, Locate, Search, MapPin } from "lucide-react";
-import type { Merchant } from "@/types";
+import type { PublicMerchant } from "@/types";
 import { getTodayHours } from "@/lib/hours";
 import { getMarkerColor } from "@/lib/map-colors";
 import { trackEvent } from '@/lib/analytics';
 
 interface MapSectionProps {
-  merchants: Merchant[];
-  selectedMerchant: Merchant | null;
-  onSelect: (merchant: Merchant | null) => void;
+  merchants: PublicMerchant[];
+  selectedMerchant: PublicMerchant | null;
+  onSelect: (merchant: PublicMerchant | null) => void;
 }
 
 export function MapSection({ merchants, selectedMerchant, onSelect }: MapSectionProps) {

@@ -17,18 +17,22 @@ begin
   end loop;
 
   foreach r in array array['anon','authenticated'] loop
-    -- no write/truncate privilege anywhere
+    -- no write/truncate privilege anywhere (column-level INSERT/UPDATE grants count too)
     for t in select c.relname from pg_class c join pg_namespace ns on ns.oid=c.relnamespace where ns.nspname='public' and c.relkind='r' loop
-      foreach p in array array['INSERT','UPDATE','DELETE','TRUNCATE'] loop
+      foreach p in array array['INSERT','UPDATE'] loop
+        if has_any_column_privilege(r, format('public.%I', t), p) then bad := bad || format(' [%s can %s %s]', r, p, t); end if;
+      end loop;
+      foreach p in array array['DELETE','TRUNCATE'] loop
         if has_table_privilege(r, format('public.%I', t), p) then bad := bad || format(' [%s can %s %s]', r, p, t); end if;
       end loop;
     end loop;
-    -- SELECT only on the public-read tables
+    -- SELECT only on the public-read tables. merchants is readable column by column since D1b,
+    -- so "readable" means at least one column; server-only tables must have no readable column.
     foreach t in array server_only_tables loop
-      if has_table_privilege(r, format('public.%I', t), 'SELECT') then bad := bad || format(' [%s can SELECT server-only table %s]', r, t); end if;
+      if has_any_column_privilege(r, format('public.%I', t), 'SELECT') then bad := bad || format(' [%s can SELECT server-only table %s]', r, t); end if;
     end loop;
     foreach t in array public_read_tables loop
-      if not has_table_privilege(r, format('public.%I', t), 'SELECT') then bad := bad || format(' [%s cannot SELECT public table %s]', r, t); end if;
+      if not has_any_column_privilege(r, format('public.%I', t), 'SELECT') then bad := bad || format(' [%s cannot SELECT public table %s]', r, t); end if;
     end loop;
     -- no function execute
     for t in select p2.oid::regprocedure::text from pg_proc p2 join pg_namespace ns on ns.oid=p2.pronamespace where ns.nspname='public' loop

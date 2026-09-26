@@ -15,6 +15,10 @@ Only the SECURITY LOCKDOWN work lives here for now (branch `fix/security-lockdow
 | `tests/d1a_state_assertions.sql` | Read-only catalog checks for D1a | Local, staging **and** production (after the migration) |
 | `tests/d1a_state_behavior_tests.sql` | Role-switching tests for D1a (synthetic `zz-d1a-*` rows, rolled back) | Local / staging only |
 | `rollback/20260926093811_…STAGING_ONLY.sql` | Undoes D1a; re-opens AUD-04 and public view counts; refuses while managed merchants exist | Staging; production only as an approved emergency |
+| `migrations/20260926101050_merchant_public_projection.sql` | D1b: anon/authenticated may read only the public `merchants` columns; child-table policies use `private.merchant_id_is_public(merchant_id)`. **Deploy the D1b application code first**: after this migration any public `select("*")` or `is_published` filter on merchants fails | Local → staging → production, each after review/approval |
+| `tests/d1b_projection_assertions.sql` | Read-only catalog checks for D1b (exact column list, predicate function, child policies) | Local, staging **and** production (after the migration) |
+| `tests/d1b_projection_behavior_tests.sql` | Role-switching tests for D1b (synthetic `zz-d1b-*` rows, rolled back) | Local / staging only |
+| `rollback/20260926101050_…STAGING_ONLY.sql` | Undoes D1b; every merchants column becomes publicly readable again. The D1b code keeps working | Staging; production only as an approved emergency |
 
 **Local database (Docker)**: create a throw-away Supabase project outside the repo (`supabase init` in a temp folder), put `create extension pg_cron;`, `staging/00_baseline_schema.sql`, `staging/10_synthetic_seed.sql` and then every file in `migrations/` into its `supabase/migrations/` in that order, run `supabase start`, and pipe each `tests/*.sql` into `docker exec -i supabase_db_<project> psql -U postgres -d postgres -v ON_ERROR_STOP=1`. Nothing in that flow touches staging or production.
 

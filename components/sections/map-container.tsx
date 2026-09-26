@@ -6,7 +6,7 @@ import dynamic from "next/dynamic";
 import { useState, useMemo } from "react";
 import { MapFilter } from "./map-filter";
 import { MapSidebar } from "./map-sidebar";
-import type { Merchant } from "@/types";
+import type { PublicMerchant } from "@/types";
 
 const MapSection = dynamic(
   () => import("./map-section").then((mod) => mod.MapSection),
@@ -21,13 +21,13 @@ const MapSection = dynamic(
 );
 
 interface MapContainerProps {
-  merchants: Merchant[];
+  merchants: PublicMerchant[];
 }
 
 export function MapContainer({ merchants }: MapContainerProps) {
   const [activeTypes, setActiveTypes] = useState<string[]>(["All"]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedMerchant, setSelectedMerchant] = useState<Merchant | null>(null);
+  const [selectedMerchant, setSelectedMerchant] = useState<PublicMerchant | null>(null);
 
   const filteredMerchants = useMemo(() => {
     let result = activeTypes.includes("All")

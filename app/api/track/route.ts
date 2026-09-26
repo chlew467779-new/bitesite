@@ -1,6 +1,7 @@
 /* bitesite/app/api/track/route.ts */
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
+import { isPublicMerchantSlug } from '@/lib/supabase';
 import { detectDevice } from '@/lib/device-detect';
 import { classifyReferrer, EventTypes } from '@/lib/analytics';
 import { allowAnalyticsRequest, getClientIp, isDuplicateAnalyticsEvent } from '@/lib/analytics-rate-limit';
@@ -98,14 +99,10 @@ export async function POST(request: NextRequest) {
 
     // Do not let the public ingest endpoint create analytics for arbitrary
     // slugs. Story-to-merchant events carry the Story slug in eventDetail and
-    // the destination merchant slug in slug, so validate both sides.
+    // the destination merchant slug in slug, so validate both sides. Merchant slugs are checked
+    // with the public client, so only merchants the public can see are counted.
     if (pageType === 'merchant' && slug) {
-      const { data: merchant } = await supabase
-        .from('merchants')
-        .select('slug')
-        .eq('slug', slug)
-        .maybeSingle();
-      if (!merchant) {
+      if (!(await isPublicMerchantSlug(slug))) {
         return NextResponse.json({ error: 'Unknown merchant' }, { status: 400 });
       }
     }
@@ -123,11 +120,11 @@ export async function POST(request: NextRequest) {
     }
 
     if (eventType === EventTypes.STORY_TO_MERCHANT && slug && eventDetail) {
-      const [{ data: merchant }, { data: article }] = await Promise.all([
-        supabase.from('merchants').select('slug').eq('slug', slug).maybeSingle(),
+      const [merchantIsPublic, { data: article }] = await Promise.all([
+        isPublicMerchantSlug(slug),
         supabase.from('articles').select('slug').eq('slug', eventDetail).eq('published', true).maybeSingle(),
       ]);
-      if (!merchant || !article) {
+      if (!merchantIsPublic || !article) {
         return NextResponse.json({ error: 'Invalid story destination' }, { status: 400 });
       }
     }

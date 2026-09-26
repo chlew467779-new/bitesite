@@ -14,7 +14,8 @@ import { FadeIn } from "@/app/components/animations";
 import { isCurrentlyOpen, getTodayKey } from "@/lib/hours";
 import { trackEvent } from "@/lib/analytics";
 import { CUISINE_TYPES } from "@/lib/presets";
-import type { Merchant } from "@/types";
+import type { PublicMerchant } from "@/types";
+import { PUBLIC_MERCHANT_SELECT } from "@/lib/public-merchant-projection.mjs";
 
 function readHomeFilters() {
   if (typeof window === "undefined") {
@@ -31,7 +32,7 @@ function readHomeFilters() {
 }
 
 export default function HomePage() {
-  const [merchants, setMerchants] = useState<Merchant[]>([]);
+  const [merchants, setMerchants] = useState<PublicMerchant[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCuisines, setActiveCuisines] = useState<string[]>(() => readHomeFilters().cuisines);
   const [activeArea, setActiveArea] = useState<string | null>(() => readHomeFilters().area);
@@ -68,14 +69,15 @@ export default function HomePage() {
   }, [activeCuisines, activeArea, activeMore, searchQuery, openNow]);
 
   // Fetch merchants + products on mount. View counts are private (DEC-29) and not read here.
+  // Only the public merchant columns are readable; row level security decides which merchants.
   useEffect(() => {
     async function fetchData() {
       const [{ data: merchantsData, error: merchantsError }, { data: productsData }] = await Promise.all([
         supabase
           .from("merchants")
-          .select("*")
-          .eq("is_published", true)
-          .order("created_at", { ascending: false }),
+          .select(PUBLIC_MERCHANT_SELECT)
+          .order("created_at", { ascending: false })
+          .returns<PublicMerchant[]>(),
         supabase
           .from("products")
           .select("merchant_id, name")
@@ -83,7 +85,7 @@ export default function HomePage() {
       ]);
 
       if (!merchantsError && merchantsData) {
-        setMerchants(merchantsData as Merchant[]);
+        setMerchants(merchantsData);
       }
 
       if (productsData) {

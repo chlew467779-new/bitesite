@@ -6,14 +6,14 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { SafeImage } from "@/app/components/safe-image";
 import { getTodayHours } from "@/lib/hours";
-import type { Merchant } from "@/types";
+import type { PublicMerchant } from "@/types";
 import type { LayoutKey } from "@/lib/layout-registry.mjs";
 import { getLayoutTheme } from "@/lib/layout-theme.mjs";
 
 type LayoutVariant = LayoutKey;
 
 interface RelatedMerchantsProps {
-  merchants: Merchant[];
+  merchants: PublicMerchant[];
   variant?: LayoutVariant;
 }
 

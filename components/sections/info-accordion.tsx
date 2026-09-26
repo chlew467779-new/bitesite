@@ -6,11 +6,11 @@ import { getTodayKey } from "@/lib/hours";
 import { useState } from "react";
 import { ChevronDown, MapPin, Clock, Shirt, Instagram, Facebook, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { Merchant } from "@/types";
+import type { PublicMerchant } from "@/types";
 import type { StyleConfig } from "@/lib/styles";
 
 interface InfoAccordionProps {
-  merchant: Merchant;
+  merchant: PublicMerchant;
   style: StyleConfig;
 }
 
