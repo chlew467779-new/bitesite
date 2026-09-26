@@ -3,13 +3,13 @@
 "use client";
 
 import { GallerySection } from "./gallery-section";
-import { ReviewsSection } from "./reviews-section";
 import { AppointmentSection } from "./appointment-section";
 import { SeasonalSection } from "./seasonal-section";
 import { EventsSection } from "./events-section";
 import { mergeFeatures, type MerchantFeatures } from "@/types";
 import type { Merchant, Product, EventItem } from "@/types";
 import { shouldShowPrice } from "@/lib/menu-display.mjs";
+import { normalizeBookingWhatsApp } from "@/lib/merchant-booking-target.mjs";
 import type { LayoutVariant } from "./gallery-section";
 
 interface TierSectionsProps {
@@ -56,7 +56,8 @@ export function TierSections({
 
   const hasGallery = galleryImages.length > 0;
   const hasEvents = (events?.length ?? 0) > 0;
-  const hasReviews = (merchant.reviews?.length ?? 0) > 0;
+  // Booking only goes to the restaurant's own valid WhatsApp number; there is no fallback.
+  const canBook = resolved.appointment && normalizeBookingWhatsApp(merchant.whatsapp) !== null;
 
   return (
     <>
@@ -72,15 +73,13 @@ export function TierSections({
         <EventsSection events={events || []} variant={variant} id="events-section" />
       )}
 
-      {resolved.reviews && hasReviews && (
-        <ReviewsSection reviews={merchant.reviews || []} variant={variant} id="reviews-section" />
-      )}
+      {/* The legacy review carousel is intentionally not rendered: those entries were
+          never verified customer reviews. An Admin-reviewed Google reviews link replaces it later. */}
 
-      {resolved.appointment && (
+      {canBook && (
         <AppointmentSection
           merchantName={merchant.name}
-          phone={merchant.phone ?? undefined}
-          whatsapp={merchant.whatsapp ?? undefined}
+          whatsapp={merchant.whatsapp}
           variant={variant}
           id="reserve-section"
           slug={merchant.slug}
