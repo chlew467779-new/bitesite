@@ -15,6 +15,7 @@ import {
 import { trackEvent } from "@/lib/analytics";
 import { MenuViewTracker } from "@/components/sections/menu-view-tracker";
 import { shouldShowPrice } from "@/lib/menu-display.mjs";
+import { normalizeBookingWhatsApp } from "@/lib/merchant-booking-target.mjs";
 import Link from "next/link";
 import { getTodayKey, formatOperatingHours, DAYS } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
@@ -32,8 +33,7 @@ export function ElegantLayout({
     { label: "Menu", id: "menu-section", show: resolvedFeatures.menu && products.length > 0 },
     { label: "Hours", id: "hours-section", show: resolvedFeatures.contact },
     { label: "Gallery", id: "gallery-section", show: resolvedFeatures.gallery },
-    { label: "Reserve", id: "reserve-section", show: resolvedFeatures.appointment },
-    { label: "Reviews", id: "reviews-section", show: resolvedFeatures.reviews },
+    { label: "Reserve", id: "reserve-section", show: resolvedFeatures.appointment && normalizeBookingWhatsApp(merchant.whatsapp) !== null },
     { label: "Events", id: "events-section", show: resolvedFeatures.events },
   ].filter((item) => item.show);
 

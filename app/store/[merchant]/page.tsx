@@ -22,8 +22,13 @@ import { PageViewTracker } from "@/app/components/page-view-tracker";
 import { GrabFoodOrderButton } from "@/components/sections/grabfood-order-button";
 import { getSiteUrl } from "@/lib/site-url";
 import { safeJsonLd } from "@/lib/safe-json-ld.mjs";
+import type { Merchant } from "@/types";
 
 export const revalidate = 60;
+
+function withoutLegacyReviews(merchant: Merchant): Merchant {
+  return { ...merchant, reviews: null };
+}
 
 type PageProps = {
   params: Promise<{ merchant: string }>;
@@ -202,6 +207,10 @@ export default async function MerchantPage({ params }: PageProps) {
     });
   }
   const LayoutComponent = layouts[layoutKey];
+  // Legacy merchants.reviews entries are not verified customer reviews. They are removed at the
+  // server → client boundary so their text is not serialised into the page payload at all.
+  const publicMerchant = withoutLegacyReviews(merchant);
+  const publicRelatedMerchants = relatedMerchants.map(withoutLegacyReviews);
 
   const canonicalUrl = `${siteUrl}/store/${merchant.slug}`;
   const dayMap: Record<string, string> = {
@@ -256,7 +265,7 @@ export default async function MerchantPage({ params }: PageProps) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(schemaData) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbSchema) }} />
       <LayoutComponent
-        merchant={merchant}
+        merchant={publicMerchant}
         categories={categories}
         products={products}
         videos={videos}
@@ -265,7 +274,7 @@ export default async function MerchantPage({ params }: PageProps) {
         events={events}
         footerText={settings.footer_text}
       />
-      <RelatedMerchants merchants={relatedMerchants} variant={layoutKey} />
+      <RelatedMerchants merchants={publicRelatedMerchants} variant={layoutKey} />
     </>
   );
 }
