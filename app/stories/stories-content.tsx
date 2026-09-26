@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { StoryFilter } from "@/components/sections/story-filter";
 import { StoryList } from "@/components/sections/story-list";
-import type { Article } from "@/types";
+import type { PublicArticle } from "@/types";
 
-export function StoriesContent({ articles }: { articles: Article[] }) {
+export function StoriesContent({ articles }: { articles: PublicArticle[] }) {
   const [activeCategory, setActiveCategory] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
     return new URLSearchParams(window.location.search).get("category");

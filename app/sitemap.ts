@@ -23,11 +23,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: "weekly" as const,
     priority: 0.8,
   }));
+  // Row level security (private.article_is_public) returns only public Stories.
   const { data: stories } = await supabase
     .from('articles')
-    .select('slug, updated_at')
-    .eq('published', true)
-    .eq('editorial_status', 'published');
+    .select('slug, updated_at');
   const storyUrls = (stories || []).map((story) => ({
     url: `${siteUrl}/stories/${story.slug}`,
     lastModified: story.updated_at ? new Date(story.updated_at) : new Date(),

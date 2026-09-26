@@ -1,10 +1,10 @@
 /* bitesite/components/sections/story-list.tsx */
 
 import { StoryCard } from "./story-card";
-import type { Article } from "@/types";
+import type { PublicArticle } from "@/types";
 
 interface StoryListProps {
-  articles: Article[];
+  articles: PublicArticle[];
   onClearFilter?: () => void;
 }
 

@@ -166,6 +166,13 @@ export interface Article {
   updated_at: string;
 }
 
+/** A Story column the public database roles may read (D1c column grants). */
+export type PublicArticleColumn = (typeof import("@/lib/public-article-projection.mjs").PUBLIC_ARTICLE_COLUMNS)[number];
+
+/** What public Story pages receive: never review notes, reviewer, AI draft copy, editorial status
+ *  or view counts. Select it with PUBLIC_ARTICLE_SELECT. */
+export type PublicArticle = Pick<Article, PublicArticleColumn>;
+
 export interface LayoutProps {
   merchant: PublicMerchant;
   categories: Category[];

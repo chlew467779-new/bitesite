@@ -148,6 +148,19 @@ export async function isPublicMerchantSlug(slug: string): Promise<boolean> {
   return !error && data !== null;
 }
 
+/**
+ * Whether a slug belongs to a Story the public may see (private.article_is_public through row
+ * level security). Service-role analytics routes use it instead of re-deciding visibility.
+ */
+export async function isPublicArticleSlug(slug: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("articles")
+    .select("id")
+    .eq("slug", slug)
+    .maybeSingle();
+  return !error && data !== null;
+}
+
 export async function getEventsByMerchant(merchantId: string): Promise<EventItem[]> {
   const { data, error } = await supabase
     .from("events")

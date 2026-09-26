@@ -3,16 +3,17 @@ import { FadeIn } from "@/app/components/animations";
 import { PageViewTracker } from "@/app/components/page-view-tracker";
 import { StoriesContent } from "./stories-content";
 import { supabase } from "@/lib/supabase";
-import type { Article } from "@/types";
+import type { PublicArticle } from "@/types";
+import { PUBLIC_ARTICLE_SELECT } from "@/lib/public-article-projection.mjs";
 
 export const revalidate = 300;
 
 export default async function StoriesPage() {
   const { data, error } = await supabase
     .from("articles")
-    .select("*")
-    .eq("published", true)
-    .order("created_at", { ascending: false });
+    .select(PUBLIC_ARTICLE_SELECT)
+    .order("created_at", { ascending: false })
+    .returns<PublicArticle[]>();
 
   if (error) {
     throw new Error("Unable to load Stories right now.");
@@ -32,7 +33,7 @@ export default async function StoriesPage() {
         </FadeIn>
       </section>
 
-      <StoriesContent articles={(data || []) as Article[]} />
+      <StoriesContent articles={data || []} />
       <Footer />
     </main>
   );

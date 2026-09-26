@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
+import { isPublicArticleSlug } from "@/lib/supabase";
 import { allowAnalyticsRequest, getClientIp, isDuplicateAnalyticsEvent } from "@/lib/analytics-rate-limit";
 
 const SLUG_PATTERN = /^[a-z0-9-]{1,200}$/;
@@ -32,13 +33,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, deduplicated: true }, { status: 202 });
     }
 
-    const { data: article } = await supabase
-      .from("articles")
-      .select("slug")
-      .eq("slug", slug)
-      .eq("published", true)
-      .maybeSingle();
-    if (!article) {
+    // Checked with the public client so only Stories the public can see are counted.
+    if (!(await isPublicArticleSlug(slug))) {
       return NextResponse.json({ error: "Unknown story" }, { status: 400 });
     }
 

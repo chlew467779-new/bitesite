@@ -1,7 +1,7 @@
 /* bitesite/app/api/track/route.ts */
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
-import { isPublicMerchantSlug } from '@/lib/supabase';
+import { isPublicArticleSlug, isPublicMerchantSlug } from '@/lib/supabase';
 import { detectDevice } from '@/lib/device-detect';
 import { classifyReferrer, EventTypes } from '@/lib/analytics';
 import { allowAnalyticsRequest, getClientIp, isDuplicateAnalyticsEvent } from '@/lib/analytics-rate-limit';
@@ -108,23 +108,17 @@ export async function POST(request: NextRequest) {
     }
 
     if (pageType === 'story' && eventType === 'page_view' && slug) {
-      const { data: article } = await supabase
-        .from('articles')
-        .select('slug')
-        .eq('slug', slug)
-        .eq('published', true)
-        .maybeSingle();
-      if (!article) {
+      if (!(await isPublicArticleSlug(slug))) {
         return NextResponse.json({ error: 'Unknown story' }, { status: 400 });
       }
     }
 
     if (eventType === EventTypes.STORY_TO_MERCHANT && slug && eventDetail) {
-      const [merchantIsPublic, { data: article }] = await Promise.all([
+      const [merchantIsPublic, articleIsPublic] = await Promise.all([
         isPublicMerchantSlug(slug),
-        supabase.from('articles').select('slug').eq('slug', eventDetail).eq('published', true).maybeSingle(),
+        isPublicArticleSlug(eventDetail),
       ]);
-      if (!merchantIsPublic || !article) {
+      if (!merchantIsPublic || !articleIsPublic) {
         return NextResponse.json({ error: 'Invalid story destination' }, { status: 400 });
       }
     }
