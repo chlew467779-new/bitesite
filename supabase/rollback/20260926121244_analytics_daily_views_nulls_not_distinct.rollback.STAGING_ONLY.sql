@@ -8,6 +8,8 @@
 -- It only restores the old constraint. It does NOT move archived rows back:
 -- they are over-counting duplicates. The archive table is kept (not dropped)
 -- so nothing is lost; dropping it needs CH approval.
+-- The migration ledger (supabase_migrations.schema_migrations) is left
+-- unchanged, as in the other rollbacks.
 --
 -- Set the switch below to 'yes' deliberately before running.
 -- =====================================================================
@@ -27,7 +29,5 @@ alter table public.merchant_daily_views drop constraint merchant_daily_views_buc
 alter table public.merchant_daily_views
   add constraint merchant_daily_views_slug_page_type_view_date_device_type_c_key
   unique (slug, page_type, view_date, device_type, country, city, os, browser, referrer_type, event_type);
-
-delete from supabase_migrations.schema_migrations where version = '20260926121244';
 
 commit;
