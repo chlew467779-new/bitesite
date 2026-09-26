@@ -1,5 +1,5 @@
 -- =====================================================================
--- ROLLBACK of 20260926112649_article_public_projection.sql — STAGING ONLY.
+-- ROLLBACK of 20260926131040_article_public_projection.sql — STAGING ONLY.
 -- =====================================================================
 -- WARNING: this re-opens every articles column to anon / authenticated,
 -- including review notes, reviewer, AI draft copy and view counts, and makes

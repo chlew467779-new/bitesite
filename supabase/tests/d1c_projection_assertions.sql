@@ -1,7 +1,7 @@
 -- =====================================================================
 -- D1c Story projection ASSERTIONS — read-only catalog checks (no writes,
 -- no role switching). Safe on local, staging and production after
--- migration 20260926112649_article_public_projection.sql.
+-- migration 20260926131040_article_public_projection.sql.
 -- Returns 'ALL D1C PROJECTION ASSERTIONS PASSED' or raises naming what is wrong.
 -- =====================================================================
 do $$

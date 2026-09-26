@@ -1,7 +1,7 @@
 -- =====================================================================
 -- D1c Story projection: BEHAVIOUR tests. Local or staging only.
 -- Needs supabase/staging/10_synthetic_seed.sql and migrations up to
--- 20260926112649_article_public_projection.sql. Everything runs inside one
+-- 20260926131040_article_public_projection.sql. Everything runs inside one
 -- transaction that is ROLLED BACK at the end. All rows are synthetic (zz-d1c-*).
 -- Any failure raises an exception that names the failing check.
 -- =====================================================================
