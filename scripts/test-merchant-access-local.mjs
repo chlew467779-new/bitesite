@@ -37,6 +37,9 @@ const call = async (method, path, token, body) => {
   return { status: res.status, json };
 };
 const withId = (path, id) => `${path}${path.includes("?") ? "&" : "?"}merchantId=${id}`;
+// D2-B: profile writes go through the field save contract; the old PUT /me is retired (410).
+const patchTagline = (token, id, expected, value) => call("PATCH", `/api/merchant/restaurants/${id}/fields`, token,
+  { requestId: crypto.randomUUID(), patches: [{ path: "profile.tagline", expected: { exists: true, value: expected }, value }] });
 const password = () => `${crypto.randomUUID()}Aa1!`;
 
 const MERCHANTS = {
@@ -88,7 +91,8 @@ async function setup() {
 
 const taglineOf = async (key) => (await admin.from("merchants").select("tagline").eq("id", ids[key]).single()).data?.tagline;
 const storyBody = (extra = {}) => ({ title: "ZZ M1A story", content: "Synthetic facts.", rights_declared: true, ...extra });
-const uploadBody = { kind: "merchant", contentType: "image/webp", size: 1000 };
+// D2-B: profile image tickets are closed (M6b); Story image tickets use the same access rules.
+const uploadBody = { kind: "story", contentType: "image/webp", size: 1000 };
 
 try {
   await setup();
@@ -108,6 +112,8 @@ try {
   expect("PUT /me -> 404", r.status === 404, `status ${r.status}`);
   r = await call("PUT", withId("/api/merchant/me", ids.a), tokens.none, { tagline: "hijack" });
   expect("PUT someone's merchant -> 404", r.status === 404, `status ${r.status}`);
+  r = await patchTagline(tokens.none, ids.a, "tagline a", "hijack");
+  expect("field save on someone's merchant -> 404", r.status === 404, `status ${r.status}`);
   r = await call("POST", "/api/merchant/story-submissions", tokens.none, storyBody());
   expect("Story POST -> 404", r.status === 404, `status ${r.status}`);
 
@@ -119,9 +125,13 @@ try {
   expect("Owner A GET Owner B -> 404", r.status === 404 && !JSON.stringify(r.json).includes(MERCHANTS.b.slug), JSON.stringify(r.json));
   r = await call("PUT", withId("/api/merchant/me", ids.b), tokens.ownerA, { tagline: "written by A" });
   expect("Owner A PUT Owner B -> 404", r.status === 404, `status ${r.status}`);
+  r = await patchTagline(tokens.ownerA, ids.b, "tagline b", "written by A");
+  expect("Owner A field save on Owner B -> 404", r.status === 404, `status ${r.status}`);
   expect("…and Owner B's row is unchanged", (await taglineOf("b")) === "tagline b", "row changed");
-  r = await call("PUT", withId("/api/merchant/me", ids.a), tokens.ownerA, { tagline: "A saved" });
-  expect("Owner A PUT own -> 200", r.status === 200 && r.json?.merchant?.tagline === "A saved", JSON.stringify(r.json));
+  r = await call("PUT", withId("/api/merchant/me", ids.a), tokens.ownerA, { tagline: "old form" });
+  expect("Owner A old PUT own -> 410 retired", r.status === 410 && r.json?.code === "LEGACY_WRITE_RETIRED", JSON.stringify(r.json));
+  r = await patchTagline(tokens.ownerA, ids.a, "tagline a", "A saved");
+  expect("Owner A field save own -> 200", r.status === 200 && r.json?.data?.values?.["profile.tagline"]?.value === "A saved", JSON.stringify(r.json));
   expect("…and the row is updated", (await taglineOf("a")) === "A saved", "row not updated");
   r = await call("GET", withId("/api/merchant/story-submissions", ids.a), tokens.ownerB);
   expect("Owner B lists Owner A's Stories -> 404", r.status === 404, `status ${r.status}`);
@@ -142,14 +152,14 @@ try {
   expect("…and neither row changed", (await taglineOf("c")) === "tagline c" && (await taglineOf("d")) === "tagline d", "row changed");
   r = await call("POST", "/api/merchant/story-submissions", tokens.multi, storyBody());
   expect("Story POST without ID -> 409", r.status === 409 && r.json?.code === "MERCHANT_CONTEXT_REQUIRED", JSON.stringify(r.json));
-  r = await call("PUT", withId("/api/merchant/me", ids.d), tokens.multi, { tagline: "D saved" });
-  expect("PUT with ID -> only D changes", r.status === 200 && (await taglineOf("d")) === "D saved" && (await taglineOf("c")) === "tagline c", JSON.stringify(r.json));
+  r = await patchTagline(tokens.multi, ids.d, "tagline d", "D saved");
+  expect("field save for D -> only D changes", r.status === 200 && (await taglineOf("d")) === "D saved" && (await taglineOf("c")) === "tagline c", JSON.stringify(r.json));
 
   console.log("5) suspended restaurant");
   r = await call("GET", "/api/merchant/me", tokens.suspended);
   expect("GET /me -> readable, restriction suspended", r.status === 200 && r.json?.merchant?.restriction === "suspended", JSON.stringify(r.json));
-  r = await call("PUT", withId("/api/merchant/me", ids.s), tokens.suspended, { tagline: "should not save" });
-  expect("PUT -> 403 MERCHANT_SUSPENDED", r.status === 403 && r.json?.code === "MERCHANT_SUSPENDED", JSON.stringify(r.json));
+  r = await patchTagline(tokens.suspended, ids.s, "tagline s", "should not save");
+  expect("field save -> 403 MERCHANT_SUSPENDED", r.status === 403 && r.json?.error?.code === "MERCHANT_SUSPENDED", JSON.stringify(r.json));
   expect("…and the row is unchanged", (await taglineOf("s")) === "tagline s", "row changed");
   r = await call("POST", withId("/api/merchant/story-submissions", ids.s), tokens.suspended, storyBody());
   expect("Story POST -> 403", r.status === 403, `status ${r.status}`);
@@ -162,8 +172,8 @@ try {
 
   console.log("6) restaurant suspended during a session");
   await admin.from("merchants").update({ platform_status: "SUSPENDED" }).eq("id", ids.a);
-  r = await call("PUT", withId("/api/merchant/me", ids.a), tokens.ownerA, { tagline: "after suspension" });
-  expect("PUT after Admin suspends the restaurant is refused", r.status === 403 && (await taglineOf("a")) === "A saved", JSON.stringify(r.json));
+  r = await patchTagline(tokens.ownerA, ids.a, "A saved", "after suspension");
+  expect("field save after Admin suspends the restaurant is refused", r.status === 403 && (await taglineOf("a")) === "A saved", JSON.stringify(r.json));
 } catch (error) {
   failed++;
   console.error(`  FAIL setup/run — ${error instanceof Error ? error.message : String(error)}`);

@@ -68,8 +68,12 @@ assert.doesNotMatch(migration, /set_config\(\s*'app\.(allow|conversion|state)/i,
 
 /* ── Admin gets a clear refusal instead of a raw 500 ───────────────────────────────────────── */
 
+// D2-B: the Admin route no longer writes publication state. The old whole-form PUT (which could
+// set is_published/platform_status/business_status) is retired, and create only makes a hidden
+// legacy draft; state changes need dedicated governance operations.
 const adminCrud = await read("app/api/admin/merchants-crud/route.ts");
-assert.match(adminCrud, /LEGACY_STATE_WRITE_FORBIDDEN/, "the Admin API recognises the managed-state refusal");
-assert.equal((adminCrud.match(/return merchantWriteError\(error\);/g) || []).length, 2, "insert and update both map it");
+assert.match(adminCrud, /export async function PUT[\s\S]*?return retired\(/, "the old whole-form PUT is retired");
+assert.match(adminCrud, /\.insert\(\{ name, slug, is_published: false, platform_status: 'DRAFT' \}\)/, "create writes only a hidden draft");
+assert.doesNotMatch(adminCrud, /\.update\(|business_status|review_status|listing_visibility|platform_restriction/, "no other state writes");
 
 console.log("merchant state wiring checks passed");
