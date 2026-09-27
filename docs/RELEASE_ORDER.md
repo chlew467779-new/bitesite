@@ -104,6 +104,6 @@ For each released step retain: application SHA/deployment URL, exact executed SQ
 ## 11. Three editable drafts per account
 
 - Migration: `20260927170000_merchant_draft_limit.sql`, after `20260927160000` (and #64 `20260927090355`). Replaces `merchant_restaurant_create` with the same body plus the cap.
-- Application: the create route returns `DRAFT_LIMIT` with a clear message.
+- Application: the create route returns `DRAFT_LIMIT` with a clear message; the listing route accepts `discard` (merchant_draft_discard) and the dashboard offers "Discard draft".
 - Local verification: `supabase/tests/draft_limit_behavior_tests.sql`, `supabase/tests/merchant_password_onboarding.sql` (unchanged behaviour otherwise), `npm run test:review`.
 - Rollback FIRST (before feedback): `supabase/rollback/20260927170000_merchant_draft_limit.rollback.STAGING_ONLY.sql`.

@@ -30,4 +30,7 @@ assert.match(fields, /tagErrors\(parsed.patches\)/);
 const draftLimit = (await readFile(new URL("../supabase/migrations/20260927170000_merchant_draft_limit.sql", import.meta.url), "utf8")).replace(/\r\n/g, "\n");
 assert.match(draftLimit, /review_status in \('draft', 'rejected'\)\) >= 3 then\n\s*return jsonb_build_object\('code', 'DRAFT_LIMIT'\);/, "fourth editable draft refused");
 assert.match((await readFile(new URL("../app/api/merchant/restaurants/route.ts", import.meta.url), "utf8")), /data\?\.code === 'DRAFT_LIMIT'/, "the create route explains the limit");
+assert.match(draftLimit, /mer\.platform_restriction <> 'archived'\) >= 3/, "discarded (archived) drafts do not count");
+assert.match(draftLimit, /m\.first_published_at is not null or m\.review_status not in \('draft', 'rejected'\)/, "only never-public drafts can be discarded");
+assert.match((await readFile(new URL("../app/api/merchant/restaurants/[merchantId]/listing/route.ts", import.meta.url), "utf8")), /supabase\.rpc\('merchant_draft_discard', actor\)/);
 console.log('merchant review checks passed');

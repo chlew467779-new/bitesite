@@ -4,7 +4,12 @@ import { useEffect, useRef, useState } from 'react';
 import { CHECK_LABELS, type ListingAction, type ListingCheck, type ListingState } from '@/lib/merchant-review-core.mjs';
 import type { SectionHandle } from '@/app/components/section-save/use-section-save';
 
-const titles: Record<ListingAction, string> = { submit: 'Submit for review', withdraw: 'Withdraw', publish: 'Publish', hide: 'Hide' };
+const titles: Record<ListingAction, string> = { submit: 'Submit for review', withdraw: 'Withdraw', publish: 'Publish', hide: 'Hide', discard: 'Discard draft' };
+const confirmText: Partial<Record<ListingAction, { title: string; body: string }>> = {
+  publish: { title: 'Publish your restaurant?', body: 'Your details and menu will be visible to everyone. Future edits to your description, contact details and menu appear immediately.' },
+  hide: { title: 'Hide your restaurant?', body: 'Visitors will no longer see your restaurant page. You can publish it again later.' },
+  discard: { title: 'Discard this draft?', body: 'It is archived and becomes read-only; it no longer counts toward your three drafts. Ask the BiteSite team through Feedback if you need it back.' },
+};
 const btn = 'min-h-11 w-full rounded-lg border border-[#2C3E2D] px-4 py-2 text-sm font-medium disabled:opacity-50 sm:w-auto';
 type Pending = { requestId: string; action: ListingAction };
 type Props = {
@@ -35,6 +40,8 @@ export function ListingPanel({ merchantId, state, getHeaders, refresh, onState, 
       if (!headers) { setMessage('Your session has ended or changed. Sign in again as the same account, then retry.'); return; }
       const response = await fetch(`/api/merchant/restaurants/${encodeURIComponent(merchantId)}/listing`, { method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify(pending) });
       const body = await response.json().catch(() => null);
+      // Discard answers without a listing state: the restaurant is archived now, so reload the status.
+      if (pending.action === 'discard' && response.ok && body?.data) { setUnknown(null); setMessage('Draft discarded. It is archived and read-only now.'); await refresh(); return; }
       if (response.status >= 500 || !body || (response.ok && !body.data?.state)) { setUnknown(pending); setMessage('The result is not confirmed. Retry safely sends the same request.'); return; }
       setUnknown(null);
       if (!response.ok) { setMessage((typeof body.error === 'string' ? body.error : body.error?.message) || 'Could not complete this action.'); await refresh(); return; }
@@ -47,7 +54,7 @@ export function ListingPanel({ merchantId, state, getHeaders, refresh, onState, 
   };
   const act = (action: ListingAction) => {
     if (!beforeAction()) { setMessage('Save all unfinished changes and finish any pending requests before continuing.'); return; }
-    if (action === 'publish' || action === 'hide') setConfirm(action);
+    if (action === 'publish' || action === 'hide' || action === 'discard') setConfirm(action);
     else void send({ requestId: crypto.randomUUID(), action });
   };
   if (state.stateSource === 'legacy') return <p className="text-sm text-[#6B6560]">Your listing is managed by the BiteSite team.</p>;
@@ -63,12 +70,13 @@ export function ListingPanel({ merchantId, state, getHeaders, refresh, onState, 
       {state.allowedActions.map((action) => <button type="button" key={action} disabled={busy || !!unknown} className={`${btn} ${action === 'submit' || action === 'publish' ? 'bg-[#2C3E2D] text-white' : ''}`} onClick={() => act(action)}>{titles[action]}</button>)}
       {unknown && <button type="button" className={btn} disabled={busy} onClick={() => void send(unknown)}>Retry {titles[unknown.action].toLowerCase()}</button>}
       <button type="button" className={btn} disabled={busy || !!unknown} onClick={() => void refresh()}>Refresh status</button>
+      {state.basicsEditable && !state.firstPublishedAt && <button type="button" className={`${btn} border-red-700 text-red-700`} disabled={busy || !!unknown} onClick={() => act('discard')}>{titles.discard}</button>}
     </div>
     {message && <p className="mt-3 text-sm" role="status">{message}</p>}
     <dialog ref={dialog} onCancel={() => setConfirm(null)} className="fixed inset-x-0 bottom-0 top-auto m-0 max-h-[85dvh] w-full max-w-none rounded-t-2xl bg-white p-6 text-[#2C3E2D] backdrop:bg-black/40 sm:inset-0 sm:m-auto sm:max-w-md sm:rounded-2xl" aria-labelledby="listing-confirm-title">
-      <h3 id="listing-confirm-title" className="text-xl font-semibold">{confirm === 'publish' ? 'Publish your restaurant?' : 'Hide your restaurant?'}</h3>
-      <p className="mt-2 text-sm">{confirm === 'publish' ? 'Your details and menu will be visible to everyone. Future edits to your description, contact details and menu appear immediately.' : 'Visitors will no longer see your restaurant page. You can publish it again later.'}</p>
-      <div className="mt-5 flex flex-col gap-2"><button type="button" className={`${btn} bg-[#2C3E2D] text-white`} onClick={() => { if (confirm && beforeAction()) void send({ requestId: crypto.randomUUID(), action: confirm }); }}>{confirm ? titles[confirm] : 'Confirm'}</button><button type="button" className={btn} onClick={() => setConfirm(null)}>Cancel</button></div>
+      <h3 id="listing-confirm-title" className="text-xl font-semibold">{confirm ? confirmText[confirm]?.title : ''}</h3>
+      <p className="mt-2 text-sm">{confirm ? confirmText[confirm]?.body : ''}</p>
+      <div className="mt-5 flex flex-col gap-2"><button type="button" className={`${btn} ${confirm === 'discard' ? 'bg-red-700 border-red-700' : 'bg-[#2C3E2D]'} text-white`} onClick={() => { if (confirm && beforeAction()) void send({ requestId: crypto.randomUUID(), action: confirm }); }}>{confirm ? titles[confirm] : 'Confirm'}</button><button type="button" className={btn} onClick={() => setConfirm(null)}>Cancel</button></div>
     </dialog>
   </section>;
 }

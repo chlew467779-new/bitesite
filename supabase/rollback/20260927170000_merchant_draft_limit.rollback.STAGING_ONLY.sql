@@ -7,6 +7,8 @@ do $$ begin
     raise exception 'Rollback switch is off. Edit deliberately to allow this rollback.';
   end if;
 end $$;
+-- Discarded drafts stay archived (Admin can restore them).
+drop function if exists public.merchant_draft_discard(text, text, uuid, uuid);
 create or replace function public.merchant_restaurant_create(p_actor_user_id uuid, p_name text, p_request_id uuid)
 returns jsonb language plpgsql security invoker set search_path = '' as $$
 declare m uuid; membership uuid; previous private.merchant_onboarding_requests; restaurant_name text := btrim(p_name);

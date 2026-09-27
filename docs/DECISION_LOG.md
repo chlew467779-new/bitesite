@@ -169,4 +169,5 @@ A new feature idea must not silently become a decision. Add it here only after C
 ## SYNC-053 — Three editable drafts per account (implements FINAL_AUDIT M2-A, Claude 2026-09-27)
 
 - `merchant_restaurant_create` refuses a fourth self-service restaurant while the account already owns three in draft or rejected (`DRAFT_LIMIT`, 409 with an explanation). Submitted (pending) and approved restaurants do not count; retries of earlier requests still return their draft.
+- The Owner can discard a self-service restaurant that was never public and is in draft or changes requested (dashboard "Discard draft", confirmed). It is archived, not deleted (read-only, Admin can restore) and no longer counts toward the three.
 - Still open from M2-A (Decision needed, CH): rights declaration and terms version at creation. There is no terms page yet; the wording is a legal decision.

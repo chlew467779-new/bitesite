@@ -44,7 +44,10 @@ export async function POST(request: NextRequest, { params }: Context) {
   const parsed = parseListingAction(body);
   if (!parsed.ok) return errorResponse(parsed.status, parsed.code, parsed.message);
   const actor = { p_actor_type: 'owner', p_actor_id: auth.user.id, p_merchant_id: merchantId, p_request_id: parsed.requestId };
-  const { data, error } = await supabase.rpc('merchant_listing_apply', { ...actor, p_action: parsed.action });
+  // Discarding a never-public draft archives it (merchant_draft_discard); the rest is merchant_listing_apply.
+  const { data, error } = parsed.action === 'discard'
+    ? await supabase.rpc('merchant_draft_discard', actor)
+    : await supabase.rpc('merchant_listing_apply', { ...actor, p_action: parsed.action });
   if (error) return rpcFailure(error, `merchant_listing_${parsed.action}`, { requestId: parsed.requestId });
   if (data?.status === 'applied' && (parsed.action === 'publish' || parsed.action === 'hide')) {
     revalidatePath('/store/' + data.slug);

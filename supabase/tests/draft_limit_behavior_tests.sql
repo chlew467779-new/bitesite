@@ -44,6 +44,32 @@ begin
   set local role service_role;
   r := public.merchant_restaurant_create(u, 'ZZ DL Five', gen_random_uuid());
   perform dl_test.ok(r ->> 'code' = 'DRAFT_LIMIT', 'rejected restaurants count as editable');
+
+  -- Discard: archived (not deleted), frees a place, replayable; only never-public drafts.
+  r := public.merchant_draft_discard('owner', u::text, first_id, '00000000-0000-4000-8000-0000000d1d01');
+  perform dl_test.ok(r ->> 'status' = 'applied' and (select platform_restriction from public.merchants where id = first_id) = 'archived', 'discarded = archived');
+  perform dl_test.ok((public.merchant_draft_discard('owner', u::text, first_id, '00000000-0000-4000-8000-0000000d1d01') ->> 'replayed')::boolean, 'discard replay');
+  perform dl_test.ok(exists (select 1 from public.merchants where id = first_id), 'not deleted');
+  -- Two, Three and Four are still editable drafts: still full. Discard Four, then a place is free.
+  perform dl_test.ok(public.merchant_restaurant_create(u, 'ZZ DL Five', gen_random_uuid()) ->> 'code' = 'DRAFT_LIMIT', 'still three editable drafts');
+  perform public.merchant_draft_discard('owner', u::text, (select id from public.merchants where name = 'ZZ DL Four'), gen_random_uuid());
+  r := public.merchant_restaurant_create(u, 'ZZ DL Five', gen_random_uuid());
+  perform dl_test.ok(r ? 'id', 'a discarded draft frees a place');
+  begin
+    perform public.merchant_draft_discard('owner', '00000000-0000-4000-8000-0000000d1a99', (r ->> 'id')::uuid, gen_random_uuid());
+    raise exception 'DRAFT LIMIT TEST FAILED: foreign Owner discarded';
+  exception when others then
+    if sqlerrm not like 'RESOURCE_NOT_FOUND%' then raise; end if;
+  end;
+  reset role;
+  update public.merchants set review_status = 'approved' where id = (r ->> 'id')::uuid;
+  set local role service_role;
+  begin
+    perform public.merchant_draft_discard('owner', u::text, (r ->> 'id')::uuid, gen_random_uuid());
+    raise exception 'DRAFT LIMIT TEST FAILED: approved restaurant discarded';
+  exception when others then
+    if sqlerrm not like 'LISTING_ACTION_NOT_ALLOWED%' then raise; end if;
+  end;
 end $$;
 
 reset role;

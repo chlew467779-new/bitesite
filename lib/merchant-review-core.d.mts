@@ -1,5 +1,5 @@
 import type { MenuSnapshot } from './merchant-menu-core.mjs';
-export type ListingAction = 'submit' | 'withdraw' | 'publish' | 'hide';
+export type ListingAction = 'submit' | 'withdraw' | 'publish' | 'hide' | 'discard';
 export type ListingCheck = 'name' | 'address' | 'contact' | 'category' | 'dish';
 export interface ListingState {
   stateSource: 'legacy' | 'managed'; reviewStatus: string; listingVisibility: string;
