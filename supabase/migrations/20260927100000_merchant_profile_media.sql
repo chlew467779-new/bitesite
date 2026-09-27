@@ -17,7 +17,7 @@
 -- 4. public.merchant_media_read(): current logo/cover for the Owner or Admin editor.
 --
 -- Objects are never deleted here (no orphan clean-up); existing image URLs are unchanged.
--- Local first; staging and production each need CH approval, after 20260927090000.
+-- Local first; staging and production each need CH approval, after 20260927093000.
 -- Rollback: supabase/rollback/20260927100000_merchant_profile_media.rollback.STAGING_ONLY.sql
 -- =====================================================================
 begin;

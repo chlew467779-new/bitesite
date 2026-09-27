@@ -1,6 +1,6 @@
 -- =====================================================================
 -- D2-C Admin governance: BEHAVIOUR tests. Local or staging only.
--- Needs migrations through 20260927090000_merchant_governance. One transaction, ROLLED BACK.
+-- Needs migrations through 20260927093000_merchant_governance. One transaction, ROLLED BACK.
 -- Synthetic rows only (zz-d2c-gov-*).
 -- =====================================================================
 begin;
