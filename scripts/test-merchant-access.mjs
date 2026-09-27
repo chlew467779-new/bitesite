@@ -146,6 +146,7 @@ assert.deepEqual(merchantRoutes.sort(), [
   "app/api/merchant/me/route.ts",
   "app/api/merchant/media/upload-url/route.ts",
   "app/api/merchant/profile-change-requests/route.ts",
+  "app/api/merchant/restaurants/route.ts",
   "app/api/merchant/story-submissions/route.ts",
 ].sort(), "the merchant route list is known; a new route must be added to these checks");
 
