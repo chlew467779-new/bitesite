@@ -86,3 +86,10 @@ For each released step retain: application SHA/deployment URL, exact executed SQ
 - Deploy the application after the migration: the store page reads `merchant_slug_history` for redirects; the Admin editor gains the Web address panel.
 - Local verification: `supabase/tests/slug_history_behavior_tests.sql`, `npm run test:slug`, rename in the browser and old address redirect.
 - Rollback FIRST (before M2-B): `supabase/rollback/20260927140000_merchant_slug_history.rollback.STAGING_ONLY.sql`. Old addresses stop redirecting; current slugs stay.
+
+## 9. Dish photos
+
+- Migration: `20260927150000_merchant_dish_media.sql`, after `20260927140000`. Extends `merchant_media_uploads` (slot `dish`, `product_id`), adds dish ticket/bind RPCs and replaces `merchant_media_ticket` (logo/cover limit counts logo/cover only).
+- Deploy after the migration: Owner routes `/api/merchant/restaurants/[id]/menu/dish-photo` (+ `/ticket`) and the menu editor photo control.
+- Local verification: `supabase/tests/dish_media_behavior_tests.sql`, `npm run test:dish-media`, HTTP smoke with a real upload (ticket, signed upload, bind, fake image refused, conflict, remove).
+- Rollback FIRST (before slug history): `supabase/rollback/20260927150000_merchant_dish_media.rollback.STAGING_ONLY.sql`.

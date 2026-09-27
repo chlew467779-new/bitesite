@@ -146,3 +146,9 @@ A new feature idea must not silently become a decision. Add it here only after C
 - An address another restaurant used before can never be taken (database guard on every write path), so old links never point to a different restaurant. Changing back to an own former address is allowed.
 - Articles (FK ON UPDATE CASCADE), Story submissions, assisted content requests and content cycles follow the rename. Analytics rows keep the address that was visited at the time (known limit: per-restaurant analytics split across addresses).
 - Owners cannot rename; they ask the BiteSite team. Scope: local only.
+
+## SYNC-050 — Owner dish photos (RECOMMENDATION, Claude 2026-09-27)
+
+- Owners set or remove a dish photo from the dish editor, through the same checked flow as logo/cover (server-chosen path, signed upload, server checks size and real image type, compare-and-set bind, request-id replay). A new dish gets a photo after it is saved.
+- Photos are resized on the phone to at most 1200 px WebP. Up to 60 dish uploads per restaurant per hour; they do not use the 20 logo/cover uploads.
+- Dish photo changes on a public restaurant show immediately (same as other menu edits); a restaurant waiting for review is frozen. Stored objects are not deleted when a photo is replaced (no orphan clean-up yet).

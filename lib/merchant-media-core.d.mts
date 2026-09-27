@@ -15,3 +15,9 @@ export declare function sniffImageType(bytes: Uint8Array | ArrayBuffer | null | 
 export declare function mediaObjectPath(merchantId: string, slot: MediaSlot, contentType: MediaContentType, uuid: string): string;
 export declare function mapMediaRpcError(error: unknown): { status: number; code: string; message: string };
 export declare function mediaBindResponse(result: unknown, requestId: string): { status: number; body: Record<string, unknown> };
+
+export declare const DISH_RESIZE: Readonly<{ maxWidthOrHeight: number }>;
+export declare function parseDishTicketRequest(body: unknown): { ok: true; productId: string; contentType: MediaContentType } | Invalid;
+export declare function parseDishBindRequest(body: unknown): { ok: true; requestId: string; productId: string; uploadId: string | null; expected: string | null } | Invalid;
+export declare function dishObjectPath(merchantId: string, productId: string, contentType: MediaContentType, uuid: string): string;
+export declare function mapDishMediaRpcError(error: unknown): { status: number; code: string; message: string };

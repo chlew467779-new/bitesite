@@ -2,7 +2,8 @@
 'use client';
 
 /**
- * Logo / cover photo control (M6b), shared by the Admin editor and the Merchant dashboard.
+ * Logo / cover photo control (M6b), shared by the Admin editor and the Merchant dashboard, and
+ * dish photos (slot 'dish' + productId; apiBase .../menu/dish-photo).
  * Mobile first: one large "Choose photo" button opens the phone's photo library or camera; the
  * photo is resized and converted to WebP on the device before upload (less data, faster).
  *
@@ -16,10 +17,12 @@ import type { SectionHandle } from '@/app/components/section-save/use-section-sa
 import { useEffect, useRef, useState } from 'react';
 import imageCompression from 'browser-image-compression';
 import { supabase } from '@/lib/supabase';
-import { MEDIA_RESIZE, type MediaSlot } from '@/lib/merchant-media-core.mjs';
+import { DISH_RESIZE, MEDIA_RESIZE, type MediaSlot } from '@/lib/merchant-media-core.mjs';
 
 type Props = {
-  slot: MediaSlot;
+  slot: MediaSlot | 'dish';
+  /** Required for slot 'dish'. */
+  productId?: string;
   label: string;
   value: string | null;
   /** e.g. `/api/admin/merchants/<id>/media` or `/api/merchant/restaurants/<id>/media` */
@@ -32,7 +35,7 @@ type Props = {
 };
 
 type Stage = 'idle' | 'preparing' | 'uploading' | 'checking' | 'removing';
-type PendingBind = { requestId: string; slot: MediaSlot; uploadId: string | null; expected: string | null };
+type PendingBind = { requestId: string; uploadId: string | null; expected: string | null } & ({ slot: MediaSlot } | { productId: string });
 
 const STAGE_TEXT: Record<Stage, string> = {
   idle: '',
@@ -61,7 +64,9 @@ async function json(response: Response): Promise<ApiReply | null> {
   return response.json().catch(() => null);
 }
 
-export function ProfileImageField({ slot, label, value, apiBase, getHeaders, onChanged, disabled, register }: Props) {
+export function ProfileImageField({ slot, productId, label, value, apiBase, getHeaders, onChanged, disabled, register }: Props) {
+  const key = slot === 'dish' ? `dish-${productId}` : slot;
+  const target = (): { slot: MediaSlot } | { productId: string } => (slot === 'dish' ? { productId: productId as string } : { slot });
   const [stage, setStage] = useState<Stage>('idle');
   const [message, setMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -69,10 +74,10 @@ export function ProfileImageField({ slot, label, value, apiBase, getHeaders, onC
   const [confirmRemove, setConfirmRemove] = useState(false);
   const busyRef = useRef(false);
   useEffect(() => {
-    register?.('photo-' + slot, { status: () => ({ dirty: false, pending: stage !== 'idle', unknown: !!unknown, conflicts: false }), save: async () => 'skipped', discard: () => {} });
-    return () => register?.('photo-' + slot, null);
-  }, [register, slot, stage, unknown]);
-  const inputId = `photo-${slot}`;
+    register?.('photo-' + key, { status: () => ({ dirty: false, pending: stage !== 'idle', unknown: !!unknown, conflicts: false }), save: async () => 'skipped', discard: () => {} });
+    return () => register?.('photo-' + key, null);
+  }, [register, key, stage, unknown]);
+  const inputId = `photo-${key}`;
 
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
 
@@ -122,21 +127,21 @@ export function ProfileImageField({ slot, label, value, apiBase, getHeaders, onC
   const choose = (file: File) => run(async (headers) => {
     setStage('preparing');
     setPreview(URL.createObjectURL(file));
-    const resized = await imageCompression(file, { ...MEDIA_RESIZE[slot], initialQuality: 0.82, fileType: 'image/webp', useWebWorker: true });
+    const resized = await imageCompression(file, { ...(slot === 'dish' ? DISH_RESIZE : MEDIA_RESIZE[slot]), initialQuality: 0.82, fileType: 'image/webp', useWebWorker: true });
     const ticketResponse = await fetch(`${apiBase}/ticket`, {
       method: 'POST',
       headers: { ...headers, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slot, contentType: 'image/webp', size: resized.size }),
+      body: JSON.stringify({ ...target(), contentType: 'image/webp', size: resized.size }),
     });
     const ticket = await json(ticketResponse);
     if (!ticketResponse.ok || !ticket?.data) throw new Error(ticket?.error?.message || 'The photo could not be prepared for upload.');
     setStage('uploading');
     const { error } = await supabase.storage.from(ticket.data.bucket as string).uploadToSignedUrl(ticket.data.path as string, ticket.data.token as string, resized, { contentType: 'image/webp' });
     if (error) throw new Error('The upload did not finish. Check your connection and choose the photo again.');
-    await bind({ requestId: crypto.randomUUID(), slot, uploadId: ticket.data.uploadId as string, expected: value }, headers);
+    await bind({ requestId: crypto.randomUUID(), ...target(), uploadId: ticket.data.uploadId as string, expected: value }, headers);
   });
 
-  const remove = () => { setConfirmRemove(false); void run((headers) => bind({ requestId: crypto.randomUUID(), slot, uploadId: null, expected: value }, headers)); };
+  const remove = () => { setConfirmRemove(false); void run((headers) => bind({ requestId: crypto.randomUUID(), ...target(), uploadId: null, expected: value }, headers)); };
   const retry = () => { if (unknown) { const pending = unknown; void run((headers) => bind(pending, headers)); } };
 
   const busy = stage !== 'idle';
@@ -146,7 +151,7 @@ export function ProfileImageField({ slot, label, value, apiBase, getHeaders, onC
   return (
     <div className="space-y-3">
       <p className="text-sm font-medium text-[#2C3E2D]">{label}</p>
-      <div className={`relative overflow-hidden rounded-xl border border-[#DDE5DC] bg-[#F4F6F1] ${slot === 'cover' ? 'aspect-[16/9] w-full' : 'aspect-square w-32'}`}>
+      <div className={`relative overflow-hidden rounded-xl border border-[#DDE5DC] bg-[#F4F6F1] ${slot === 'cover' ? 'aspect-[16/9] w-full' : slot === 'dish' ? 'aspect-[4/3] w-full max-w-xs' : 'aspect-square w-32'}`}>
         {src
           ? <img src={src} alt={label} className={`h-full w-full object-cover ${busy ? 'opacity-60' : ''}`} />
           : <div className="flex h-full items-center justify-center px-2 text-center text-xs text-[#6B6560]">No {label.toLowerCase()}</div>}

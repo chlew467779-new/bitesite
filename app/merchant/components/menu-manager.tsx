@@ -7,13 +7,15 @@
  * fresh menu, which replaces the list. Dish edits send only changed fields with the value this
  * page showed, so a change made on another device is reported instead of overwritten. If a
  * result is unknown (network), Retry resends the same request id, so nothing is applied twice.
- * Dish photos are not changed here.
+ * Dish photos use the checked photo flow (ProfileImageField with slot 'dish'); a new dish gets a
+ * photo after it is saved.
  */
 
 import type { SectionHandle } from '@/app/components/section-save/use-section-save';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowDown, ArrowUp, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
 import { MENU_LIMITS, parsePriceInput, type MenuCategory, type MenuProduct, type MenuSnapshot } from '@/lib/merchant-menu-core.mjs';
+import { ProfileImageField } from '@/app/components/media/profile-image-field';
 
 type Op = { type: string } & Record<string, unknown>;
 type Pending = { requestId: string; op: Op };
@@ -221,6 +223,7 @@ export function MenuManager({ merchantId, getHeaders, readOnly, register, onChan
             <ul className="divide-y divide-[#EEF2EC]">
               {products.map((product, pi) => (
                 <li key={product.id} className="flex items-center gap-2 p-3">
+                  {product.imageUrl && <img src={product.imageUrl} alt="" className="h-11 w-11 shrink-0 rounded-lg object-cover" />}
                   <button type="button" disabled={locked} onClick={() => openDish(category.id, product)} className="min-w-0 flex-1 text-left disabled:opacity-60">
                     <span className="block truncate text-sm font-medium text-[#2C3E2D]">{product.name}{product.isFeatured ? ' ★' : ''}</span>
                     <span className="block text-xs text-[#6B6560]">{product.showPrices ? priceLabel(product) : 'Price hidden'}</span>
@@ -307,6 +310,23 @@ export function MenuManager({ merchantId, getHeaders, readOnly, register, onChan
                 </select>
               </label>
             )}
+            <div className="mt-4 border-t border-[#EEF2EC] pt-4">
+              {dish.id ? (
+                <ProfileImageField
+                  key={`dish-photo:${dish.id}`}
+                  slot="dish"
+                  productId={dish.id}
+                  label="Dish photo"
+                  value={menu.products.find((p) => p.id === dish.id)?.imageUrl ?? null}
+                  apiBase={`${api}/dish-photo`}
+                  getHeaders={getHeaders}
+                  disabled={readOnly}
+                  onChanged={(value) => setMenu((current) => current ? { ...current, products: current.products.map((p) => (p.id === dish.id ? { ...p, imageUrl: value } : p)) } : current)}
+                />
+              ) : (
+                <p className="text-sm text-[#6B6560]">Save the dish first, then open it again to add a photo.</p>
+              )}
+            </div>
             {dishError && <p className="mt-3 text-sm text-red-700" role="alert">{dishError}</p>}
             {message?.kind === 'error' && <p className="mt-3 text-sm text-red-700" role="alert">{message.text}</p>}
             <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end">
