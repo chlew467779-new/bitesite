@@ -4,7 +4,7 @@
 
 import { useState } from 'react';
 import { useAuth } from './auth-context';
-import { confirmLeave } from '@/lib/unsaved-guard';
+import { requestLeave } from '@/lib/unsaved-guard';
 import {
   LayoutDashboard,
   TrendingUp,
@@ -61,10 +61,11 @@ export default function AdminShell({ activeTab, onTabChange, children }: AdminSh
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const handleTabChange = (tab: string) => {
-    // An open restaurant editor may hold unsaved or unconfirmed section saves.
-    if (!confirmLeave()) return;
-    onTabChange(tab);
-    setSidebarOpen(false);
+    // Keep the destination until the editor has saved or discarded its changes.
+    requestLeave(() => {
+      onTabChange(tab);
+      setSidebarOpen(false);
+    });
   };
 
   return (
@@ -201,9 +202,10 @@ export default function AdminShell({ activeTab, onTabChange, children }: AdminSh
           </button>
           <button
             onClick={() => {
-              if (!confirmLeave()) return;
-              setSidebarOpen(false);
-              logout();
+              requestLeave(() => {
+                setSidebarOpen(false);
+                logout();
+              });
             }}
             className={`
               w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all

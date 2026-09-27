@@ -1,17 +1,16 @@
 'use client';
 
 /**
- * In-app navigation guard for editors with unsaved or unconfirmed section saves (D2-B / M1-B).
- * Editors register a check; navigation code (e.g. the Admin sidebar, sign-out) asks
- * `confirmLeave()` before unmounting them. Page reloads and closing the tab are covered separately
- * by each editor's `beforeunload` handler.
- *
- * A check returns null when leaving is fine, `{ block: true, message }` when a save is in flight or
- * unconfirmed (leaving is refused: the result must be known first), or `{ block: false, message }`
- * when there are unsaved edits (the user may choose to discard them).
+ * Editors check in-app navigation before the Admin shell unmounts them. A dirty restaurant
+ * editor can defer the requested action to its Save / Discard / Cancel dialog. Its continuation
+ * checks all editors again: completing one prompt never bypasses another editor's pending save.
+ * Reloads and closing the tab remain covered by each editor's beforeunload handler.
  */
-
-export type LeaveCheck = () => { block: boolean; message: string } | null;
+export type LeaveCheck = () => {
+  block: boolean;
+  message: string;
+  prompt?: (continueLeave: () => void) => void;
+} | null;
 
 const checks = new Set<LeaveCheck>();
 
@@ -20,15 +19,18 @@ export function registerLeaveCheck(check: LeaveCheck) {
   return () => { checks.delete(check); };
 }
 
-export function confirmLeave(): boolean {
-  for (const check of checks) {
-    const result = check();
-    if (!result) continue;
-    if (result.block) {
-      window.alert(result.message);
-      return false;
+export function requestLeave(leave: () => void): void {
+  const results = [...checks].map((check) => check()).filter((result) => result !== null);
+  // A blocked editor takes priority even when an earlier editor only has unsaved changes.
+  const blocked = results.find((result) => result.block);
+  if (blocked) { window.alert(blocked.message); return; }
+  for (const result of results) {
+    if (result.prompt) {
+      result.prompt(() => requestLeave(leave));
+      return;
     }
-    return window.confirm(result.message);
+    // Keep the native discard confirmation available for editors without a custom prompt.
+    if (!window.confirm(result.message)) return;
   }
-  return true;
+  leave();
 }

@@ -327,6 +327,10 @@ export default function MerchantForm({ merchant, onBack, onSaved, loadWarning }:
   const [loadError, setLoadError] = useState('');
   const [loadId, setLoadId] = useState(0);
   const [leavePrompt, setLeavePrompt] = useState<string | null>(null);
+  const [savingAll, setSavingAll] = useState(false);
+  const savingAllRef = useRef(false);
+  const pendingLeave = useRef<(() => void) | null>(null);
+  const leaveDialog = useRef<HTMLDivElement | null>(null);
   const [createName, setCreateName] = useState('');
   const [createSlug, setCreateSlug] = useState('');
   const [createError, setCreateError] = useState('');
@@ -370,16 +374,53 @@ export default function MerchantForm({ merchant, onBack, onSaved, loadWarning }:
 
   const anyStatus = useCallback(() => {
     const statuses = [...handles.current.values()].map((handle) => handle.status());
-    return { dirty: statuses.some((s) => s.dirty || s.conflicts), busy: statuses.some((s) => s.pending || s.unknown) };
+    return { dirty: statuses.some((s) => s.dirty || s.conflicts), busy: savingAllRef.current || statuses.some((s) => s.pending || s.unknown) };
   }, []);
+
+  const openLeavePrompt = useCallback((continueLeave: () => void) => {
+    // Keep the first destination, including when the user clicks the sidebar repeatedly.
+    if (pendingLeave.current) return;
+    pendingLeave.current = continueLeave;
+    const s = anyStatus();
+    setLeavePrompt(s.busy ? 'A save is still in progress or unconfirmed. Wait for it (or choose Retry) before leaving.' : '');
+  }, [anyStatus]);
+
+  const cancelLeave = useCallback(() => {
+    if (savingAllRef.current) return;
+    pendingLeave.current = null;
+    setLeavePrompt(null);
+  }, []);
+
+  const promptOpen = leavePrompt !== null;
+  useEffect(() => {
+    if (!promptOpen) return;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const dialog = leaveDialog.current;
+    dialog?.querySelector<HTMLButtonElement>('button')?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { event.preventDefault(); cancelLeave(); return; }
+      if (event.key !== 'Tab' || !dialog) return;
+      const buttons = [...dialog.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')];
+      const first = buttons[0];
+      const last = buttons[buttons.length - 1];
+      if (!first) { event.preventDefault(); return; }
+      if (event.shiftKey && (document.activeElement === first || !dialog.contains(document.activeElement))) {
+        event.preventDefault(); last.focus();
+      } else if (!event.shiftKey && (document.activeElement === last || !dialog.contains(document.activeElement))) {
+        event.preventDefault(); first.focus();
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => { document.removeEventListener('keydown', onKeyDown); previousFocus?.focus(); };
+  }, [promptOpen, cancelLeave]);
 
   // In-app navigation (sidebar, sign-out) asks before unmounting this editor.
   useEffect(() => registerLeaveCheck(() => {
     const s = anyStatus();
     if (s.busy) return { block: true, message: 'A restaurant section is still saving or its result is unconfirmed. Wait for it (or choose Retry) before leaving.' };
-    if (s.dirty) return { block: false, message: 'You have unsaved restaurant changes. Leave and discard them?' };
+    if (s.dirty) return { block: false, message: 'You have unsaved restaurant changes.', prompt: openLeavePrompt };
     return null;
-  }), [anyStatus]);
+  }), [anyStatus, openLeavePrompt]);
 
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent) => { const s = anyStatus(); if (s.dirty || s.busy) event.preventDefault(); };
@@ -390,21 +431,56 @@ export default function MerchantForm({ merchant, onBack, onSaved, loadWarning }:
   const leave = () => { onSaved(); onBack(); };
   const requestBack = () => {
     const s = anyStatus();
-    if (s.busy) { setLeavePrompt('A save is still in progress or unconfirmed. Wait for it (or choose Retry) before leaving.'); return; }
-    if (s.dirty) { setLeavePrompt(''); return; }
+    if (s.dirty || s.busy) { openLeavePrompt(leave); return; }
     leave();
   };
+  const finishLeave = () => {
+    const s = anyStatus();
+    if (s.dirty || s.busy) { setLeavePrompt('Changes are still unsaved or unconfirmed. Stay here and resolve them before leaving.'); return; }
+    const continueLeave = pendingLeave.current;
+    pendingLeave.current = null;
+    setLeavePrompt(null);
+    continueLeave?.();
+  };
   const saveAllAndLeave = async () => {
-    for (const handle of handles.current.values()) {
-      if (!handle.status().dirty) continue;
-      const outcome = await handle.save();
-      if (outcome !== 'saved' && outcome !== 'noop') {
-        setLeavePrompt('Not closed: a section has a conflict or could not be saved. Sections saved before it stay saved.');
+    if (!pendingLeave.current || anyStatus().busy) return;
+    // A ref closes the double-click gap before React renders the disabled buttons.
+    savingAllRef.current = true;
+    setSavingAll(true);
+    let savedAll = false;
+    try {
+      for (const handle of handles.current.values()) {
+        const status = handle.status();
+        if (status.pending || status.unknown) {
+          setLeavePrompt('A save is still in progress or unconfirmed. Wait for it (or choose Retry) before leaving.');
+          return;
+        }
+        if (!status.dirty && !status.conflicts) continue;
+        const outcome = await handle.save();
+        if (outcome !== 'saved' && outcome !== 'noop') {
+          setLeavePrompt('Not leaving: a section has a conflict or could not be saved. Sections saved before it stay saved. Cancel to resolve the section or retry an unconfirmed save.');
+          return;
+        }
+      }
+      // Ignore only our own loop lock; another section may have started a save in the meantime.
+      const statuses = [...handles.current.values()].map((handle) => handle.status());
+      if (statuses.some((s) => s.dirty || s.conflicts || s.pending || s.unknown)) {
+        setLeavePrompt('Changes are still unsaved or unconfirmed. Save or resolve those changes first.');
         return;
       }
+      savedAll = true;
+    } catch {
+      setLeavePrompt('Not leaving: a section could not be saved. Sections saved before it stay saved. Cancel to check the section.');
+    } finally {
+      savingAllRef.current = false;
+      setSavingAll(false);
     }
-    if (anyStatus().dirty) { setLeavePrompt('You kept typing while saving. Save or discard those changes first.'); return; }
-    leave();
+    if (savedAll) finishLeave();
+  };
+  const discardAndLeave = () => {
+    if (!pendingLeave.current || anyStatus().busy) return;
+    for (const handle of handles.current.values()) handle.discard();
+    finishLeave();
   };
 
   const create = async () => {
@@ -469,16 +545,16 @@ export default function MerchantForm({ merchant, onBack, onSaved, loadWarning }:
       {loadWarning && <p className="rounded-lg border border-amber-500/30 bg-amber-950/40 px-4 py-2 text-sm text-amber-300">{loadWarning}</p>}
 
       {leavePrompt !== null && (
-        <div role="dialog" aria-modal="true" aria-labelledby="leave-title" className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center">
+        <div ref={leaveDialog} role="dialog" aria-modal="true" aria-labelledby="leave-title" className="fixed inset-0 z-[60] flex items-end justify-center bg-black/50 p-4 sm:items-center">
           <div className="w-full max-w-md rounded-2xl bg-white p-5 text-[#2C3E2D] shadow-xl">
             <h2 id="leave-title" className="font-semibold">Unsaved changes</h2>
             <p className="mt-2 text-sm">{leavePrompt || `You have unsaved changes for ${current.name}. Save them, discard them, or stay.`}</p>
             <div className="mt-5 flex flex-wrap justify-end gap-2">
-              <button type="button" onClick={() => setLeavePrompt(null)} className="rounded-lg px-4 py-2 text-sm font-medium">Cancel</button>
-              {!anyStatus().busy && (
+              <button type="button" disabled={savingAll} onClick={cancelLeave} className="rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50">Cancel</button>
+              {(!anyStatus().busy || savingAll) && (
                 <>
-                  <button type="button" onClick={() => { for (const handle of handles.current.values()) handle.discard(); leave(); }} className="rounded-lg border border-red-700 px-4 py-2 text-sm font-medium text-red-700">Discard</button>
-                  <button type="button" onClick={() => void saveAllAndLeave()} className="rounded-lg bg-[#2C3E2D] px-4 py-2 text-sm font-medium text-white">Save</button>
+                  <button type="button" disabled={savingAll} onClick={discardAndLeave} className="rounded-lg border border-red-700 px-4 py-2 text-sm font-medium text-red-700">Discard</button>
+                  <button type="button" disabled={savingAll} onClick={() => void saveAllAndLeave()} className="rounded-lg bg-[#2C3E2D] px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{savingAll ? 'Saving…' : 'Save'}</button>
                 </>
               )}
             </div>
