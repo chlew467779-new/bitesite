@@ -5,6 +5,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './auth-context';
 import { Search, Plus, Eye, EyeOff, Store, Loader2, ExternalLink, Pencil, Circle, UserPlus } from 'lucide-react';
+import { merchantListState } from '@/lib/merchant-list-state.mjs';
 import MerchantForm from './merchant-form';
 import MerchantProfileChangeRequests from './merchant-profile-change-requests';
 import { describeLayoutValueForLog, getLayoutMeta, isLayoutKey, isPersistableLayout } from '@/lib/layout-registry.mjs';
@@ -26,6 +27,10 @@ interface Merchant {
   cover_image?: string;
   is_published: boolean;
   status?: string;
+  state_source?: string;
+  platform_restriction?: string;
+  review_status?: string;
+  listing_visibility?: string;
   platform_status?: string;
   business_status?: string;
   created_at: string;
@@ -49,60 +54,16 @@ interface Merchant {
   menu_pdf_url?: string;
 }
 
-/*
- * Primary platform-status badge for a Merchant Manager card. This reads `platform_status`
- * directly so PENDING_REVIEW / SUSPENDED / ARCHIVED are visually distinct from DRAFT instead
- * of all collapsing into a generic "Draft" pill. `is_published` is the actual public
- * visibility gate (unchanged by this function) — PUBLISHED + is_published=false is a real,
- * possible state (the two fields can disagree) and must never be labeled "Live".
- * Active/Inactive stays a separate badge rendered alongside this one; do not merge them.
- */
+/** Visibility uses the same state rule as the public database policy. */
 function getPlatformStatusBadge(merchant: Merchant) {
-  const platformStatus = merchant.platform_status || (merchant.is_published ? 'PUBLISHED' : 'DRAFT');
-
-  if (platformStatus === 'PUBLISHED' && merchant.is_published) {
-    return (
-      <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-500/10 text-emerald-400 text-xs rounded-full border border-emerald-500/20">
-        <Eye className="w-3 h-3" /> Live
-      </span>
-    );
-  }
-  if (platformStatus === 'PUBLISHED' && !merchant.is_published) {
-    return (
-      <span
-        className="inline-flex items-center gap-1 px-2 py-1 bg-violet-500/10 text-violet-400 text-xs rounded-full border border-violet-500/20"
-        title="Platform status is Published, but Published is off — this merchant is not publicly visible."
-      >
-        <EyeOff className="w-3 h-3" /> Published / hidden
-      </span>
-    );
-  }
-  if (platformStatus === 'PENDING_REVIEW') {
-    return (
-      <span className="inline-flex items-center gap-1 px-2 py-1 bg-sky-500/10 text-sky-400 text-xs rounded-full border border-sky-500/20">
-        <EyeOff className="w-3 h-3" /> Pending review
-      </span>
-    );
-  }
-  if (platformStatus === 'SUSPENDED') {
-    return (
-      <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-500/10 text-red-400 text-xs rounded-full border border-red-500/20">
-        <EyeOff className="w-3 h-3" /> Suspended
-      </span>
-    );
-  }
-  if (platformStatus === 'ARCHIVED') {
-    return (
-      <span className="inline-flex items-center gap-1 px-2 py-1 bg-slate-600/20 text-slate-400 text-xs rounded-full border border-slate-500/30">
-        <EyeOff className="w-3 h-3" /> Archived
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-500/10 text-amber-400 text-xs rounded-full border border-amber-500/20">
-      <EyeOff className="w-3 h-3" /> Draft
-    </span>
-  );
+  const { visibility } = merchantListState(merchant);
+  const color = visibility === 'Public' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+    : visibility === 'Suspended' ? 'bg-red-500/10 text-red-400 border-red-500/20'
+    : visibility === 'Archived' ? 'bg-slate-600/20 text-slate-400 border-slate-500/30'
+    : 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+  return <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full border ${color}`}>
+    {visibility === 'Public' ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />} {visibility}
+  </span>;
 }
 
 export default function MerchantManager() {
@@ -236,14 +197,14 @@ export default function MerchantManager() {
       filter === 'all'
         ? true
         : filter === 'published'
-        ? m.is_published
-        : !m.is_published;
+        ? merchantListState(m).isPublic
+        : !merchantListState(m).isPublic;
     const matchesStatus =
       statusFilter === 'all'
         ? true
         : statusFilter === 'active'
-        ? m.status === 'active'
-        : m.status === 'inactive';
+        ? merchantListState(m).isOpen
+        : !merchantListState(m).isOpen;
     return matchesSearch && matchesFilter && matchesStatus;
   });
 
@@ -396,15 +357,15 @@ export default function MerchantManager() {
                     <Store className="w-8 h-8 text-slate-600" />
                   </div>
                 )}
-                <div className="absolute top-3 right-3 flex gap-1.5">
+                <div className="absolute top-3 left-3 right-3 flex flex-wrap justify-end gap-1.5">
                   {getPlatformStatusBadge(merchant)}
-                  {merchant.business_status === 'TEMPORARILY_CLOSED' || merchant.business_status === 'PERMANENTLY_CLOSED' || merchant.status === 'inactive' ? (
+                  {!merchantListState(merchant).isOpen ? (
                     <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-500/10 text-red-400 text-xs rounded-full border border-red-500/20">
-                      <Circle className="w-2 h-2 fill-current" /> Inactive
+                      <Circle className="w-2 h-2 fill-current" /> {merchantListState(merchant).businessLabel}
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1 px-2 py-1 bg-slate-700/50 text-slate-400 text-xs rounded-full border border-slate-600/30">
-                      <Circle className="w-2 h-2 fill-emerald-400 text-emerald-400" /> Active
+                      <Circle className="w-2 h-2 fill-emerald-400 text-emerald-400" /> {merchantListState(merchant).businessLabel}
                     </span>
                   )}
                 </div>

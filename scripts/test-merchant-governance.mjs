@@ -107,3 +107,21 @@ const rollback = await read("supabase/rollback/20260927090000_merchant_governanc
 assert.match(rollback, /if 'NO' <> 'yes' then/, "rollback switch is off by default");
 
 console.log("merchant governance checks passed");
+
+// Synthetic list states: stale legacy flags and canonical managed visibility.
+const { merchantListState } = await import('../lib/merchant-list-state.mjs');
+for (const [platform_status, is_published, visibility] of [['PUBLISHED', true, 'Public'], ['DRAFT', false, 'Hidden'], ['SUSPENDED', true, 'Suspended'], ['ARCHIVED', true, 'Archived']]) {
+  const state = merchantListState({platform_status, is_published});
+  assert.equal(state.visibility, visibility);
+  assert.equal(state.isPublic, visibility === 'Public');
+}
+for (const [business_status, label] of [['OPEN', 'Open'], ['TEMPORARILY_CLOSED', 'Temporarily closed'], ['MOVED', 'Moved'], ['PERMANENTLY_CLOSED', 'Permanently closed']]) {
+  const state = merchantListState({business_status, is_published: true});
+  assert.equal(state.businessLabel, label);
+  assert.equal(state.isOpen, business_status === 'OPEN');
+  assert.equal(state.isPublic, true, 'legacy business closure alone does not hide a listing');
+}
+const managed = {state_source:'managed', review_status:'approved', listing_visibility:'public', platform_restriction:'none', business_status:'OPEN', is_published:false};
+assert.equal(merchantListState(managed).isPublic, true);
+for (const change of [{review_status:'draft'}, {listing_visibility:'hidden'}, {platform_restriction:'suspended'}, {platform_restriction:'archived'}, {business_status:'MOVED'}, {business_status:'PERMANENTLY_CLOSED'}]) assert.equal(merchantListState({...managed,...change}).isPublic,false);
+assert.equal(merchantListState({business_status:'OPEN',status:'inactive'}).isOpen,true,'canonical business state wins');
