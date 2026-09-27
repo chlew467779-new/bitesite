@@ -68,6 +68,14 @@ Run the SQL assertions/behaviour tests below with `psql -v ON_ERROR_STOP=1`, and
 
 ## Rollback and release evidence
 
-The listed rollback scripts are **staging-only** and intentionally disabled by switches. A document does not authorize their execution on production. Prefer forward fixes; take the appropriate backup and assess state/history loss before any separately authorized rollback. Roll back dependent application code first, then schema in reverse dependency order: link review → M3a → M6b → D2-C → B0 → D2-A. Inspect the actual rollback bodies, since later migrations can replace shared helpers retained by older rollback scripts.
+The listed rollback scripts are **staging-only** and intentionally disabled by switches. A document does not authorize their execution on production. Prefer forward fixes; take the appropriate backup and assess state/history loss before any separately authorized rollback. Roll back dependent application code first, then schema in reverse dependency order: M2-B → link review → M3a → M6b → D2-C → B0 → D2-A. Inspect the actual rollback bodies, since later migrations can replace shared helpers retained by older rollback scripts.
 
 For each released step retain: application SHA/deployment URL, exact executed SQL/checksum, hosted migration version/name, assertion/behaviour outputs from local/staging, hosted read-only grant/schema checks, authorized smoke-test results and known limits. A matching name, merged PR, local PASS or Preview READY alone does not prove production state.
+
+## 7. M2-B — Listing review and Owner publication
+
+- Migration: `20260927130000_merchant_listing_review.sql`, after B0, #64 password onboarding, governance, media, menu and `20260927120000` link review. It replaces the field registry with a scoped Owner-basics wrapper, creates private review/settings/outbox tables, and adds service-role-only RPCs.
+- Apply the migration before deploying the listing dashboard and Restaurant Reviews page. Queue capacity defaults to 20, pilot admission to 50. Only managed (self-registered) pending/approved restaurants count toward the pilot limit; legacy restaurants do not. The capacity setter takes an optional fourth pilot-capacity argument.
+- Local verification: `supabase/tests/m2b_listing_review_behavior_tests.sql`, `npm run verify`, and HTTP submit/approve/publish plus concurrent last-place submissions.
+- Rollback FIRST, before link review: `supabase/rollback/20260927130000_merchant_listing_review.rollback.STAGING_ONLY.sql`. Default switch is NO. Restore application first; export submission/outbox history. Restaurant states/slugs and audit/idempotency history remain. Restores the exact B0 registry.
+- Hosted D2-A/#64 versions reportedly differ from repository timestamps. Reconcile actual SQL/checksums and dependency order before choosing any renames or application plan. This local package does not authorize or perform hosted operations.

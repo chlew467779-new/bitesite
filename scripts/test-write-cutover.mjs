@@ -61,7 +61,7 @@ for (const route of ["app/api/merchant/restaurants/[merchantId]/fields/route.ts"
   assert.match(await read(route), /patchMerchantFields\(request, /, `${route} uses the field save runner`);
 }
 const runner = await read("app/api/_lib/merchant-field-patch.ts");
-assert.match(runner, /supabase\.rpc\('merchant_field_patch'/, "the runner saves through the transactional RPC");
+assert.match(runner, /supabase\.rpc\(basics \? 'merchant_listing_basics_patch' : 'merchant_field_patch'/, "the runner saves through the transactional RPC");
 
 /* no client still calls the retired routes */
 for (const rel of sources.filter((file) => file.endsWith(".tsx"))) {

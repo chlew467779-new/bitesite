@@ -2898,3 +2898,9 @@ The audit should end with:
 8. minimal migration plan,
 9. testing gaps,
 10. a final list of decisions that CH + Claude must resolve before coding.
+
+## Managed restaurant self-service — CH decision, 2026-09-27
+
+Restaurant listing review is distinct from Story editorial review. Draft/rejected managed listings may edit their name, location and cuisine; pending listings are frozen and may be withdrawn. Approval leaves the listing hidden until its Owner publishes. After approval, About/contact/menu updates are effective immediately; external links still require review and basics remain Admin-only.
+
+Two independent admission controls apply during the pilot: 50 total restaurant places and 20 simultaneously waiting for review, both configurable by Admin. A pending restaurant reserves a pilot place; approval keeps that place while releasing the review-queue place. Rejection/withdrawal releases both. Only self-registered (managed) restaurants count; existing legacy restaurants do not (CH, 2026-09-27). Approved hidden/suspended restaurants retain their place. Drafts do not consume places. Formal launch capacity will be determined separately. See SYNC-048 for the implementation contract.

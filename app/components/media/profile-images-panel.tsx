@@ -7,6 +7,7 @@
  * editor and the Merchant dashboard; the caller supplies the endpoint and the auth headers.
  */
 
+import type { SectionHandle } from '@/app/components/section-save/use-section-save';
 import { useCallback, useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { ProfileImageField } from './profile-image-field';
@@ -16,10 +17,11 @@ type Props = {
   apiBase: string;
   getHeaders: () => Promise<Record<string, string> | null>;
   disabled?: boolean;
+  register?: (id: string, handle: SectionHandle | null) => void;
   onChanged?: (slot: MediaSlot, value: string | null) => void;
 };
 
-export function ProfileImagesPanel({ apiBase, getHeaders, disabled, onChanged }: Props) {
+export function ProfileImagesPanel({ apiBase, getHeaders, disabled, onChanged, register }: Props) {
   const [media, setMedia] = useState<{ logo: string | null; cover: string | null } | null>(null);
   const [error, setError] = useState('');
 
@@ -48,8 +50,8 @@ export function ProfileImagesPanel({ apiBase, getHeaders, disabled, onChanged }:
   if (!media) return <Loader2 className="h-5 w-5 animate-spin text-[#2C3E2D]" />;
   return (
     <div className="grid gap-8 sm:grid-cols-2">
-      <ProfileImageField slot="cover" label="Cover photo" value={media.cover} apiBase={apiBase} getHeaders={getHeaders} onChanged={changed('cover')} disabled={disabled} />
-      <ProfileImageField slot="logo" label="Logo" value={media.logo} apiBase={apiBase} getHeaders={getHeaders} onChanged={changed('logo')} disabled={disabled} />
+      <ProfileImageField slot="cover" label="Cover photo" value={media.cover} apiBase={apiBase} getHeaders={getHeaders} onChanged={changed('cover')} disabled={disabled} register={register} />
+      <ProfileImageField slot="logo" label="Logo" value={media.logo} apiBase={apiBase} getHeaders={getHeaders} onChanged={changed('logo')} disabled={disabled} register={register} />
     </div>
   );
 }

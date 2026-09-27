@@ -129,3 +129,13 @@
 User approved ChatGPT implementation: email/password daily login, email-confirmed self-registration and creation of an own private draft with atomic Owner membership; Magic Link remains for transition/recovery. No invitation or claim of an existing restaurant is needed to create a new draft. Five consecutive bad-password attempts from the current login source trigger 15 minutes of cooldown; recovery remains available, no permanent account lock, no effect on public listings. Minimum 8 characters, long passphrases allowed; shared accounts represent one identity. Hosted Auth configuration remains an environment prerequisite, not a code assumption.
 
 A new feature idea must not silently become a decision. Add it here only after CH explicitly approves it or after the Master Spec is formally revised and approved.
+
+## SYNC-048 — Managed listing review, publication and two separate limits (DECIDED, CH 2026-09-27)
+
+- Owner completes name, address, valid contact, preset cuisine and at least one menu dish, then submits. Pending content is frozen; withdrawing returns to an editable draft. Rejection requires a visible reason.
+- Approval leaves the restaurant hidden. Only its Owner explicitly publishes/hides it. First publication generates a name-based slug, with a collision suffix; retain a referenced slug. Later slug changes and 301 history are a separate package.
+- Owner may edit name, location and cuisine only while managed draft/rejected. After approval those fields remain Admin-only. Approved About/contact/menu edits take effect immediately; published restaurants show those edits immediately. External links continue through review. This does not change Story editorial review.
+- Pending-review capacity defaults to 20 and is configurable independently. Each Owner has at most one pending restaurant. Approval, rejection and withdrawal release queue places.
+- Pilot admission defaults to 50 restaurants, counted per restaurant. Only managed (self-registered) pending/approved restaurants count; legacy restaurants do not (CH, 2026-09-27: otherwise an existing catalogue of 50+ restaurants would block every new submission), nor do managed drafts/rejected restaurants. Approved public/hidden/suspended restaurants retain their place. Lowering a limit never removes existing restaurants or cancels submissions. The post-launch total capacity remains a later operational decision, not a permanent product limit of 20 or 50.
+- Notifications are durable outbox records only; no real email is sent.
+- Scope: local implementation and tests only. No push, PR, hosted migration, merge or deployment authorized. B0/#63 migration history reconciliation remains a separate release task.

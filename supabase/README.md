@@ -46,6 +46,10 @@ Only the SECURITY LOCKDOWN work lives here for now (branch `fix/security-lockdow
 | `migrations/20260927120000_merchant_link_review.sql` | Link review: private `merchant_link_requests` and RPCs for Owner requests / withdraw, Admin review, Admin direct set, read and queue (service_role only). After `20260927110000` | Local → staging → production, each after review/approval |
 | `tests/links_review_behavior_tests.sql` | Behaviour tests for the link review (synthetic `zz-lnk-*`, rolled back) | Local / staging only |
 | `rollback/20260927120000_merchant_link_review.rollback.STAGING_ONLY.sql` | Drops the link review RPCs and the request table (history lost); applied links are kept | Staging only |
+| `migrations/20260927090355_merchant_password_onboarding.sql` | #64: password login limits and confirmed-Owner private draft creation | Local; hosted only with approval |
+| `migrations/20260927130000_merchant_listing_review.sql` | M2-B: basics, listing review, Owner publish/hide; queue limit 20 and separate pilot limit 50 | Local; hosted only with approval |
+| `tests/m2b_listing_review_behavior_tests.sql` | Synthetic transaction, rolled back: ownership, freeze, snapshots, decisions, slugs and both limits | Local / staging only |
+| `rollback/20260927130000_merchant_listing_review.rollback.STAGING_ONLY.sql` | Guarded rollback; drops review/outbox/settings, restores B0 registry, keeps restaurant states/slugs | Staging only |
 | `scripts/test-d2b-cutover-local.mjs` | D2-B write cutover over HTTP: retired Merchant/Admin whole-form saves and hard DELETE refuse (410) and change nothing, no GrabFood write, hidden-draft create accepts only name/slug, profile image upload tickets refused (Story/menu uploads open), B0 Admin paths work | Local only (needs a local Next server) |
 | `rollback/20260926131040_…STAGING_ONLY.sql` | Undoes D1c; every articles column and the old `published`-only rule come back. The D1c code keeps working | Staging; production only as an approved emergency |
 

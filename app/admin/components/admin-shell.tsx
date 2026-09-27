@@ -44,6 +44,7 @@ const navItems = [
   { id: 'stories-analytics', label: 'Stories Analytics', icon: BookOpen },
   { id: 'stories-editor', label: 'Stories Editor', icon: PenLine },
   { id: 'story-submissions', label: 'Story Submissions', icon: Inbox },
+  { id: 'restaurant-reviews', label: 'Restaurant Reviews', icon: ShieldCheck },
   { id: 'link-reviews', label: 'Link Reviews', icon: ShieldCheck },
   { id: 'content-service', label: 'Content Service', icon: CalendarClock },
   { id: 'merchant-manager', label: 'Merchant Manager', icon: Building2 },

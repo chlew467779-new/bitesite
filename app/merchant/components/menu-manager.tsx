@@ -10,6 +10,7 @@
  * Dish photos are not changed here.
  */
 
+import type { SectionHandle } from '@/app/components/section-save/use-section-save';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowDown, ArrowUp, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
 import { MENU_LIMITS, parsePriceInput, type MenuCategory, type MenuProduct, type MenuSnapshot } from '@/lib/merchant-menu-core.mjs';
@@ -48,10 +49,12 @@ const moved = (ids: string[], index: number, delta: number) => {
   return next;
 };
 
-export function MenuManager({ merchantId, getHeaders, readOnly }: {
+export function MenuManager({ merchantId, getHeaders, readOnly, register, onChanged }: {
   merchantId: string;
   getHeaders: () => Promise<Record<string, string> | null>;
   readOnly: boolean;
+  register?: (id: string, handle: SectionHandle | null) => void;
+  onChanged?: () => void;
 }) {
   const api = `/api/merchant/restaurants/${encodeURIComponent(merchantId)}/menu`;
   const [menu, setMenu] = useState<MenuSnapshot | null>(null);
@@ -65,6 +68,10 @@ export function MenuManager({ merchantId, getHeaders, readOnly }: {
   const [newCategory, setNewCategory] = useState<string | null>(null);
   const [rename, setRename] = useState<{ id: string; name: string; original: string } | null>(null);
   const busyRef = useRef(false);
+  useEffect(() => {
+    register?.('menu', { status: () => ({ dirty: !!dish || newCategory !== null || !!rename, pending: busy, unknown: !!unknown, conflicts: false }), save: async () => 'skipped', discard: () => { setDish(null); setNewCategory(null); setRename(null); } });
+    return () => register?.('menu', null);
+  }, [register, busy, unknown, dish, newCategory, rename]);
 
   const load = useCallback(async () => {
     setLoadError('');

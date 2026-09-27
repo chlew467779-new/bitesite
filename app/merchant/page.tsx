@@ -4,6 +4,9 @@ import Link from 'next/link';
 import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { ProfileImagesPanel } from '@/app/components/media/profile-images-panel';
+import { ListingPanel } from './components/listing-panel';
+import { ListingBasics } from './components/listing-basics';
+import type { ListingState } from '@/lib/merchant-review-core.mjs';
 import { MenuManager } from './components/menu-manager';
 import { LinkRequests } from './components/link-requests';
 import { validateProfileField } from '@/lib/merchant-profile-validation.mjs';
@@ -24,7 +27,7 @@ import { TextField } from './components/text-field';
  * value, so a change made meanwhile elsewhere is reported as a conflict instead of being
  * overwritten. The cover photo and logo upload through the checked photo flow (M6b); the menu
  * (categories and dishes) is edited in MenuManager (M3a). Link changes (website, social, menu
- * link, GrabFood) are requests that the BiteSite team reviews first (LinkRequests). Name, address, web address and business status stay with the BiteSite team.
+ * link, GrabFood) are requests that the BiteSite team reviews first (LinkRequests). Managed drafts can edit listing basics until approval; pending review freezes editing. Approved profile and menu edits appear immediately.
  *
  * The restaurant is the one in the URL (`?merchant=<id>`) or the account's only one. Switching
  * restaurants asks first when anything is unsaved, never switches while a save is in flight or
@@ -53,6 +56,7 @@ type LeaveKind = 'stories' | 'signout' | 'new';
 type LeavePrompt = { kind: LeaveKind; message?: string } | null;
 
 const SECTIONS = [
+  { id: 'basics', label: 'Listing basics' },
   { id: 'about', label: 'About' },
   { id: 'contact', label: 'Contact & links' },
   { id: 'photos', label: 'Photos' },
@@ -200,6 +204,10 @@ export default function MerchantDashboardPage() {
   const [switchPrompt, setSwitchPrompt] = useState<SwitchPrompt>(null);
   const [leavePrompt, setLeavePrompt] = useState<LeavePrompt>(null);
   const [switching, setSwitching] = useState(false);
+  const [listing, setListing] = useState<ListingState | null>(null);
+  const [listingError, setListingError] = useState('');
+  const [listingBusy, setListingBusy] = useState(false);
+  const listingSeq = useRef(0);
   const handles = useRef(new Map<string, SectionHandle>());
   const loadSeq = useRef(0);
   const leaving = useRef(false);
@@ -233,6 +241,11 @@ export default function MerchantDashboardPage() {
       if (seq !== loadSeq.current) return;
       if (!fieldsResponse.ok) { setLoad({ kind: 'error', message: errorMessage(fieldsData, 'We could not load your restaurant details.') }); return; }
       const fields = ((fieldsData.data as { fields?: Record<string, Snapshot> } | undefined)?.fields) ?? {};
+      const listingResponse = await fetch(`/api/merchant/restaurants/${encodeURIComponent(profile.id)}/listing`, { headers, cache: 'no-store' });
+      const listingData = await readJson(listingResponse);
+      if (seq !== loadSeq.current) return;
+      if (!listingResponse.ok || !(listingData.data as { state?: ListingState })?.state) { setLoad({ kind: 'error', message: errorMessage(listingData, 'Could not load listing status.') }); return; }
+      setListing((listingData.data as { state: ListingState }).state);
       setData({ userId, profile, merchants, fields, loadId: seq });
       setConfirmed(fields);
       setLoad({ kind: 'ready' });
@@ -264,6 +277,27 @@ export default function MerchantDashboardPage() {
     if (!session.session?.access_token || session.session.user.id !== data?.userId) return null;
     return { Authorization: `Bearer ${session.session.access_token}` };
   }, [data?.userId]);
+  const onListingState = useCallback((state: ListingState) => {
+    setListing(state);
+    setData((current) => current ? { ...current, profile: { ...current.profile, slug: state.slug } } : current);
+  }, []);
+  const listingMerchantId = data?.profile.id;
+  const refreshListing = useCallback(async () => {
+    if (!listingMerchantId) return;
+    const seq = ++listingSeq.current;
+    const merchantLoad = loadSeq.current;
+    try {
+      const headers = await photoHeaders();
+      if (!headers) throw new Error('session');
+      const response = await fetch(`/api/merchant/restaurants/${encodeURIComponent(listingMerchantId)}/listing`, { headers, cache: 'no-store' });
+      const body = await response.json();
+      if (!response.ok || !body.data?.state) throw new Error('listing');
+      if (seq !== listingSeq.current || merchantLoad !== loadSeq.current) return;
+      onListingState(body.data.state); setListingError('');
+    } catch { if (seq === listingSeq.current && merchantLoad === loadSeq.current) setListingError('Could not refresh listing status. Try Refresh status again.'); }
+  }, [listingMerchantId, photoHeaders, onListingState]);
+  useEffect(() => { void refreshListing(); }, [confirmed, refreshListing]);
+
   const onPhotoChanged = useCallback((slot: 'logo' | 'cover', value: string | null) => {
     setData((current) => (current ? { ...current, profile: { ...current.profile, [slot === 'logo' ? 'logo_image' : 'cover_image']: value } } : current));
   }, []);
@@ -427,11 +461,11 @@ export default function MerchantDashboardPage() {
           {load.kind === 'signed-out' && (
             <>
               <p className="mt-4 text-sm text-[#6B6560]">Please sign in with your merchant email to manage your listing.</p>
-              <Link href="/merchant/login" className="mt-5 inline-block rounded-lg bg-[#2C3E2D] px-4 py-2.5 text-sm font-medium text-white">Merchant login</Link>
+              <Link href="/merchant/login" className="mt-5 inline-flex min-h-11 w-full items-center justify-center sm:w-auto rounded-lg bg-[#2C3E2D] px-4 py-2.5 text-sm font-medium text-white">Merchant login</Link>
             </>
           )}
           {load.kind === 'no-merchant' && (
-            <div className="mt-4"><p className="text-sm text-[#6B6560]">Create your first private restaurant draft to get started.</p><Link href="/merchant/new" className="mt-5 inline-block rounded-lg bg-[#2C3E2D] px-4 py-2.5 text-sm font-medium text-white">Create a restaurant</Link><button type="button" onClick={() => void performSignOut()} className="ml-4 text-sm underline">Sign out</button></div>
+            <div className="mt-4"><p className="text-sm text-[#6B6560]">Create your first private restaurant draft to get started.</p><Link href="/merchant/new" className="mt-5 inline-block rounded-lg bg-[#2C3E2D] px-4 py-2.5 text-sm font-medium text-white">Create a restaurant</Link><button type="button" onClick={() => void performSignOut()} className="mt-2 min-h-11 w-full text-sm underline sm:ml-4 sm:w-auto">Sign out</button></div>
           )}
           {load.kind === 'choose' && (
             <>
@@ -465,10 +499,16 @@ export default function MerchantDashboardPage() {
   }
 
   const { profile, merchants } = data;
-  const readOnly = profile.restriction === 'suspended' || profile.restriction === 'archived';
+  const readOnly = profile.restriction === 'suspended' || profile.restriction === 'archived' || listing?.reviewStatus === 'pending' || listing?.restriction !== 'none' || listingBusy;
   const value = (path: string) => snapshotValue(confirmed[path]);
   const hasText = (path: string) => typeof value(path) === 'string' && (value(path) as string).trim() !== '';
-  const checklist = [
+  const checklist = listing?.stateSource === 'managed' ? [
+    { label: 'Restaurant name', complete: listing.checks.name, anchor: 'basics' },
+    { label: 'Address', complete: listing.checks.address, anchor: 'basics' },
+    { label: 'A way to contact you', complete: listing.checks.contact, anchor: 'contact' },
+    { label: 'Cuisine', complete: listing.checks.category, anchor: 'basics' },
+    { label: 'At least one dish', complete: listing.checks.dish, anchor: 'menu' },
+  ] : [
     { label: 'Short description', complete: hasText('profile.description'), anchor: 'about' },
     { label: 'A way to contact you', complete: hasText('profile.phone') || hasText('profile.whatsapp') || hasText('profile.email'), anchor: 'contact' },
     { label: 'Cover photo or logo', complete: Boolean(profile.cover_image || profile.logo_image), anchor: 'photos' },
@@ -488,7 +528,7 @@ export default function MerchantDashboardPage() {
             <p className="text-xs font-medium uppercase tracking-wider text-emerald-800">Merchant dashboard</p>
             <h1 className="mt-1 font-serif text-2xl text-[#2C3E2D] break-words sm:text-3xl">{profile.name}</h1>
             <div className="mt-2 flex flex-wrap gap-2 text-xs">
-              <span className="rounded-full bg-[#F0F4EC] px-2.5 py-1 text-[#2C3E2D]">Listing: {statusLabel(profile.platform_status, 'Published')}</span>
+              <span className="rounded-full bg-[#F0F4EC] px-2.5 py-1 text-[#2C3E2D]">Listing: {listing?.stateSource === 'managed' ? (listing.public ? 'Live' : statusLabel(listing.reviewStatus, 'Draft')) : statusLabel(profile.platform_status, 'Published')}</span>
               <span className="rounded-full bg-[#F0F4EC] px-2.5 py-1 text-[#2C3E2D]">Business: {statusLabel(profile.business_status, 'Open')}</span>
             </div>
             {merchants.length > 1 && (
@@ -508,7 +548,7 @@ export default function MerchantDashboardPage() {
           </div>
           <nav aria-label="Merchant links" className="flex flex-wrap items-center gap-2 text-sm">
             <a href="/merchant/new" onClick={(event) => { event.preventDefault(); requestNewRestaurant(); }} className="rounded-lg border border-[#DDE5DC] px-3 py-2 font-medium text-[#2C3E2D] hover:border-emerald-700">Create another restaurant</a>
-            <a href={`/store/${profile.slug}`} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-[#DDE5DC] px-3 py-2 font-medium text-[#2C3E2D] hover:border-emerald-700">View public page</a>
+            {(listing?.stateSource === 'legacy' || listing?.public) && <a href={`/store/${profile.slug}`} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-[#DDE5DC] px-3 py-2 font-medium text-[#2C3E2D] hover:border-emerald-700">View public page</a>}
             <Link href={merchantPageUrl('/merchant/stories', profile.id)} onClick={(event) => { event.preventDefault(); requestStories(); }} className="rounded-lg border border-[#DDE5DC] px-3 py-2 font-medium text-[#2C3E2D] hover:border-emerald-700">Stories</Link>
             <button type="button" onClick={requestSignOut} className="rounded-lg px-3 py-2 font-medium text-[#6B6560] hover:text-[#2C3E2D]">Sign out</button>
           </nav>
@@ -577,7 +617,7 @@ export default function MerchantDashboardPage() {
             </div>
             <ul className="mt-3 space-y-1.5 text-sm">
               {checklist.map((item) => (
-                <li key={item.anchor}>
+                <li key={item.label}>
                   {item.complete
                     ? <span className="text-emerald-800">✓ {item.label}</span>
                     : <a href={`#${item.anchor}`} className="text-[#2C3E2D] underline underline-offset-2">○ {item.label}</a>}
@@ -595,11 +635,16 @@ export default function MerchantDashboardPage() {
             </ul>
           </nav>
           <p className="mt-4 hidden text-xs leading-relaxed text-[#6B6560] lg:block">
-            Your restaurant name, address, web address and business status are managed by the BiteSite team. Each section saves on its own.
+            Save each section separately. You can edit listing basics until approval; later changes to those details go through BiteSite. External links are reviewed.
           </p>
         </aside>
 
         <div className="min-w-0 space-y-6">
+          {listingError && <p role="alert" className="text-sm text-red-700">{listingError}</p>}
+          {listing && <ListingPanel key={sectionKey} merchantId={profile.id} state={listing} getHeaders={photoHeaders} refresh={refreshListing} onState={onListingState} onBusy={setListingBusy} register={register} beforeAction={() => { const status = anyStatus(); return !status.dirty && !status.busy; }} />}
+          <SectionCard id="basics" title="Listing basics" description="Your restaurant name, location and cuisine.">
+            <ListingBasics key={`basics:${sectionKey}`} {...sectionProps} readOnly={readOnly || !listing?.basicsEditable} />
+          </SectionCard>
           <SectionCard id="about" title="About" description="A short line and description help visitors decide to come in.">
             <TextSection key={`about:${sectionKey}`} id="about" config={ABOUT_FIELDS} {...sectionProps} />
           </SectionCard>
@@ -608,16 +653,16 @@ export default function MerchantDashboardPage() {
             <TextSection key={`contact:${sectionKey}`} id="contact" config={CONTACT_FIELDS} {...sectionProps} />
             <div className="mt-6 rounded-lg border border-[#EEF2EC] bg-[#FAFBF7] p-4">
               <h3 className="mb-2 text-sm font-semibold text-[#2C3E2D]">Links</h3>
-              <LinkRequests key={`links:${profile.id}:${data.loadId}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={readOnly} />
+              <LinkRequests key={`links:${profile.id}:${data.loadId}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={readOnly} register={register} />
             </div>
           </SectionCard>
 
           <SectionCard id="photos" title="Photos" description="Choose a photo from your phone or take a new one. It is resized before upload and appears on your page after BiteSite checks the file.">
-            <ProfileImagesPanel key={`photos:${profile.id}:${data.loadId}`} apiBase={`/api/merchant/restaurants/${encodeURIComponent(profile.id)}/media`} getHeaders={photoHeaders} disabled={readOnly} onChanged={onPhotoChanged} />
+            <ProfileImagesPanel key={`photos:${profile.id}:${data.loadId}`} apiBase={`/api/merchant/restaurants/${encodeURIComponent(profile.id)}/media`} getHeaders={photoHeaders} disabled={readOnly} register={register} onChanged={onPhotoChanged} />
           </SectionCard>
 
           <SectionCard id="menu" title="Menu" description="Add categories and dishes, change prices, and mark dishes sold out. Changes show on your page right away.">
-            <MenuManager key={`menu:${profile.id}:${data.loadId}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={readOnly} />
+            <MenuManager onChanged={refreshListing} key={`menu:${profile.id}:${data.loadId}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={readOnly} />
           </SectionCard>
 
           <SectionCard id="hours" title="Opening hours" description="Customers see these on your page. Changes to one day leave the other days as they are.">
@@ -629,7 +674,7 @@ export default function MerchantDashboardPage() {
           </SectionCard>
 
           <p className="text-xs leading-relaxed text-[#6B6560] lg:hidden">
-            Your restaurant name, address, web address and business status are managed by the BiteSite team. Each section saves on its own.
+            Save each section separately. You can edit listing basics until approval; later changes to those details go through BiteSite. External links are reviewed.
           </p>
         </div>
       </div>

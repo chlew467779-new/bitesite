@@ -38,6 +38,9 @@
 --
 -- Every write is locked (merchant row first), audited by the D1a trigger (operation
 -- merchant_listing:<action> / merchant_review:<decision>) and idempotent per request id (7 days).
+-- CH confirmed 2026-09-27: pending capacity defaults to 20; pilot total defaults to 50.
+-- Approval releases a queue place but retains a pilot place; withdrawal/rejection releases both.
+-- Owner profile/contact/menu edits after approval are immediately effective; links remain reviewed.
 -- Local first; staging and production each need CH approval, after 20260927120000.
 -- Rollback: supabase/rollback/20260927130000_merchant_listing_review.rollback.STAGING_ONLY.sql
 -- =====================================================================
@@ -72,6 +75,7 @@ comment on table public.merchant_review_submissions is
 create table private.merchant_review_settings (
   singleton        boolean     primary key default true check (singleton),
   pending_capacity integer     not null default 20 check (pending_capacity between 0 and 1000),
+  pilot_capacity   integer     not null default 50 check (pilot_capacity between 0 and 100000),
   updated_at       timestamptz not null default now()
 );
 insert into private.merchant_review_settings (singleton) values (true);
@@ -411,6 +415,8 @@ declare
   v_content jsonb;
   v_capacity int;
   v_pending int;
+  v_pilot_capacity int;
+  v_pilot_used int;
   v_slug text;
   v_old_slug text;
   v_submission uuid;
@@ -462,10 +468,17 @@ begin
       perform private.merchant_write_error('REVIEW_ONE_PENDING');
     end if;
     -- Site-wide capacity: the settings row serializes every submit, so the last slot has one winner.
-    select pending_capacity into v_capacity from private.merchant_review_settings where singleton for update;
+    select pending_capacity, pilot_capacity into v_capacity, v_pilot_capacity from private.merchant_review_settings where singleton for update;
     select count(*) into v_pending from public.merchant_review_submissions where status = 'pending';
     if v_pending >= v_capacity then
       perform private.merchant_write_error('REVIEW_CAPACITY_FULL');
+    end if;
+    -- Separate from the queue limit: pending and approved restaurants reserve a pilot place.
+    -- Only managed (self-registered) restaurants count; legacy restaurants never take a place.
+    select count(*) into v_pilot_used from public.merchants
+      where state_source = 'managed' and review_status in ('pending', 'approved');
+    if v_pilot_used >= v_pilot_capacity then
+      perform private.merchant_write_error('PILOT_CAPACITY_FULL');
     end if;
     update public.merchants set review_status = 'pending' where id = m.id returning * into m;
     v_content := private.merchant_review_content(m);
@@ -511,6 +524,8 @@ begin
   end if;
   return jsonb_build_object(
     'capacity', (select pending_capacity from private.merchant_review_settings where singleton),
+    'pilotCapacity', (select pilot_capacity from private.merchant_review_settings where singleton),
+    'pilotUsed', (select count(*) from public.merchants where state_source = 'managed' and review_status in ('pending', 'approved')),
     'pending', (select count(*) from public.merchant_review_submissions where status = 'pending'),
     'items', coalesce((
       select jsonb_agg(jsonb_build_object(
@@ -594,7 +609,8 @@ begin
 end;
 $$;
 
-create or replace function public.merchant_review_capacity_set(p_actor_type text, p_actor_id text, p_capacity int)
+drop function if exists public.merchant_review_capacity_set(text,text,integer);
+create or replace function public.merchant_review_capacity_set(p_actor_type text, p_actor_id text, p_capacity int, p_pilot_capacity int default null)
 returns jsonb
 language plpgsql
 volatile
@@ -610,10 +626,13 @@ begin
   if p_capacity is null or p_capacity not between 0 and 1000 then
     perform private.merchant_write_error('VALIDATION_FAILED', 'capacity must be 0..1000');
   end if;
+  if p_pilot_capacity is not null and p_pilot_capacity not between 0 and 100000 then
+    perform private.merchant_write_error('VALIDATION_FAILED', 'pilot capacity must be 0..100000');
+  end if;
   -- Setting a number is naturally idempotent; lowering it never cancels waiting submissions.
-  update private.merchant_review_settings set pending_capacity = p_capacity, updated_at = now()
+  update private.merchant_review_settings set pending_capacity = p_capacity, pilot_capacity = coalesce(p_pilot_capacity, pilot_capacity), updated_at = now()
    where singleton returning pending_capacity into v;
-  return jsonb_build_object('capacity', v, 'pending', (select count(*) from public.merchant_review_submissions where status = 'pending'));
+  return jsonb_build_object('capacity', v, 'pilotCapacity', (select pilot_capacity from private.merchant_review_settings where singleton), 'pilotUsed', (select count(*) from public.merchants where state_source = 'managed' and review_status in ('pending', 'approved')), 'pending', (select count(*) from public.merchant_review_submissions where status = 'pending'));
 end;
 $$;
 
@@ -641,7 +660,7 @@ begin
     'public.merchant_listing_apply(text,text,uuid,uuid,text)',
     'public.merchant_review_queue(text,text)',
     'public.merchant_review_decide(text,text,uuid,uuid,text,text)',
-    'public.merchant_review_capacity_set(text,text,integer)'
+    'public.merchant_review_capacity_set(text,text,integer,integer)'
   ] loop
     execute format('revoke all on function %s from public, anon, authenticated', fn);
     execute format('grant execute on function %s to service_role', fn);

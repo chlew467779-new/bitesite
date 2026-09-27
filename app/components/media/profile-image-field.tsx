@@ -12,6 +12,7 @@
  * result of the PUT is unknown, Retry resends it with the same request id.
  */
 
+import type { SectionHandle } from '@/app/components/section-save/use-section-save';
 import { useEffect, useRef, useState } from 'react';
 import imageCompression from 'browser-image-compression';
 import { supabase } from '@/lib/supabase';
@@ -27,6 +28,7 @@ type Props = {
   getHeaders: () => Promise<Record<string, string> | null>;
   onChanged: (value: string | null) => void;
   disabled?: boolean;
+  register?: (id: string, handle: SectionHandle | null) => void;
 };
 
 type Stage = 'idle' | 'preparing' | 'uploading' | 'checking' | 'removing';
@@ -59,13 +61,17 @@ async function json(response: Response): Promise<ApiReply | null> {
   return response.json().catch(() => null);
 }
 
-export function ProfileImageField({ slot, label, value, apiBase, getHeaders, onChanged, disabled }: Props) {
+export function ProfileImageField({ slot, label, value, apiBase, getHeaders, onChanged, disabled, register }: Props) {
   const [stage, setStage] = useState<Stage>('idle');
   const [message, setMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [unknown, setUnknown] = useState<PendingBind | null>(null);
   const [confirmRemove, setConfirmRemove] = useState(false);
   const busyRef = useRef(false);
+  useEffect(() => {
+    register?.('photo-' + slot, { status: () => ({ dirty: false, pending: stage !== 'idle', unknown: !!unknown, conflicts: false }), save: async () => 'skipped', discard: () => {} });
+    return () => register?.('photo-' + slot, null);
+  }, [register, slot, stage, unknown]);
   const inputId = `photo-${slot}`;
 
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);

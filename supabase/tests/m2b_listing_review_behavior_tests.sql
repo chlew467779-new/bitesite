@@ -93,6 +93,10 @@ begin
   perform m2b_test.err(format(apply, oa, leg, 'submit'), 'LISTING_ACTION_NOT_ALLOWED', 'legacy restaurants are not submitted');
   perform m2b_test.err(format(apply, oa, a, 'publish'), 'LISTING_ACTION_NOT_ALLOWED', 'cannot publish a draft');
 
+  -- Pilot capacity is independent of the pending queue (and drafts use neither).
+  perform public.merchant_review_capacity_set('admin', 'legacy_admin', 20, 0);
+  perform m2b_test.err(format(apply, oa, a, 'submit'), 'PILOT_CAPACITY_FULL', 'pilot full with queue free');
+  perform public.merchant_review_capacity_set('admin', 'legacy_admin', 20, 50);
   -- Submit: pending, frozen, snapshot, notification.
   req := gen_random_uuid();
   r := public.merchant_listing_apply('owner', oa, a, req, 'submit');
@@ -156,6 +160,12 @@ begin
   perform m2b_test.ok((public.merchant_review_decide('admin', 'legacy_admin', req, sub, 'approve', null) ->> 'replayed')::boolean, 'decision replay');
   perform m2b_test.err(format(basics, oa, a, '[{"path":"profile.name","expected":{"exists":true,"value":"ZZ M2B Kopi Ah Seng"},"value":"x"}]'), 'FIELD_NOT_WRITABLE', 'basics locked after approval');
   perform m2b_test.err(format(apply, oa, a, 'submit'), 'LISTING_ACTION_NOT_ALLOWED', 'approved restaurants are not resubmitted');
+
+  perform m2b_test.ok((public.merchant_review_queue('admin', 'legacy_admin') ->> 'pending')::int = 0, 'approval releases queue place');
+  perform public.merchant_review_capacity_set('admin', 'legacy_admin', 20,
+    (public.merchant_review_queue('admin', 'legacy_admin') ->> 'pilotUsed')::int);
+  perform m2b_test.err(format(apply, ob, b, 'submit'), 'PILOT_CAPACITY_FULL', 'approved hidden restaurant retains pilot place');
+  perform public.merchant_review_capacity_set('admin', 'legacy_admin', 20, 50);
 
   -- Publish: public, first slug from the name (numbered on collision), hide / publish again.
   req := gen_random_uuid();

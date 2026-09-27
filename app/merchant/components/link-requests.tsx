@@ -8,6 +8,7 @@
  * link, full-width buttons, URL keyboard. Checks mirror the server (lib/merchant-links-core.mjs).
  */
 
+import type { SectionHandle } from '@/app/components/section-save/use-section-save';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { LINK_FIELDS, LINK_PROBLEM_TEXT, linkProblem, type LinkField, type LinkRequestItem } from '@/lib/merchant-links-core.mjs';
@@ -23,10 +24,11 @@ function safeHref(value: string | null) {
   try { const url = new URL(value); return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : null; } catch { return null; }
 }
 
-export function LinkRequests({ merchantId, getHeaders, readOnly }: {
+export function LinkRequests({ merchantId, getHeaders, readOnly, register }: {
   merchantId: string;
   getHeaders: () => Promise<Record<string, string> | null>;
   readOnly: boolean;
+  register?: (id: string, handle: SectionHandle | null) => void;
 }) {
   const api = `/api/merchant/restaurants/${encodeURIComponent(merchantId)}/links`;
   const [links, setLinks] = useState<Links | null>(null);
@@ -38,6 +40,10 @@ export function LinkRequests({ merchantId, getHeaders, readOnly }: {
   const [message, setMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
   const [unknown, setUnknown] = useState<Pending | null>(null);
   const busyRef = useRef(false);
+  useEffect(() => {
+    register?.('links', { status: () => ({ dirty: !!editing, pending: busy, unknown: !!unknown, conflicts: false }), save: async () => 'skipped', discard: () => { setEditing(null); } });
+    return () => register?.('links', null);
+  }, [register, busy, unknown, editing]);
 
   const load = useCallback(async () => {
     setLoadError('');

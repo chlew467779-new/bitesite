@@ -45,7 +45,9 @@ for (const file of migrationFiles) {
   if (text.includes("create or replace function private.merchant_field_registry()")) registrySource = text;
 }
 const registrySql = registrySource.slice(registrySource.indexOf("create or replace function private.merchant_field_registry()"));
-const sqlRows = [...registrySql.slice(0, registrySql.indexOf("$$;")).matchAll(/\('([a-z_.]+)',\s*'(\w+)',\s*'(\w+)',\s*(true|false),\s*(true|false),\s*(\d+|null)\)/g)]
+// Outside the listing-basics wrapper, the scoped Owner permission is false.
+const normalRegistrySql = registrySql.replaceAll("private.merchant_listing_basics_enabled()", "false");
+const sqlRows = [...normalRegistrySql.slice(0, normalRegistrySql.indexOf("$;")).matchAll(/\('([a-z_.]+)',\s*'(\w+)',\s*'(\w+)',\s*(true|false),\s*(true|false),\s*(\d+|null)\)/g)]
   .map(([, path, kind, target, owner, admin, max]) => ({ path, kind, target, owner: owner === "true", admin: admin === "true", maxLength: max === "null" ? null : Number(max) }));
 assert.deepEqual(sqlRows, MERCHANT_FIELD_REGISTRY.map((row) => ({ ...row })), "JS registry equals the database registry");
 
@@ -160,10 +162,10 @@ assert.equal(fieldPatchResponse(null, REQ).status, 500);
 const runner = await read("app/api/_lib/merchant-field-patch.ts");
 assert.match(runner, /^import 'server-only';/m);
 assert.match(runner, /export const ADMIN_PRINCIPAL = 'legacy_admin';/);
-assert.match(runner, /supabase\.rpc\('merchant_field_patch'/);
-assert.match(runner, /parseFieldPatchRequest\(body, actor\.type\)/, "the actor type comes from the caller, not the body");
+assert.match(runner, /supabase\.rpc\(basics \? 'merchant_listing_basics_patch' : 'merchant_field_patch'/);
+assert.match(runner, /parseFieldPatchRequest\(body, basics \? 'admin' : actor\.type\)/, "only the scoped basics parser uses Admin shapes; RPC still uses actorArgs(actor)");
 assert.doesNotMatch(runner, /\.from\('merchants'\)\s*\.update|\.update\(/, "no direct merchant UPDATE");
-assert.ok(runner.indexOf("supabase.rpc('merchant_field_patch'") < runner.indexOf("revalidateMerchant(merchantId)"), "revalidation after the committed RPC");
+assert.ok(runner.indexOf("supabase.rpc(basics ? ") < runner.indexOf("revalidateMerchant(merchantId)"), "revalidation after the committed RPC");
 assert.match(runner, /if \(result\?\.status === 'applied'\) await revalidateMerchant/, "only applied saves (including replays) refresh pages");
 
 const ownerRoute = await read("app/api/merchant/restaurants/[merchantId]/fields/route.ts");

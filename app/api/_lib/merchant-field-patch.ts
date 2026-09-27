@@ -11,6 +11,7 @@
  */
 
 import 'server-only';
+import { isListingBasicsPatch, mapReviewRpcError } from '@/lib/merchant-review-core.mjs';
 import { NextResponse, type NextRequest } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
@@ -19,7 +20,6 @@ import { AMENITY_TAGS, CUISINE_TAGS, OCCASION_TAGS } from '@/lib/presets';
 import {
   MAX_FIELD_PATCH_BODY_BYTES,
   fieldPatchResponse,
-  mapFieldRpcError,
   parseFieldPatchRequest,
   type FieldActorType,
 } from '@/lib/merchant-field-patch-core.mjs';
@@ -71,7 +71,7 @@ export async function readMerchantFields(actor: FieldActor, merchantId: string) 
   if (!isMerchantId(merchantId)) return errorResponse(404, 'RESOURCE_NOT_FOUND', 'Restaurant not found.');
   const { data, error } = await supabase.rpc('merchant_field_snapshot_read', { ...actorArgs(actor), p_merchant_id: merchantId });
   if (error) {
-    const mapped = mapFieldRpcError(error);
+    const mapped = mapReviewRpcError(error);
     if (mapped.status === 500) console.error('merchant_field_snapshot_read failed:', error.message);
     return errorResponse(mapped.status, mapped.code, mapped.message);
   }
@@ -91,19 +91,20 @@ export async function patchMerchantFields(request: NextRequest, actor: FieldActo
     return errorResponse(400, 'INVALID_JSON', 'Invalid request.');
   }
 
-  const parsed = parseFieldPatchRequest(body, actor.type);
+  const basics = actor.type === 'owner' && isListingBasicsPatch(body);
+  const parsed = parseFieldPatchRequest(body, basics ? 'admin' : actor.type);
   if (!parsed.ok) return errorResponse(parsed.status, parsed.code, parsed.message, parsed.fieldErrors ? { fieldErrors: parsed.fieldErrors } : {});
   const invalidTags = tagErrors(parsed.patches);
   if (Object.keys(invalidTags).length > 0) return errorResponse(400, 'VALIDATION_FAILED', 'Please fix the highlighted fields.', { fieldErrors: invalidTags });
 
-  const { data, error } = await supabase.rpc('merchant_field_patch', {
+  const { data, error } = await supabase.rpc(basics ? 'merchant_listing_basics_patch' : 'merchant_field_patch', {
     ...actorArgs(actor),
     p_merchant_id: merchantId,
     p_request_id: parsed.requestId,
     p_patches: parsed.patches,
   });
   if (error) {
-    const mapped = mapFieldRpcError(error);
+    const mapped = mapReviewRpcError(error);
     if (mapped.status === 500) console.error('merchant_field_patch failed:', error.message);
     return errorResponse(mapped.status, mapped.code, mapped.message, { requestId: parsed.requestId });
   }
