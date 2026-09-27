@@ -157,7 +157,8 @@ A new feature idea must not silently become a decision. Add it here only after C
 
 - The Owner opens `/merchant/preview?merchant=<id>` ("Preview page" on the dashboard, new tab) to see the restaurant page with the same layout visitors get, in any state: draft, waiting for review, approved but hidden, suspended.
 - Only the restaurant's active Owner can load it; the data is the public projection (no legacy reviews), so the preview never shows more than the public page would. A banner states whether visitors can see the page.
-- No analytics are recorded (data-bs-analytics suppression), the page is noindex, and the API response is not cached. Admin preview is not included yet.
+- No analytics are recorded (data-bs-analytics suppression), the page is noindex, and the API response is not cached.
+- Admin can preview any restaurant (`&as=admin`, Admin session), linked from each Restaurant Reviews item so reviewers see the real page before approving.
 
 ## SYNC-052 — Merchant feedback destination (RECOMMENDATION, Claude 2026-09-27; CH_REQUIRED to switch on)
 

@@ -5,6 +5,9 @@
  * visitors see, rendered from GET /api/merchant/preview for the signed-in Owner, even while the
  * restaurant is a draft, waiting for review or approved but hidden. Analytics are suppressed for
  * the whole preview (data-bs-analytics), so previews never count as visits or clicks.
+ *
+ * `&as=admin` previews any restaurant for the signed-in Admin (review before approval), through
+ * GET /api/admin/merchants/[id]/preview with the Admin session token.
  */
 
 import Link from 'next/link';
@@ -40,17 +43,32 @@ function statusText(status: PreviewData['status']) {
 export default function MerchantPreviewPage() {
   const [state, setState] = useState<State>({ kind: 'loading' });
   const [merchantId, setMerchantId] = useState<string | null>(null);
+  const [asAdmin, setAsAdmin] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const selected = selectedMerchantIdFromSearch(window.location.search);
+      const admin = new URLSearchParams(window.location.search).get('as') === 'admin';
       setMerchantId(selected);
-      const { data: session } = await supabase.auth.getSession();
-      const token = session.session?.access_token;
-      if (!token) { if (!cancelled) setState({ kind: 'error', message: 'Sign in to preview your restaurant page.', signedOut: true }); return; }
+      setAsAdmin(admin);
+      let url: string;
+      let headers: Record<string, string>;
+      if (admin) {
+        let adminToken: string | null = null;
+        try { adminToken = localStorage.getItem('admin_token'); } catch { adminToken = null; }
+        if (!adminToken || !selected) { if (!cancelled) setState({ kind: 'error', message: 'Sign in to Admin first, then open the preview again.', signedOut: true }); return; }
+        url = `/api/admin/merchants/${encodeURIComponent(selected)}/preview`;
+        headers = { 'x-admin-token': adminToken };
+      } else {
+        const { data: session } = await supabase.auth.getSession();
+        const token = session.session?.access_token;
+        if (!token) { if (!cancelled) setState({ kind: 'error', message: 'Sign in to preview your restaurant page.', signedOut: true }); return; }
+        url = merchantApiUrl('/api/merchant/preview', selected);
+        headers = { Authorization: `Bearer ${token}` };
+      }
       try {
-        const response = await fetch(merchantApiUrl('/api/merchant/preview', selected), { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' });
+        const response = await fetch(url, { headers, cache: 'no-store' });
         const body = await response.json().catch(() => null);
         if (cancelled) return;
         if (!response.ok || !body?.data) {
@@ -65,7 +83,8 @@ export default function MerchantPreviewPage() {
     return () => { cancelled = true; };
   }, []);
 
-  const back = merchantPageUrl('/merchant', merchantId);
+  const back = asAdmin ? '/admin' : merchantPageUrl('/merchant', merchantId);
+  const backLabel = asAdmin ? 'Back to Admin' : 'Back to dashboard';
 
   if (state.kind !== 'ready') {
     return (
@@ -74,8 +93,8 @@ export default function MerchantPreviewPage() {
           <h1 className="font-serif text-2xl">Page preview</h1>
           <p className="mt-3 text-sm text-[#6B6560]" role={state.kind === 'error' ? 'alert' : 'status'}>{state.kind === 'loading' ? 'Loading your preview…' : state.message}</p>
           {state.kind === 'error' && (
-            <Link href={state.signedOut ? '/merchant/login' : back} className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-[#2C3E2D] px-4 text-sm font-medium text-white sm:w-auto">
-              {state.signedOut ? 'Sign in' : 'Back to dashboard'}
+            <Link href={state.signedOut ? (asAdmin ? '/admin' : '/merchant/login') : back} className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-[#2C3E2D] px-4 text-sm font-medium text-white sm:w-auto">
+              {state.signedOut ? 'Sign in' : backLabel}
             </Link>
           )}
         </div>
@@ -89,8 +108,8 @@ export default function MerchantPreviewPage() {
     <div {...analyticsSuppressedProps}>
       <div className="sticky top-0 z-[70] border-b border-amber-300 bg-amber-50 px-4 py-2 text-amber-950" role="status">
         <div className="mx-auto flex max-w-6xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm"><span className="font-semibold">Preview — only you can see this.</span> {statusText(data.status)}</p>
-          <Link href={back} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-amber-800 px-4 text-sm font-medium">Back to dashboard</Link>
+          <p className="text-sm"><span className="font-semibold">{asAdmin ? 'Admin preview.' : 'Preview — only you can see this.'}</span> {statusText(data.status)}</p>
+          <Link href={back} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-amber-800 px-4 text-sm font-medium">{backLabel}</Link>
         </div>
       </div>
       <Layout
