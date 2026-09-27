@@ -1,7 +1,7 @@
 /* bitesite/lib/merchant-field-patch-core.d.mts */
 
 export type FieldActorType = "owner" | "admin";
-export type FieldKind = "text" | "hours" | "feature";
+export type FieldKind = "text" | "hours" | "feature" | "layout" | "tag_array" | "location";
 
 export interface FieldRegistryRow {
   readonly path: string;
@@ -12,12 +12,19 @@ export interface FieldRegistryRow {
   readonly maxLength: number | null;
 }
 
+export interface FieldLocation {
+  address: string | null;
+  area: string | null;
+  latitude: number | null;
+  longitude: number | null;
+}
+
 export type FieldSnapshot = { exists: true; value: unknown } | { exists: false };
 
 export interface FieldPatch {
   path: string;
   expected: FieldSnapshot;
-  value: string | boolean | null;
+  value: string | boolean | null | string[] | FieldLocation;
 }
 
 export type ParsedFieldPatchRequest =
@@ -37,3 +44,5 @@ export declare function mapFieldRpcError(error: { code?: string; message?: strin
   message: string;
 };
 export declare function fieldPatchResponse(result: unknown, requestId: string): { status: number; body: Record<string, unknown> };
+
+export declare function parseLocation(value: unknown): FieldLocation | string;

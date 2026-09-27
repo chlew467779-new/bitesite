@@ -15,6 +15,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { InvalidJsonBodyError, readBoundedJson, RequestBodyTooLargeError } from '@/lib/bounded-json';
+import { AMENITY_TAGS, CUISINE_TAGS, OCCASION_TAGS } from '@/lib/presets';
 import {
   MAX_FIELD_PATCH_BODY_BYTES,
   fieldPatchResponse,
@@ -36,6 +37,29 @@ function actorArgs(actor: FieldActor): { p_actor_type: FieldActorType; p_actor_i
 
 function errorResponse(status: number, code: string, message: string, extra: Record<string, unknown> = {}) {
   return NextResponse.json({ error: { code, message, ...extra } }, { status });
+}
+
+const TAG_PRESETS: Record<string, readonly string[]> = {
+  'tags.cuisine': CUISINE_TAGS,
+  'tags.amenities': AMENITY_TAGS,
+  'tags.occasion': OCCASION_TAGS,
+};
+
+/**
+ * Controlled tags: every tag must be a preset, except tags the restaurant already had (in the
+ * expected snapshot), which may stay so an edit never silently drops older values.
+ */
+function tagErrors(patches: { path: string; expected: unknown; value: unknown }[]) {
+  const errors: Record<string, string> = {};
+  for (const patch of patches) {
+    const preset = TAG_PRESETS[patch.path];
+    if (!preset || !Array.isArray(patch.value)) continue;
+    const expected = patch.expected as { exists: boolean; value?: unknown };
+    const stored = expected.exists && Array.isArray(expected.value) ? (expected.value as unknown[]) : [];
+    const invalid = (patch.value as string[]).filter((tag) => !preset.includes(tag) && !stored.includes(tag));
+    if (invalid.length) errors[patch.path] = `Choose from the list: "${invalid[0]}" is not available.`;
+  }
+  return errors;
 }
 
 export function isMerchantId(value: string) {
@@ -69,6 +93,8 @@ export async function patchMerchantFields(request: NextRequest, actor: FieldActo
 
   const parsed = parseFieldPatchRequest(body, actor.type);
   if (!parsed.ok) return errorResponse(parsed.status, parsed.code, parsed.message, parsed.fieldErrors ? { fieldErrors: parsed.fieldErrors } : {});
+  const invalidTags = tagErrors(parsed.patches);
+  if (Object.keys(invalidTags).length > 0) return errorResponse(400, 'VALIDATION_FAILED', 'Please fix the highlighted fields.', { fieldErrors: invalidTags });
 
   const { data, error } = await supabase.rpc('merchant_field_patch', {
     ...actorArgs(actor),

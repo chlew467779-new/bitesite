@@ -34,10 +34,17 @@ const rejects = (body, actor, status, code, label) => {
 
 /* ── registry matches the migration ────────────────────────────────────────────────────────── */
 
-const migrations = (await readdir(new URL("../supabase/migrations/", import.meta.url))).filter((f) => f.endsWith("_merchant_field_cas.sql"));
+const migrationFiles = (await readdir(new URL("../supabase/migrations/", import.meta.url))).sort();
+const migrations = migrationFiles.filter((f) => f.endsWith("_merchant_field_cas.sql"));
 assert.equal(migrations.length, 1, "exactly one D2-A migration");
 const migration = await read(`supabase/migrations/${migrations[0]}`);
-const registrySql = migration.slice(migration.indexOf("create or replace function private.merchant_field_registry()"));
+// The registry as defined by the newest migration that (re)creates it.
+let registrySource = "";
+for (const file of migrationFiles) {
+  const text = await read(`supabase/migrations/${file}`);
+  if (text.includes("create or replace function private.merchant_field_registry()")) registrySource = text;
+}
+const registrySql = registrySource.slice(registrySource.indexOf("create or replace function private.merchant_field_registry()"));
 const sqlRows = [...registrySql.slice(0, registrySql.indexOf("$$;")).matchAll(/\('([a-z_.]+)',\s*'(\w+)',\s*'(\w+)',\s*(true|false),\s*(true|false),\s*(\d+|null)\)/g)]
   .map(([, path, kind, target, owner, admin, max]) => ({ path, kind, target, owner: owner === "true", admin: admin === "true", maxLength: max === "null" ? null : Number(max) }));
 assert.deepEqual(sqlRows, MERCHANT_FIELD_REGISTRY.map((row) => ({ ...row })), "JS registry equals the database registry");
@@ -48,7 +55,7 @@ for (const row of MERCHANT_FIELD_REGISTRY) {
 }
 assert.ok(!isWritablePath("features.menu", "admin") && !isWritablePath("features.reviews", "admin"), "menu/reviews features are protected");
 for (const column of ["name", "slug", "address", "layout", "is_published", "platform_status", "review_status", "listing_visibility", "platform_restriction", "business_status", "settings", "reviews"]) {
-  assert.ok(!MERCHANT_FIELD_REGISTRY.some((row) => row.kind === "text" && row.target === column), `${column} is not a patch target`);
+  assert.ok(!MERCHANT_FIELD_REGISTRY.some((row) => row.kind === "text" && row.target === column && column !== "name"), `${column} is not a patch target`);
 }
 
 /* ── request parsing ───────────────────────────────────────────────────────────────────────── */
@@ -75,7 +82,34 @@ rejects(req([{ path: "profile.tagline", expected: ex(null), value: "x", extra: 1
 rejects(req([p("profile.tagline", { exists: true }, "x")]), "owner", 400, "VALIDATION_FAILED", "exists without value");
 rejects(req([p("hours.mon", { exists: false, value: null }, "10:00 - 18:00")]), "owner", 400, "VALIDATION_FAILED", "absent with value");
 rejects(req([p("profile.tagline", { exists: "true", value: null }, "x")]), "owner", 400, "VALIDATION_FAILED", "exists not boolean");
-rejects(req([p("profile.name", ex("x"), "y")]), "owner", 400, "UNKNOWN_FIELD", "name");
+rejects(req([p("profile.name", ex("x"), "y")]), "owner", 400, "FIELD_NOT_WRITABLE", "Owner cannot rename (Admin-only, B0)");
+rejects(req([p("profile.slug", ex("x"), "y")]), "admin", 400, "UNKNOWN_FIELD", "slug is not a patch path");
+
+/* B0: Admin-only name, layout, tags, location */
+ok = parseFieldPatchRequest(req([
+  p("profile.name", ex("Old"), " New Name "),
+  p("presentation.layout", ex("classic"), "rustic"),
+  p("tags.cuisine", ex(["Cafe"]), [" Cafe ", "Bakery"]),
+  p("location", ex({ address: "a", area: null, latitude: 1, longitude: 2 }), { address: " 2 Jalan ", area: null, latitude: 0, longitude: 0 }),
+]), "admin");
+assert.equal(ok.ok, true, JSON.stringify(ok));
+assert.deepEqual(ok.patches.map((x) => x.value), ["New Name", "rustic", ["Cafe", "Bakery"], { address: "2 Jalan", area: null, latitude: 0, longitude: 0 }], "values cleaned; coordinate 0 kept");
+for (const path of ["profile.name", "presentation.layout", "tags.cuisine", "location"]) assert.ok(!isWritablePath(path, "owner"), `${path} is Admin-only`);
+let bad = rejects(req([p("presentation.layout", ex("classic"), "chinese")]), "admin", 400, "VALIDATION_FAILED", "layout on hold");
+assert.ok(bad.fieldErrors["presentation.layout"]);
+rejects(req([p("profile.name", ex("Old"), null)]), "admin", 400, "VALIDATION_FAILED", "name cannot be cleared");
+bad = rejects(req([p("tags.cuisine", ex([]), ["Cafe", "Cafe"])]), "admin", 400, "VALIDATION_FAILED", "duplicate tags");
+assert.ok(bad.fieldErrors["tags.cuisine"]);
+rejects(req([p("tags.occasion", ex([]), ["A", "B", "C", "D"])]), "admin", 400, "VALIDATION_FAILED", "too many occasion tags");
+rejects(req([p("tags.cuisine", ex([]), "Cafe")]), "admin", 400, "VALIDATION_FAILED", "tags must be a list");
+for (const [value, label] of [
+  [{ address: "a", area: null, latitude: 1 }, "missing key"],
+  [{ address: "a", area: null, latitude: 1, longitude: null }, "one coordinate"],
+  [{ address: "a", area: null, latitude: 91, longitude: 0 }, "latitude range"],
+  [{ address: "a", area: null, latitude: "3", longitude: "101" }, "string coordinates"],
+  [{ address: "  ", area: null, latitude: null, longitude: null }, "blank address"],
+  [{ address: "a", area: null, latitude: Number.NaN, longitude: 0 }, "NaN"],
+]) rejects(req([p("location", ABSENT, value)]), "admin", 400, "VALIDATION_FAILED", `location: ${label}`);
 rejects(req([p("operating_hours", ex({}), {})]), "owner", 400, "UNKNOWN_FIELD", "column name instead of path");
 rejects(req([p("features.anything", ABSENT, true)]), "admin", 400, "UNKNOWN_FIELD", "unregistered feature");
 rejects(req([p("profile.tagline", ex(null), "x"), p("profile.tagline", ex(null), "y")]), "owner", 400, "VALIDATION_FAILED", "duplicate path");

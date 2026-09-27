@@ -61,7 +61,8 @@ begin
     raise exception 'D2A ASSERT: merchant_change_log must stay private';
   end if;
 
-  if (select count(*) from private.merchant_field_registry() where owner_writable or admin_writable) <> 19
+  -- The exact writable count grows with later migrations (B0: 25); these D2-A invariants stay.
+  if (select count(*) from private.merchant_field_registry() where owner_writable) <> 12
      or exists (select 1 from private.merchant_field_registry() where target in ('website', 'instagram', 'facebook', 'menu_pdf_url', 'menu', 'reviews') and (owner_writable or admin_writable))
      or exists (select 1 from private.merchant_field_registry() where kind = 'feature' and owner_writable) then
     raise exception 'D2A ASSERT: field registry differs from the reviewed whitelist';

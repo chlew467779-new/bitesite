@@ -227,7 +227,7 @@ begin
   perform d2a_test.assert_error(format(stmt, 'owner', o, a, req, '[{"path": "profile.tagline", "expected": {"exists": true}, "value": "x"}]'), 'VALIDATION_FAILED', null, 'expected exists without value');
   perform d2a_test.assert_error(format(stmt, 'owner', o, a, req, '[{"path": "profile.tagline", "expected": {"exists": "yes", "value": null}, "value": "x"}]'), 'VALIDATION_FAILED', null, 'expected.exists not boolean');
   perform d2a_test.assert_error(format(stmt, 'owner', o, a, req, '[{"path": "hours.mon", "expected": {"exists": false, "value": null}, "value": "x"}]'), 'VALIDATION_FAILED', null, 'absent snapshot with value');
-  perform d2a_test.assert_error(format(stmt, 'owner', o, a, req, '[{"path": "profile.name", "expected": {"exists": true, "value": "x"}, "value": "y"}]'), 'UNKNOWN_FIELD', null, 'name is not a patch path');
+  perform d2a_test.assert_error(format(stmt, 'owner', o, a, req, '[{"path": "profile.owner_email", "expected": {"exists": true, "value": "x"}, "value": "y"}]'), 'UNKNOWN_FIELD', null, 'an unregistered path');
   perform d2a_test.assert_error(format(stmt, 'owner', o, a, req, '[{"path": "settings.theme", "expected": {"exists": false}, "value": "y"}]'), 'UNKNOWN_FIELD', null, 'arbitrary path');
   perform d2a_test.assert_error(format(stmt, 'owner', o, a, req, '[{"path": "features", "expected": {"exists": false}, "value": {}}]'), 'UNKNOWN_FIELD', null, 'parent path');
   perform d2a_test.assert_error(format(stmt, 'owner', o, a, req, '[{"path": "profile.tagline", "expected": {"exists": true, "value": null}, "value": "x"}, {"path": "profile.tagline", "expected": {"exists": true, "value": null}, "value": "y"}]'), 'VALIDATION_FAILED', null, 'duplicate path');
