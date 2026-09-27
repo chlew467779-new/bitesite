@@ -185,7 +185,8 @@ assert.deepEqual(validateProfile({ website: null }, { website: "https://old.exam
 /* ── API: same auth boundary, shared rules ─────────────────────────────────────────────────── */
 
 async function read(relPath) {
-  return readFile(new URL(`../${relPath}`, import.meta.url), "utf8");
+  // Source assertions use LF consistently across Linux CI and Windows checkouts.
+  return (await readFile(new URL(`../${relPath}`, import.meta.url), "utf8")).replace(/\r\n/g, "\n");
 }
 
 const routeSource = await read("app/api/merchant/me/route.ts");
