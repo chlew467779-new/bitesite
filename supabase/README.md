@@ -62,6 +62,9 @@ Only the SECURITY LOCKDOWN work lives here for now (branch `fix/security-lockdow
 | `migrations/20260927170000_merchant_draft_limit.sql` | M2-A completion: `merchant_restaurant_create` refuses a fourth editable (draft/rejected, not archived) self-service restaurant per account (`DRAFT_LIMIT`); `merchant_draft_discard` archives a never-public draft | Local; hosted only with approval |
 | `tests/draft_limit_behavior_tests.sql` | Synthetic transaction, rolled back: fourth draft refused, retry still returns its draft, submitted frees a place, rejected counts | Local / staging only |
 | `rollback/20260927170000_merchant_draft_limit.rollback.STAGING_ONLY.sql` | Guarded rollback; restores the #64 function without the cap | Staging only |
+| `migrations/20260927190000_notification_delivery.sql` | Notification delivery bookkeeping on `merchant_notifications` (attempts, last_error, lease); `merchant_notification_claim` (SKIP LOCKED, 5-minute lease, max 5 attempts) / `merchant_notification_finish` | Local; hosted only with approval |
+| `tests/notification_delivery_behavior_tests.sql` | Synthetic transaction, rolled back: order, lease, finish, retry, give-up | Local / staging only |
+| `rollback/20260927190000_notification_delivery.rollback.STAGING_ONLY.sql` | Guarded rollback; drops the RPCs and bookkeeping columns, keeps outbox rows | Staging only |
 | `scripts/test-d2b-cutover-local.mjs` | D2-B write cutover over HTTP: retired Merchant/Admin whole-form saves and hard DELETE refuse (410) and change nothing, no GrabFood write, hidden-draft create accepts only name/slug, profile image upload tickets refused (Story/menu uploads open), B0 Admin paths work | Local only (needs a local Next server) |
 | `rollback/20260926131040_…STAGING_ONLY.sql` | Undoes D1c; every articles column and the old `published`-only rule come back. The D1c code keeps working | Staging; production only as an approved emergency |
 

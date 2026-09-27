@@ -171,3 +171,9 @@ A new feature idea must not silently become a decision. Add it here only after C
 - `merchant_restaurant_create` refuses a fourth self-service restaurant while the account already owns three in draft or rejected (`DRAFT_LIMIT`, 409 with an explanation). Submitted (pending) and approved restaurants do not count; retries of earlier requests still return their draft.
 - The Owner can discard a self-service restaurant that was never public and is in draft or changes requested (dashboard "Discard draft", confirmed). It is archived, not deleted (read-only, Admin can restore) and no longer counts toward the three.
 - Still open from M2-A (Decision needed, CH): rights declaration and terms version at creation. There is no terms page yet; the wording is a legal decision.
+
+## SYNC-055 — Review notification emails (DECIDED by Claude under CH delegation, 2026-09-27)
+
+- Outbox rows (submitted, withdrawn → Admin; approved, rejected with the note → Owner) are emailed by `/api/admin/notifications/deliver`: POST with the Admin session ("send now") or GET from a scheduler with `Authorization: Bearer $CRON_SECRET`.
+- Provider: Resend when `RESEND_API_KEY` and `NOTIFY_FROM` are set; Admin rows go to `ADMIN_NOTIFY_EMAIL`; Owner rows to the Owner account email (Auth lookup). Without a provider nothing is claimed or sent. `NOTIFY_PROVIDER=log` (never in production) prints instead, for local tests.
+- Each row is claimed under a 5-minute lease with SKIP LOCKED (no double sends) and retried up to 5 times. Scheduling (e.g. a Vercel cron every 10 minutes) and the sender domain are release tasks for CH.

@@ -107,3 +107,10 @@ For each released step retain: application SHA/deployment URL, exact executed SQ
 - Application: the create route returns `DRAFT_LIMIT` with a clear message; the listing route accepts `discard` (merchant_draft_discard) and the dashboard offers "Discard draft".
 - Local verification: `supabase/tests/draft_limit_behavior_tests.sql`, `supabase/tests/merchant_password_onboarding.sql` (unchanged behaviour otherwise), `npm run test:review`.
 - Rollback FIRST (before feedback): `supabase/rollback/20260927170000_merchant_draft_limit.rollback.STAGING_ONLY.sql`.
+
+## 12. Notification emails
+
+- Migration: `20260927190000_notification_delivery.sql`, after `20260927170000` (and the M2-B outbox `20260927130000`).
+- Environment: `RESEND_API_KEY`, `NOTIFY_FROM` (verified sender domain), `ADMIN_NOTIFY_EMAIL`, `CRON_SECRET`; schedule GET `/api/admin/notifications/deliver`. Without them nothing is sent.
+- Local verification: `supabase/tests/notification_delivery_behavior_tests.sql`, `npm run test:notifications`, local run with `NOTIFY_PROVIDER=log` (owner row sent, admin row "no recipient", wrong secret 401).
+- Rollback FIRST: `supabase/rollback/20260927190000_notification_delivery.rollback.STAGING_ONLY.sql`.
