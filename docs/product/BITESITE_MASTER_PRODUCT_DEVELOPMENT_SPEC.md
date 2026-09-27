@@ -1284,9 +1284,9 @@ The exact verification method remains pending repository/user-behavior review.
 
 # 22. Merchant Authentication
 
-Current planning preference: low-friction passwordless authentication, such as email magic link/OTP, with possible future phone/WhatsApp verification.
+Confirmed 2026-09-27: daily Merchant login uses email and password. Magic Link remains as a transition/recovery option. Self-registration requires email confirmation; a confirmed account creates its own private restaurant draft without an Admin invitation. Existing restaurant claims are a separate workflow. Server-owned active Owner membership remains the authorization boundary for every restaurant.
 
-This remains a recommendation, not a final technical decision until the actual repository is audited.
+Five consecutive invalid-password attempts from the same login source trigger a 15-minute source cooldown. Successful password login resets the count. Password recovery remains available; accounts are never permanently locked and published listings are unaffected. New passwords require at least 8 characters with no required character mixture. Shared accounts have a shared identity and cannot distinguish individual staff actions.
 
 Must consider:
 
@@ -2398,9 +2398,9 @@ The Halal / pork-free labeling system is intentionally **not an open question fo
 
 ## OQ-001 — Exact Merchant authentication method
 
-Email magic link, email/password, or future phone/WhatsApp.
+Email/password daily login, with email-confirmed self-registration and Magic Link as a transition/recovery option.
 
-**Status:** Pending repository/user UX review.
+**Status:** DECIDED by user, 2026-09-27. Source cooldown: five consecutive failures, 15 minutes.
 
 ## OQ-002 — Exact Merchant claim verification
 

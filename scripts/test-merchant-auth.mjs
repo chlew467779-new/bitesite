@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import { validateCredentials, validateRestaurantDraft } from '../lib/merchant-auth-validation.mjs';
+assert.deepEqual(validateCredentials({ email: ' OWNER@Example.com ', password: ' with spaces ' }), { email: 'owner@example.com', password: ' with spaces ' });
+for (const input of [null, [], {}, { email: 'invalid', password: 'password' }, { email: 'a@b.com', password: '' }, { email: 'a@b.com', password: 'a'.repeat(1025) }]) assert.equal(validateCredentials(input), null);
+assert.equal(validateCredentials({ email: 'a@b.com', password: '1234567' }, true), null);
+assert.ok(validateCredentials({ email: 'a@b.com', password: '12345678' }, true));
+const draft = { name: ' My restaurant ', requestId: '00000000-0000-4000-8000-000000000001' };
+assert.equal(validateRestaurantDraft(draft).name, 'My restaurant');
+for (const extra of ['merchantId', 'userId', 'is_published', 'role', 'slug', 'state_source']) assert.equal(validateRestaurantDraft({ ...draft, [extra]: 'arbitrary' }), null, extra);
+for (const name of ['', ' ', 'a'.repeat(121), null, 42]) assert.equal(validateRestaurantDraft({ ...draft, name }), null);
+assert.equal(validateRestaurantDraft({ ...draft, requestId: 'not-a-uuid' }), null);
+console.log('merchant auth validation PASS');
