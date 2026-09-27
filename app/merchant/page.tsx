@@ -677,7 +677,7 @@ export default function MerchantDashboardPage() {
           </SectionCard>
 
           <SectionCard id="feedback" title="Feedback" description="Tell the BiteSite team what would make the dashboard or your page work better for you.">
-            <FeedbackPanel />
+            <FeedbackPanel merchantId={profile.id} getHeaders={photoHeaders} />
           </SectionCard>
 
           <p className="text-xs leading-relaxed text-[#6B6560] lg:hidden">

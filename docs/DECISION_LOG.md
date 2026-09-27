@@ -158,3 +158,9 @@ A new feature idea must not silently become a decision. Add it here only after C
 - The Owner opens `/merchant/preview?merchant=<id>` ("Preview page" on the dashboard, new tab) to see the restaurant page with the same layout visitors get, in any state: draft, waiting for review, approved but hidden, suspended.
 - Only the restaurant's active Owner can load it; the data is the public projection (no legacy reviews), so the preview never shows more than the public page would. A banner states whether visitors can see the page.
 - No analytics are recorded (data-bs-analytics suppression), the page is noindex, and the API response is not cached. Admin preview is not included yet.
+
+## SYNC-052 — Merchant feedback destination (RECOMMENDATION, Claude 2026-09-27; CH_REQUIRED to switch on)
+
+- Recommended destination: a private `merchant_feedback` table read on a new Admin Feedback page (filter new/read/resolved, reply). The Owner sees the reply and status on the dashboard. No email yet (SMTP is off).
+- Owners can send feedback while suspended, archived or waiting for review (the suspension notice points them to Feedback). Idempotent per request id; 10 per restaurant per hour.
+- Built and tested, but the dashboard form stays switched off (`FEEDBACK_SENDING_ENABLED = false` in `app/merchant/components/feedback-panel.tsx`) until CH approves this destination. Switching on is that one line.

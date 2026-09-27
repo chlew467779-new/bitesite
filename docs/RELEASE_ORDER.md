@@ -93,3 +93,10 @@ For each released step retain: application SHA/deployment URL, exact executed SQ
 - Deploy after the migration: Owner routes `/api/merchant/restaurants/[id]/menu/dish-photo` (+ `/ticket`) and the menu editor photo control.
 - Local verification: `supabase/tests/dish_media_behavior_tests.sql`, `npm run test:dish-media`, HTTP smoke with a real upload (ticket, signed upload, bind, fake image refused, conflict, remove).
 - Rollback FIRST (before slug history): `supabase/rollback/20260927150000_merchant_dish_media.rollback.STAGING_ONLY.sql`.
+
+## 10. Merchant feedback
+
+- Migration: `20260927160000_merchant_feedback.sql`, after `20260927150000`. New private table and four service-role RPCs; nothing existing changes.
+- Application: Owner route `/api/merchant/restaurants/[id]/feedback`, Admin route `/api/admin/feedback`, Admin Feedback page. The dashboard form is switched off until CH approves SYNC-052.
+- Local verification: `supabase/tests/feedback_behavior_tests.sql`, `npm run test:feedback`, HTTP smoke (send, replay, inbox, reply, Owner sees reply).
+- Rollback FIRST (before dish photos): `supabase/rollback/20260927160000_merchant_feedback.rollback.STAGING_ONLY.sql`.

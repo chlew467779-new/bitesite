@@ -233,19 +233,21 @@ assert.match(pageSource, /A save is still in progress or unconfirmed\. Wait for 
 assert.match(pageSource, /const saveAllAndLeave = async \(\) =>/, "leaving with dirty sections offers a save path");
 assert.match(pageSource, /const discardAndLeave = \(\) =>/, "leaving with dirty sections offers a discard path");
 
-/* ── feedback: entry point only, nothing is sent (CH_REQUIRED) ───────────────────────────────── */
+/* ── feedback: built (SYNC-052) but switched off until CH approves the destination ────────────── */
 
 const feedbackSource = await read("app/merchant/components/feedback-panel.tsx");
 assert.match(feedbackSource, /export const FEEDBACK_SENDING_ENABLED = false;/, "sending is off until a destination is approved");
 assert.match(feedbackSource, /CH_REQUIRED/, "the open decision is marked in the code");
-for (const forbidden of ["fetch(", "mailto:", "localStorage", "sessionStorage", "supabase", "sendBeacon", "XMLHttpRequest"]) {
+for (const forbidden of ["mailto:", "localStorage", "sessionStorage", "supabase", "sendBeacon", "XMLHttpRequest"]) {
   assert.ok(!feedbackSource.includes(forbidden), `the feedback form does not use ${forbidden}`);
 }
-assert.match(feedbackSource, /disabled=\{!FEEDBACK_SENDING_ENABLED\}/, "the send button is disabled");
-assert.match(feedbackSource, /event\.preventDefault\(\);\s*\}/, "submitting does nothing");
+assert.match(feedbackSource, /disabled=\{!FEEDBACK_SENDING_ENABLED \|\| busy\}/, "the send button is disabled while switched off");
+assert.match(feedbackSource, /if \(!FEEDBACK_SENDING_ENABLED \|\| !api \|\| !getHeaders\) return;/, "nothing is loaded while switched off");
+assert.match(feedbackSource, /event\.preventDefault\(\);\n\s*if \(!FEEDBACK_SENDING_ENABLED \|\| !api \|\| !getHeaders \|\| busy\) return;/, "submitting sends nothing while switched off");
+assert.equal((feedbackSource.match(/fetch\(/g) || []).length, 2, "only the guarded load and submit call the API");
 assert.match(feedbackSource, /Nothing you type here is sent or saved/, "merchants are told nothing is sent");
 // D2-B: there is no page-wide listing form any more (sections save on their own), so feedback can
 // never be submitted as part of a listing save.
-assert.ok(!pageSource.includes("<form") && pageSource.includes("<FeedbackPanel />"), "feedback is not part of any listing save");
+assert.ok(!pageSource.includes("<form") && pageSource.includes("<FeedbackPanel merchantId={profile.id} getHeaders={photoHeaders} />"), "feedback is not part of any listing save");
 
 console.log("merchant dashboard checks passed");

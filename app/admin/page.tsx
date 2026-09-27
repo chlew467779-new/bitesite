@@ -24,6 +24,7 @@ import StoriesManager from './components/stories-manager';
 import StoryEditor from './components/story-editor';
 import StorySubmissionsManager from './components/story-submissions-manager';
 import LinkReviewQueue from './components/link-review-queue';
+import FeedbackInbox from './components/feedback-inbox';
 import RestaurantReviewQueue from './components/restaurant-review-queue';
 import MerchantManager from './components/merchant-manager';
 import ContentServiceManager from './components/content-service-manager';
@@ -346,6 +347,7 @@ export default function AdminPage() {
       )}
 
       {activeTab === 'link-reviews' && <LinkReviewQueue />}
+      {activeTab === 'feedback' && <FeedbackInbox />}
       {activeTab === 'restaurant-reviews' && <RestaurantReviewQueue />}
 
       {activeTab === 'content-service' && (

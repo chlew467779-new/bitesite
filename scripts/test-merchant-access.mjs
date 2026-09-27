@@ -146,6 +146,7 @@ assert.deepEqual(merchantRoutes.sort(), [
   "app/api/merchant/me/route.ts",
   "app/api/merchant/media/upload-url/route.ts",
   "app/api/merchant/profile-change-requests/route.ts",
+  "app/api/merchant/restaurants/[merchantId]/feedback/route.ts",
   "app/api/merchant/restaurants/[merchantId]/fields/route.ts",
   "app/api/merchant/restaurants/[merchantId]/links/route.ts",
   "app/api/merchant/restaurants/[merchantId]/listing/route.ts",
