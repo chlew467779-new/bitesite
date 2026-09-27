@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { ProfileImagesPanel } from '@/app/components/media/profile-images-panel';
 import { validateProfileField } from '@/lib/merchant-profile-validation.mjs';
 import { WEEK_DAYS, type WeekDay } from '@/lib/merchant-hours.mjs';
 import { merchantPageUrl, selectedMerchantIdFromSearch } from '@/lib/merchant-context-url.mjs';
@@ -19,8 +20,8 @@ import { TextField } from './components/text-field';
  * Each section (About, Contact, Opening hours) saves on its own through the field-level save
  * contract: only changed fields are sent, with the value this page loaded as the expected
  * value, so a change made meanwhile elsewhere is reported as a conflict instead of being
- * overwritten. Links, photos and the menu link are read-only until their review/upload
- * workflows exist. Name, address, web address and business status stay with the BiteSite team.
+ * overwritten. The cover photo and logo upload through the checked photo flow (M6b). Links and
+ * the menu link are read-only until their review workflow exists. Name, address, web address and business status stay with the BiteSite team.
  *
  * The restaurant is the one in the URL (`?merchant=<id>`) or the account's only one. Switching
  * restaurants asks first when anything is unsaved, never switches while a save is in flight or
@@ -258,6 +259,16 @@ export default function MerchantDashboardPage() {
       body: JSON.stringify(body),
     });
   }, [data]);
+
+  // Photo uploads (M6b) use the same account check as saves: a changed session is not used.
+  const photoHeaders = useCallback(async () => {
+    const { data: session } = await supabase.auth.getSession();
+    if (!session.session?.access_token || session.session.user.id !== data?.userId) return null;
+    return { Authorization: `Bearer ${session.session.access_token}` };
+  }, [data?.userId]);
+  const onPhotoChanged = useCallback((slot: 'logo' | 'cover', value: string | null) => {
+    setData((current) => (current ? { ...current, profile: { ...current.profile, [slot === 'logo' ? 'logo_image' : 'cover_image']: value } } : current));
+  }, []);
 
   const anyStatus = useCallback(() => {
     const statuses = [...handles.current.values()].map((handle) => handle.status());
@@ -595,23 +606,8 @@ export default function MerchantDashboardPage() {
             </div>
           </SectionCard>
 
-          <SectionCard id="photos" title="Photos" description="Photo changes open with the new photo review. Your current photos stay as they are.">
-            <div className="grid gap-6 sm:grid-cols-2">
-              {(['cover_image', 'logo_image'] as const).map((name) => {
-                const label = name === 'cover_image' ? 'Cover photo' : 'Logo';
-                const src = safeHref(profile[name]);
-                return (
-                  <div key={name} className="space-y-2">
-                    <p className="text-sm font-medium text-[#2C3E2D]">{label}</p>
-                    <div className={`overflow-hidden rounded-xl border border-[#DDE5DC] bg-[#F4F6F1] ${name === 'cover_image' ? 'aspect-[16/9]' : 'aspect-square w-28'}`}>
-                      {src
-                        ? <img src={src} alt={`${label} of ${profile.name}`} className="h-full w-full object-cover" />
-                        : <div className="flex h-full items-center justify-center text-xs text-[#6B6560]">No {label.toLowerCase()}</div>}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+          <SectionCard id="photos" title="Photos" description="Choose a photo from your phone or take a new one. It is resized before upload and appears on your page after BiteSite checks the file.">
+            <ProfileImagesPanel key={`photos:${profile.id}:${data.loadId}`} apiBase={`/api/merchant/restaurants/${encodeURIComponent(profile.id)}/media`} getHeaders={photoHeaders} disabled={readOnly} onChanged={onPhotoChanged} />
           </SectionCard>
 
           <SectionCard id="menu" title="Menu" description="Menu items and prices are managed by BiteSite for now.">

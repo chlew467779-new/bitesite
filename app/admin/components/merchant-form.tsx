@@ -10,11 +10,12 @@
  * Edit: every section saves on its own through the field-level save contract
  * (PATCH /api/admin/merchants/[merchantId]/fields). Only changed fields are sent, each with the
  * value this editor loaded, so an Owner's change made meanwhile is reported as a conflict instead
- * of being overwritten; changes to other fields merge. Links, GrabFood, images, payment methods,
+ * of being overwritten; changes to other fields merge. Links, GrabFood, payment methods,
  * the web address (slug), archiving and business status are shown read-only: they need review or
  * governance workflows that are not built yet, and the old whole-form save that wrote them is
  * retired. Publish / hide / suspend / lift suspension are dedicated, audited actions in
- * MerchantStatusPanel (D2-C), never part of a section save.
+ * MerchantStatusPanel (D2-C), never part of a section save. Logo and cover upload through the
+ * checked photo flow (M6b, ProfileImagesPanel).
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -23,6 +24,7 @@ import { useAuth } from './auth-context';
 import { registerLeaveCheck } from '@/lib/unsaved-guard';
 import MenuEditor from './menu-editor';
 import MerchantStatusPanel from './merchant-status-panel';
+import { ProfileImagesPanel } from '@/app/components/media/profile-images-panel';
 import { AMENITY_TAGS, CUISINE_TAGS, OCCASION_TAGS } from '@/lib/presets';
 import { getPersistableLayouts } from '@/lib/layout-registry.mjs';
 import { defaultFeatures } from '@/types';
@@ -340,6 +342,9 @@ export default function MerchantForm({ merchant, onBack, onSaved, loadWarning }:
   const handles = useRef(new Map<string, SectionHandle>());
   const loadSeq = useRef(0);
 
+  // Profile images (M6b) are uploaded and bound through the media endpoint, not the section saves.
+  const mediaHeaders = useCallback(async () => (token ? { 'x-admin-token': token } : null), [token]);
+
   const register = useCallback((id: string, handle: SectionHandle | null) => {
     if (handle) handles.current.set(id, handle); else handles.current.delete(id);
   }, []);
@@ -628,18 +633,8 @@ export default function MerchantForm({ merchant, onBack, onSaved, loadWarning }:
               </div>
             </div>
             <div hidden={activeTab !== 4} className={panel}>
-              <PanelTitle title="Images (read only)" note="Image changes open with trusted media upload. Current images stay as they are." />
-              <div className="grid gap-4 sm:grid-cols-2">
-                {([['Cover image', merchant?.cover_image], ['Logo', merchant?.logo_image]] as const).map(([label, src]) => {
-                  const href = safeHref(src);
-                  return (
-                    <div key={label}>
-                      <p className="text-sm font-medium">{label}</p>
-                      {href ? <img src={href} alt={label} className="mt-2 max-h-40 rounded-lg border border-[#DDE5DC] object-cover" /> : <p className="mt-1 text-sm text-[#6B6560]">Not set</p>}
-                    </div>
-                  );
-                })}
-              </div>
+              <PanelTitle title="Images" note="Photos are resized on the device and checked by the server before they appear on the restaurant page." />
+              <ProfileImagesPanel key={`media:${current.id}`} apiBase={`/api/admin/merchants/${encodeURIComponent(current.id)}/media`} getHeaders={mediaHeaders} />
             </div>
             <div hidden={activeTab !== 5}>
               <MenuEditor merchantId={current.id} merchantName={current.name} />
