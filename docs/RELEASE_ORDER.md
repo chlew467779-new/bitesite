@@ -28,11 +28,11 @@ Run the SQL assertions/behaviour tests below with `psql -v ON_ERROR_STOP=1`, and
 
 ## 2. B0 — Admin field paths and D2-B editor prerequisite
 
-- Migration: `supabase/migrations/20260927034414_merchant_field_cas_admin_fields.sql`, after D2-A. Extends the field registry/audit to Admin Name, Layout, Discovery tags and the atomic Location group; Owners cannot write these paths. No table/data conversion.
+- Migration: `supabase/migrations/20260927094400_merchant_field_cas_admin_fields.sql`, after D2-A. Extends the field registry/audit to Admin Name, Layout, Discovery tags and the atomic Location group; Owners cannot write these paths. No table/data conversion. Renamed from `20260927034414` (Claude, 2026-09-27) so it sorts after production's hosted D2-A `20260927094252` and #64 `20260927094313`; a normal `supabase db push` accepts it.
 - Application: section-saving Merchant/Admin editors, including `app/admin/components/merchant-form.tsx`, `app/merchant/page.tsx`, section-save components and field endpoints. D2-B/M1-B retires whole-form Merchant/Admin writes and hard delete, uses section CAS, and guards switching/leaving with unsaved changes. This step must precede deploying those Admin paths.
 - Pre-release SQL: rerun D2-A assertions/behaviour tests plus `supabase/tests/d2b_admin_fields_behavior_tests.sql`. Confirm allowed Admin paths and denied Owner paths, whole-array tag CAS, location atomicity, archived refusal and no-op snapshots. HTTP cutover: `scripts/test-d2b-cutover-local.mjs`; code: `scripts/test-write-cutover.mjs`, `test-section-save.mjs`, `test-admin-navigation.mjs`.
 - Post-release: verify the registry includes B0 paths, ordinary writes remain service-only, and the matching editor saves a section, handles 409 conflicts and refuses retired whole-form writes. The legacy Merchant upload-url now supports Story only; profile photos use M6b below.
-- Rollback: `supabase/rollback/20260927034414_merchant_field_cas_admin_fields.rollback.STAGING_ONLY.sql`. Application first; restores corrected D2-A function bodies, removes B0 layout helper, keeps stored data. Later migrations also replace shared functions: unwind dependents in reverse order first.
+- Rollback: `supabase/rollback/20260927094400_merchant_field_cas_admin_fields.rollback.STAGING_ONLY.sql`. Application first; restores corrected D2-A function bodies, removes B0 layout helper, keeps stored data. Later migrations also replace shared functions: unwind dependents in reverse order first.
 
 ## 3. D2-C — governance and business status
 

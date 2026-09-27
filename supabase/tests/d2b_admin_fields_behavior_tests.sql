@@ -1,6 +1,6 @@
 -- =====================================================================
 -- B0 (D2-B prerequisite): Admin field paths — BEHAVIOUR tests. Local or staging only.
--- Needs migrations through 20260927034414_merchant_field_cas_admin_fields. One transaction,
+-- Needs migrations through 20260927094400_merchant_field_cas_admin_fields. One transaction,
 -- ROLLED BACK at the end. Synthetic rows only (zz-d2b-*).
 -- =====================================================================
 begin;

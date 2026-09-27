@@ -16,7 +16,7 @@
 --    location.<column>).
 --
 -- Local first; staging and production each need CH approval, after 20260927030741.
--- Rollback: supabase/rollback/20260927034414_merchant_field_cas_admin_fields.rollback.STAGING_ONLY.sql
+-- Rollback: supabase/rollback/20260927094400_merchant_field_cas_admin_fields.rollback.STAGING_ONLY.sql
 -- =====================================================================
 
 begin;

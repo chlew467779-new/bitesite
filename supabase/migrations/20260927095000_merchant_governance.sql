@@ -34,7 +34,7 @@
 -- no audit row). Applied actions are audited by the D1a/D2-A trigger with operation
 -- `merchant_governance:<action>` and the reason.
 --
--- Local first; staging and production each need CH approval, after 20260927034414. Versioned after 20260927090355 (#64) and after production's hosted 20260927094313 so a normal db push accepts it.
+-- Local first; staging and production each need CH approval, after 20260927094400. Versioned after 20260927090355 (#64) and after production's hosted 20260927094313 so a normal db push accepts it.
 -- Rollback: supabase/rollback/20260927095000_merchant_governance.rollback.STAGING_ONLY.sql
 -- =====================================================================
 begin;

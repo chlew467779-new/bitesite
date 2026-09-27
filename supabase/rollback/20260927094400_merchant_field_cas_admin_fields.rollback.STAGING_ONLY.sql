@@ -1,5 +1,5 @@
 -- =====================================================================
--- ROLLBACK of 20260927034414_merchant_field_cas_admin_fields.sql (B0) — STAGING ONLY.
+-- ROLLBACK of 20260927094400_merchant_field_cas_admin_fields.sql (B0) — STAGING ONLY.
 -- =====================================================================
 -- Restores the D2-A (20260927030741) versions of the replaced functions and drops the layout
 -- helper. Stored data is untouched. Roll the application back to the D2-A code first: the B0

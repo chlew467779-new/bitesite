@@ -116,7 +116,7 @@ as $$
   select coalesce(current_setting('app.listing_basics', true), '') <> ''
 $$;
 
--- Same rows as B0 (20260927034414); only the three listing-basics paths change owner_writable.
+-- Same rows as B0 (20260927094400); only the three listing-basics paths change owner_writable.
 create or replace function private.merchant_field_registry()
 returns table (path text, kind text, target text, owner_writable boolean, admin_writable boolean, max_length int)
 language sql
