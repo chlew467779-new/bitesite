@@ -191,13 +191,12 @@ async function read(relPath) {
 const routeSource = await read("app/api/merchant/me/route.ts");
 const putBody = /export async function PUT\(request: NextRequest\) \{([\s\S]*?)\n\}\n?$/.exec(routeSource);
 assert.ok(putBody, "the PUT handler is readable");
-assert.match(putBody[1], /supabase\.auth\.getUser\(token\)/, "PUT still requires a signed-in Supabase user");
-assert.match(
-  putBody[1],
-  /from\('merchant_memberships'\)\.select\('merchant_id'\)\.eq\('user_id', userData\.user\.id\)\.eq\('status', 'active'\)/,
-  "PUT still resolves the merchant from the caller's own active membership",
-);
-assert.match(putBody[1], /\.update\(updateData\)\.eq\('id', membership\.merchant_id\)/, "the update is scoped to that merchant only");
+// M1-A: authentication and the caller's own active Owner membership are resolved by the shared
+// helper (app/api/merchant/_lib/merchant-access.ts, tested in scripts/test-merchant-access.mjs) with an explicit
+// merchant ID instead of the first membership.
+assert.match(putBody[1], /requireMerchantAccess\(request, 'write'\)/, "PUT requires a signed-in Owner with write access");
+assert.match(putBody[1], /const merchantId = access\.merchant\.id;/, "the merchant comes from the verified membership");
+assert.match(putBody[1], /\.update\(updateData\)\s*\.eq\('id', merchantId\)/, "the update is scoped to that merchant only");
 assert.doesNotMatch(putBody[1], /body\.(merchant_id|id|slug)\b/, "the merchant is never taken from the request body");
 assert.match(routeSource, /from '@\/lib\/merchant-profile-validation\.mjs'/, "the API uses the shared field rules");
 assert.match(routeSource, /isEditorHoursValue\(value\)/, "the API enforces the hours format for changed days");
