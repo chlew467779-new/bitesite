@@ -1,16 +1,16 @@
 /**
  * Admin merchant CRUD: WhatsApp is optional (DEC-21).
  *
- * A restaurant without WhatsApp simply has no Book a Table (P0). The Admin API and form used to
- * require the field, so a merchant whose test number was removed (S0 stop-loss) could no longer be
- * saved. These checks keep the field optional, keep a new or changed number valid for wa.me, and
- * make sure an unchanged stored value never blocks saving unrelated fields.
+ * A restaurant without WhatsApp simply has no Book a Table (P0). These checks keep the field
+ * optional and keep a new or changed number valid for wa.me. Since D2-B an unchanged stored value
+ * is never re-sent (only changed fields are saved), so it cannot block saving other fields.
  */
 
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { normalizeBookingWhatsApp } from "../lib/merchant-booking-target.mjs";
 import { validateProfileField } from "../lib/merchant-profile-validation.mjs";
+import { parseFieldPatchRequest } from "../lib/merchant-field-patch-core.mjs";
 
 const read = (relPath) => readFile(new URL(`../${relPath}`, import.meta.url), "utf8");
 
@@ -29,32 +29,28 @@ for (const value of vectors) {
   );
 }
 
-/* ── API ───────────────────────────────────────────────────────────────────────────────────── */
+/* ── Admin save contract (D2-B) ──────────────────────────────────────────────────────────── */
+// The old whole-form PUT is retired; Admin saves WhatsApp through the field save contract, which
+// applies the same validator as the Merchant dashboard (and, for the contact minimum, the booking
+// normalizer in the database).
 
+const REQ = "7d1c3a52-5b1e-4c8e-9a51-0e2c55d2a002";
+const patch = (value, expected = { exists: true, value: "60123456789" }) =>
+  parseFieldPatchRequest({ requestId: REQ, patches: [{ path: "profile.whatsapp", expected, value }] }, "admin");
+assert.equal(patch(null).ok, true, "Admin may clear WhatsApp (optional)");
+assert.equal(patch("+60 12-345 6789").ok, true, "a valid international number is accepted");
+for (const bad of ["012-345 6789", "abc60123456789", "1234567"]) {
+  assert.equal(patch(bad).ok, false, `${bad} is rejected as a new value`);
+}
 const route = await read("app/api/admin/merchants-crud/route.ts");
-assert.doesNotMatch(route, /WhatsApp is required/, "the API no longer requires WhatsApp");
-assert.match(route, /import \{ normalizeBookingWhatsApp \} from '@\/lib\/merchant-booking-target\.mjs';/,
-  "the API validates with the same rule the booking section uses");
-assert.match(route, /const unchanged = typeof existingWhatsapp === 'string' && body\.whatsapp\.trim\(\) === existingWhatsapp\.trim\(\);/,
-  "an unchanged stored number is not re-validated");
-assert.match(route, /if \(!unchanged && !normalizeBookingWhatsApp\(body\.whatsapp\)\) return WHATSAPP_FORMAT_MESSAGE;/,
-  "a new or changed number must be a valid international WhatsApp number");
-assert.match(route, /\.select\('operating_hours, whatsapp'\)/, "the update reads the stored number to compare");
-assert.match(route, /validateMerchantPayload\(body, false, existingOperatingHours, existingMerchant\.whatsapp\)/,
-  "the update passes the stored number to the validator");
-assert.match(route, /whatsapp: body\.whatsapp\?\.trim\(\) \|\| null,/, "create stores an empty number as null");
-assert.match(route, /updateData\.whatsapp = body\.whatsapp\?\.trim\(\) \|\| null;/, "update stores an empty number as null");
-assert.doesNotMatch(route, /body\.whatsapp\.trim\(\),|updateData\.whatsapp = body\.whatsapp\.trim\(\);/,
-  "no unguarded .trim() on a value that may now be null");
+assert.doesNotMatch(route, /whatsapp/i, "the Admin create/list route does not write WhatsApp");
 
 /* ── Admin form ────────────────────────────────────────────────────────────────────────────── */
 
 const form = await read("app/admin/components/merchant-form.tsx");
 assert.doesNotMatch(form, /WhatsApp is required/, "the form no longer requires WhatsApp");
-assert.doesNotMatch(form, /WhatsApp <span className="text-red-400">\*<\/span>/, "no required marker on the label");
-assert.match(form, /WhatsApp <span className="text-slate-500 font-normal">\(optional\)<\/span>/, "the label says optional");
-assert.match(form, /import \{ normalizeBookingWhatsApp \} from '@\/lib\/merchant-booking-target\.mjs';/, "the form uses the same rule");
-assert.match(form, /form\.whatsapp\.trim\(\) !== \(merchant\?\.whatsapp \|\| ''\)\.trim\(\)/, "the form also skips an unchanged stored number");
-assert.match(form, /Book a Table is then hidden on the public page/, "the hint explains what an empty number means");
+assert.ok(form.includes("label: 'WhatsApp (optional; international"), "the label says optional and international");
+assert.ok(form.includes("value.trim() === '' ? null : "), "an emptied field is sent as null (cleared), not an empty string");
+assert.match(form, /Shown only when the restaurant has a valid WhatsApp number/, "Book a Table explains it needs a valid number");
 
 console.log("admin whatsapp optional checks passed");

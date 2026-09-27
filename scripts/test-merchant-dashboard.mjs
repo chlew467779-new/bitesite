@@ -189,44 +189,45 @@ async function read(relPath) {
   return (await readFile(new URL(`../${relPath}`, import.meta.url), "utf8")).replace(/\r\n/g, "\n");
 }
 
-const routeSource = await read("app/api/merchant/me/route.ts");
+// D2-B: the old whole-form PUT is retired (410, after the same access check); profile fields are
+// saved per section through PATCH /api/merchant/restaurants/[id]/fields (field save contract,
+// tested in scripts/test-merchant-field-patch.mjs and the local route/concurrency scripts).
+const routeSource = (await read("app/api/merchant/me/route.ts")).replace(/\r\n/g, "\n");
 const putBody = /export async function PUT\(request: NextRequest\) \{([\s\S]*?)\n\}\n?$/.exec(routeSource);
 assert.ok(putBody, "the PUT handler is readable");
-// M1-A: authentication and the caller's own active Owner membership are resolved by the shared
-// helper (app/api/merchant/_lib/merchant-access.ts, tested in scripts/test-merchant-access.mjs) with an explicit
-// merchant ID instead of the first membership.
-assert.match(putBody[1], /requireMerchantAccess\(request, 'write'\)/, "PUT requires a signed-in Owner with write access");
-assert.match(putBody[1], /const merchantId = access\.merchant\.id;/, "the merchant comes from the verified membership");
-assert.match(putBody[1], /\.update\(updateData\)\s*\.eq\('id', merchantId\)/, "the update is scoped to that merchant only");
-assert.doesNotMatch(putBody[1], /body\.(merchant_id|id|slug)\b/, "the merchant is never taken from the request body");
-assert.match(routeSource, /from '@\/lib\/merchant-profile-validation\.mjs'/, "the API uses the shared field rules");
-assert.match(routeSource, /isEditorHoursValue\(value\)/, "the API enforces the hours format for changed days");
-assert.match(routeSource, /fieldErrors/, "validation failures are reported per field");
+assert.match(putBody[1], /requireMerchantAccess\(request, 'read'\)/, "the retired PUT still authenticates and scopes first");
+assert.match(putBody[1], /merchantErrorResponse\(410, 'LEGACY_WRITE_RETIRED'/, "…then refuses: no old write path remains");
+assert.doesNotMatch(routeSource, /\.update\(/, "no merchant UPDATE in the old route");
 for (const field of ["name", "slug", "address", "business_status", "platform_status", "is_published", "layout", "status"]) {
   assert.ok(!PROFILE_TEXT_FIELDS.includes(field), `${field} is not merchant-editable`);
 }
 
-/* ── dashboard page ────────────────────────────────────────────────────────────────────────── */
+/* ── dashboard page (section saves) ─────────────────────────────────────────────────────────── */
 
-const pageSource = await read("app/merchant/page.tsx");
+const pageSource = (await read("app/merchant/page.tsx")).replace(/\r\n/g, "\n");
 const hoursSource = await read("app/merchant/components/hours-editor.tsx");
+const hoursSection = await read("app/components/section-save/hours-section.tsx");
 assert.doesNotMatch(pageSource, /Request a controlled change|requestControlledChange/, "the controlled-change block is not shown");
 assert.doesNotMatch(pageSource, /profile-change-requests/, "the dashboard no longer calls the change-request API");
 assert.match(pageSource, /from '@\/lib\/merchant-profile-validation\.mjs'/, "the form uses the same field rules as the API");
-assert.match(pageSource, /from '@\/lib\/merchant-hours\.mjs'/, "the form uses the shared hours rules");
+assert.match(hoursSection, /from '@\/lib\/merchant-hours\.mjs'/, "the hours section uses the shared hours rules");
 assert.doesNotMatch(pageSource, /name=\{`hours-/, "there is no free-text hours field");
 const hoursInputs = [...hoursSource.matchAll(/<input\b[\s\S]*?\/>/g)].map((match) => match[0]);
 assert.ok(hoursInputs.length > 0 && hoursInputs.every((input) => /type="time"/.test(input)), "the hours editor only has time pickers");
-assert.equal((pageSource.match(/\.json\(\)/g) || []).length, 1, "responses are parsed in one place only");
-assert.match(
-  pageSource,
-  /async function readJson\(response: Response\)[\s\S]*?try \{\s*const data = await response\.json\(\);[\s\S]*?\} catch \{\s*return \{\};/,
-  "…and that place tolerates a non-JSON error page instead of crashing the form",
-);
-assert.match(pageSource, /catch \{\s*setSave\(\{ kind: 'error'/, "a network failure is reported, not thrown");
-assert.match(pageSource, /data\.fieldErrors/, "server field errors are shown next to their fields");
-assert.match(pageSource, /Your changes are still here/, "a failed save says the typed values are kept");
-assert.doesNotMatch(pageSource, /event\.currentTarget\.reset\(\)/, "a save never clears the form");
+assert.match(pageSource, /async function readJson\(response: Response\)[\s\S]*?try \{\s*const data = await response\.json\(\);[\s\S]*?\} catch \{\s*return \{\};/,
+  "responses tolerate a non-JSON error page instead of crashing the page");
+assert.doesNotMatch(pageSource, /method: 'PUT'/, "the dashboard never uses the retired whole-form save");
+assert.match(pageSource, /method: 'PATCH'/, "saves go through the field save contract");
+assert.match(pageSource, /\/api\/merchant\/restaurants\/\$\{encodeURIComponent\(current\.profile\.id\)\}\/fields/, "…for the loaded restaurant");
+assert.equal((pageSource.match(/<TextSection key=/g) || []).length, 2, "About and Contact are separate sections");
+assert.match(pageSource, /<HoursSection key=/, "Opening hours is its own section");
+for (const link of ["website", "instagram", "facebook", "menu_pdf_url"]) {
+  assert.ok(!pageSource.includes(`path: 'profile.${link}', field:`), `${link} is not an editable field`);
+}
+assert.match(pageSource, /Link changes are checked by the BiteSite team/, "links say why they are read-only");
+assert.doesNotMatch(pageSource, /media\/upload-url|type="file"/, "profile photo upload is closed (M6b)");
+assert.match(pageSource, /Your changes are still here/, "a failed or refused save says the typed values are kept");
+assert.doesNotMatch(pageSource, /applyMerchant/, "no whole-page reset after a save");
 
 /* ── feedback: entry point only, nothing is sent (CH_REQUIRED) ───────────────────────────────── */
 
@@ -239,7 +240,8 @@ for (const forbidden of ["fetch(", "mailto:", "localStorage", "sessionStorage", 
 assert.match(feedbackSource, /disabled=\{!FEEDBACK_SENDING_ENABLED\}/, "the send button is disabled");
 assert.match(feedbackSource, /event\.preventDefault\(\);\s*\}/, "submitting does nothing");
 assert.match(feedbackSource, /Nothing you type here is sent or saved/, "merchants are told nothing is sent");
-const formEnd = pageSource.indexOf("</form>");
-assert.ok(formEnd > 0 && pageSource.indexOf("<FeedbackPanel />") > formEnd, "feedback sits outside the listing form");
+// D2-B: there is no page-wide listing form any more (sections save on their own), so feedback can
+// never be submitted as part of a listing save.
+assert.ok(!pageSource.includes("<form") && pageSource.includes("<FeedbackPanel />"), "feedback is not part of any listing save");
 
 console.log("merchant dashboard checks passed");

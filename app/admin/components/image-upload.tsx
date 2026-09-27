@@ -5,7 +5,7 @@ import imageCompression from 'browser-image-compression';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from './auth-context';
 
-type Props = { kind: 'merchant' | 'story' | 'menu'; value: string; onChange: (value: string) => void; label: string; help?: string };
+type Props = { kind: 'story' | 'menu'; value: string; onChange: (value: string) => void; label: string; help?: string };
 
 export default function ImageUpload({ kind, value, onChange, label, help }: Props) {
   const { token } = useAuth();

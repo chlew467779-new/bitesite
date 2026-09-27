@@ -312,13 +312,13 @@ assert.doesNotMatch(
   "an unknown layout no longer 404s the storefront",
 );
 
+// D2-B: layout is written only through the field save contract (presentation.layout), which the
+// server validates with the shared registry and the database re-checks against the same list.
+const fieldCoreSource = await read("lib/merchant-field-patch-core.mjs");
+assert.match(fieldCoreSource, /import \{ isPersistableLayout \} from "\.\/layout-registry\.mjs";/, "the save contract uses the shared registry");
+assert.match(fieldCoreSource, /row\.kind === "layout"\) \{\s*if \(!isPersistableLayout\(value\)\)/, "layout writes are whitelisted against the registry");
 const merchantsCrudSource = await read("app/api/admin/merchants-crud/route.ts");
-assert.match(
-  merchantsCrudSource,
-  /body\.layout !== undefined && !isPersistableLayout\(body\.layout\)/,
-  "the admin merchants API whitelists layout writes against the registry",
-);
-assert.match(merchantsCrudSource, /from '@\/lib\/layout-registry\.mjs'/, "…using the shared registry, not a local copy");
+assert.doesNotMatch(merchantsCrudSource, /layout/, "the Admin create/list route no longer writes layout at all");
 
 /* ── admin surfaces read the registry and never resubmit an invalid stored value ───────────── */
 
@@ -335,21 +335,18 @@ assert.doesNotMatch(
 );
 assert.match(
   merchantFormSource,
-  /if \(isPersistableLayout\(form\.layout\)\) \{\s*payload\.layout = form\.layout;/,
-  "layout is only submitted when it is a value the API will accept",
-);
-assert.doesNotMatch(
-  merchantFormSource,
-  /^\s*layout: form\.layout,$/m,
-  "layout is no longer unconditionally part of the save payload",
+  /\{LAYOUTS\.map\(\(layout\) => <option key=\{layout\.key\} value=\{layout\.key\}>/,
+  "the selector only offers registry layouts",
 );
 assert.match(
   merchantFormSource,
-  /layout: merchant\.layout \?\? 'classic'/,
-  "a blank stored layout stays visible as bad data instead of being normalised to classic",
+  /value=\{known \? value : ''\}/,
+  "an invalid stored layout is shown unselected and is only replaced when the Admin picks a layout",
 );
-assert.match(merchantFormSource, /Unknown saved layout\./, "operators are told when a stored layout is unknown");
-assert.match(merchantFormSource, /not yet public-ready/, "operators are told when a stored layout is not public-ready");
+assert.doesNotMatch(merchantFormSource, /presentation\.layout'\][^;]*\?\? 'classic'/,
+  "a blank stored layout stays visible as bad data instead of being normalised to classic");
+assert.match(merchantFormSource, /is not a production layout and renders as Classic/,
+  "operators are told when a stored layout is unknown or not public-ready");
 
 const merchantManagerSource = await read("app/admin/components/merchant-manager.tsx");
 assert.doesNotMatch(

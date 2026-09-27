@@ -25,7 +25,9 @@
     "test:story-review-sync": "node scripts/test-story-review-sync.mjs",
     "test:merchant-access": "node scripts/test-merchant-access.mjs",
     "test:field-patch": "node scripts/test-merchant-field-patch.mjs",
-    "verify": "npm run typecheck && npm run lint && npm run check:security && npm run test:security && npm run test:menu && npm run test:layout && npm run test:preview-safety && npm run test:prices && npm run test:fixtures && npm run test:theme && npm run test:merchant && npm run test:booking-safety && npm run test:merchant-state && npm run test:public-projection && npm run test:admin-whatsapp && npm run test:article-projection && npm run test:story-review-sync && npm run test:merchant-access && npm run test:field-patch && git diff --check"
+    "test:section-save": "node scripts/test-section-save.mjs",
+    "test:write-cutover": "node scripts/test-write-cutover.mjs",
+    "verify": "npm run typecheck && npm run lint && npm run check:security && npm run test:security && npm run test:menu && npm run test:layout && npm run test:preview-safety && npm run test:prices && npm run test:fixtures && npm run test:theme && npm run test:merchant && npm run test:booking-safety && npm run test:merchant-state && npm run test:public-projection && npm run test:admin-whatsapp && npm run test:article-projection && npm run test:story-review-sync && npm run test:merchant-access && npm run test:field-patch && npm run test:section-save && npm run test:write-cutover && git diff --check"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
