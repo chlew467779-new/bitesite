@@ -228,6 +228,10 @@ assert.match(pageSource, /Link changes are checked by the BiteSite team/, "links
 assert.doesNotMatch(pageSource, /media\/upload-url|type="file"/, "profile photo upload is closed (M6b)");
 assert.match(pageSource, /Your changes are still here/, "a failed or refused save says the typed values are kept");
 assert.doesNotMatch(pageSource, /applyMerchant/, "no whole-page reset after a save");
+assert.match(pageSource, /onClick=\{\(event\) => \{ event\.preventDefault\(\); requestStories\(\); \}\}/, "Stories navigation is guarded before leaving the dashboard");
+assert.match(pageSource, /A save is still in progress or unconfirmed\. Wait for it \(or choose Retry\) before signing out\./, "sign out is blocked while a save result is unknown");
+assert.match(pageSource, /const saveAllAndLeave = async \(\) =>/, "leaving with dirty sections offers a save path");
+assert.match(pageSource, /const discardAndLeave = \(\) =>/, "leaving with dirty sections offers a discard path");
 
 /* ── feedback: entry point only, nothing is sent (CH_REQUIRED) ───────────────────────────────── */
 

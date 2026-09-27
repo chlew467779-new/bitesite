@@ -45,6 +45,7 @@ type Choice = { id: string; name: string; restriction: Restriction };
 type Loaded = { userId: string; profile: Profile; merchants: Choice[]; fields: Record<string, Snapshot>; loadId: number };
 type LoadState = { kind: 'loading' } | { kind: 'signed-out' } | { kind: 'error'; message: string } | { kind: 'no-merchant' } | { kind: 'choose'; merchants: Choice[] } | { kind: 'ready' };
 type SwitchPrompt = { targetId: string; message?: string } | null;
+type LeavePrompt = { kind: 'stories' | 'signout'; message?: string } | null;
 
 const SECTIONS = [
   { id: 'about', label: 'About' },
@@ -198,6 +199,7 @@ export default function MerchantDashboardPage() {
   const [data, setData] = useState<Loaded | null>(null);
   const [confirmed, setConfirmed] = useState<Record<string, Snapshot>>({});
   const [switchPrompt, setSwitchPrompt] = useState<SwitchPrompt>(null);
+  const [leavePrompt, setLeavePrompt] = useState<LeavePrompt>(null);
   const [switching, setSwitching] = useState(false);
   const handles = useRef(new Map<string, SectionHandle>());
   const loadSeq = useRef(0);
@@ -312,14 +314,80 @@ export default function MerchantDashboardPage() {
     goTo(targetId);
   };
 
-  const signOut = async () => {
+  const goToStories = () => {
+    if (!data) return;
+    leaving.current = true;
+    window.location.assign(merchantPageUrl('/merchant/stories', data.profile.id));
+  };
+
+  const performSignOut = async () => {
     const status = anyStatus();
-    if ((status.dirty || status.busy) && !window.confirm('You have unsaved changes. Sign out anyway?')) return;
+    if (status.dirty || status.busy) return;
     leaving.current = true;
     await supabase.auth.signOut();
     setData(null);
     setLoad({ kind: 'signed-out' });
     leaving.current = false;
+  };
+
+  const requestStories = () => {
+    const status = anyStatus();
+    if (status.busy) {
+      setLeavePrompt({ kind: 'stories', message: 'A save is still in progress or unconfirmed. Wait for it (or choose Retry) before leaving.' });
+      return;
+    }
+    if (status.dirty) {
+      setLeavePrompt({ kind: 'stories' });
+      return;
+    }
+    goToStories();
+  };
+
+  const requestSignOut = () => {
+    const status = anyStatus();
+    if (status.busy) {
+      setLeavePrompt({ kind: 'signout', message: 'A save is still in progress or unconfirmed. Wait for it (or choose Retry) before signing out.' });
+      return;
+    }
+    if (status.dirty) {
+      setLeavePrompt({ kind: 'signout' });
+      return;
+    }
+    void performSignOut();
+  };
+
+  const finishLeave = (kind: 'stories' | 'signout') => {
+    setLeavePrompt(null);
+    if (kind === 'stories') goToStories();
+    else void performSignOut();
+  };
+
+  const saveAllAndLeave = async () => {
+    if (!leavePrompt) return;
+    const kind = leavePrompt.kind;
+    setSwitching(true);
+    for (const handle of handles.current.values()) {
+      if (!handle.status().dirty) continue;
+      const outcome = await handle.save();
+      if (outcome !== 'saved' && outcome !== 'noop') {
+        setSwitching(false);
+        setLeavePrompt({ kind, message: `Not leaving. ${outcome === 'conflict' ? 'A section has a conflict to resolve.' : 'A section could not be saved.'} Your changes are still here.` });
+        return;
+      }
+    }
+    setSwitching(false);
+    if (anyStatus().dirty) {
+      setLeavePrompt({ kind, message: 'You kept typing while saving. Save or discard those changes first.' });
+      return;
+    }
+    finishLeave(kind);
+  };
+
+  const discardAndLeave = () => {
+    if (!leavePrompt) return;
+    const kind = leavePrompt.kind;
+    for (const handle of handles.current.values()) handle.discard();
+    finishLeave(kind);
   };
 
   if (load.kind !== 'ready' || !data) {
@@ -411,8 +479,8 @@ export default function MerchantDashboardPage() {
           </div>
           <nav aria-label="Merchant links" className="flex flex-wrap items-center gap-2 text-sm">
             <a href={`/store/${profile.slug}`} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-[#DDE5DC] px-3 py-2 font-medium text-[#2C3E2D] hover:border-emerald-700">View public page</a>
-            <Link href={merchantPageUrl('/merchant/stories', profile.id)} className="rounded-lg border border-[#DDE5DC] px-3 py-2 font-medium text-[#2C3E2D] hover:border-emerald-700">Stories</Link>
-            <button type="button" onClick={() => void signOut()} className="rounded-lg px-3 py-2 font-medium text-[#6B6560] hover:text-[#2C3E2D]">Sign out</button>
+            <Link href={merchantPageUrl('/merchant/stories', profile.id)} onClick={(event) => { event.preventDefault(); requestStories(); }} className="rounded-lg border border-[#DDE5DC] px-3 py-2 font-medium text-[#2C3E2D] hover:border-emerald-700">Stories</Link>
+            <button type="button" onClick={requestSignOut} className="rounded-lg px-3 py-2 font-medium text-[#6B6560] hover:text-[#2C3E2D]">Sign out</button>
           </nav>
         </div>
       </header>
@@ -430,6 +498,26 @@ export default function MerchantDashboardPage() {
                 <>
                   <button type="button" disabled={switching} onClick={() => discardAndSwitch(switchPrompt.targetId)} className="rounded-lg border border-red-700 px-4 py-2 text-sm font-medium text-red-700 disabled:opacity-50">Discard</button>
                   <button type="button" disabled={switching} onClick={() => void saveAllAndSwitch(switchPrompt.targetId)} className="rounded-lg bg-[#2C3E2D] px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{switching ? 'Saving…' : 'Save'}</button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {leavePrompt && (
+        <div role="dialog" aria-modal="true" aria-labelledby="leave-title" className="fixed inset-0 z-40 flex items-end justify-center bg-black/30 p-4 sm:items-center">
+          <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
+            <h2 id="leave-title" className="font-serif text-xl text-[#2C3E2D]">Unsaved changes</h2>
+            <p className="mt-2 text-sm text-[#4B4540]">
+              {leavePrompt.message ?? `You have unsaved changes for ${profile.name}. Save them before ${leavePrompt.kind === 'signout' ? 'signing out' : 'opening Stories'}, discard them, or stay here.`}
+            </p>
+            <div className="mt-5 flex flex-wrap justify-end gap-2">
+              <button type="button" disabled={switching} onClick={() => setLeavePrompt(null)} className="rounded-lg px-4 py-2 text-sm font-medium text-[#2C3E2D] disabled:opacity-50">Cancel</button>
+              {!anyStatus().busy && (
+                <>
+                  <button type="button" disabled={switching} onClick={discardAndLeave} className="rounded-lg border border-red-700 px-4 py-2 text-sm font-medium text-red-700 disabled:opacity-50">Discard</button>
+                  <button type="button" disabled={switching} onClick={() => void saveAllAndLeave()} className="rounded-lg bg-[#2C3E2D] px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{switching ? 'Saving…' : 'Save'}</button>
                 </>
               )}
             </div>
