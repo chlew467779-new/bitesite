@@ -205,4 +205,30 @@ assert.match(noopBody, /private\.merchant_field_snapshot\(m, reg\.kind, reg\.tar
 assert.match(noopBody, /'values', values_out/, "no-op stores all confirmed snapshots for replay");
 assert.doesNotMatch(noopBody, /update public\.merchants/, "no-op does not update merchant rows");
 
+/* ── B0 forward keeps the fixes; B0 rollback restores the current D2-A ───────────────────── */
+
+const b0File = migrationFiles.find((f) => f.endsWith("_merchant_field_cas_admin_fields.sql"));
+assert.ok(b0File, "B0 migration present");
+const b0 = await read(`supabase/migrations/${b0File}`);
+const rollback = await read(`supabase/rollback/${b0File.replace(/\.sql$/, ".rollback.STAGING_ONLY.sql")}`);
+const fnBlocks = (text) => Object.fromEntries([...text.matchAll(/^create or replace function ([\w.]+)\(/gm)]
+  .map((m) => [m[1], text.slice(m.index, text.indexOf("\n$$;", m.index) + 4)]));
+const d2aFns = fnBlocks(migration);
+const b0Fns = fnBlocks(b0);
+const rollbackFns = fnBlocks(rollback);
+const replacedByB0 = Object.keys(b0Fns).filter((fn) => fn !== "private.merchant_persistable_layouts");
+assert.deepEqual(Object.keys(rollbackFns).sort(), replacedByB0.sort(), "the B0 rollback restores every D2-A function B0 replaces");
+for (const fn of replacedByB0) {
+  assert.ok(d2aFns[fn], `${fn} exists in D2-A`);
+  assert.equal(rollbackFns[fn], d2aFns[fn], `${fn}: B0 rollback is verbatim the current D2-A definition`);
+}
+assert.match(rollback, /drop function if exists private\.merchant_persistable_layouts\(\);/, "the B0 rollback drops the B0-only helper");
+assert.doesNotMatch(rollback, /'profile\.name'|'presentation\.layout'|'tags\.cuisine'|'location'/, "the B0 rollback does not keep B0 Admin paths");
+const b0Lock = b0Fns["private.lock_merchant_for_actor"];
+assert.match(b0Lock, /if p_actor_type = 'owner' then[\s\S]*MERCHANT_SUSPENDED[\s\S]*'archived'/, "B0: Owner archived refusal kept");
+assert.match(b0Lock, /if p_actor_type = 'admin' and \(m\.platform_restriction = 'archived' or m\.platform_status = 'ARCHIVED'\) then\s*perform private\.merchant_write_error\('OPERATION_FORBIDDEN', 'archived'\)/, "B0: Admin archived refusal kept");
+const b0Noop = b0.slice(b0.indexOf("if cardinality(changed_paths) = 0 then"), b0.indexOf("if (select count(*) from unnest(changed_paths) p where p like 'hours.%')"));
+assert.match(b0Noop, /for patch in select value from jsonb_array_elements\(p_patches\) loop[\s\S]*'values', values_out/, "B0: no-op confirms all requested snapshots");
+assert.doesNotMatch(b0Noop, /update public\.merchants/, "B0: no-op does not update merchant rows");
+
 console.log("merchant field patch checks passed");

@@ -14,7 +14,9 @@ begin
   end if;
 end $$;
 
--- D2-A versions, verbatim from 20260927030741_merchant_field_cas.sql
+-- D2-A versions, verbatim from 20260927030741_merchant_field_cas.sql as corrected in PR #63
+-- (archived restaurants refuse Admin ordinary writes; a no-op confirms every requested snapshot).
+-- scripts/test-merchant-field-patch.mjs fails if these drift from that migration.
 create or replace function private.merchants_after_write_audit()
 returns trigger
 language plpgsql
@@ -180,9 +182,9 @@ begin
       if m.platform_restriction = 'suspended' or m.platform_status = 'SUSPENDED' then
         perform private.merchant_write_error('MERCHANT_SUSPENDED');
       end if;
-      if m.platform_restriction = 'archived' or m.platform_status = 'ARCHIVED' then
-        perform private.merchant_write_error('OPERATION_FORBIDDEN', 'archived');
-      end if;
+    end if;
+    if m.platform_restriction = 'archived' or m.platform_status = 'ARCHIVED' then
+      perform private.merchant_write_error('OPERATION_FORBIDDEN', 'archived');
     end if;
     -- Restaurant review pending (not Story or link review): managed rows by review_status,
     -- legacy rows by their still-authoritative platform_status.
@@ -410,7 +412,12 @@ begin
   end loop;
 
   if cardinality(changed_paths) = 0 then
-    v_result := jsonb_build_object('status', 'noop', 'revision', m.revision, 'updatedAt', m.updated_at, 'values', '{}'::jsonb);
+    -- Confirm every requested value even when nothing changes, including absent day keys.
+    for patch in select value from jsonb_array_elements(p_patches) loop
+      select * into reg from private.merchant_field_registry() r where r.path = patch ->> 'path';
+      values_out := values_out || jsonb_build_object(reg.path, private.merchant_field_snapshot(m, reg.kind, reg.target));
+    end loop;
+    v_result := jsonb_build_object('status', 'noop', 'revision', m.revision, 'updatedAt', m.updated_at, 'values', values_out);
     insert into public.request_idempotency (actor_type, actor_id, merchant_id, operation, request_id, payload_hash, result_status, result, expires_at)
     values (p_actor_type, p_actor_id, p_merchant_id, v_operation, p_request_id, v_hash, 'noop', v_result, now() + interval '7 days');
     return v_result || jsonb_build_object('replayed', false);
