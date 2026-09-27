@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from './auth-context';
 import { requestLeave } from '@/lib/unsaved-guard';
 import {
@@ -61,7 +61,28 @@ interface AdminShellProps {
 }
 
 export default function AdminShell({ activeTab, onTabChange, children }: AdminShellProps) {
-  const { logout } = useAuth();
+  const { logout, token } = useAuth();
+  const [attention, setAttention] = useState<Record<string, number>>({});
+
+  // Sidebar badges: what needs the team now. Refreshed on page change and every minute.
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const response = await fetch('/api/admin/attention', { headers: { 'x-admin-token': token }, cache: 'no-store' });
+        const body = await response.json().catch(() => null);
+        if (!cancelled && response.ok && body?.data) {
+          const { notifications, ...counts } = body.data as Record<string, number> & { notifications: unknown };
+          void notifications;
+          setAttention(counts);
+        }
+      } catch { /* badges are a convenience; the pages themselves stay authoritative */ }
+    };
+    void load();
+    const timer = window.setInterval(load, 60_000);
+    return () => { cancelled = true; window.clearInterval(timer); };
+  }, [token, activeTab]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
@@ -157,6 +178,9 @@ export default function AdminShell({ activeTab, onTabChange, children }: AdminSh
                 {!sidebarCollapsed && (
                   <>
                     <span className="flex-1 text-left truncate">{item.label}</span>
+                    {(attention[item.id] ?? 0) > 0 && (
+                      <span className="shrink-0 rounded-full bg-amber-500 px-2 py-0.5 text-xs font-semibold text-slate-950" aria-label={`${attention[item.id]} waiting`}>{attention[item.id]}</span>
+                    )}
                     {isActive && <ChevronRight className="w-3.5 h-3.5 shrink-0" />}
                   </>
                 )}

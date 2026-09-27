@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from './auth-context';
+import NotificationStatus from './notification-status';
 import type { ReviewItem } from '@/lib/merchant-review-core.mjs';
 
 type Queue = { capacity: number; pending: number; pilotCapacity: number; pilotUsed: number; items: ReviewItem[] };
@@ -65,6 +66,7 @@ export default function RestaurantReviewQueue() {
   };
   return <div className="space-y-5">
     <div><h2 className="text-xl font-semibold text-slate-100">Restaurant Reviews</h2><p className="mt-1 text-sm text-slate-400">Review the submitted restaurant details. Approval lets the Owner publish when ready.</p></div>
+    <NotificationStatus />
     {error && <p role="alert" className="rounded-lg bg-red-950/40 p-3 text-sm text-red-200">{error}</p>}
     {notice && <p role="status" className="text-sm text-emerald-300">{notice}</p>}
     {unknown && <button className={`${btn} text-amber-200`} disabled={busy} onClick={() => void decide(unknown)}>Retry {unknown.decision}</button>}

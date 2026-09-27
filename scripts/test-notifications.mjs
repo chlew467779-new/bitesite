@@ -37,4 +37,12 @@ const migration = await read("supabase/migrations/20260927190000_notification_de
 assert.match(migration, /for update skip locked/, "parallel runs never take the same row");
 assert.doesNotMatch(migration, /security definer/i);
 
+// Admin attention badges and the send-now control.
+const attention = await read("app/api/admin/attention/route.ts");
+assert.match(attention, /verifyAdminToken\(token\)/, "attention counts need the Admin session");
+assert.match(attention, /head: true/, "counts only, no rows");
+assert.match(await read("app/admin/components/admin-shell.tsx"), /\/api\/admin\/attention/, "sidebar shows the badges");
+assert.match(await read("app/admin/components/notification-status.tsx"), /\/api\/admin\/notifications\/deliver/, "send now");
+assert.match(await read("app/admin/components/restaurant-review-queue.tsx"), /<NotificationStatus \/>/);
+
 console.log("notification checks passed");
