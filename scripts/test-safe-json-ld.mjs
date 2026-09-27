@@ -27,7 +27,7 @@ const jsonLdFiles = [
 ];
 
 for (const file of jsonLdFiles) {
-  const source = await readFile(new URL(`../${file}`, import.meta.url), "utf8");
+  const source = (await readFile(new URL(`../${file}`, import.meta.url), "utf8")).replace(/\r\n/g, "\n");
   assert.match(source, /safeJsonLd/, `${file} must use the shared JSON-LD serializer`);
   assert.doesNotMatch(
     source,
@@ -36,7 +36,7 @@ for (const file of jsonLdFiles) {
   );
 }
 
-const adminAuthSource = await readFile(new URL("../lib/admin-auth.ts", import.meta.url), "utf8");
+const adminAuthSource = (await readFile(new URL("../lib/admin-auth.ts", import.meta.url), "utf8")).replace(/\r\n/g, "\n");
 assert.match(adminAuthSource, /process\.env\.ADMIN_SESSION_SECRET/, "admin tokens must use ADMIN_SESSION_SECRET");
 assert.doesNotMatch(adminAuthSource, /process\.env\.ADMIN_PASSWORD/, "admin tokens must not use ADMIN_PASSWORD");
 
