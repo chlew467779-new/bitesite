@@ -115,7 +115,10 @@ assert.equal(conflict.body.revision, 7);
 const applied = fieldPatchResponse({ status: "applied", values: { "profile.phone": ex("3") }, changedPaths: ["profile.phone"], revision: 8, replayed: true }, REQ);
 assert.equal(applied.status, 200);
 assert.deepEqual([applied.body.data.status, applied.body.revision, applied.body.replayed, applied.body.requestId], ["applied", 8, true, REQ]);
-assert.equal(fieldPatchResponse({ status: "noop", revision: 8 }, REQ).body.data.status, "noop");
+const noop = fieldPatchResponse({ status: "noop", revision: 8, values: { "profile.phone": ex("3"), "hours.sun": ABSENT }, replayed: true }, REQ);
+assert.equal(noop.body.data.status, "noop");
+assert.deepEqual(noop.body.data.values, { "profile.phone": ex("3"), "hours.sun": ABSENT }, "no-op responses preserve confirmed snapshots");
+assert.equal(noop.body.replayed, true);
 assert.equal(fieldPatchResponse(null, REQ).status, 500);
 
 /* ── wiring (source level) ─────────────────────────────────────────────────────────────────── */
@@ -158,5 +161,14 @@ assert.match(migration, /private\.lock_merchant_for_actor\(p_actor_type, p_actor
 assert.match(migration, /for update;\s*if not found then\s*perform private\.merchant_write_error\('RESOURCE_NOT_FOUND'\);\s*end if;\s*elsif p_actor_type = 'admin'/, "the Owner membership is locked FOR UPDATE and rechecked");
 assert.doesNotMatch(migration, /security definer/i, "no SECURITY DEFINER");
 assert.doesNotMatch(migration.slice(migration.indexOf("function public.merchant_field_patch(")), /revision\s*=\s*[^=]*\+\s*1/, "the RPC never bumps revision itself");
+
+// Regression guards complement the executable SQL behavior suite.
+const lockBody = migration.slice(migration.indexOf("function private.lock_merchant_for_actor("), migration.indexOf("-- 3b)"));
+assert.match(lockBody, /if p_actor_type = 'owner' then[\s\S]*MERCHANT_SUSPENDED[\s\S]*end if;\s*end if;\s*if m\.platform_restriction = 'archived'/, "archived guard applies outside the Owner-only suspended guard");
+const noopBody = migration.slice(migration.indexOf("if cardinality(changed_paths) = 0 then"), migration.indexOf("if (select count(*) from unnest(changed_paths) p where p like 'hours.%')"));
+assert.match(noopBody, /for patch in select value from jsonb_array_elements\(p_patches\) loop/);
+assert.match(noopBody, /private\.merchant_field_snapshot\(m, reg\.kind, reg\.target\)/);
+assert.match(noopBody, /'values', values_out/, "no-op stores all confirmed snapshots for replay");
+assert.doesNotMatch(noopBody, /update public\.merchants/, "no-op does not update merchant rows");
 
 console.log("merchant field patch checks passed");

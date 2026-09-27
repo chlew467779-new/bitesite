@@ -155,8 +155,16 @@ begin
 
   -- 6. real no-op
   r := public.merchant_field_patch('owner', owner_a, a, '10000000-0000-4000-8000-000000000004', jsonb_build_array(
-         d2a_test.p('profile.tagline', d2a_test.ex('"A"'), '"A"')));
+         d2a_test.p('profile.tagline', d2a_test.ex('"A"'), '"A"'),
+         d2a_test.p('hours.sun', d2a_test.absent(), 'null')));
   perform d2a_test.assert_true(r ->> 'status' = 'noop' and (select revision from public.merchants where id = a) = rev0 and d2a_test.logs(a) = logs0, 'no-op writes nothing');
+  perform d2a_test.assert_true(r -> 'values' = jsonb_build_object('profile.tagline', d2a_test.ex('"A"'), 'hours.sun', d2a_test.absent()), 'no-op confirms every requested snapshot including absence');
+  r := public.merchant_field_patch('owner', owner_a, a, '10000000-0000-4000-8000-000000000004', jsonb_build_array(
+         d2a_test.p('hours.sun', d2a_test.absent(), 'null'),
+         d2a_test.p('profile.tagline', d2a_test.ex('"A"'), '"A"')));
+  perform d2a_test.assert_true(r ->> 'status' = 'noop' and (r ->> 'replayed')::boolean
+    and r -> 'values' = jsonb_build_object('profile.tagline', d2a_test.ex('"A"'), 'hours.sun', d2a_test.absent())
+    and (select revision from public.merchants where id = a) = rev0 and d2a_test.logs(a) = logs0, 'no-op replay preserves confirmed snapshots and writes nothing');
 
   -- 7. removing a day, clearing text
   r := public.merchant_field_patch('owner', owner_a, a, '10000000-0000-4000-8000-000000000005', jsonb_build_array(
@@ -254,6 +262,7 @@ begin
   perform d2a_test.assert_error(format(stmt, 'admin', 'legacy_admin', '00000000-0000-4000-8000-0000000d2a05', gen_random_uuid(), '"P"'), 'OPERATION_FORBIDDEN', null, 'pending review frozen for Admin');
   perform d2a_test.assert_error(format(stmt, 'owner', '00000000-0000-4000-8000-0000000d2a17', '00000000-0000-4000-8000-0000000d2a07', gen_random_uuid(), '"L"'), 'OPERATION_FORBIDDEN', null, 'legacy PENDING_REVIEW frozen for Owner');
   perform d2a_test.assert_error(format(stmt, 'admin', 'legacy_admin', '00000000-0000-4000-8000-0000000d2a07', gen_random_uuid(), '"L"'), 'OPERATION_FORBIDDEN', null, 'legacy PENDING_REVIEW frozen for Admin');
+  perform d2a_test.assert_error(format(stmt, 'admin', 'legacy_admin', '00000000-0000-4000-8000-0000000d2a04', gen_random_uuid(), '"R"'), 'OPERATION_FORBIDDEN', null, 'archived Admin ordinary write');
   r := public.merchant_field_patch('admin', 'legacy_admin', '00000000-0000-4000-8000-0000000d2a03', gen_random_uuid(),
          '[{"path": "profile.tagline", "expected": {"exists": true, "value": "S"}, "value": "admin fix"}]');
   perform d2a_test.assert_true(r ->> 'status' = 'applied', 'Admin may correct a suspended restaurant');
