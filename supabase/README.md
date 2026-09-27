@@ -40,6 +40,9 @@ Only the SECURITY LOCKDOWN work lives here for now (branch `fix/security-lockdow
 | `migrations/20260927100000_merchant_profile_media.sql` | M6b: private `merchant_media_uploads` tickets and RPCs `merchant_media_ticket` / `merchant_media_bind` / `merchant_media_read` for checked logo/cover uploads (service_role only). After `20260927090000` | Local → staging → production, each after review/approval |
 | `tests/m6b_profile_media_behavior_tests.sql` | Behaviour tests for M6b (synthetic `zz-m6b-*`, rolled back) | Local / staging only |
 | `rollback/20260927100000_merchant_profile_media.rollback.STAGING_ONLY.sql` | Drops the M6b RPCs and the ticket table; image values and stored objects are kept | Staging only |
+| `migrations/20260927110000_merchant_menu.sql` | M3a: Owner menu RPCs `merchant_menu_read` / `merchant_menu_apply` (categories and dishes, idempotent, service_role only) and private validation helpers. After `20260927100000` | Local → staging → production, each after review/approval |
+| `tests/m3a_menu_behavior_tests.sql` | Behaviour tests for M3a (synthetic `zz-m3a-*`, rolled back) | Local / staging only |
+| `rollback/20260927110000_merchant_menu.rollback.STAGING_ONLY.sql` | Drops the M3a RPCs and helpers; categories and dishes are kept | Staging only |
 | `scripts/test-d2b-cutover-local.mjs` | D2-B write cutover over HTTP: retired Merchant/Admin whole-form saves and hard DELETE refuse (410) and change nothing, no GrabFood write, hidden-draft create accepts only name/slug, profile image upload tickets refused (Story/menu uploads open), B0 Admin paths work | Local only (needs a local Next server) |
 | `rollback/20260926131040_…STAGING_ONLY.sql` | Undoes D1c; every articles column and the old `published`-only rule come back. The D1c code keeps working | Staging; production only as an approved emergency |
 

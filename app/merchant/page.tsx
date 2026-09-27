@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { ProfileImagesPanel } from '@/app/components/media/profile-images-panel';
+import { MenuManager } from './components/menu-manager';
 import { validateProfileField } from '@/lib/merchant-profile-validation.mjs';
 import { WEEK_DAYS, type WeekDay } from '@/lib/merchant-hours.mjs';
 import { merchantPageUrl, selectedMerchantIdFromSearch } from '@/lib/merchant-context-url.mjs';
@@ -20,8 +21,9 @@ import { TextField } from './components/text-field';
  * Each section (About, Contact, Opening hours) saves on its own through the field-level save
  * contract: only changed fields are sent, with the value this page loaded as the expected
  * value, so a change made meanwhile elsewhere is reported as a conflict instead of being
- * overwritten. The cover photo and logo upload through the checked photo flow (M6b). Links and
- * the menu link are read-only until their review workflow exists. Name, address, web address and business status stay with the BiteSite team.
+ * overwritten. The cover photo and logo upload through the checked photo flow (M6b); the menu
+ * (categories and dishes) is edited in MenuManager (M3a). Links and the menu link are read-only
+ * until their review workflow exists. Name, address, web address and business status stay with the BiteSite team.
  *
  * The restaurant is the one in the URL (`?merchant=<id>`) or the account's only one. Switching
  * restaurants asks first when anything is unsaved, never switches while a save is in flight or
@@ -610,7 +612,9 @@ export default function MerchantDashboardPage() {
             <ProfileImagesPanel key={`photos:${profile.id}:${data.loadId}`} apiBase={`/api/merchant/restaurants/${encodeURIComponent(profile.id)}/media`} getHeaders={photoHeaders} disabled={readOnly} onChanged={onPhotoChanged} />
           </SectionCard>
 
-          <SectionCard id="menu" title="Menu" description="Menu items and prices are managed by BiteSite for now.">
+          <SectionCard id="menu" title="Menu" description="Add categories and dishes, change prices, and mark dishes sold out. Changes show on your page right away.">
+            <MenuManager key={`menu:${profile.id}:${data.loadId}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={readOnly} />
+            <h3 className="mt-6 text-sm font-medium text-[#2C3E2D]">Menu link</h3>
             <p className="text-xs text-[#6B6560]">{LINKS_CLOSED}</p>
             <p className="mt-2 break-words text-sm text-[#2C3E2D]">
               {safeHref(value('profile.menu_pdf_url'))
