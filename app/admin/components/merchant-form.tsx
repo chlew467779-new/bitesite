@@ -10,7 +10,8 @@
  * Edit: every section saves on its own through the field-level save contract
  * (PATCH /api/admin/merchants/[merchantId]/fields). Only changed fields are sent, each with the
  * value this editor loaded, so an Owner's change made meanwhile is reported as a conflict instead
- * of being overwritten; changes to other fields merge. Links, GrabFood, payment methods,
+ * of being overwritten; changes to other fields merge. Links and GrabFood are edited in
+ * MerchantLinksPanel (compare-and-set; Owner requests are reviewed on Link Reviews). Payment methods,
  * the web address (slug), archiving and business status are shown read-only: they need review or
  * governance workflows that are not built yet, and the old whole-form save that wrote them is
  * retired. Publish / hide / suspend / lift suspension are dedicated, audited actions in
@@ -24,6 +25,7 @@ import { useAuth } from './auth-context';
 import { registerLeaveCheck } from '@/lib/unsaved-guard';
 import MenuEditor from './menu-editor';
 import MerchantStatusPanel from './merchant-status-panel';
+import MerchantLinksPanel from './merchant-links-panel';
 import { ProfileImagesPanel } from '@/app/components/media/profile-images-panel';
 import { AMENITY_TAGS, CUISINE_TAGS, OCCASION_TAGS } from '@/lib/presets';
 import { getPersistableLayouts } from '@/lib/layout-registry.mjs';
@@ -71,7 +73,6 @@ const WRITABLE_FEATURES = [
   { key: 'appointment', label: 'Book a Table', desc: 'Shown only when the restaurant has a valid WhatsApp number' },
   { key: 'seasonal_popup', label: 'Seasonal popup', desc: 'Seasonal items popup' },
 ];
-const LINKS_CLOSED = 'Link changes need the link review queue, which is not open yet. Current values are shown as stored (not marked as reviewed).';
 const TAG_GROUPS = [
   { path: 'tags.cuisine', label: 'Cuisine', options: CUISINE_TAGS, max: 3 },
   { path: 'tags.amenities', label: 'Amenities', options: AMENITY_TAGS, max: 5 },
@@ -607,14 +608,8 @@ export default function MerchantForm({ merchant, onBack, onSaved, loadWarning }:
               <TextFieldsSection key={`contact:${sectionKey}`} id="contact" title="Contact" fieldsConfig={[{ path: 'profile.phone', label: 'Phone' }, { path: 'profile.whatsapp', label: 'WhatsApp (optional; international, e.g. +60 12-345 6789)' }, { path: 'profile.email', label: 'Email' }]} {...props} />
               <LocationSection key={`location:${sectionKey}`} {...props} />
               <div className={panel}>
-                <PanelTitle title="Links" note={LINKS_CLOSED} />
-                <ReadOnlyList items={[
-                  { label: 'Website', value: stored('profile.website'), link: true },
-                  { label: 'Instagram', value: stored('profile.instagram'), link: true },
-                  { label: 'Facebook', value: stored('profile.facebook'), link: true },
-                  { label: 'GrabFood', value: merchant?.grabfood_url ?? null, link: true },
-                  { label: 'Menu PDF', value: stored('profile.menu_pdf_url'), link: true },
-                ]} />
+                <PanelTitle title="Links" note="Links must use https. Owner requests wait on the Link Reviews page; saving here replaces a waiting request." />
+                <MerchantLinksPanel key={`links:${current.id}`} merchantId={current.id} token={token} />
               </div>
             </div>
             <div hidden={activeTab !== 2} className={panel}>

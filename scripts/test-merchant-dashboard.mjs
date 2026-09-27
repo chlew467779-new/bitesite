@@ -224,7 +224,7 @@ assert.match(pageSource, /<HoursSection key=/, "Opening hours is its own section
 for (const link of ["website", "instagram", "facebook", "menu_pdf_url"]) {
   assert.ok(!pageSource.includes(`path: 'profile.${link}', field:`), `${link} is not an editable field`);
 }
-assert.match(pageSource, /Link changes are checked by the BiteSite team/, "links say why they are read-only");
+assert.match(pageSource, /<LinkRequests /, "link changes are requests reviewed by BiteSite (link review queue)");
 assert.doesNotMatch(pageSource, /media\/upload-url|type="file"/, "profile photo upload is closed (M6b)");
 assert.match(pageSource, /Your changes are still here/, "a failed or refused save says the typed values are kept");
 assert.doesNotMatch(pageSource, /applyMerchant/, "no whole-page reset after a save");

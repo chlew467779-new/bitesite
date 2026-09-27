@@ -5,6 +5,7 @@ import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 're
 import { supabase } from '@/lib/supabase';
 import { ProfileImagesPanel } from '@/app/components/media/profile-images-panel';
 import { MenuManager } from './components/menu-manager';
+import { LinkRequests } from './components/link-requests';
 import { validateProfileField } from '@/lib/merchant-profile-validation.mjs';
 import { WEEK_DAYS, type WeekDay } from '@/lib/merchant-hours.mjs';
 import { merchantPageUrl, selectedMerchantIdFromSearch } from '@/lib/merchant-context-url.mjs';
@@ -22,8 +23,8 @@ import { TextField } from './components/text-field';
  * contract: only changed fields are sent, with the value this page loaded as the expected
  * value, so a change made meanwhile elsewhere is reported as a conflict instead of being
  * overwritten. The cover photo and logo upload through the checked photo flow (M6b); the menu
- * (categories and dishes) is edited in MenuManager (M3a). Links and the menu link are read-only
- * until their review workflow exists. Name, address, web address and business status stay with the BiteSite team.
+ * (categories and dishes) is edited in MenuManager (M3a). Link changes (website, social, menu
+ * link, GrabFood) are requests that the BiteSite team reviews first (LinkRequests). Name, address, web address and business status stay with the BiteSite team.
  *
  * The restaurant is the one in the URL (`?merchant=<id>`) or the account's only one. Switching
  * restaurants asks first when anything is unsaved, never switches while a save is in flight or
@@ -59,12 +60,6 @@ const SECTIONS = [
   { id: 'feedback', label: 'Feedback' },
 ] as const;
 
-const LINK_FIELDS = [
-  { path: 'profile.website', label: 'Website' },
-  { path: 'profile.instagram', label: 'Instagram page' },
-  { path: 'profile.facebook', label: 'Facebook page' },
-];
-const LINKS_CLOSED = 'Link changes are checked by the BiteSite team before they go live. That review is not open yet, so links cannot be changed here.';
 const cardClass = 'scroll-mt-24 rounded-2xl border border-[#DDE5DC] bg-white p-5 shadow-sm sm:p-7';
 
 function statusLabel(value: string | null | undefined, fallback: string) {
@@ -590,21 +585,8 @@ export default function MerchantDashboardPage() {
           <SectionCard id="contact" title="Contact & links" description="All optional. Leave a field empty to hide it from your page.">
             <TextSection key={`contact:${sectionKey}`} id="contact" config={CONTACT_FIELDS} {...sectionProps} />
             <div className="mt-6 rounded-lg border border-[#EEF2EC] bg-[#FAFBF7] p-4">
-              <h3 className="text-sm font-semibold text-[#2C3E2D]">Links</h3>
-              <p className="mt-1 text-xs text-[#6B6560]">{LINKS_CLOSED}</p>
-              <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-3">
-                {LINK_FIELDS.map((link) => {
-                  const href = safeHref(value(link.path));
-                  return (
-                    <div key={link.path} className="min-w-0">
-                      <dt className="text-xs font-medium text-[#6B6560]">{link.label}</dt>
-                      <dd className="mt-0.5 break-words text-[#2C3E2D]">
-                        {href ? <a href={href} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">{href}</a> : 'Not set'}
-                      </dd>
-                    </div>
-                  );
-                })}
-              </dl>
+              <h3 className="mb-2 text-sm font-semibold text-[#2C3E2D]">Links</h3>
+              <LinkRequests key={`links:${profile.id}:${data.loadId}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={readOnly} />
             </div>
           </SectionCard>
 
@@ -614,13 +596,6 @@ export default function MerchantDashboardPage() {
 
           <SectionCard id="menu" title="Menu" description="Add categories and dishes, change prices, and mark dishes sold out. Changes show on your page right away.">
             <MenuManager key={`menu:${profile.id}:${data.loadId}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={readOnly} />
-            <h3 className="mt-6 text-sm font-medium text-[#2C3E2D]">Menu link</h3>
-            <p className="text-xs text-[#6B6560]">{LINKS_CLOSED}</p>
-            <p className="mt-2 break-words text-sm text-[#2C3E2D]">
-              {safeHref(value('profile.menu_pdf_url'))
-                ? <a href={safeHref(value('profile.menu_pdf_url')) as string} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">{safeHref(value('profile.menu_pdf_url'))}</a>
-                : 'No menu link set.'}
-            </p>
           </SectionCard>
 
           <SectionCard id="hours" title="Opening hours" description="Customers see these on your page. Changes to one day leave the other days as they are.">

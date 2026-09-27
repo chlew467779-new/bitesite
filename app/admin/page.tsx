@@ -23,6 +23,7 @@ import { SettingsPanel } from './components/settings-panel';
 import StoriesManager from './components/stories-manager';
 import StoryEditor from './components/story-editor';
 import StorySubmissionsManager from './components/story-submissions-manager';
+import LinkReviewQueue from './components/link-review-queue';
 import MerchantManager from './components/merchant-manager';
 import ContentServiceManager from './components/content-service-manager';
 import { Lock, Loader2 } from 'lucide-react';
@@ -342,6 +343,8 @@ export default function AdminPage() {
           setActiveTab('stories-editor');
         }} />
       )}
+
+      {activeTab === 'link-reviews' && <LinkReviewQueue />}
 
       {activeTab === 'content-service' && (
         <ContentServiceManager />
