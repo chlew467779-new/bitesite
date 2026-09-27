@@ -1,8 +1,9 @@
 /* bitesite/app/api/admin/story-submissions/route.ts */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { revalidatePath } from 'next/cache';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
+import { revalidatePublicStoryRoutes } from '@/lib/story-revalidation';
+import { linkedArticleReviewUpdate } from '@/lib/story-review-sync.mjs';
 import { verifyAdminToken } from '@/lib/admin-auth';
 import { InvalidJsonBodyError, readBoundedJson, RequestBodyTooLargeError } from '@/lib/bounded-json';
 
@@ -40,6 +41,18 @@ function makeSlug(title: string, existing: string[]) {
   let i = 1;
   while (existing.includes(`${safe}-${i}`)) i += 1;
   return `${safe}-${i}`;
+}
+
+/**
+ * Record a Story revision. The article change it describes is already committed, so a failure
+ * here must not stop the takedown, the cache refresh or the submission update: it is logged and
+ * returned as a warning instead.
+ */
+async function recordArticleRevision(article: { id: string }, action: string, actor: string, note: string | null): Promise<string | null> {
+  const { error } = await supabase.from('article_revisions').insert({ article_id: article.id, action, snapshot: article, actor, note });
+  if (!error) return null;
+  console.error(`Story revision (${action}) for article ${article.id} was not recorded:`, error.message);
+  return 'The Story was updated, but its revision history could not be recorded.';
 }
 
 export async function GET(request: NextRequest) {
@@ -152,13 +165,13 @@ export async function PATCH(request: Request) {
           reviewed_by: body.reviewed_by || 'admin',
         }).eq('id', source.article_id).select().single();
         if (publishError || !article) return NextResponse.json({ error: publishError?.message || 'Could not publish linked Story' }, { status: 500 });
-        const { error: revisionError } = await supabase.from('article_revisions').insert({ article_id: article.id, action: 'published', snapshot: article, actor: body.reviewed_by || 'admin', note: body.review_notes || `Published ${publishVersion} version from Story submission review.` });
-        if (revisionError) return NextResponse.json({ error: revisionError.message }, { status: 500 });
+        // The Story is public from here on, so the public pages are refreshed before anything
+        // else can fail.
+        revalidatePublicStoryRoutes(article.slug);
+        const warning = await recordArticleRevision(article, 'published', body.reviewed_by || 'admin', body.review_notes || `Published ${publishVersion} version from Story submission review.`);
         const { data: published, error: conversionError } = await supabase.from('story_submissions').update(updateData).eq('id', body.id).select().single();
         if (conversionError) return NextResponse.json({ error: conversionError.message }, { status: 500 });
-        revalidatePath('/stories');
-        revalidatePath(`/stories/${article.slug}`);
-        return NextResponse.json({ submission: published, article, success: true });
+        return NextResponse.json({ submission: published, article, success: true, ...(warning ? { warning } : {}) });
       }
       const { data: existing } = await supabase.from('articles').select('slug');
       const slug = makeSlug(source.title, (existing || []).map((item) => item.slug));
@@ -210,27 +223,41 @@ export async function PATCH(request: Request) {
       updateData.article_id = article.id;
       const { data: converted, error: conversionError } = await supabase.from('story_submissions').update(updateData).eq('id', body.id).select().single();
       if (conversionError) return NextResponse.json({ error: conversionError.message }, { status: 500 });
-      if (publishImmediately) {
-        revalidatePath('/stories');
-        revalidatePath(`/stories/${article.slug}`);
-      }
+      if (publishImmediately) revalidatePublicStoryRoutes(article.slug);
       return NextResponse.json({ submission: converted, article, success: true });
+    }
+
+    // Review decision (approved / rejected / draft / …). The linked article is written first, so
+    // a Story sent back to draft or rejected is taken down before anything else can fail; the
+    // submission is updated last. These are separate requests, not one transaction.
+    const { data: source, error: sourceError } = await supabase.from('story_submissions').select('id, article_id').eq('id', body.id).maybeSingle();
+    if (sourceError) return NextResponse.json({ error: sourceError.message }, { status: 500 });
+    if (!source) return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
+    const linkedArticleId = (updateData.article_id !== undefined ? updateData.article_id : source.article_id) as string | null;
+    let warning: string | null = null;
+    if (linkedArticleId) {
+      const { data: current, error: currentError } = await supabase.from('articles').select('id, slug, published, editorial_status').eq('id', linkedArticleId).maybeSingle();
+      if (currentError) return NextResponse.json({ error: currentError.message }, { status: 500 });
+      if (!current) return NextResponse.json({ error: 'Linked Story not found' }, { status: 404 });
+      const change = linkedArticleReviewUpdate(body.status, current);
+      if (change) {
+        // Only write if the article still has the state the decision was based on, so a stale
+        // approval cannot demote a Story that was published in the meantime.
+        let articleUpdate = supabase.from('articles')
+          .update({ ...change.fields, review_notes: body.review_notes || null, reviewed_at: new Date().toISOString(), reviewed_by: body.reviewed_by || 'admin' })
+          .eq('id', current.id)
+          .eq('editorial_status', current.editorial_status);
+        articleUpdate = current.published === null ? articleUpdate.is('published', null) : articleUpdate.eq('published', current.published);
+        const { data: article, error: articleError } = await articleUpdate.select().maybeSingle();
+        if (articleError) return NextResponse.json({ error: articleError.message }, { status: 500 });
+        if (!article) return NextResponse.json({ error: 'The linked Story changed during review. Reload and try again.' }, { status: 409 });
+        if (change.visibilityChanged) revalidatePublicStoryRoutes(article.slug);
+        warning = await recordArticleRevision(article, change.revisionAction, body.reviewed_by || 'admin', body.review_notes || null);
+      }
     }
     const { data, error } = await supabase.from('story_submissions').update(updateData).eq('id', body.id).select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    if (data.article_id) {
-      const editorialStatus = body.status === 'approved' ? 'approved' : body.status === 'rejected' ? 'rejected' : body.status === 'draft' ? 'draft' : null;
-      if (editorialStatus) {
-        const { data: article, error: articleError } = await supabase.from('articles')
-          .update({ editorial_status: editorialStatus, review_notes: body.review_notes || null, reviewed_at: new Date().toISOString(), reviewed_by: body.reviewed_by || 'admin' })
-          .eq('id', data.article_id).select().single();
-        if (articleError || !article) return NextResponse.json({ error: articleError?.message || 'Could not update linked article' }, { status: 500 });
-        const action = editorialStatus === 'approved' ? 'approved' : editorialStatus === 'rejected' ? 'rejected' : 'updated';
-        const { error: revisionError } = await supabase.from('article_revisions').insert({ article_id: article.id, action, snapshot: article, actor: body.reviewed_by || 'admin', note: body.review_notes || null });
-        if (revisionError) return NextResponse.json({ error: revisionError.message }, { status: 500 });
-      }
-    }
-    return NextResponse.json({ submission: data, success: true });
+    return NextResponse.json({ submission: data, success: true, ...(warning ? { warning } : {}) });
   } catch (error) {
     if (error instanceof RequestBodyTooLargeError) {
       return NextResponse.json({ error: error.message }, { status: 413 });
