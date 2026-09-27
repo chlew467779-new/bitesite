@@ -12,7 +12,7 @@ import { normalizeBookingWhatsApp } from "../lib/merchant-booking-target.mjs";
 import { validateProfileField } from "../lib/merchant-profile-validation.mjs";
 import { parseFieldPatchRequest } from "../lib/merchant-field-patch-core.mjs";
 
-const read = (relPath) => readFile(new URL(`../${relPath}`, import.meta.url), "utf8");
+const read = async (relPath) => (await readFile(new URL(`../${relPath}`, import.meta.url), "utf8")).replace(/\r\n/g, "\n");
 
 /* ── the Admin rule and the merchant dashboard rule agree ──────────────────────────────────── */
 

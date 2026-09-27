@@ -34,7 +34,7 @@ import {
 } from "../lib/layout-registry.mjs";
 
 async function read(relPath) {
-  return readFile(new URL(`../${relPath}`, import.meta.url), "utf8");
+  return (await readFile(new URL(`../${relPath}`, import.meta.url), "utf8")).replace(/\r\n/g, "\n");
 }
 
 const HEX = /^#[0-9A-Fa-f]{6}$/;

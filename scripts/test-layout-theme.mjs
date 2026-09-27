@@ -19,7 +19,7 @@ import { LAYOUT_KEYS } from "../lib/layout-registry.mjs";
 import { LAYOUT_THEMES, LAYOUT_THEME_SLOTS, getLayoutTheme } from "../lib/layout-theme.mjs";
 
 async function read(relPath) {
-  return readFile(new URL(`../${relPath}`, import.meta.url), "utf8");
+  return (await readFile(new URL(`../${relPath}`, import.meta.url), "utf8")).replace(/\r\n/g, "\n");
 }
 
 /* ── the five original layouts are unchanged ───────────────────────────────────────────────── */
