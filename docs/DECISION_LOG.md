@@ -182,3 +182,7 @@ A new feature idea must not silently become a decision. Add it here only after C
 
 - Dashboard "Visitors": page views, unique visitors, menu views, WhatsApp/call/directions and other taps for 7, 30 or 90 days, with a daily bar chart. Includes former web addresses; previews never count.
 - Only aggregates reach the Owner (no IPs, no raw rows); `merchant_stats` stays private (DEC-29). Data comes from raw `page_views` (kept 90 days), so counts are live.
+
+## SYNC-057 — Owners mark temporarily closed (DECIDED by Claude under CH delegation, 2026-09-27)
+
+- Owners switch OPEN ↔ TEMPORARILY_CLOSED with an optional note (≤200) and reopening date (today..+1 year); MOVED/PERMANENTLY_CLOSED stay Admin-only. The public page says "<name> is temporarily closed" with the note and date instead of the generic unavailable text.

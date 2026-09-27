@@ -18,6 +18,7 @@ import { SectionSaveBar } from '@/app/components/section-save/section-save-bar';
 import { DAY_CODES, HoursSection, type SectionProps } from '@/app/components/section-save/hours-section';
 import { FeedbackPanel } from './components/feedback-panel';
 import { StatsPanel } from './components/stats-panel';
+import { ClosurePanel } from './components/closure-panel';
 import { TextField } from './components/text-field';
 
 /**
@@ -675,6 +676,9 @@ export default function MerchantDashboardPage() {
           </SectionCard>
 
           <SectionCard id="hours" title="Opening hours" description="Customers see these on your page. Changes to one day leave the other days as they are.">
+            <div className="mb-6 border-b border-[#EEF2EC] pb-6">
+              <ClosurePanel key={`closure:${profile.id}:${data.loadId}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={readOnly} />
+            </div>
             <HoursSection key={`hours:${sectionKey}`} {...sectionProps} />
           </SectionCard>
 

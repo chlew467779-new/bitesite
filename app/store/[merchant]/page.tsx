@@ -132,6 +132,11 @@ export default async function MerchantPage({ params }: PageProps) {
       merchant.area,
       3
     );
+    const temporarilyClosed = merchant.business_status === "TEMPORARILY_CLOSED";
+    const { data: closure } = temporarilyClosed
+      ? await supabase.from("merchant_closure_notices").select("note, reopen_on").eq("merchant_id", merchant.id).maybeSingle()
+      : { data: null };
+    const reopenOn = closure?.reopen_on ? new Date(`${closure.reopen_on}T00:00:00`).toLocaleDateString("en-MY", { day: "numeric", month: "long", year: "numeric" }) : null;
 
     return (
       <>
@@ -139,16 +144,25 @@ export default async function MerchantPage({ params }: PageProps) {
         <div className="min-h-screen bg-[#FAFBF7] flex flex-col">
           <div className="flex-1 flex items-center justify-center px-4 py-20">
             <div className="max-w-md w-full text-center">
-              <div className="mb-6 text-6xl">😔</div>
+              <div className="mb-6 text-6xl">{temporarilyClosed ? "🌙" : "😔"}</div>
               <h1 className="text-2xl font-bold text-[#2C3E2D] mb-3">
-                This Restaurant is Unavailable
+                {temporarilyClosed ? `${merchant.name} is temporarily closed` : "This Restaurant is Unavailable"}
               </h1>
-              <p className="text-[#6B6560] mb-2">
-                We&apos;re sorry, but <strong>{merchant.name}</strong> is not taking orders
-              </p>
-              <p className="text-[#6B6560] mb-8">
-                or reservations at the moment.
-              </p>
+              {temporarilyClosed ? (
+                <div className="mb-8 space-y-2 text-[#6B6560]">
+                  {closure?.note && <p className="whitespace-pre-wrap break-words rounded-xl bg-amber-50 p-4 text-amber-900">{closure.note}</p>}
+                  <p>{reopenOn ? <>Expected to reopen on <strong>{reopenOn}</strong>.</> : "Please check back soon."}</p>
+                </div>
+              ) : (
+                <>
+                <p className="text-[#6B6560] mb-2">
+                  We&apos;re sorry, but <strong>{merchant.name}</strong> is not taking orders
+                </p>
+                <p className="text-[#6B6560] mb-8">
+                  or reservations at the moment.
+                </p>
+                </>
+              )}
               {relatedMerchants.length > 0 && (
                 <div className="border-t border-[#DDE5DC] pt-8">
                   <p className="text-sm font-medium text-[#8A968B] mb-4">

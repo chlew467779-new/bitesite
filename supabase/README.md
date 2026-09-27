@@ -68,6 +68,9 @@ Only the SECURITY LOCKDOWN work lives here for now (branch `fix/security-lockdow
 | `migrations/20260927200000_merchant_owner_stats.sql` | Owner statistics: `merchant_stats_read` (7..90 days from `page_views`, current + former slugs, Malaysia days, aggregates only) and index `page_views_slug_created_idx` | Local; hosted only with approval |
 | `tests/owner_stats_behavior_tests.sql` | Synthetic transaction, rolled back: totals, former slug, page type, range, no IPs, foreign Owner | Local / staging only |
 | `rollback/20260927200000_merchant_owner_stats.rollback.STAGING_ONLY.sql` | Guarded rollback; drops the function and index | Staging only |
+| `migrations/20260927210000_owner_temporary_closure.sql` | Owner OPEN/TEMPORARILY_CLOSED with note and reopening date: `merchant_closure_notices` (public read for public restaurants), `merchant_owner_business_status` / `_read` | Local; hosted only with approval |
+| `tests/owner_closure_behavior_tests.sql` | Synthetic transaction, rolled back | Local / staging only |
+| `rollback/20260927210000_owner_temporary_closure.rollback.STAGING_ONLY.sql` | Guarded rollback; drops notices and RPCs, statuses stay | Staging only |
 | `scripts/test-d2b-cutover-local.mjs` | D2-B write cutover over HTTP: retired Merchant/Admin whole-form saves and hard DELETE refuse (410) and change nothing, no GrabFood write, hidden-draft create accepts only name/slug, profile image upload tickets refused (Story/menu uploads open), B0 Admin paths work | Local only (needs a local Next server) |
 | `rollback/20260926131040_…STAGING_ONLY.sql` | Undoes D1c; every articles column and the old `published`-only rule come back. The D1c code keeps working | Staging; production only as an approved emergency |
 

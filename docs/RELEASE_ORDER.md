@@ -121,3 +121,9 @@ For each released step retain: application SHA/deployment URL, exact executed SQ
 - Application: `/api/merchant/restaurants/[id]/stats` and the dashboard Visitors section.
 - Local verification: `supabase/tests/owner_stats_behavior_tests.sql`, browser check at 390px.
 - Rollback FIRST: `supabase/rollback/20260927200000_merchant_owner_stats.rollback.STAGING_ONLY.sql`.
+
+## 14. Owner temporary closure
+
+- Migration: `20260927210000_owner_temporary_closure.sql`, after `20260927200000`. New table + two RPCs; merchant projection unchanged.
+- Application: `/api/merchant/restaurants/[id]/business-status`, dashboard panel in Opening hours, store page closed view.
+- Rollback FIRST: `supabase/rollback/20260927210000_owner_temporary_closure.rollback.STAGING_ONLY.sql`.
