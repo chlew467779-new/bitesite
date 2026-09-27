@@ -109,7 +109,7 @@
 | OQ-SharedSectionA11y | Pre-existing accessibility gaps in shared sections, found while checking PR2B: the booking form's date, time and guests fields are not linked to their labels; the review date uses 50% opacity (below WCAG AA on any colour); Elegant overflows by 9px at 320px when there is no cover image. Fixing them changes the live layouts, so it is not part of PR2B. Update (P0, 2026-09-26): all six booking fields are now linked to their labels; the review date contrast no longer appears publicly because the carousel is not rendered (SYNC-035). | RESOLVED (2026-09-27): current public booking labels verified; legacy date/time/guests labels associated using unique IDs; review date opacity removed; Elegant dish name and discount price stack below sm to prevent 320px overflow. |
 | OQ-AnalyticsNulls | Found while running `supabase/tests/analytics_aggregation_idempotence.sql` locally (D1a): the test calls `select` instead of `perform` inside a DO block, so it has never run; with that fixed it shows the hourly aggregate doubles counts, because the `merchant_daily_views` unique key uses NULLS DISTINCT and `/api/track` writes NULL key columns. Fix direction: `UNIQUE NULLS NOT DISTINCT` plus merging existing duplicate rows (a production data change). Not verified against production. Update (2026-09-26): migration `20260926121244` makes the key `UNIQUE NULLS NOT DISTINCT`, keeps the most recent row of each duplicated bucket and archives the older rows in `private.merchant_daily_views_nulls_dedupe_archive`; the test now uses `perform` and covers NULL keys. | PROPOSED: fix in its own PR; running it on staging/production needs CH approval per environment |
 | OQ-Soft404 | `app/store/[merchant]/loading.tsx` makes Next.js stream a 200 response before `notFound()` runs, so unknown, hidden and suspended restaurants show the not-found page with HTTP 200 (a soft 404; also true on production today). The spec requires a real 404 for direct links. | RESOLVED 2026-09-27 (W1): `app/store/[merchant]/loading.tsx` removed; unknown and hidden restaurants now return HTTP 404 (checked locally), public ones 200 |
-| OQ-MerchantFeedback | Where Merchant Feedback goes: a new table (needs a migration and RLS) or a receiving inbox. Until decided, the dashboard shows the form but sends and stores nothing. | CH_REQUIRED |
+| OQ-MerchantFeedback | Where Merchant Feedback goes: a new table (needs a migration and RLS) or a receiving inbox. Until decided, the dashboard shows the form but sends and stores nothing. | RESOLVED (SYNC-052) |
 
 ## Explicitly out of scope for current planning
 
@@ -160,11 +160,11 @@ A new feature idea must not silently become a decision. Add it here only after C
 - No analytics are recorded (data-bs-analytics suppression), the page is noindex, and the API response is not cached.
 - Admin can preview any restaurant (`&as=admin`, Admin session), linked from each Restaurant Reviews item so reviewers see the real page before approving.
 
-## SYNC-052 — Merchant feedback destination (RECOMMENDATION, Claude 2026-09-27; CH_REQUIRED to switch on)
+## SYNC-052 — Merchant feedback destination (DECIDED, CH 2026-09-27; switched on)
 
 - Recommended destination: a private `merchant_feedback` table read on a new Admin Feedback page (filter new/read/resolved, reply). The Owner sees the reply and status on the dashboard. No email yet (SMTP is off).
 - Owners can send feedback while suspended, archived or waiting for review (the suspension notice points them to Feedback). Idempotent per request id; 10 per restaurant per hour.
-- Built and tested, but the dashboard form stays switched off (`FEEDBACK_SENDING_ENABLED = false` in `app/merchant/components/feedback-panel.tsx`) until CH approves this destination. Switching on is that one line.
+- CH approved this destination on 2026-09-27; the dashboard form is switched on (`FEEDBACK_SENDING_ENABLED = true`).
 
 ## SYNC-053 — Three editable drafts per account (implements FINAL_AUDIT M2-A, Claude 2026-09-27)
 

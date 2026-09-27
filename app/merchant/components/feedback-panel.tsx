@@ -6,12 +6,11 @@ import { FEEDBACK_MESSAGE_LIMIT, FEEDBACK_TOPICS, type FeedbackItem, type Feedba
 /**
  * Merchant Feedback to the BiteSite team.
  *
- * CH_REQUIRED: the destination is still CH's decision. The recommended one is built (SYNC-052:
- * private merchant_feedback table + Admin Feedback page, replies shown here; no email), but it
- * stays switched off: while FEEDBACK_SENDING_ENABLED is false this form sends, loads and stores
- * nothing. Switching it on is this one line after CH approves.
+ * Destination approved by CH (2026-09-27, SYNC-052): private merchant_feedback table + Admin
+ * Feedback page, replies shown here; no email yet. FEEDBACK_SENDING_ENABLED = false switches the
+ * form back to sending, loading and storing nothing.
  */
-export const FEEDBACK_SENDING_ENABLED = false;
+export const FEEDBACK_SENDING_ENABLED = true;
 
 const STATUS_TEXT: Record<FeedbackItem['status'], string> = { new: 'Sent', read: 'Read by BiteSite', resolved: 'Resolved' };
 const input = 'mt-1.5 block w-full rounded-lg border border-[#C9D6C7] bg-white px-3 py-2.5 text-base text-[#2C3E2D] focus:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-700/20';

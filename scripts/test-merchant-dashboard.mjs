@@ -233,11 +233,10 @@ assert.match(pageSource, /A save is still in progress or unconfirmed\. Wait for 
 assert.match(pageSource, /const saveAllAndLeave = async \(\) =>/, "leaving with dirty sections offers a save path");
 assert.match(pageSource, /const discardAndLeave = \(\) =>/, "leaving with dirty sections offers a discard path");
 
-/* ── feedback: built (SYNC-052) but switched off until CH approves the destination ────────────── */
+/* ── feedback: SYNC-052, approved by CH and switched on ────────────── */
 
 const feedbackSource = await read("app/merchant/components/feedback-panel.tsx");
-assert.match(feedbackSource, /export const FEEDBACK_SENDING_ENABLED = false;/, "sending is off until a destination is approved");
-assert.match(feedbackSource, /CH_REQUIRED/, "the open decision is marked in the code");
+assert.match(feedbackSource, /export const FEEDBACK_SENDING_ENABLED = true;/, "sending is on (CH approved SYNC-052)");
 for (const forbidden of ["mailto:", "localStorage", "sessionStorage", "supabase", "sendBeacon", "XMLHttpRequest"]) {
   assert.ok(!feedbackSource.includes(forbidden), `the feedback form does not use ${forbidden}`);
 }
