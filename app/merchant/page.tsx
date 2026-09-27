@@ -557,6 +557,7 @@ export default function MerchantDashboardPage() {
           <nav aria-label="Merchant links" className="flex flex-wrap items-center gap-2 text-sm">
             <a href="/merchant/new" onClick={(event) => { event.preventDefault(); requestNewRestaurant(); }} className="rounded-lg border border-[#DDE5DC] px-3 py-2 font-medium text-[#2C3E2D] hover:border-emerald-700">Create another restaurant</a>
             {(listing?.stateSource === 'legacy' || listing?.public) && <a href={`/store/${profile.slug}`} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-[#DDE5DC] px-3 py-2 font-medium text-[#2C3E2D] hover:border-emerald-700">View public page</a>}
+            <a href={merchantPageUrl('/merchant/preview', profile.id)} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-[#DDE5DC] px-3 py-2 font-medium text-[#2C3E2D] hover:border-emerald-700">Preview page</a>
             <Link href={merchantPageUrl('/merchant/stories', profile.id)} onClick={(event) => { event.preventDefault(); requestStories(); }} className="rounded-lg border border-[#DDE5DC] px-3 py-2 font-medium text-[#2C3E2D] hover:border-emerald-700">Stories</Link>
             <button type="button" onClick={requestSignOut} className="rounded-lg px-3 py-2 font-medium text-[#6B6560] hover:text-[#2C3E2D]">Sign out</button>
           </nav>

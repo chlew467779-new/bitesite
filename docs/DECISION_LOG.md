@@ -152,3 +152,9 @@ A new feature idea must not silently become a decision. Add it here only after C
 - Owners set or remove a dish photo from the dish editor, through the same checked flow as logo/cover (server-chosen path, signed upload, server checks size and real image type, compare-and-set bind, request-id replay). A new dish gets a photo after it is saved.
 - Photos are resized on the phone to at most 1200 px WebP. Up to 60 dish uploads per restaurant per hour; they do not use the 20 logo/cover uploads.
 - Dish photo changes on a public restaurant show immediately (same as other menu edits); a restaurant waiting for review is frozen. Stored objects are not deleted when a photo is replaced (no orphan clean-up yet).
+
+## SYNC-051 — Owner private preview (RECOMMENDATION, Claude 2026-09-27)
+
+- The Owner opens `/merchant/preview?merchant=<id>` ("Preview page" on the dashboard, new tab) to see the restaurant page with the same layout visitors get, in any state: draft, waiting for review, approved but hidden, suspended.
+- Only the restaurant's active Owner can load it; the data is the public projection (no legacy reviews), so the preview never shows more than the public page would. A banner states whether visitors can see the page.
+- No analytics are recorded (data-bs-analytics suppression), the page is noindex, and the API response is not cached. Admin preview is not included yet.
