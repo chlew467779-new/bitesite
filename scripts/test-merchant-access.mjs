@@ -146,6 +146,7 @@ assert.deepEqual(merchantRoutes.sort(), [
   "app/api/merchant/me/route.ts",
   "app/api/merchant/media/upload-url/route.ts",
   "app/api/merchant/profile-change-requests/route.ts",
+  "app/api/merchant/restaurants/[merchantId]/fields/route.ts",
   "app/api/merchant/story-submissions/route.ts",
 ].sort(), "the merchant route list is known; a new route must be added to these checks");
 
@@ -176,7 +177,8 @@ for (const [path, capabilities] of Object.entries(expectCapability)) {
   for (const capability of capabilities) assert.match(source, new RegExp(`requireMerchantAccess\\(request, '${capability}'\\)`), `${path}: ${capability} access`);
 }
 const stories = await read("app/api/merchant/story-submissions/route.ts");
-assert.match(stories, /merchant_slug: context\.merchant\.slug/, "Story submissions use the verified merchant's slug");
+// D2-A: the POST slug is set by merchant_story_submission_create from the locked restaurant.
+assert.match(stories, /p_merchant_id: context\.merchant\.id/, "Story submissions name the verified restaurant");
 assert.match(stories, /\.eq\('merchant_slug', context\.merchant\.slug\)/);
 
 const helper = await read("app/api/merchant/_lib/merchant-access.ts");

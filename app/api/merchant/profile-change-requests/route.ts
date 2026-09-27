@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { InvalidJsonBodyError, readBoundedJson, RequestBodyTooLargeError } from '@/lib/bounded-json';
 import { requireMerchantAccess } from '@/app/api/merchant/_lib/merchant-access';
+import { mapFieldRpcError } from '@/lib/merchant-field-patch-core.mjs';
 
 const MAX_BODY_BYTES = 16 * 1024;
 const requestableFields = ['name', 'address', 'slug', 'business_status'] as const;
@@ -50,14 +51,17 @@ export async function POST(request: NextRequest) {
       changes[field] = value;
     }
     if (Object.keys(changes).length === 0) return NextResponse.json({ error: 'Choose at least one change to request' }, { status: 400 });
-    const { data, error } = await supabase
-      .from('merchant_profile_change_requests')
-      .insert({ merchant_id: context.merchant.id, requested_by: context.user.id, changes })
-      .select('id, changes, status, admin_notes, created_at')
-      .single();
+    // D2-A: inserted in one transaction that locks and rechecks the restaurant and Owner membership.
+    const { data, error } = await supabase.rpc('merchant_profile_change_request_create', {
+      p_user_id: context.user.id,
+      p_merchant_id: context.merchant.id,
+      p_changes: changes,
+    });
     if (error) {
       if (error.code === '23505') return NextResponse.json({ error: 'You already have a profile change request awaiting review' }, { status: 409 });
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      const mapped = mapFieldRpcError(error);
+      if (mapped.status === 500) console.error('merchant_profile_change_request_create failed:', error.message);
+      return NextResponse.json({ error: mapped.message, code: mapped.code }, { status: mapped.status });
     }
     return NextResponse.json({ request: data, success: true }, { status: 201 });
   } catch (error) {

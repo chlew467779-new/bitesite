@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { InvalidJsonBodyError, readBoundedJson, RequestBodyTooLargeError } from '@/lib/bounded-json';
 import { requireMerchantAccess } from '@/app/api/merchant/_lib/merchant-access';
+import { mapFieldRpcError } from '@/lib/merchant-field-patch-core.mjs';
 
 const MAX_BODY_BYTES = 512 * 1024;
 
@@ -12,7 +13,7 @@ function validUrl(value: unknown) {
 }
 
 // Story submissions are still keyed by merchant_slug; the slug is always taken from the verified
-// merchant, never from the request.
+// merchant (inside the insert transaction for POST), never from the request.
 export async function GET(request: NextRequest) {
   const context = await requireMerchantAccess(request, 'read');
   if ('response' in context) return context.response;
@@ -31,28 +32,29 @@ export async function POST(request: NextRequest) {
     const imageUrls = Array.isArray(body.image_urls) ? body.image_urls.filter(Boolean) : [];
     if (!validUrl(body.cover_image) || imageUrls.length > 3 || imageUrls.some((url: unknown) => !validUrl(url))) return NextResponse.json({ error: 'Use valid http(s) image URLs and no more than three gallery images' }, { status: 400 });
     if (body.rights_declared !== true) return NextResponse.json({ error: 'Rights declaration is required before submission' }, { status: 400 });
-    const now = new Date().toISOString();
-    const { data, error } = await supabase.from('story_submissions').insert({
-      merchant_slug: context.merchant.slug,
-      channel: 'self_service_form',
-      status: 'pending_review',
-      title: body.title.trim(),
-      excerpt: body.excerpt ? String(body.excerpt).trim() : null,
-      content: body.content.trim(),
-      story_angle: body.story_angle ? String(body.story_angle).trim() : null,
-      facts: body.facts && typeof body.facts === 'object' && !Array.isArray(body.facts) ? body.facts : {},
-      cover_image: body.cover_image || null,
-      image_urls: imageUrls,
-      rights_declared: true,
-      rights_note: body.rights_note ? String(body.rights_note).trim() : null,
-      ai_assistance_requested: body.ai_assistance_requested === true,
-      submitted_by: context.user.id,
-      submitted_at: now,
-      updated_at: now,
-    }).select().single();
+    // D2-A: the insert runs in one database transaction that locks the restaurant and the
+    // caller's Owner membership and rechecks both; the slug, channel, status, submitter and times
+    // are set there, never taken from the request.
+    const { data, error } = await supabase.rpc('merchant_story_submission_create', {
+      p_user_id: context.user.id,
+      p_merchant_id: context.merchant.id,
+      p_submission: {
+        title: body.title,
+        excerpt: body.excerpt ? String(body.excerpt) : null,
+        content: body.content,
+        story_angle: body.story_angle ? String(body.story_angle) : null,
+        facts: body.facts && typeof body.facts === 'object' && !Array.isArray(body.facts) ? body.facts : {},
+        cover_image: body.cover_image || null,
+        image_urls: imageUrls,
+        rights_note: body.rights_note ? String(body.rights_note) : null,
+        ai_assistance_requested: body.ai_assistance_requested === true,
+      },
+    });
     if (error) {
       if (error.code === '23505') return NextResponse.json({ error: 'You already have a Story awaiting review' }, { status: 409 });
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      const mapped = mapFieldRpcError(error);
+      if (mapped.status === 500) console.error('merchant_story_submission_create failed:', error.message);
+      return NextResponse.json({ error: mapped.message, code: mapped.code }, { status: mapped.status });
     }
     return NextResponse.json({ submission: data, success: true }, { status: 201 });
   } catch (error) {
