@@ -11,9 +11,10 @@
  * (PATCH /api/admin/merchants/[merchantId]/fields). Only changed fields are sent, each with the
  * value this editor loaded, so an Owner's change made meanwhile is reported as a conflict instead
  * of being overwritten; changes to other fields merge. Links, GrabFood, images, payment methods,
- * the web address (slug) and publication/suspension/business status are shown read-only: they
- * need review or governance workflows that are not built yet, and the old whole-form save that
- * wrote them is retired.
+ * the web address (slug), archiving and business status are shown read-only: they need review or
+ * governance workflows that are not built yet, and the old whole-form save that wrote them is
+ * retired. Publish / hide / suspend / lift suspension are dedicated, audited actions in
+ * MerchantStatusPanel (D2-C), never part of a section save.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -21,6 +22,7 @@ import { ArrowLeft, FileText, Globe, Image as ImageIcon, Loader2, MapPin, Phone,
 import { useAuth } from './auth-context';
 import { registerLeaveCheck } from '@/lib/unsaved-guard';
 import MenuEditor from './menu-editor';
+import MerchantStatusPanel from './merchant-status-panel';
 import { AMENITY_TAGS, CUISINE_TAGS, OCCASION_TAGS } from '@/lib/presets';
 import { getPersistableLayouts } from '@/lib/layout-registry.mjs';
 import { defaultFeatures } from '@/types';
@@ -616,11 +618,10 @@ export default function MerchantForm({ merchant, onBack, onSaved, loadWarning }:
             </div>
             <div hidden={activeTab !== 3} className="space-y-4">
               <FeaturesSection key={`features:${sectionKey}`} {...props} />
+              <MerchantStatusPanel key={`status:${current.id}`} merchantId={current.id} merchantName={current.name} token={token} />
               <div className={panel}>
-                <PanelTitle title="Status (read only)" note="Publishing, hiding, suspending, archiving and business status changes need dedicated governance actions, which are not available in this editor. Saving sections never changes them." />
+                <PanelTitle title="Not editable here" note="Archiving and business status changes need governance workflows that are not built yet." />
                 <ReadOnlyList items={[
-                  { label: 'Platform status', value: merchant?.platform_status ?? null },
-                  { label: 'Published', value: merchant?.is_published ?? null },
                   { label: 'Business status', value: merchant?.business_status ?? null },
                   { label: 'Menu section (protected)', value: stored('features.menu') ?? '(default)' },
                 ]} />
