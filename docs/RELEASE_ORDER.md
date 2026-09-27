@@ -36,11 +36,11 @@ Run the SQL assertions/behaviour tests below with `psql -v ON_ERROR_STOP=1`, and
 
 ## 3. D2-C — governance and business status
 
-- Migration: `supabase/migrations/20260927090000_merchant_governance.sql`, after B0. Adds Admin-only Publish/Hide/Suspend/Lift suspension/Archive/Restore and business status RPCs, with audit and request replay. Pending review freezes ordinary Owner/Admin edits. Managed rows have narrower governance than legacy rows.
+- Migration: `supabase/migrations/20260927095000_merchant_governance.sql`, after B0. Adds Admin-only Publish/Hide/Suspend/Lift suspension/Archive/Restore and business status RPCs, with audit and request replay. Pending review freezes ordinary Owner/Admin edits. Managed rows have narrower governance than legacy rows.
 - Application: `app/admin/components/merchant-status-panel.tsx`, `app/api/admin/merchants/[merchantId]/status/route.ts` (state read, governance and business-status writes). The list badges/filter are display-only. Business statuses are Open, Temporarily closed, Moved and Permanently closed; visibility/restriction is separate.
 - Pre-release SQL: `supabase/tests/d2c_governance_behavior_tests.sql`, then rerun D2-A/B0 suites because shared lock/audit behaviour changes. Verify contact-gated publication, suspension preserving prior visibility, archive/read-only, restore to hidden, managed action restrictions, pending freeze, reasons and replay.
 - Post-release: inspect grants and governance function definitions; smoke-test approved actions with a synthetic restaurant, verify public page/list/sitemap cache refresh and rejected Owner writes during suspension. Do not alter real restaurant state just to test.
-- Rollback: `supabase/rollback/20260927090000_merchant_governance.rollback.STAGING_ONLY.sql`. Application first; removes governance RPCs but preserves states, audit and idempotency records. It does not undo the history of actions or automatically restore old publication values.
+- Rollback: `supabase/rollback/20260927095000_merchant_governance.rollback.STAGING_ONLY.sql`. Application first; removes governance RPCs but preserves states, audit and idempotency records. It does not undo the history of actions or automatically restore old publication values.
 
 ## 4. M6b — trusted logo/cover images
 

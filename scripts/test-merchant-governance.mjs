@@ -93,7 +93,7 @@ assert.doesNotMatch(crud, /updateData\.is_published|updateData\.platform_status/
 
 /* ── migration shape ─────────────────────────────────────────────────────────────────────── */
 
-const migration = await read("supabase/migrations/20260927093000_merchant_governance.sql");
+const migration = await read("supabase/migrations/20260927095000_merchant_governance.sql");
 for (const fn of ["merchant_governance_read", "merchant_governance_apply"]) {
   const body = migration.slice(migration.indexOf(`function public.${fn}(`));
   assert.match(body.slice(0, body.indexOf("as $$")), /security invoker\s+set search_path = ''/, `${fn}: invoker, empty search_path`);
@@ -103,7 +103,7 @@ for (const fn of ["merchant_governance_read", "merchant_governance_apply"]) {
 assert.doesNotMatch(migration, /security definer/i);
 assert.match(migration, /p_actor_type is distinct from 'admin' or p_actor_id is distinct from 'legacy_admin'/, "Admin only");
 assert.match(migration, /for update;/, "the row is locked");
-const rollback = await read("supabase/rollback/20260927093000_merchant_governance.rollback.STAGING_ONLY.sql");
+const rollback = await read("supabase/rollback/20260927095000_merchant_governance.rollback.STAGING_ONLY.sql");
 assert.match(rollback, /if 'NO' <> 'yes' then/, "rollback switch is off by default");
 
 console.log("merchant governance checks passed");

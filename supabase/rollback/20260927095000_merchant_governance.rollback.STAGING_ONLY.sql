@@ -1,5 +1,5 @@
 -- =====================================================================
--- ROLLBACK of 20260927093000_merchant_governance.sql (D2-C) — STAGING ONLY.
+-- ROLLBACK of 20260927095000_merchant_governance.sql (D2-C) — STAGING ONLY.
 -- =====================================================================
 -- Drops the governance functions. Restaurant states they set, audit rows and idempotency rows
 -- are kept. Roll the application back first (the Admin status panel calls these RPCs).
