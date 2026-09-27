@@ -13,6 +13,7 @@ export async function POST(request: NextRequest) {
   if (!input) return merchantErrorResponse(400, 'INVALID_INPUT', 'Enter a restaurant name and a valid request ID.');
   const { data, error } = await supabaseAdmin.rpc('merchant_restaurant_create', { p_actor_user_id: auth.user.id, p_name: input.name, p_request_id: input.requestId });
   if (error) return merchantErrorResponse(503, 'CREATE_UNAVAILABLE', 'We could not create your draft. Please try again.');
+  if (data?.code === 'DRAFT_LIMIT') return merchantErrorResponse(409, 'DRAFT_LIMIT', 'You already have three restaurants in progress. Submit one for review (or finish it) before creating another.');
   if (data?.code) return merchantErrorResponse(data.code === 'AUTH_REQUIRED' ? 403 : 409, data.code, 'This request could not be completed. Try again with a new restaurant name.');
   return NextResponse.json({ merchant: data }, { status: 201, headers: { 'Cache-Control': 'no-store' } });
 }

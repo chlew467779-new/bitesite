@@ -165,3 +165,8 @@ A new feature idea must not silently become a decision. Add it here only after C
 - Recommended destination: a private `merchant_feedback` table read on a new Admin Feedback page (filter new/read/resolved, reply). The Owner sees the reply and status on the dashboard. No email yet (SMTP is off).
 - Owners can send feedback while suspended, archived or waiting for review (the suspension notice points them to Feedback). Idempotent per request id; 10 per restaurant per hour.
 - Built and tested, but the dashboard form stays switched off (`FEEDBACK_SENDING_ENABLED = false` in `app/merchant/components/feedback-panel.tsx`) until CH approves this destination. Switching on is that one line.
+
+## SYNC-053 — Three editable drafts per account (implements FINAL_AUDIT M2-A, Claude 2026-09-27)
+
+- `merchant_restaurant_create` refuses a fourth self-service restaurant while the account already owns three in draft or rejected (`DRAFT_LIMIT`, 409 with an explanation). Submitted (pending) and approved restaurants do not count; retries of earlier requests still return their draft.
+- Still open from M2-A (Decision needed, CH): rights declaration and terms version at creation. There is no terms page yet; the wording is a legal decision.

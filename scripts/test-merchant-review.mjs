@@ -26,4 +26,8 @@ const fields = await read('app/api/_lib/merchant-field-patch.ts');
 assert.match(fields, /actor.type === 'owner' && isListingBasicsPatch\(body\)/);
 assert.match(fields, /basics \? 'merchant_listing_basics_patch' : 'merchant_field_patch'/);
 assert.match(fields, /tagErrors\(parsed.patches\)/);
+// M2-A completion: at most three editable self-service drafts per account.
+const draftLimit = (await readFile(new URL("../supabase/migrations/20260927170000_merchant_draft_limit.sql", import.meta.url), "utf8")).replace(/\r\n/g, "\n");
+assert.match(draftLimit, /review_status in \('draft', 'rejected'\)\) >= 3 then\n\s*return jsonb_build_object\('code', 'DRAFT_LIMIT'\);/, "fourth editable draft refused");
+assert.match((await readFile(new URL("../app/api/merchant/restaurants/route.ts", import.meta.url), "utf8")), /data\?\.code === 'DRAFT_LIMIT'/, "the create route explains the limit");
 console.log('merchant review checks passed');

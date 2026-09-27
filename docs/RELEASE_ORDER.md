@@ -100,3 +100,10 @@ For each released step retain: application SHA/deployment URL, exact executed SQ
 - Application: Owner route `/api/merchant/restaurants/[id]/feedback`, Admin route `/api/admin/feedback`, Admin Feedback page. The dashboard form is switched off until CH approves SYNC-052.
 - Local verification: `supabase/tests/feedback_behavior_tests.sql`, `npm run test:feedback`, HTTP smoke (send, replay, inbox, reply, Owner sees reply).
 - Rollback FIRST (before dish photos): `supabase/rollback/20260927160000_merchant_feedback.rollback.STAGING_ONLY.sql`.
+
+## 11. Three editable drafts per account
+
+- Migration: `20260927170000_merchant_draft_limit.sql`, after `20260927160000` (and #64 `20260927090355`). Replaces `merchant_restaurant_create` with the same body plus the cap.
+- Application: the create route returns `DRAFT_LIMIT` with a clear message.
+- Local verification: `supabase/tests/draft_limit_behavior_tests.sql`, `supabase/tests/merchant_password_onboarding.sql` (unchanged behaviour otherwise), `npm run test:review`.
+- Rollback FIRST (before feedback): `supabase/rollback/20260927170000_merchant_draft_limit.rollback.STAGING_ONLY.sql`.
