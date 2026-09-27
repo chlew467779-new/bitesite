@@ -118,4 +118,8 @@
 
 ## Change rule
 
+### Merchant auth and self-registration — 2026-09-27
+
+User approved ChatGPT implementation: email/password daily login, email-confirmed self-registration and creation of an own private draft with atomic Owner membership; Magic Link remains for transition/recovery. No invitation or claim of an existing restaurant is needed to create a new draft. Five consecutive bad-password attempts from the current login source trigger 15 minutes of cooldown; recovery remains available, no permanent account lock, no effect on public listings. Minimum 8 characters, long passphrases allowed; shared accounts represent one identity. Hosted Auth configuration remains an environment prerequisite, not a code assumption.
+
 A new feature idea must not silently become a decision. Add it here only after CH explicitly approves it or after the Master Spec is formally revised and approved.

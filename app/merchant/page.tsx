@@ -341,11 +341,12 @@ export default function MerchantDashboardPage() {
             </>
           )}
           {load.kind === 'no-merchant' && (
-            <p className="mt-4 text-sm text-[#6B6560]">No restaurant is linked to this account yet. If you manage a restaurant on BiteSite, contact the BiteSite team through Feedback.</p>
+            <div className="mt-4"><p className="text-sm text-[#6B6560]">Create your first private restaurant draft to get started.</p><Link href="/merchant/new" className="mt-5 inline-block rounded-lg bg-[#2C3E2D] px-4 py-2.5 text-sm font-medium text-white">Create a restaurant</Link><button type="button" onClick={() => void signOut()} className="ml-4 text-sm underline">Sign out</button></div>
           )}
           {load.kind === 'choose' && (
             <>
               <p className="mt-4 text-sm text-[#6B6560]">Choose the restaurant you want to manage.</p>
+              <Link href="/merchant/new" className="mt-4 inline-block text-sm text-emerald-800 underline">Create another restaurant</Link>
               <ul className="mt-4 space-y-2">
                 {load.merchants.map((choice) => (
                   <li key={choice.id}>
@@ -410,6 +411,7 @@ export default function MerchantDashboardPage() {
             </div>
           </div>
           <nav aria-label="Merchant links" className="flex flex-wrap items-center gap-2 text-sm">
+            <a href="/merchant/new" onClick={(event) => { if (isDirty && !window.confirm('You have unsaved changes. Leave anyway?')) event.preventDefault(); }} className="rounded-lg border border-[#DDE5DC] px-3 py-2 font-medium text-[#2C3E2D]">Create another restaurant</a>
             <a href={`/store/${merchant.slug}`} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-[#DDE5DC] px-3 py-2 font-medium text-[#2C3E2D] hover:border-emerald-700">
               View public page
             </a>
