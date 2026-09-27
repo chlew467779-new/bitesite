@@ -11,9 +11,9 @@
  * (PATCH /api/admin/merchants/[merchantId]/fields). Only changed fields are sent, each with the
  * value this editor loaded, so an Owner's change made meanwhile is reported as a conflict instead
  * of being overwritten; changes to other fields merge. Links and GrabFood are edited in
- * MerchantLinksPanel (compare-and-set; Owner requests are reviewed on Link Reviews). Payment
- * methods and the web address (slug) are shown read-only: they need workflows that are not built
- * yet, and the old whole-form save that wrote them is retired. Publish / hide / suspend / lift
+ * MerchantLinksPanel (compare-and-set; Owner requests are reviewed on Link Reviews). The web
+ * address is renamed in MerchantSlugPanel (old addresses redirect). Payment methods are shown
+ * read-only: they need a workflow that is not built yet, and the old whole-form save is retired. Publish / hide / suspend / lift
  * suspension / archive / restore and the business status are dedicated, audited actions in
  * MerchantStatusPanel (D2-C), never part of a section save. Logo and cover upload through the
  * checked photo flow (M6b, ProfileImagesPanel).
@@ -26,6 +26,7 @@ import { registerLeaveCheck } from '@/lib/unsaved-guard';
 import MenuEditor from './menu-editor';
 import MerchantStatusPanel from './merchant-status-panel';
 import MerchantLinksPanel from './merchant-links-panel';
+import MerchantSlugPanel from './merchant-slug-panel';
 import { ProfileImagesPanel } from '@/app/components/media/profile-images-panel';
 import { AMENITY_TAGS, CUISINE_TAGS, OCCASION_TAGS } from '@/lib/presets';
 import { getPersistableLayouts } from '@/lib/layout-registry.mjs';
@@ -367,18 +368,20 @@ export default function MerchantForm({ merchant, onBack, onSaved, loadWarning }:
     }
   }, [token]);
 
-  useEffect(() => { if (current) void load(current.id); }, [current, load]);
+  // Reload only when the restaurant changes, not when its name or web address is updated here.
+  const currentId = current?.id ?? null;
+  useEffect(() => { if (currentId) void load(currentId); }, [currentId, load]);
 
   const send: SendSave = useCallback(async (body) => {
-    if (!current || !token) {
+    if (!currentId || !token) {
       return new Response(JSON.stringify({ error: { code: 'AUTH_REQUIRED', message: 'Your Admin session has ended. Sign in again in a new tab, then retry.' } }), { status: 401 });
     }
-    return fetch(`/api/admin/merchants/${encodeURIComponent(current.id)}/fields`, {
+    return fetch(`/api/admin/merchants/${encodeURIComponent(currentId)}/fields`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
       body: JSON.stringify(body),
     });
-  }, [current, token]);
+  }, [currentId, token]);
 
   const anyStatus = useCallback(() => {
     const statuses = [...handles.current.values()].map((handle) => handle.status());
@@ -596,9 +599,12 @@ export default function MerchantForm({ merchant, onBack, onSaved, loadWarning }:
               <LayoutSection key={`layout:${sectionKey}`} {...props} />
               <TagsSection key={`tags:${sectionKey}`} {...props} />
               <div className={panel}>
-                <PanelTitle title="Not editable here" note="The web address needs a dedicated rename that keeps old links working; payment methods and legacy tags need a defined list." />
+                <PanelTitle title="Web address" note="Renaming keeps old links working: they redirect permanently to the new address." />
+                <MerchantSlugPanel key={`slug:${current.id}`} merchantId={current.id} token={token} onChanged={(slug) => setCurrent((c) => (c ? { ...c, slug } : c))} />
+              </div>
+              <div className={panel}>
+                <PanelTitle title="Not editable here" note="Payment methods and legacy tags need a defined list." />
                 <ReadOnlyList items={[
-                  { label: 'Web address', value: `/${current.slug}` },
                   { label: 'Payment methods', value: merchant?.payment_methods ?? null },
                   { label: 'Legacy tags', value: merchant?.tags ?? null },
                 ]} />

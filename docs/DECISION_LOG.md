@@ -139,3 +139,10 @@ A new feature idea must not silently become a decision. Add it here only after C
 - Pilot admission defaults to 50 restaurants, counted per restaurant. Only managed (self-registered) pending/approved restaurants count; legacy restaurants do not (CH, 2026-09-27: otherwise an existing catalogue of 50+ restaurants would block every new submission), nor do managed drafts/rejected restaurants. Approved public/hidden/suspended restaurants retain their place. Lowering a limit never removes existing restaurants or cancels submissions. The post-launch total capacity remains a later operational decision, not a permanent product limit of 20 or 50.
 - Notifications are durable outbox records only; no real email is sent.
 - Scope: local implementation and tests only. No push, PR, hosted migration, merge or deployment authorized. B0/#63 migration history reconciliation remains a separate release task.
+## SYNC-049 — Web address rename with permanent redirects (RECOMMENDATION, Claude 2026-09-27)
+
+- Only Admin renames a restaurant web address (slug), in the Admin editor. Compare-and-set on the address shown; idempotent; audited.
+- Every former address is kept in `merchant_slug_history` and redirects permanently (Next.js `permanentRedirect`, HTTP 308 — treated like 301 by search engines) while the restaurant is public. The never-public M2-B draft address `restaurant-<id>` is not kept.
+- An address another restaurant used before can never be taken (database guard on every write path), so old links never point to a different restaurant. Changing back to an own former address is allowed.
+- Articles (FK ON UPDATE CASCADE), Story submissions, assisted content requests and content cycles follow the rename. Analytics rows keep the address that was visited at the time (known limit: per-restaurant analytics split across addresses).
+- Owners cannot rename; they ask the BiteSite team. Scope: local only.

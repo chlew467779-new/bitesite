@@ -79,3 +79,10 @@ For each released step retain: application SHA/deployment URL, exact executed SQ
 - Local verification: `supabase/tests/m2b_listing_review_behavior_tests.sql`, `npm run verify`, and HTTP submit/approve/publish plus concurrent last-place submissions.
 - Rollback FIRST, before link review: `supabase/rollback/20260927130000_merchant_listing_review.rollback.STAGING_ONLY.sql`. Default switch is NO. Restore application first; export submission/outbox history. Restaurant states/slugs and audit/idempotency history remain. Restores the exact B0 registry.
 - Hosted D2-A/#64 versions reportedly differ from repository timestamps. Reconcile actual SQL/checksums and dependency order before choosing any renames or application plan. This local package does not authorize or perform hosted operations.
+
+## 8. Web address rename and redirects
+
+- Migration: `20260927140000_merchant_slug_history.sql`, after `20260927130000`. Adds `merchant_slug_history`, slug guard/follow triggers, Admin RPCs, and changes `articles_merchant_slug_fkey` to ON UPDATE CASCADE. Replaces `private.merchant_publication_slug`.
+- Deploy the application after the migration: the store page reads `merchant_slug_history` for redirects; the Admin editor gains the Web address panel.
+- Local verification: `supabase/tests/slug_history_behavior_tests.sql`, `npm run test:slug`, rename in the browser and old address redirect.
+- Rollback FIRST (before M2-B): `supabase/rollback/20260927140000_merchant_slug_history.rollback.STAGING_ONLY.sql`. Old addresses stop redirecting; current slugs stay.

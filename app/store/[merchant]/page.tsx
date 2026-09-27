@@ -2,7 +2,7 @@
 
 import { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import {
   getMerchantBySlug,
   getCategoriesByMerchant,
@@ -11,6 +11,7 @@ import {
   getPublishedMerchants,
   getRelatedMerchants,
   getEventsByMerchant,
+  getRenamedMerchantSlug,
 } from "@/lib/supabase";
 import { supabase } from "@/lib/supabase";
 import { getSettings } from "@/lib/settings";
@@ -115,7 +116,12 @@ export default async function MerchantPage({ params }: PageProps) {
     getMerchantBySlug(slug),
   ]);
 
-  if (!merchant) notFound();
+  if (!merchant) {
+    // A renamed restaurant: send old links to the current address (permanent redirect).
+    const renamed = await getRenamedMerchantSlug(slug);
+    if (renamed) permanentRedirect(`/store/${encodeURIComponent(renamed)}`);
+    notFound();
+  }
 
   // Inactive merchant friendly page
   if (merchant.status === 'inactive' || ['TEMPORARILY_CLOSED', 'MOVED', 'PERMANENTLY_CLOSED'].includes(merchant.business_status || '')) {
