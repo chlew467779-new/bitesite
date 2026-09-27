@@ -31,7 +31,7 @@ export default function ResetPasswordPage() {
     {done ? <p role="status" className="mt-4">Your password has been updated. Sign in with your new password.</p> : !ready ? <p className="mt-4">Open the password reset link from your email. If it expired, request a new one.</p> : <form onSubmit={submit} className="mt-6 space-y-4">
       <label className="block">New password<input required type="password" minLength={8} maxLength={1024} autoComplete="new-password" value={password} disabled={busy} onChange={event => setPassword(event.target.value)} className="mt-1 block w-full rounded-lg border px-3 py-2.5" /></label>
       <label className="block">Confirm password<input required type="password" maxLength={1024} autoComplete="new-password" value={confirm} disabled={busy} onChange={event => setConfirm(event.target.value)} className="mt-1 block w-full rounded-lg border px-3 py-2.5" /></label>
-      <button disabled={busy} className="w-full rounded-lg bg-[#2C3E2D] p-3 text-white disabled:opacity-50">{busy ? 'Saving…' : 'Save password'}</button>
-    </form>}{error && <p role="alert" className="mt-4 text-red-700">{error}</p>}<Link href="/merchant/login" className="mt-5 inline-block text-emerald-800 underline">Back to sign in</Link>
+      <button disabled={busy} className="min-h-11 w-full rounded-lg bg-[#2C3E2D] p-3 text-white disabled:opacity-50">{busy ? 'Saving…' : 'Save password'}</button>
+    </form>}{error && <p role="alert" className="mt-4 text-red-700">{error}</p>}<Link href="/merchant/login" className="mt-5 inline-flex min-h-11 w-full items-center justify-center text-emerald-800 underline">Back to sign in</Link>
   </div></main>;
 }
