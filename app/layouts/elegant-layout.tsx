@@ -18,6 +18,7 @@ import { normalizeBookingWhatsApp } from "@/lib/merchant-booking-target.mjs";
 import Link from "next/link";
 import { getTodayKey, formatOperatingHours, DAYS } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
+import { formatPrice } from "@/lib/price-format.mjs";
 
 export function ElegantLayout({
   merchant, categories, products, videos, features, events, footerText,
@@ -127,9 +128,9 @@ export function ElegantLayout({
                               {shouldShowPrice(product) && (
                                 <span className="font-bold text-amber-400 whitespace-nowrap">
                                   {product.discount_price ? (
-                                    <><span className="line-through opacity-50 text-sm mr-1">RM {product.price}</span>RM {product.discount_price}</>
+                                    <><span className="line-through opacity-50 text-sm mr-1">{formatPrice(product.price)}</span>{formatPrice(product.discount_price)}</>
                                   ) : (
-                                    `RM ${product.price}`
+                                    formatPrice(product.price)
                                   )}
                                 </span>
                               )}

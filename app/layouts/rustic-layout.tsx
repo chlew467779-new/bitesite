@@ -15,6 +15,7 @@ import { shouldShowPrice } from "@/lib/menu-display.mjs";
 import Link from "next/link";
 import { getTodayKey, formatOperatingHours, DAYS } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
+import { formatPrice } from "@/lib/price-format.mjs";
 
 export function RusticLayout({
   merchant, categories, products, videos, features, events, footerText,
@@ -90,8 +91,8 @@ export function RusticLayout({
                                 {shouldShowPrice(product) && (
                                   <span className="font-bold text-orange-700 text-sm whitespace-nowrap">
                                     {product.discount_price ? (
-                                      <><span className="line-through opacity-50 text-xs mr-1">RM {product.price}</span>RM {product.discount_price}</>
-                                    ) : `RM ${product.price}`}
+                                      <><span className="line-through opacity-50 text-xs mr-1">{formatPrice(product.price)}</span>{formatPrice(product.discount_price)}</>
+                                    ) : formatPrice(product.price)}
                                   </span>
                                 )}
                               </div>

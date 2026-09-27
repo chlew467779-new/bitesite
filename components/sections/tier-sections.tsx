@@ -9,6 +9,7 @@ import { SeasonalSection } from "@/app/components/sections/seasonal-section";
 import { EventsSection } from "@/app/components/sections/events-section";
 import { mergeFeatures, type MerchantFeatures } from "@/types";
 import type { Merchant, Product, EventItem } from "@/types";
+import { formatPrice } from "@/lib/price-format.mjs";
 
 type LayoutVariant = "classic" | "elegant" | "minimal" | "modern" | "rustic";
 
@@ -44,9 +45,9 @@ export function TierSections({
       description: p.description ?? undefined,
       image: p.image_url ?? undefined,
       price: p.discount_price
-        ? `RM ${p.discount_price}`
+        ? formatPrice(p.discount_price)
         : p.price
-        ? `RM ${p.price}`
+        ? formatPrice(p.price)
         : undefined,
     }));
 

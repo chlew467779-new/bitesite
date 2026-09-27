@@ -14,6 +14,7 @@ import { MapEmbed } from "@/app/components/map-embed";
 import { trackEvent } from "@/lib/analytics";
 import { MenuViewTracker } from "@/components/sections/menu-view-tracker";
 import { shouldShowPrice } from "@/lib/menu-display.mjs";
+import { formatPrice } from "@/lib/price-format.mjs";
 
 export function ClassicLayout({
   merchant,
@@ -146,12 +147,12 @@ export function ClassicLayout({
                                     {product.discount_price ? (
                                       <>
                                         <span className="line-through opacity-50 text-sm mr-1">
-                                          RM {product.price}
+                                          {formatPrice(product.price)}
                                         </span>
-                                        RM {product.discount_price}
+                                        {formatPrice(product.discount_price)}
                                       </>
                                     ) : (
-                                      `RM ${product.price}`
+                                      formatPrice(product.price)
                                     )}
                                   </span>
                                 )}
