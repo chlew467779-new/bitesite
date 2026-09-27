@@ -500,6 +500,14 @@ export default function MerchantDashboardPage() {
 
   const { profile, merchants } = data;
   const readOnly = profile.restriction === 'suspended' || profile.restriction === 'archived' || listing?.reviewStatus === 'pending' || listing?.restriction !== 'none' || listingBusy;
+  const restriction = profile.restriction !== 'none' && profile.restriction ? profile.restriction : listing?.restriction;
+  const readOnlyNotice = restriction === 'suspended'
+    ? 'This restaurant is suspended by BiteSite, so it cannot be changed. Contact the BiteSite team through Feedback.'
+    : restriction === 'archived'
+      ? 'This restaurant is archived and cannot be changed.'
+      : listing?.reviewStatus === 'pending'
+        ? 'Your restaurant is waiting for review, so it cannot be changed. Withdraw it from review if you need to edit.'
+        : null;
   const value = (path: string) => snapshotValue(confirmed[path]);
   const hasText = (path: string) => typeof value(path) === 'string' && (value(path) as string).trim() !== '';
   const checklist = listing?.stateSource === 'managed' ? [
@@ -595,12 +603,10 @@ export default function MerchantDashboardPage() {
         </div>
       )}
 
-      {readOnly && (
+      {readOnlyNotice && (
         <div className="mx-auto max-w-6xl px-4 pt-6 sm:px-6">
           <p role="status" className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            {profile.restriction === 'suspended'
-              ? 'This restaurant is suspended by BiteSite, so it cannot be changed. Contact the BiteSite team through Feedback.'
-              : 'This restaurant is archived and cannot be changed.'}
+            {readOnlyNotice}
           </p>
         </div>
       )}
