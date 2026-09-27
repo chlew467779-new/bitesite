@@ -11,10 +11,10 @@
  * (PATCH /api/admin/merchants/[merchantId]/fields). Only changed fields are sent, each with the
  * value this editor loaded, so an Owner's change made meanwhile is reported as a conflict instead
  * of being overwritten; changes to other fields merge. Links and GrabFood are edited in
- * MerchantLinksPanel (compare-and-set; Owner requests are reviewed on Link Reviews). Payment methods,
- * the web address (slug), archiving and business status are shown read-only: they need review or
- * governance workflows that are not built yet, and the old whole-form save that wrote them is
- * retired. Publish / hide / suspend / lift suspension are dedicated, audited actions in
+ * MerchantLinksPanel (compare-and-set; Owner requests are reviewed on Link Reviews). Payment
+ * methods and the web address (slug) are shown read-only: they need workflows that are not built
+ * yet, and the old whole-form save that wrote them is retired. Publish / hide / suspend / lift
+ * suspension / archive / restore and the business status are dedicated, audited actions in
  * MerchantStatusPanel (D2-C), never part of a section save. Logo and cover upload through the
  * checked photo flow (M6b, ProfileImagesPanel).
  */
@@ -620,9 +620,8 @@ export default function MerchantForm({ merchant, onBack, onSaved, loadWarning }:
               <FeaturesSection key={`features:${sectionKey}`} {...props} />
               <MerchantStatusPanel key={`status:${current.id}`} merchantId={current.id} merchantName={current.name} token={token} />
               <div className={panel}>
-                <PanelTitle title="Not editable here" note="Archiving and business status changes need governance workflows that are not built yet." />
+                <PanelTitle title="Not editable here" note="The menu section is always shown; it cannot be switched off." />
                 <ReadOnlyList items={[
-                  { label: 'Business status', value: merchant?.business_status ?? null },
                   { label: 'Menu section (protected)', value: stored('features.menu') ?? '(default)' },
                 ]} />
               </div>

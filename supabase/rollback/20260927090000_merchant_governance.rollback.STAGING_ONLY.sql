@@ -13,6 +13,7 @@ begin
   end if;
 end $$;
 
+drop function if exists public.merchant_business_status_set(text, text, uuid, uuid, text, text);
 drop function if exists public.merchant_governance_apply(text, text, uuid, uuid, text, text);
 drop function if exists public.merchant_governance_read(text, text, uuid);
 drop function if exists private.merchant_governance_state(public.merchants);

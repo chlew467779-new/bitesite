@@ -100,7 +100,7 @@ begin
   -- 5. suspend keeps is_published; Owner writes refused, Admin corrections allowed; publish refused
   res := d2c_test.act(p, 'suspend', 'Complaint under review');
   perform d2c_test.ok(res ->> 'status' = 'applied' and not d2c_test.public(p) and (d2c_test.m(p)).is_published
-    and (res -> 'state' -> 'allowedActions') = '["hide", "unsuspend"]'::jsonb, 'suspend');
+    and (res -> 'state' -> 'allowedActions') = '["hide", "unsuspend", "archive"]'::jsonb, 'suspend');
   perform d2c_test.err(format($s$select public.merchant_field_patch('owner', %L, %L::uuid, gen_random_uuid(), '[{"path": "profile.tagline", "expected": {"exists": false}, "value": "x"}]')$s$,
     '00000000-0000-4000-8000-00000000c0a1', p), 'MERCHANT_SUSPENDED', 'Owner write while suspended');
   res := public.merchant_field_patch('admin', 'legacy_admin', p, gen_random_uuid(), '[{"path": "profile.tagline", "expected": {"exists": true, "value": null}, "value": "fixed"}]');
@@ -132,10 +132,42 @@ begin
   -- 9. actor, action and target checks; read
   perform d2c_test.err(format(stmt, 'owner', '00000000-0000-4000-8000-00000000c0a1', d, 'hide', 'x'), 'OPERATION_FORBIDDEN', 'Owner cannot govern');
   perform d2c_test.err(format(stmt, 'admin', 'someone', d, 'hide', 'x'), 'OPERATION_FORBIDDEN', 'unknown Admin principal');
-  perform d2c_test.err(format(stmt, 'admin', 'legacy_admin', d, 'archive', 'x'), 'VALIDATION_FAILED', 'unknown action');
+  perform d2c_test.err(format(stmt, 'admin', 'legacy_admin', d, 'delete', 'x'), 'VALIDATION_FAILED', 'unknown action');
   perform d2c_test.err(format(stmt, 'admin', 'legacy_admin', gen_random_uuid(), 'hide', 'x'), 'RESOURCE_NOT_FOUND', 'missing restaurant');
+  -- 10. archive / restore (legacy): archived refuses everything else and ordinary edits; restore is hidden
+  perform d2c_test.err(format(stmt, 'admin', 'legacy_admin', d, 'archive', null), 'VALIDATION_FAILED', 'archive needs a reason');
+  res := d2c_test.act(d, 'archive', 'Closed for good');
+  perform d2c_test.ok(res ->> 'status' = 'applied' and not d2c_test.public(d) and (d2c_test.m(d)).platform_status = 'ARCHIVED'
+    and (res -> 'state' -> 'allowedActions') = '["restore"]'::jsonb, 'archive');
+  perform d2c_test.err(format($s$select public.merchant_field_patch('admin', 'legacy_admin', %L::uuid, gen_random_uuid(), '[{"path": "profile.tagline", "expected": {"exists": true, "value": null}, "value": "x"}]')$s$, d),
+    'OPERATION_FORBIDDEN', 'no ordinary edits while archived');
+  perform d2c_test.err(format($s$select public.merchant_business_status_set('admin', 'legacy_admin', %L::uuid, gen_random_uuid(), 'OPEN', null)$s$, d), 'OPERATION_FORBIDDEN', 'business status refused while archived');
+  res := d2c_test.act(d, 'restore', 'Reopened');
+  perform d2c_test.ok(res ->> 'status' = 'applied' and not d2c_test.public(d) and (d2c_test.m(d)).platform_status = 'DRAFT', 'restore is hidden');
+  res := d2c_test.act(d, 'restore', 'again');
+  perform d2c_test.ok(res ->> 'status' = 'noop', 'restore when not archived is a no-op');
+  res := d2c_test.act(h, 'archive', 'Managed archive');
+  perform d2c_test.ok((d2c_test.m(h)).platform_restriction = 'archived' and (d2c_test.m(h)).platform_status = 'ARCHIVED', 'managed archive');
+  res := d2c_test.act(h, 'restore', 'Managed restore');
+  perform d2c_test.ok((d2c_test.m(h)).platform_restriction = 'none', 'managed restore');
+
+  -- 11. business status
+  perform d2c_test.err(format($s$select public.merchant_business_status_set('admin', 'legacy_admin', %L::uuid, gen_random_uuid(), 'PERMANENTLY_CLOSED', ' ')$s$, p), 'VALIDATION_FAILED', 'closing needs a reason');
+  perform d2c_test.err(format($s$select public.merchant_business_status_set('admin', 'legacy_admin', %L::uuid, gen_random_uuid(), 'GONE', 'x')$s$, p), 'VALIDATION_FAILED', 'unknown status');
+  perform d2c_test.err(format($s$select public.merchant_business_status_set('owner', %L, %L::uuid, gen_random_uuid(), 'OPEN', null)$s$, '00000000-0000-4000-8000-00000000c0a1', p), 'OPERATION_FORBIDDEN', 'Owner cannot set business status');
+  req := gen_random_uuid();
+  res := public.merchant_business_status_set('admin', 'legacy_admin', p, req, 'TEMPORARILY_CLOSED', 'Renovation');
+  perform d2c_test.ok(res ->> 'status' = 'applied' and (d2c_test.m(p)).business_status = 'TEMPORARILY_CLOSED'
+    and exists (select 1 from public.merchant_change_log l where l.merchant_id = p and l.operation = 'merchant_business_status:TEMPORARILY_CLOSED' and l.reason = 'Renovation'), 'business status set and audited');
+  res := public.merchant_business_status_set('admin', 'legacy_admin', p, req, 'TEMPORARILY_CLOSED', 'Renovation');
+  perform d2c_test.ok((res ->> 'replayed')::boolean, 'business status replay');
+  res := public.merchant_business_status_set('admin', 'legacy_admin', mg, gen_random_uuid(), 'PERMANENTLY_CLOSED', 'Closed');
+  perform d2c_test.ok(not d2c_test.public(mg), 'managed row closed permanently is not public');
+  res := public.merchant_business_status_set('admin', 'legacy_admin', p, gen_random_uuid(), 'OPEN', null);
+  perform d2c_test.ok((d2c_test.m(p)).business_status = 'OPEN', 'reopen without reason');
+
   res := public.merchant_governance_read('admin', 'legacy_admin', n);
-  perform d2c_test.ok(res -> 'state' ->> 'hasValidContact' = 'false' and res -> 'state' -> 'allowedActions' = '["suspend"]'::jsonb, 'read shows what is allowed');
+  perform d2c_test.ok(res -> 'state' ->> 'hasValidContact' = 'false' and res -> 'state' -> 'allowedActions' = '["suspend", "archive"]'::jsonb, 'read shows what is allowed');
 end $$;
 
 reset role;

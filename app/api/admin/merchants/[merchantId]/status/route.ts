@@ -2,7 +2,7 @@
 
 /**
  * Admin governance (D2-C): read the restaurant's visibility state and publish / hide / suspend /
- * lift a suspension. The actor is the verified Admin session (x-admin-token), recorded as
+ * lift a suspension / archive / restore, or set the business status. The actor is the verified Admin session (x-admin-token), recorded as
  * `legacy_admin`. Rules, locking, audit and idempotency all live in
  * public.merchant_governance_apply (one transaction); public pages are refreshed after it commits.
  */
@@ -63,14 +63,10 @@ export async function POST(request: NextRequest, { params }: Context) {
   const parsed = parseGovernanceRequest(body);
   if (!parsed.ok) return errorResponse(parsed.status, parsed.code, parsed.message);
 
-  const { data, error } = await supabase.rpc('merchant_governance_apply', {
-    p_actor_type: 'admin',
-    p_actor_id: ADMIN_PRINCIPAL,
-    p_merchant_id: merchantId,
-    p_request_id: parsed.requestId,
-    p_action: parsed.action,
-    p_reason: parsed.reason,
-  });
+  const actor = { p_actor_type: 'admin', p_actor_id: ADMIN_PRINCIPAL, p_merchant_id: merchantId, p_request_id: parsed.requestId };
+  const { data, error } = parsed.action === 'set_business_status'
+    ? await supabase.rpc('merchant_business_status_set', { ...actor, p_status: parsed.businessStatus, p_reason: parsed.reason })
+    : await supabase.rpc('merchant_governance_apply', { ...actor, p_action: parsed.action, p_reason: parsed.reason });
   if (error) {
     const mapped = mapGovernanceRpcError(error);
     if (mapped.status === 500) console.error('merchant_governance_apply failed:', error.message);

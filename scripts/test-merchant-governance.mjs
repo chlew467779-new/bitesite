@@ -19,14 +19,18 @@ const REQ = "7d1c3a52-5b1e-4c8e-9a51-0e2c55d2c001";
 
 /* ── request parsing ─────────────────────────────────────────────────────────────────────── */
 
-assert.deepEqual(GOVERNANCE_ACTIONS, ["publish", "hide", "suspend", "unsuspend"]);
+assert.deepEqual(GOVERNANCE_ACTIONS, ["publish", "hide", "suspend", "unsuspend", "archive", "restore"]);
+assert.equal(parseGovernanceRequest({ requestId: REQ, action: "set_business_status", businessStatus: "OPEN" }).ok, true, "reopen needs no reason");
+assert.equal(parseGovernanceRequest({ requestId: REQ, action: "set_business_status", businessStatus: "MOVED" }).ok, false, "closing needs a reason");
+assert.equal(parseGovernanceRequest({ requestId: REQ, action: "set_business_status", businessStatus: "GONE", reason: "x" }).ok, false, "unknown status");
+assert.equal(parseGovernanceRequest({ requestId: REQ, action: "hide", reason: "x", businessStatus: "OPEN" }).ok, false, "status only with its action");
 assert.deepEqual(parseGovernanceRequest({ requestId: REQ, action: "publish" }), { ok: true, requestId: REQ, action: "publish", reason: null });
 assert.deepEqual(parseGovernanceRequest({ requestId: REQ, action: "hide", reason: "  Wrong prices  " }), { ok: true, requestId: REQ, action: "hide", reason: "Wrong prices" });
 for (const [body, label] of [
   [null, "no body"],
   [[], "array"],
   [{ requestId: "x", action: "hide", reason: "r" }, "bad request id"],
-  [{ requestId: REQ, action: "archive", reason: "r" }, "unknown action"],
+  [{ requestId: REQ, action: "delete", reason: "r" }, "unknown action"],
   [{ requestId: REQ, action: "hide" }, "hide without reason"],
   [{ requestId: REQ, action: "suspend", reason: "   " }, "blank reason"],
   [{ requestId: REQ, action: "unsuspend", reason: "x".repeat(501) }, "reason too long"],
@@ -72,6 +76,7 @@ const route = await read("app/api/admin/merchants/[merchantId]/status/route.ts")
 assert.match(route, /verifyAdminToken/, "Admin session is verified");
 assert.match(route, /p_actor_type: 'admin',\s*p_actor_id: ADMIN_PRINCIPAL/, "the actor is server-built");
 assert.match(route, /rpc\('merchant_governance_apply'/);
+assert.match(route, /rpc\('merchant_business_status_set'/);
 assert.doesNotMatch(route, /\.from\('merchants'\)\.update|\.update\(/, "no direct merchant UPDATE");
 for (const path of ["'/'", "'/our-partner'", "'/sitemap.xml'", "`/store/${data.slug}`"]) assert.ok(route.includes(`revalidatePath(${path})`), `refreshes ${path}`);
 
