@@ -227,7 +227,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ submission: converted, article, success: true });
     }
 
-    // Review decision (approved / rejected / draft / …). The linked article is written first, so
+    // Review decision (approved / rejected / draft / other). The linked article is written first, so
     // a Story sent back to draft or rejected is taken down before anything else can fail; the
     // submission is updated last. These are separate requests, not one transaction.
     const { data: source, error: sourceError } = await supabase.from('story_submissions').select('id, article_id').eq('id', body.id).maybeSingle();
