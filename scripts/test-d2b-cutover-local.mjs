@@ -86,10 +86,10 @@ try {
   r = await call("POST", "/api/admin/merchants-crud", { adminToken, body: { name: "Bad", slug: "Not A Slug!" } });
   expect("invalid slug -> 400", r.status === 400, JSON.stringify(r));
 
-  console.log("3) profile image uploads closed, Story uploads open");
+  console.log("3) legacy upload route rejects profile kinds, Story uploads open");
   const upload = { contentType: "image/webp", size: 1000 };
   r = await call("POST", `/api/merchant/media/upload-url?merchantId=${m.id}`, { token, body: { kind: "merchant", ...upload } });
-  expect("Merchant profile upload ticket -> 403", r.status === 403 && r.json?.code === "FIELD_NOT_WRITABLE", JSON.stringify(r));
+  expect("Merchant profile kind on Story upload route -> 400", r.status === 400 && r.json?.error === "Unsupported media upload kind", JSON.stringify(r));
   r = await call("POST", `/api/merchant/media/upload-url?merchantId=${m.id}`, { token, body: { kind: "story", ...upload } });
   expect("Merchant Story upload ticket still issued (or storage not configured)", r.status === 200 || r.status === 503, JSON.stringify(r));
   r = await call("POST", "/api/admin/media/upload-url", { adminToken, body: { kind: "merchant", ...upload } });

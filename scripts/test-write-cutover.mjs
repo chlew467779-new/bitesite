@@ -49,7 +49,8 @@ const me = await read("app/api/merchant/me/route.ts");
 assert.match(me, /export async function PUT[\s\S]*?410, 'LEGACY_WRITE_RETIRED'/, "Merchant whole-form PUT retired");
 
 const upload = await read("app/api/merchant/media/upload-url/route.ts");
-assert.match(upload, /if \(body\.kind === 'merchant'\) \{\s*return NextResponse\.json\(\{[^}]*code: 'FIELD_NOT_WRITABLE' \}, \{ status: 403 \}\);/, "profile photo upload tickets are refused (M6b)");
+assert.match(upload, /if \(body\.kind !== 'story'\) return NextResponse\.json\(\{ error: 'Unsupported media upload kind' \}, \{ status: 400 \}\);/, "only Story uploads use the legacy upload route");
+assert.doesNotMatch(upload, /body\.kind === 'merchant'|Photo changes are not open yet/, "obsolete profile upload branch removed");
 assert.match(upload, /const bucket = 'story-media';/, "Story photo uploads continue");
 
 const adminUpload = await read("app/api/admin/media/upload-url/route.ts");
@@ -71,3 +72,43 @@ for (const rel of sources.filter((file) => file.endsWith(".tsx"))) {
 }
 
 console.log("write cutover checks passed");
+
+// Execute the Story upload handler with provider I/O mocked: retired kinds must never
+// issue a storage ticket, while valid Story uploads keep the same bucket and response.
+const { createRequire } = await import('node:module');
+const vm = await import('node:vm');
+const require = createRequire(import.meta.url);
+const ts = require('typescript');
+const { NextRequest, NextResponse } = require('next/server');
+let denied = null;
+let tickets = 0;
+const mocks = {
+  '@/lib/supabase-admin': { supabaseAdmin: { storage: { from(bucket) {
+    assert.equal(bucket, 'story-media');
+    return { async createSignedUploadUrl(path) { tickets++; assert.match(path, /^merchant\/synthetic\/.+\.webp$/); return { data: { token: 'synthetic-token' }, error: null }; } };
+  } } } },
+  '@/lib/bounded-json': { readBoundedJson: (request) => request.json(), InvalidJsonBodyError: class extends Error {}, RequestBodyTooLargeError: class extends Error {} },
+  '@/app/api/merchant/_lib/merchant-access': { requireMerchantAccess: async (_request, capability) => {
+    assert.equal(capability, 'write');
+    return denied ? { response: NextResponse.json({ error: 'denied' }, { status: denied }) } : { merchant: { slug: 'synthetic' } };
+  } },
+};
+const compiled = ts.transpileModule(upload, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
+const handlerModule = { exports: {} };
+vm.runInThisContext(`(function(require,module,exports){${compiled}\n})`)(name => mocks[name] ?? require(name), handlerModule, handlerModule.exports);
+const callUpload = (body) => handlerModule.exports.POST(new NextRequest('http://localhost/api/merchant/media/upload-url', { method: 'POST', body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' } }));
+const valid = { kind: 'story', contentType: 'image/webp', size: 1000 };
+for (const kind of ['merchant', 'menu', undefined]) assert.equal((await callUpload({ ...valid, kind })).status, 400);
+assert.equal(tickets, 0);
+assert.equal((await callUpload({ ...valid, contentType: 'text/html' })).status, 400);
+assert.equal((await callUpload({ ...valid, size: 6 * 1024 * 1024 })).status, 413);
+const story = await callUpload(valid);
+assert.equal(story.status, 200);
+const ticket = await story.json();
+assert.equal(ticket.bucket, 'story-media');
+assert.equal(ticket.token, 'synthetic-token');
+assert.equal(ticket.maxBytes, 5 * 1024 * 1024);
+assert.equal(tickets, 1);
+for (const status of [401, 403, 404]) { denied = status; assert.equal((await callUpload(valid)).status, status); }
+assert.equal(tickets, 1, 'denied access cannot issue tickets');
+console.log('Story upload handler checks passed (9 request scenarios, mocked provider I/O)');

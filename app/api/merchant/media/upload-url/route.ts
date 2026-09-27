@@ -15,12 +15,8 @@ export async function POST(request: NextRequest) {
   try {
     const body = await readBoundedJson(request, MAX_UPLOAD_REQUEST_BYTES);
     if (!body || typeof body !== 'object' || Array.isArray(body)) return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
-    if (body.kind !== 'story' && body.kind !== 'merchant') return NextResponse.json({ error: 'Unsupported media upload kind' }, { status: 400 });
-    // D2-B: profile photos (logo/cover) cannot be bound to the restaurant until trusted media
-    // upload (M6b), so no upload ticket is issued for them. Story photo uploads are unchanged.
-    if (body.kind === 'merchant') {
-      return NextResponse.json({ error: 'Photo changes are not open yet. Your current photos stay as they are.', code: 'FIELD_NOT_WRITABLE' }, { status: 403 });
-    }
+    // Profile photos use the restaurant-specific M6b ticket and bind routes.
+    if (body.kind !== 'story') return NextResponse.json({ error: 'Unsupported media upload kind' }, { status: 400 });
     if (typeof body.contentType !== 'string' || !MIME_TYPES.has(body.contentType)) return NextResponse.json({ error: 'Only JPG, PNG, and WebP images are supported' }, { status: 400 });
     if (!Number.isSafeInteger(body.size) || body.size <= 0 || body.size > MAX_BYTES) return NextResponse.json({ error: 'Image must be smaller than 5MB' }, { status: 413 });
     const extension = body.contentType === 'image/jpeg' ? 'jpg' : body.contentType.split('/')[1];
