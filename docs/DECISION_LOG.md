@@ -177,3 +177,8 @@ A new feature idea must not silently become a decision. Add it here only after C
 - Outbox rows (submitted, withdrawn → Admin; approved, rejected with the note → Owner) are emailed by `/api/admin/notifications/deliver`: POST with the Admin session ("send now") or GET from a scheduler with `Authorization: Bearer $CRON_SECRET`.
 - Provider: Resend when `RESEND_API_KEY` and `NOTIFY_FROM` are set; Admin rows go to `ADMIN_NOTIFY_EMAIL`; Owner rows to the Owner account email (Auth lookup). Without a provider nothing is claimed or sent. `NOTIFY_PROVIDER=log` (never in production) prints instead, for local tests.
 - Each row is claimed under a 5-minute lease with SKIP LOCKED (no double sends) and retried up to 5 times. Scheduling (e.g. a Vercel cron every 10 minutes) and the sender domain are release tasks for CH.
+
+## SYNC-056 — Owners see their own visitor statistics (DECIDED by Claude under CH delegation, 2026-09-27)
+
+- Dashboard "Visitors": page views, unique visitors, menu views, WhatsApp/call/directions and other taps for 7, 30 or 90 days, with a daily bar chart. Includes former web addresses; previews never count.
+- Only aggregates reach the Owner (no IPs, no raw rows); `merchant_stats` stays private (DEC-29). Data comes from raw `page_views` (kept 90 days), so counts are live.

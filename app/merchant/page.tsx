@@ -17,6 +17,7 @@ import { useSectionSave, type SectionHandle, type SendSave } from '@/app/compone
 import { SectionSaveBar } from '@/app/components/section-save/section-save-bar';
 import { DAY_CODES, HoursSection, type SectionProps } from '@/app/components/section-save/hours-section';
 import { FeedbackPanel } from './components/feedback-panel';
+import { StatsPanel } from './components/stats-panel';
 import { TextField } from './components/text-field';
 
 /**
@@ -62,6 +63,7 @@ const SECTIONS = [
   { id: 'photos', label: 'Photos' },
   { id: 'menu', label: 'Menu' },
   { id: 'hours', label: 'Opening hours' },
+  { id: 'stats', label: 'Visitors' },
   { id: 'feedback', label: 'Feedback' },
 ] as const;
 
@@ -674,6 +676,10 @@ export default function MerchantDashboardPage() {
 
           <SectionCard id="hours" title="Opening hours" description="Customers see these on your page. Changes to one day leave the other days as they are.">
             <HoursSection key={`hours:${sectionKey}`} {...sectionProps} />
+          </SectionCard>
+
+          <SectionCard id="stats" title="Visitors" description="How many people opened your page and what they did.">
+            <StatsPanel key={`stats:${profile.id}`} merchantId={profile.id} getHeaders={photoHeaders} />
           </SectionCard>
 
           <SectionCard id="feedback" title="Feedback" description="Tell the BiteSite team what would make the dashboard or your page work better for you.">

@@ -114,3 +114,10 @@ For each released step retain: application SHA/deployment URL, exact executed SQ
 - Environment: `RESEND_API_KEY`, `NOTIFY_FROM` (verified sender domain), `ADMIN_NOTIFY_EMAIL`, `CRON_SECRET`; schedule GET `/api/admin/notifications/deliver`. Without them nothing is sent.
 - Local verification: `supabase/tests/notification_delivery_behavior_tests.sql`, `npm run test:notifications`, local run with `NOTIFY_PROVIDER=log` (owner row sent, admin row "no recipient", wrong secret 401).
 - Rollback FIRST: `supabase/rollback/20260927190000_notification_delivery.rollback.STAGING_ONLY.sql`.
+
+## 13. Owner visitor statistics
+
+- Migration: `20260927200000_merchant_owner_stats.sql`, after `20260927190000` (uses `merchant_slug_history` from `20260927140000`). Read-only function plus an index on `page_views (slug, created_at)`; build the index outside peak hours on a large table.
+- Application: `/api/merchant/restaurants/[id]/stats` and the dashboard Visitors section.
+- Local verification: `supabase/tests/owner_stats_behavior_tests.sql`, browser check at 390px.
+- Rollback FIRST: `supabase/rollback/20260927200000_merchant_owner_stats.rollback.STAGING_ONLY.sql`.
