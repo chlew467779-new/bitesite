@@ -110,8 +110,10 @@ export default function AdminShell({ activeTab, onTabChange, children }: AdminSh
           
           {/* Mobile close */}
           <button
+            type="button"
+            aria-label="Close menu"
             onClick={() => setSidebarOpen(false)}
-            className="lg:hidden text-slate-400 hover:text-white ml-auto"
+            className="lg:hidden inline-flex min-h-11 min-w-11 items-center justify-center text-slate-400 hover:text-white ml-auto"
           >
             <X className="w-5 h-5" />
           </button>
@@ -227,8 +229,11 @@ export default function AdminShell({ activeTab, onTabChange, children }: AdminSh
         {/* Top Bar - Mobile only */}
         <header className="flex items-center justify-between px-4 py-3 bg-slate-900/50 border-b border-slate-800 lg:hidden">
           <button
+            type="button"
+            aria-label="Open admin menu"
+            aria-expanded={sidebarOpen}
             onClick={() => setSidebarOpen(true)}
-            className="text-slate-400 hover:text-white"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center text-slate-400 hover:text-white"
           >
             <Menu className="w-6 h-6" />
           </button>
