@@ -4,6 +4,7 @@ import { FormEvent, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import imageCompression from 'browser-image-compression';
 import { supabase } from '@/lib/supabase';
+import { merchantApiUrl, merchantPageUrl, selectedMerchantIdFromSearch } from '@/lib/merchant-context-url.mjs';
 
 type Submission = { id: string; title: string; status: string; review_notes?: string | null; created_at: string };
 const labels: Record<string, string> = { pending_review: 'Pending review', draft: 'Draft', approved: 'Approved', rejected: 'Changes requested', converted: 'Published draft', archived: 'Archived' };
@@ -24,16 +25,39 @@ export default function MerchantStoriesPage() {
   const [coverPreview, setCoverPreview] = useState('');
   const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
   const [draftKey, setDraftKey] = useState<string | null>(null);
+  // The restaurant these Stories are for: the one selected in the URL, or the account's only one.
+  const [merchantId, setMerchantId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const { data } = await supabase.auth.getSession();
     const accessToken = data.session?.access_token;
     if (!accessToken) { setAuthChecked(true); setMessage('Please sign in with your merchant email first.'); return; }
-    setToken(accessToken); setAuthChecked(true);
-    const nextDraftKey = data.session?.user?.id ? `bitesite:merchant-story-draft:${data.session.user.id}` : null;
+    setToken(accessToken);
+    const contextResponse = await fetch(merchantApiUrl('/api/merchant/me', selectedMerchantIdFromSearch(window.location.search)), { headers: { Authorization: `Bearer ${accessToken}` } });
+    const context = await contextResponse.json().catch(() => ({}));
+    setAuthChecked(true);
+    if (!contextResponse.ok) { setMessage(context.error || 'Unable to load your restaurant.'); return; }
+    const owned = Array.isArray(context.merchants) ? context.merchants : [];
+    if (!context.merchant) {
+      setMessage(owned.length === 0 ? 'No restaurant is linked to this account yet.' : 'Choose a restaurant on the Merchant dashboard first.');
+      return;
+    }
+    const currentMerchantId = String(context.merchant.id);
+    setMerchantId(currentMerchantId);
+    // Drafts are kept per account and restaurant, so one restaurant's draft never appears in another's form.
+    const userId = data.session?.user?.id;
+    const nextDraftKey = userId ? `bitesite:merchant-story-draft:${userId}:${currentMerchantId}` : null;
     setDraftKey(nextDraftKey);
-    if (nextDraftKey) {
+    if (nextDraftKey && userId) {
       try {
+        const legacyKey = `bitesite:merchant-story-draft:${userId}`;
+        // A draft saved before drafts were per restaurant moves over only when the account has
+        // exactly one restaurant; with several it is left unread rather than guessed.
+        if (owned.length === 1) {
+          const legacyDraft = window.localStorage.getItem(legacyKey);
+          if (legacyDraft && !window.localStorage.getItem(nextDraftKey)) window.localStorage.setItem(nextDraftKey, legacyDraft);
+          window.localStorage.removeItem(legacyKey);
+        }
         const savedDraft = window.localStorage.getItem(nextDraftKey);
         if (savedDraft) {
           const parsed = JSON.parse(savedDraft) as { form?: typeof form; rights?: boolean; requestAi?: boolean };
@@ -46,7 +70,7 @@ export default function MerchantStoriesPage() {
         window.localStorage.removeItem(nextDraftKey);
       }
     }
-    const response = await fetch('/api/merchant/story-submissions', { headers: { Authorization: `Bearer ${accessToken}` } });
+    const response = await fetch(merchantApiUrl('/api/merchant/story-submissions', currentMerchantId), { headers: { Authorization: `Bearer ${accessToken}` } });
     const result = await response.json();
     if (!response.ok) { setMessage(result.error || 'Unable to load submissions.'); return; }
     setSubmissions(result.submissions || []); setMessage('');
@@ -61,9 +85,9 @@ export default function MerchantStoriesPage() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!token || !rights) return;
+    if (!token || !rights || !merchantId) return;
     setSaving(true); setMessage('');
-    const response = await fetch('/api/merchant/story-submissions', { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ ...form, image_urls: form.image_urls.split(/[\n,]/).map(value => value.trim()).filter(Boolean), rights_declared: rights, ai_assistance_requested: requestAi }) });
+    const response = await fetch(merchantApiUrl('/api/merchant/story-submissions', merchantId), { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ ...form, image_urls: form.image_urls.split(/[\n,]/).map(value => value.trim()).filter(Boolean), rights_declared: rights, ai_assistance_requested: requestAi }) });
     const result = await response.json();
     if (!response.ok) {
       const alreadyPending = response.status === 409;
@@ -76,7 +100,7 @@ export default function MerchantStoriesPage() {
   }
 
   async function uploadImage(file: File, gallery: boolean) {
-    if (!token) return;
+    if (!token || !merchantId) return;
     const currentGalleryCount = form.image_urls.split(/[\n,]/).map(value => value.trim()).filter(Boolean).length;
     if (gallery && currentGalleryCount >= 3) { setMessage('You can upload up to 3 gallery images.'); return; }
     const preview = URL.createObjectURL(file);
@@ -84,7 +108,7 @@ export default function MerchantStoriesPage() {
     setUploading(true); setMessage(`Uploading ${file.name}…`);
     try {
       const compressed = await imageCompression(file, { maxWidthOrHeight: 1200, initialQuality: 0.75, useWebWorker: true, fileType: 'image/webp' });
-      const response = await fetch('/api/merchant/media/upload-url', { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ kind: 'story', contentType: compressed.type || 'image/webp', size: compressed.size }) });
+      const response = await fetch(merchantApiUrl('/api/merchant/media/upload-url', merchantId), { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ kind: 'story', contentType: compressed.type || 'image/webp', size: compressed.size }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Could not prepare upload');
       const { error } = await supabase.storage.from(result.bucket).uploadToSignedUrl(result.path, result.token, compressed);
@@ -108,5 +132,5 @@ export default function MerchantStoriesPage() {
     <button disabled={saving || uploading || !rights} className="rounded-lg bg-[#2C3E2D] px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{saving ? 'Submitting…' : 'Submit for review'}</button>
   </form>;
 
-  return <main className="min-h-screen bg-[#FAFBF7] px-4 py-16"><div className="mx-auto max-w-3xl"><Link href="/merchant" className="text-sm text-emerald-700 underline">← Merchant dashboard</Link><h1 className="mt-5 font-serif text-3xl text-[#2C3E2D]">Submit a Story</h1><p className="mt-2 text-sm text-[#6B6560]">Share facts and photos. BiteSite will review and publish approved Stories.</p>{message && <p aria-live="polite" className="mt-4 rounded-lg bg-white p-3 text-sm text-[#6B6560]">{message}{showSubmissionLink && <Link href="#your-submissions" className="ml-2 font-medium text-emerald-700 underline">View your pending submission</Link>}</p>}{authChecked && token ? formContent : authChecked ? <div className="mt-6 rounded-2xl border border-[#DDE5DC] bg-white p-6 text-sm text-[#6B6560]">Please <Link href="/merchant/login" className="text-emerald-700 underline">sign in as a Merchant</Link> before submitting a Story.</div> : null}{authChecked && token && <section id="your-submissions" className="mt-8 scroll-mt-6"><h2 className="font-semibold text-[#2C3E2D]">Your submissions</h2><div className="mt-3 space-y-2">{submissions.map(item => <div key={item.id} className="rounded-lg border border-[#DDE5DC] bg-white p-4 text-sm"><div className="flex items-center justify-between gap-3"><span className="font-medium text-[#2C3E2D]">{item.title}</span><span className="text-[#6B6560]">{labels[item.status] || item.status}</span></div>{item.review_notes && <details className="mt-2 text-[#6B6560]"><summary className="cursor-pointer font-medium text-[#2C3E2D]">Review note</summary><p className="mt-2 whitespace-pre-wrap">{item.review_notes}</p></details>}</div>)}{submissions.length === 0 && <p className="text-sm text-[#6B6560]">No submissions yet.</p>}</div></section>}</div></main>;
+  return <main className="min-h-screen bg-[#FAFBF7] px-4 py-16"><div className="mx-auto max-w-3xl"><Link href={merchantPageUrl('/merchant', merchantId)} className="text-sm text-emerald-700 underline">← Merchant dashboard</Link><h1 className="mt-5 font-serif text-3xl text-[#2C3E2D]">Submit a Story</h1><p className="mt-2 text-sm text-[#6B6560]">Share facts and photos. BiteSite will review and publish approved Stories.</p>{message && <p aria-live="polite" className="mt-4 rounded-lg bg-white p-3 text-sm text-[#6B6560]">{message}{showSubmissionLink && <Link href="#your-submissions" className="ml-2 font-medium text-emerald-700 underline">View your pending submission</Link>}</p>}{authChecked && token && merchantId ? formContent : authChecked && !token ? <div className="mt-6 rounded-2xl border border-[#DDE5DC] bg-white p-6 text-sm text-[#6B6560]">Please <Link href="/merchant/login" className="text-emerald-700 underline">sign in as a Merchant</Link> before submitting a Story.</div> : null}{authChecked && token && merchantId && <section id="your-submissions" className="mt-8 scroll-mt-6"><h2 className="font-semibold text-[#2C3E2D]">Your submissions</h2><div className="mt-3 space-y-2">{submissions.map(item => <div key={item.id} className="rounded-lg border border-[#DDE5DC] bg-white p-4 text-sm"><div className="flex items-center justify-between gap-3"><span className="font-medium text-[#2C3E2D]">{item.title}</span><span className="text-[#6B6560]">{labels[item.status] || item.status}</span></div>{item.review_notes && <details className="mt-2 text-[#6B6560]"><summary className="cursor-pointer font-medium text-[#2C3E2D]">Review note</summary><p className="mt-2 whitespace-pre-wrap">{item.review_notes}</p></details>}</div>)}{submissions.length === 0 && <p className="text-sm text-[#6B6560]">No submissions yet.</p>}</div></section>}</div></main>;
 }

@@ -23,7 +23,8 @@
     "test:admin-whatsapp": "node scripts/test-admin-whatsapp-optional.mjs",
     "test:article-projection": "node scripts/test-article-public-projection.mjs",
     "test:story-review-sync": "node scripts/test-story-review-sync.mjs",
-    "verify": "npm run typecheck && npm run lint && npm run check:security && npm run test:security && npm run test:menu && npm run test:layout && npm run test:preview-safety && npm run test:prices && npm run test:fixtures && npm run test:theme && npm run test:merchant && npm run test:booking-safety && npm run test:merchant-state && npm run test:public-projection && npm run test:admin-whatsapp && npm run test:article-projection && npm run test:story-review-sync && git diff --check"
+    "test:merchant-access": "node scripts/test-merchant-access.mjs",
+    "verify": "npm run typecheck && npm run lint && npm run check:security && npm run test:security && npm run test:menu && npm run test:layout && npm run test:preview-safety && npm run test:prices && npm run test:fixtures && npm run test:theme && npm run test:merchant && npm run test:booking-safety && npm run test:merchant-state && npm run test:public-projection && npm run test:admin-whatsapp && npm run test:article-projection && npm run test:story-review-sync && npm run test:merchant-access && git diff --check"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

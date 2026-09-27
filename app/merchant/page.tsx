@@ -23,6 +23,7 @@ import {
   type WeekDay,
   type WeekEditorState,
 } from '@/lib/merchant-hours.mjs';
+import { merchantApiUrl, merchantPageUrl, selectedMerchantIdFromSearch } from '@/lib/merchant-context-url.mjs';
 import { FeedbackPanel } from './components/feedback-panel';
 import { HoursEditor } from './components/hours-editor';
 import { TextField } from './components/text-field';
@@ -30,13 +31,16 @@ import { TextField } from './components/text-field';
 /**
  * Merchant self-service dashboard.
  *
- * Signed-in merchants edit the public details of the one listing their active membership points
- * to; PUT /api/merchant/me enforces the same boundary and the same field rules
+ * Signed-in merchants edit the public details of the restaurant selected in the URL
+ * (`?merchant=<id>`, or their only restaurant). Every API call names that restaurant; the server
+ * checks the account owns it. PUT /api/merchant/me enforces the same boundary and the same field rules
  * (lib/merchant-profile-validation.mjs, lib/merchant-hours.mjs). Name, address, web address and
  * business status are managed by the BiteSite team and are shown read-only here.
  */
 
 type Merchant = {
+  id: string;
+  restriction?: 'none' | 'suspended' | 'archived';
   name: string;
   slug: string;
   address?: string | null;
@@ -47,7 +51,14 @@ type Merchant = {
 
 type Values = Record<ProfileTextField, string>;
 type SaveStatus = { kind: 'idle' | 'saving' | 'saved' | 'error'; message: string };
-type LoadState = { kind: 'loading' } | { kind: 'signed-out' } | { kind: 'error'; message: string } | { kind: 'ready' };
+type MerchantChoice = { id: string; name: string; restriction: 'none' | 'suspended' | 'archived' };
+type LoadState =
+  | { kind: 'loading' }
+  | { kind: 'signed-out' }
+  | { kind: 'error'; message: string }
+  | { kind: 'no-merchant' }
+  | { kind: 'choose'; merchants: MerchantChoice[] }
+  | { kind: 'ready' };
 
 const SECTIONS = [
   { id: 'about', label: 'About' },
@@ -112,11 +123,17 @@ export default function MerchantDashboardPage() {
   const loadMerchant = useCallback(async (accessToken: string) => {
     setLoad({ kind: 'loading' });
     try {
-      const response = await fetch('/api/merchant/me', { headers: { Authorization: `Bearer ${accessToken}` } });
+      const selected = selectedMerchantIdFromSearch(window.location.search);
+      const response = await fetch(merchantApiUrl('/api/merchant/me', selected), { headers: { Authorization: `Bearer ${accessToken}` } });
       const data = await readJson(response);
       if (response.status === 401) { setLoad({ kind: 'signed-out' }); return; }
-      if (!response.ok || !data.merchant) {
+      if (!response.ok) {
         setLoad({ kind: 'error', message: typeof data.error === 'string' ? data.error : 'We could not load your merchant account.' });
+        return;
+      }
+      if (!data.merchant) {
+        const merchants = Array.isArray(data.merchants) ? (data.merchants as MerchantChoice[]) : [];
+        setLoad(merchants.length === 0 ? { kind: 'no-merchant' } : { kind: 'choose', merchants });
         return;
       }
       applyMerchant(data.merchant as Merchant);
@@ -220,13 +237,13 @@ export default function MerchantDashboardPage() {
   }
 
   async function uploadImage(field: 'logo_image' | 'cover_image', file: File) {
-    if (!token) return;
+    if (!token || !merchant) return;
     const label = field === 'logo_image' ? 'Logo' : 'Cover photo';
     setUploading(field);
     setUploadMessage(`Uploading ${label.toLowerCase()}…`);
     try {
       const compressed = await imageCompression(file, { maxWidthOrHeight: 1600, initialQuality: 0.8, useWebWorker: true, fileType: 'image/webp' });
-      const response = await fetch('/api/merchant/media/upload-url', {
+      const response = await fetch(merchantApiUrl('/api/merchant/media/upload-url', merchant.id), {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ kind: 'merchant', contentType: compressed.type || 'image/webp', size: compressed.size }),
@@ -270,7 +287,7 @@ export default function MerchantDashboardPage() {
 
     setSave({ kind: 'saving', message: 'Saving…' });
     try {
-      const response = await fetch('/api/merchant/me', {
+      const response = await fetch(merchantApiUrl('/api/merchant/me', merchant.id), {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -323,6 +340,25 @@ export default function MerchantDashboardPage() {
               <Link href="/merchant/login" className="mt-5 inline-block rounded-lg bg-[#2C3E2D] px-4 py-2.5 text-sm font-medium text-white">Merchant login</Link>
             </>
           )}
+          {load.kind === 'no-merchant' && (
+            <p className="mt-4 text-sm text-[#6B6560]">No restaurant is linked to this account yet. If you manage a restaurant on BiteSite, contact the BiteSite team through Feedback.</p>
+          )}
+          {load.kind === 'choose' && (
+            <>
+              <p className="mt-4 text-sm text-[#6B6560]">Choose the restaurant you want to manage.</p>
+              <ul className="mt-4 space-y-2">
+                {load.merchants.map((choice) => (
+                  <li key={choice.id}>
+                    {/* A full page load, so nothing from one restaurant carries over to another. */}
+                    <a href={merchantPageUrl('/merchant', choice.id)} className="flex items-center justify-between gap-3 rounded-lg border border-[#DDE5DC] px-4 py-3 text-sm font-medium text-[#2C3E2D] hover:border-emerald-700">
+                      <span className="min-w-0 break-words">{choice.name}</span>
+                      {choice.restriction !== 'none' && <span className="shrink-0 text-xs font-normal text-[#6B6560]">Read only</span>}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
           {load.kind === 'error' && (
             <>
               <p className="mt-4 text-sm text-red-700" role="alert">{load.message}</p>
@@ -337,6 +373,10 @@ export default function MerchantDashboardPage() {
       </main>
     );
   }
+
+  // Suspended or archived restaurants stay visible to their Owner but cannot be changed; the API
+  // refuses those writes as well.
+  const readOnly = merchant.restriction === 'suspended' || merchant.restriction === 'archived';
 
   const checklist = [
     { label: 'Short description', complete: Boolean(merchant.description?.trim()), anchor: 'about' },
@@ -373,7 +413,7 @@ export default function MerchantDashboardPage() {
             <a href={`/store/${merchant.slug}`} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-[#DDE5DC] px-3 py-2 font-medium text-[#2C3E2D] hover:border-emerald-700">
               View public page
             </a>
-            <Link href="/merchant/stories" className="rounded-lg border border-[#DDE5DC] px-3 py-2 font-medium text-[#2C3E2D] hover:border-emerald-700">
+            <Link href={merchantPageUrl('/merchant/stories', merchant.id)} className="rounded-lg border border-[#DDE5DC] px-3 py-2 font-medium text-[#2C3E2D] hover:border-emerald-700">
               Stories
             </Link>
             <button type="button" onClick={() => void signOut()} className="rounded-lg px-3 py-2 font-medium text-[#6B6560] hover:text-[#2C3E2D]">
@@ -382,6 +422,16 @@ export default function MerchantDashboardPage() {
           </nav>
         </div>
       </header>
+
+      {readOnly && (
+        <div className="mx-auto max-w-6xl px-4 pt-6 sm:px-6">
+          <p role="status" className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            {merchant.restriction === 'suspended'
+              ? 'This restaurant is suspended by BiteSite, so it cannot be changed. Contact the BiteSite team through Feedback.'
+              : 'This restaurant is archived and cannot be changed.'}
+          </p>
+        </div>
+      )}
 
       <div className="mx-auto grid max-w-6xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[15rem_minmax(0,1fr)] lg:py-8">
         <aside className="min-w-0 lg:sticky lg:top-6 lg:self-start">
@@ -455,7 +505,7 @@ export default function MerchantDashboardPage() {
                         <input
                           type="file"
                           accept="image/jpeg,image/png,image/webp"
-                          disabled={uploading !== null}
+                          disabled={uploading !== null || readOnly}
                           className="sr-only"
                           onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadImage(name, file); event.currentTarget.value = ''; }}
                         />
@@ -499,7 +549,7 @@ export default function MerchantDashboardPage() {
           <button
             type="submit"
             form="listing-form"
-            disabled={save.kind === 'saving' || uploading !== null || !isDirty}
+            disabled={save.kind === 'saving' || uploading !== null || !isDirty || readOnly}
             className="w-full rounded-lg bg-[#2C3E2D] px-5 py-2.5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
           >
             {uploading ? 'Finish uploading first…' : save.kind === 'saving' ? 'Saving…' : 'Save changes'}

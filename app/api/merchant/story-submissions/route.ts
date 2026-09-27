@@ -1,32 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { InvalidJsonBodyError, readBoundedJson, RequestBodyTooLargeError } from '@/lib/bounded-json';
+import { requireMerchantAccess } from '@/app/api/merchant/_lib/merchant-access';
 
 const MAX_BODY_BYTES = 512 * 1024;
-
-function tokenFrom(request: NextRequest) {
-  const value = request.headers.get('authorization');
-  return value?.startsWith('Bearer ') ? value.slice(7) : null;
-}
-
-async function merchantContext(request: NextRequest) {
-  const token = tokenFrom(request);
-  if (!token) return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
-  const { data: userData, error: userError } = await supabase.auth.getUser(token);
-  if (userError || !userData.user) return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
-  const { data, error } = await supabase
-    .from('merchant_memberships')
-    .select('merchant:merchants(id, slug)')
-    .eq('user_id', userData.user.id)
-    .eq('status', 'active')
-    .limit(1)
-    .maybeSingle();
-  if (error) return { error: NextResponse.json({ error: error.message }, { status: 500 }) };
-  const merchantValue = data?.merchant as { id: string; slug: string } | { id: string; slug: string }[] | null | undefined;
-  const merchant = Array.isArray(merchantValue) ? merchantValue[0] : merchantValue;
-  if (!merchant) return { error: NextResponse.json({ error: 'No active merchant membership' }, { status: 404 }) };
-  return { user: userData.user, merchant };
-}
 
 function validUrl(value: unknown) {
   if (value === undefined || value === null || value === '') return true;
@@ -34,17 +11,19 @@ function validUrl(value: unknown) {
   try { return ['http:', 'https:'].includes(new URL(value).protocol); } catch { return false; }
 }
 
+// Story submissions are still keyed by merchant_slug; the slug is always taken from the verified
+// merchant, never from the request.
 export async function GET(request: NextRequest) {
-  const context = await merchantContext(request);
-  if (context.error) return context.error;
+  const context = await requireMerchantAccess(request, 'read');
+  if ('response' in context) return context.response;
   const { data, error } = await supabase.from('story_submissions').select('id, title, excerpt, content, story_angle, cover_image, image_urls, rights_declared, rights_note, status, review_notes, submitted_at, created_at, updated_at').eq('merchant_slug', context.merchant.slug).order('created_at', { ascending: false });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ submissions: data || [] });
 }
 
 export async function POST(request: NextRequest) {
-  const context = await merchantContext(request);
-  if (context.error) return context.error;
+  const context = await requireMerchantAccess(request, 'write');
+  if ('response' in context) return context.response;
   try {
     const body = await readBoundedJson(request, MAX_BODY_BYTES);
     if (typeof body.title !== 'string' || !body.title.trim() || typeof body.content !== 'string' || !body.content.trim()) return NextResponse.json({ error: 'Title and story facts are required' }, { status: 400 });

@@ -1,39 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { InvalidJsonBodyError, readBoundedJson, RequestBodyTooLargeError } from '@/lib/bounded-json';
+import { requireMerchantAccess } from '@/app/api/merchant/_lib/merchant-access';
 
 const MAX_BODY_BYTES = 16 * 1024;
 const requestableFields = ['name', 'address', 'slug', 'business_status'] as const;
 const businessStatuses = new Set(['OPEN', 'TEMPORARILY_CLOSED', 'MOVED', 'PERMANENTLY_CLOSED']);
 const fieldLimits = { name: 160, address: 500, slug: 200 } as const;
 
-function accessToken(request: NextRequest) {
-  const header = request.headers.get('authorization');
-  return header?.startsWith('Bearer ') ? header.slice(7) : null;
-}
-
-async function merchantContext(request: NextRequest) {
-  const token = accessToken(request);
-  if (!token) return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
-  const { data: userData, error: userError } = await supabase.auth.getUser(token);
-  if (userError || !userData.user) return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
-  const { data, error } = await supabase
-    .from('merchant_memberships')
-    .select('merchant:merchants(id, name, slug)')
-    .eq('user_id', userData.user.id)
-    .eq('status', 'active')
-    .limit(1)
-    .maybeSingle();
-  if (error) return { error: NextResponse.json({ error: error.message }, { status: 500 }) };
-  const merchantValue = data?.merchant as { id: string; name: string; slug: string } | { id: string; name: string; slug: string }[] | null | undefined;
-  const merchant = Array.isArray(merchantValue) ? merchantValue[0] : merchantValue;
-  if (!merchant) return { error: NextResponse.json({ error: 'No active merchant membership' }, { status: 404 }) };
-  return { merchant, user: userData.user };
-}
-
 export async function GET(request: NextRequest) {
-  const context = await merchantContext(request);
-  if (context.error) return context.error;
+  const context = await requireMerchantAccess(request, 'read');
+  if ('response' in context) return context.response;
   const { data, error } = await supabase
     .from('merchant_profile_change_requests')
     .select('id, changes, status, admin_notes, created_at, reviewed_at')
@@ -44,8 +21,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const context = await merchantContext(request);
-  if (context.error) return context.error;
+  const context = await requireMerchantAccess(request, 'write');
+  if ('response' in context) return context.response;
   try {
     const body = await readBoundedJson(request, MAX_BODY_BYTES);
     const rawChanges = body.changes;
