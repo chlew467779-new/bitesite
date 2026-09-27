@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { verifyAdminToken } from '@/lib/admin-auth';
-import { revalidatePath } from 'next/cache';
+import { revalidatePublicStoryRoutes } from '@/lib/story-revalidation';
 import { InvalidJsonBodyError, readBoundedJson, RequestBodyTooLargeError } from '@/lib/bounded-json';
 
 const MAX_STORY_BODY_BYTES = 512 * 1024;
@@ -172,9 +172,8 @@ export async function POST(request: Request) {
 
     await recordRevision(data, editorialStatus === 'published' ? 'published' : editorialStatus === 'pending_review' ? 'submitted' : 'created');
 
-    // Revalidate immediately
-    revalidatePath(`/stories/${data.slug}`);
-    revalidatePath('/stories');
+    // Refresh home, Story list, Story pages and sitemap (a Story may have appeared or gone).
+    revalidatePublicStoryRoutes(data.slug);
 
     return NextResponse.json({ article: data, success: true }, { status: 201 });
   } catch (err) {
@@ -293,9 +292,8 @@ export async function PUT(request: Request) {
       if (cycleError) console.error('Content cycle completion error:', cycleError);
     }
 
-    // Revalidate immediately
-    revalidatePath(`/stories/${data.slug}`);
-    revalidatePath('/stories');
+    // Refresh home, Story list, Story pages and sitemap (a Story may have appeared or gone).
+    revalidatePublicStoryRoutes(data.slug);
 
     return NextResponse.json({ article: data, success: true });
   } catch (err) {
@@ -328,9 +326,8 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Revalidate immediately
-    revalidatePath(`/stories/${slug}`);
-    revalidatePath('/stories');
+    // Refresh home, Story list, Story pages and sitemap (a Story may have appeared or gone).
+    revalidatePublicStoryRoutes(slug);
 
     return NextResponse.json({ success: true });
   } catch (err) {
