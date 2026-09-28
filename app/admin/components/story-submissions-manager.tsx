@@ -6,7 +6,9 @@ import { useAuth } from './auth-context';
 
 type Submission = {
   id: string;
+  merchant_id: string | null;
   merchant_slug: string | null;
+  merchant: { name: string; slug: string } | null;
   channel: 'self_service_form' | 'admin_relayed';
   status: 'draft' | 'pending_review' | 'approved' | 'rejected' | 'archived' | 'converted';
   title: string;
@@ -170,7 +172,14 @@ export default function StorySubmissionsManager({ onDraftCreated }: { onDraftCre
               <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap"><h2 className="text-lg font-semibold text-white">{submission.title}</h2><span className="text-xs px-2 py-1 rounded-full bg-sky-500/10 text-sky-300">{labels[submission.status]}</span><span className="text-xs px-2 py-1 rounded-full bg-slate-800 text-slate-400">{submission.channel === 'admin_relayed' ? 'Admin relayed' : 'Self service'}</span>{submission.ai_assistance_requested && <span className="text-xs px-2 py-1 rounded-full bg-violet-500/10 text-violet-300">AI draft requested</span>}</div>
-                  <p className="text-xs text-slate-500 mt-1">{submission.merchant_slug ? `Merchant: ${submission.merchant_slug} · ` : ''}{submission.submitted_at ? new Date(submission.submitted_at).toLocaleString('en-MY', { timeZone: 'Asia/Kuala_Lumpur' }) : new Date(submission.created_at).toLocaleString('en-MY', { timeZone: 'Asia/Kuala_Lumpur' })}</p>
+                  <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-400">
+                    {submission.merchant_id ? (
+                      <span>Restaurant: <strong className="text-slate-200">{submission.merchant?.name ?? 'Unknown restaurant'}</strong>{submission.merchant?.slug && ` /${submission.merchant.slug}`}</span>
+                    ) : (
+                      <span className="rounded-full bg-amber-500/10 px-2 py-1 font-medium text-amber-300">Unlinked{submission.merchant_slug && ` · /${submission.merchant_slug}`}</span>
+                    )}
+                    <span>{submission.submitted_at ? new Date(submission.submitted_at).toLocaleString('en-MY', { timeZone: 'Asia/Kuala_Lumpur' }) : new Date(submission.created_at).toLocaleString('en-MY', { timeZone: 'Asia/Kuala_Lumpur' })}</span>
+                  </div>
                   {submission.excerpt && <p className="text-sm text-slate-300 mt-3">{submission.excerpt}</p>}
                   <p className="text-sm text-slate-400 mt-3 whitespace-pre-wrap line-clamp-5">{submission.content}</p>
                   <p className="text-xs mt-3"><span className={submission.rights_declared ? 'text-emerald-400' : 'text-red-400'}>{submission.rights_declared ? 'Rights declared' : 'Rights declaration missing'}</span>{submission.rights_note ? ` · ${submission.rights_note}` : ''}</p>
