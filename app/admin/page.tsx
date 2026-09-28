@@ -358,7 +358,7 @@ export default function AdminPage() {
       {/* Merchant Manager */}
       {activeTab === 'merchant-manager' && (
         <div className="space-y-6">
-          <MerchantManager />
+          <MerchantManager onOpenChangeRequests={() => setActiveTab('link-reviews')} />
         </div>
       )}
 
