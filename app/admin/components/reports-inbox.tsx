@@ -20,7 +20,10 @@ const FILTERS: { value: Filter; label: string }[] = [
   { value: 'all', label: 'All' },
 ];
 
-export default function ReportsInbox() {
+export default function ReportsInbox({ onOpenMerchantManager, onOpenStoryEditor }: {
+  onOpenMerchantManager: () => void;
+  onOpenStoryEditor: (slug: string | null) => void;
+}) {
   const { token } = useAuth();
   const [filter, setFilter] = useState<Filter>('new');
   const [items, setItems] = useState<ReportItem[] | null>(null);
@@ -106,6 +109,11 @@ export default function ReportsInbox() {
                 className="mt-1 block w-full rounded-lg border border-[#C9D6C7] px-3 py-2 text-sm" />
             </label>
             <div className="mt-3 flex flex-wrap gap-2">
+              {item.targetType === 'merchant' ? (
+                <button type="button" onClick={onOpenMerchantManager} className="min-h-11 w-full rounded-lg border border-[#C9D6C7] px-4 text-sm font-medium sm:w-auto">Edit in Merchant Manager</button>
+              ) : (
+                <button type="button" onClick={() => onOpenStoryEditor(item.targetGone ? null : item.slug)} className="min-h-11 w-full rounded-lg border border-[#C9D6C7] px-4 text-sm font-medium sm:w-auto">Edit in Stories Editor</button>
+              )}
               {item.status !== 'resolved' && <button type="button" disabled={working !== null} onClick={() => void decide(item, 'resolved')} className="min-h-10 rounded-lg bg-[#2C3E2D] px-4 text-sm font-medium text-white disabled:opacity-50">Resolved</button>}
               {item.status !== 'dismissed' && <button type="button" disabled={working !== null} onClick={() => void decide(item, 'dismissed')} className="min-h-10 rounded-lg border border-[#C9D6C7] px-4 text-sm font-medium disabled:opacity-50">Dismiss</button>}
               {item.status !== 'new' && <button type="button" disabled={working !== null} onClick={() => void decide(item, 'new')} className="min-h-10 rounded-lg border border-[#C9D6C7] px-4 text-sm font-medium disabled:opacity-50">Reopen</button>}

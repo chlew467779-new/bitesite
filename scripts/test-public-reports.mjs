@@ -47,7 +47,7 @@ const unavailableBranch = storePage.split("// Inactive merchant friendly page")[
 assert.match(unavailableBranch, /<ReportProblem targetType="merchant" slug=\{merchant\.slug\} \/>/, "unavailable restaurant page includes reporting");
 assert.match(await read("app/stories/[slug]/page.tsx"), /<ReportProblem targetType="story" slug=\{slug\} \/>/);
 assert.match(await read("app/admin/components/admin-shell.tsx"), /id: 'reports'/);
-assert.match(await read("app/admin/page.tsx"), /<ReportsInbox \/>/);
+assert.match(await read("app/admin/page.tsx"), /<ReportsInbox onOpenMerchantManager=\{\(\) => setActiveTab\('merchant-manager'\)\} onOpenStoryEditor=\{openReportStory\} \/>/);
 assert.match(await read("app/api/admin/attention/route.ts"), /count\('public_reports'\)\.eq\('status', 'new'\)/);
 const form = await read("app/components/report-problem.tsx");
 assert.match(form, /min-h-11/);

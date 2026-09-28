@@ -134,6 +134,12 @@ export default function AdminPage() {
     setRefreshKey(k => k + 1);
   };
 
+  const openReportStory = (slug: string | null) => {
+    if (slug) handleEditStory(slug);
+    else handleBackToList();
+    setActiveTab('stories-editor');
+  };
+
   return (
     <AdminShell activeTab={activeTab} onTabChange={setActiveTab}>
       {dateRange === '365d' && rawAnalyticsTabs.has(activeTab) && (
@@ -362,7 +368,7 @@ export default function AdminPage() {
       )}
       {activeTab === 'feedback' && <FeedbackInbox />}
       {activeTab === 'restaurant-reviews' && <RestaurantReviewQueue />}
-      {activeTab === 'reports' && <ReportsInbox />}
+      {activeTab === 'reports' && <ReportsInbox onOpenMerchantManager={() => setActiveTab('merchant-manager')} onOpenStoryEditor={openReportStory} />}
 
       {activeTab === 'content-service' && (
         <ContentServiceManager />
