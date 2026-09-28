@@ -57,6 +57,10 @@ type SwitchPrompt = { targetId: string; message?: string } | null;
 type LeaveKind = 'stories' | 'signout' | 'new';
 type LeavePrompt = { kind: LeaveKind; message?: string } | null;
 
+function archivedLast(choices: Choice[]) {
+  return [...choices].sort((a, b) => Number(a.restriction === 'archived') - Number(b.restriction === 'archived'));
+}
+
 const SECTIONS = [
   { id: 'basics', label: 'Listing basics' },
   { id: 'about', label: 'About' },
@@ -475,12 +479,12 @@ export default function MerchantDashboardPage() {
               <p className="mt-4 text-sm text-[#6B6560]">Choose the restaurant you want to manage.</p>
               <Link href="/merchant/new" className="mt-4 inline-block text-sm text-emerald-800 underline">Create another restaurant</Link>
               <ul className="mt-4 space-y-2">
-                {load.merchants.map((choice) => (
+                {archivedLast(load.merchants).map((choice) => (
                   <li key={choice.id}>
                     {/* A full page load, so nothing from one restaurant carries over to another. */}
                     <a href={merchantPageUrl('/merchant', choice.id)} className="flex items-center justify-between gap-3 rounded-lg border border-[#DDE5DC] px-4 py-3 text-sm font-medium text-[#2C3E2D] hover:border-emerald-700">
                       <span className="min-w-0 break-words">{choice.name}</span>
-                      {choice.restriction !== 'none' && <span className="shrink-0 text-xs font-normal text-[#6B6560]">Read only</span>}
+                      {choice.restriction !== 'none' && <span className="shrink-0 text-xs font-normal text-[#6B6560]">{choice.restriction === 'archived' ? 'Discarded' : 'Read only'}</span>}
                     </a>
                   </li>
                 ))}
@@ -550,8 +554,8 @@ export default function MerchantDashboardPage() {
                   onChange={(event) => requestSwitch(event.target.value)}
                   className="min-w-0 max-w-full rounded-lg border border-[#C9D6C7] bg-white px-3 py-2 text-sm"
                 >
-                  {merchants.map((choice) => (
-                    <option key={choice.id} value={choice.id}>{choice.name}{choice.restriction !== 'none' ? ' (read only)' : ''}</option>
+                  {archivedLast(merchants).map((choice) => (
+                    <option key={choice.id} value={choice.id}>{choice.name}{choice.restriction === 'archived' ? ' (Discarded)' : choice.restriction !== 'none' ? ' (read only)' : ''}</option>
                   ))}
                 </select>
               </label>
