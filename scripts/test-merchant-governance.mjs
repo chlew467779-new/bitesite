@@ -109,7 +109,7 @@ assert.match(rollback, /if 'NO' <> 'yes' then/, "rollback switch is off by defau
 console.log("merchant governance checks passed");
 
 // Synthetic list states: stale legacy flags and canonical managed visibility.
-const { merchantListState } = await import('../lib/merchant-list-state.mjs');
+const { merchantListState, merchantReviewLabel } = await import('../lib/merchant-list-state.mjs');
 for (const [platform_status, is_published, visibility] of [['PUBLISHED', true, 'Public'], ['DRAFT', false, 'Hidden'], ['SUSPENDED', true, 'Suspended'], ['ARCHIVED', true, 'Archived']]) {
   const state = merchantListState({platform_status, is_published});
   assert.equal(state.visibility, visibility);
@@ -125,3 +125,14 @@ const managed = {state_source:'managed', review_status:'approved', listing_visib
 assert.equal(merchantListState(managed).isPublic, true);
 for (const change of [{review_status:'draft'}, {listing_visibility:'hidden'}, {platform_restriction:'suspended'}, {platform_restriction:'archived'}, {business_status:'MOVED'}, {business_status:'PERMANENTLY_CLOSED'}]) assert.equal(merchantListState({...managed,...change}).isPublic,false);
 assert.equal(merchantListState({business_status:'OPEN',status:'inactive'}).isOpen,true,'canonical business state wins');
+assert.equal(merchantReviewLabel({ state_source: 'legacy' }), null);
+for (const [changes, label] of [
+  [{ review_status: 'draft' }, 'Draft'],
+  [{ review_status: 'pending' }, 'Waiting for review'],
+  [{ review_status: 'rejected' }, 'Changes requested'],
+  [{ review_status: 'approved', listing_visibility: 'hidden' }, 'Approved – hidden'],
+  [{ review_status: 'approved', listing_visibility: 'public' }, 'Live'],
+  [{ platform_restriction: 'archived', first_published_at: null }, 'Discarded'],
+  [{ platform_restriction: 'archived', first_published_at: '2026-09-01T00:00:00Z' }, 'Archived'],
+  [{ platform_restriction: 'suspended' }, 'Suspended'],
+]) assert.equal(merchantReviewLabel({ ...managed, ...changes }), label);

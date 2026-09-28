@@ -5,7 +5,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './auth-context';
 import { Search, Plus, Eye, EyeOff, Store, Loader2, ExternalLink, Pencil, Circle, UserPlus } from 'lucide-react';
-import { merchantListState } from '@/lib/merchant-list-state.mjs';
+import { merchantListState, merchantReviewLabel } from '@/lib/merchant-list-state.mjs';
 import MerchantForm from './merchant-form';
 import MerchantProfileChangeRequests from './merchant-profile-change-requests';
 import { describeLayoutValueForLog, getLayoutMeta, isLayoutKey, isPersistableLayout } from '@/lib/layout-registry.mjs';
@@ -31,6 +31,7 @@ interface Merchant {
   platform_restriction?: string;
   review_status?: string;
   listing_visibility?: string;
+  first_published_at?: string | null;
   platform_status?: string;
   business_status?: string;
   created_at: string;
@@ -71,7 +72,7 @@ export default function MerchantManager() {
   const [merchants, setMerchants] = useState<Merchant[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState<'all' | 'published' | 'draft'>('all');
+  const [filter, setFilter] = useState<'all' | 'published' | 'draft' | 'waiting'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
@@ -198,6 +199,8 @@ export default function MerchantManager() {
         ? true
         : filter === 'published'
         ? merchantListState(m).isPublic
+        : filter === 'waiting'
+        ? merchantReviewLabel(m) === 'Waiting for review'
         : !merchantListState(m).isPublic;
     const matchesStatus =
       statusFilter === 'all'
@@ -289,18 +292,18 @@ export default function MerchantManager() {
               className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-800 rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors"
             />
           </div>
-          <div className="flex gap-2">
-            {(['all', 'published', 'draft'] as const).map((f) => (
+          <div className="flex flex-wrap gap-2">
+            {(['all', 'published', 'draft', 'waiting'] as const).map((f) => (
               <button
                 key={f}
                 onClick={() => setFilter(f)}
-                className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`min-h-11 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                   filter === f
                     ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent'
                 }`}
               >
-                {f.charAt(0).toUpperCase() + f.slice(1)}
+                {f === 'waiting' ? 'Waiting for review' : f.charAt(0).toUpperCase() + f.slice(1)}
               </button>
             ))}
           </div>
@@ -410,6 +413,7 @@ export default function MerchantManager() {
                     <p className="text-slate-500 text-xs truncate">
                       /store/{merchant.slug}
                     </p>
+                    {merchantReviewLabel(merchant) && <span className="mt-2 inline-flex rounded-full border border-amber-500/30 px-2 py-1 text-xs text-amber-300">{merchantReviewLabel(merchant)}</span>}
                   </div>
                 </div>
 
@@ -437,7 +441,15 @@ export default function MerchantManager() {
                   >
                     {getLayoutLabel(merchant.layout)}
                   </span>
-                  <div className="flex items-center gap-3"><button onClick={(event) => { event.stopPropagation(); setLinkingMerchant(merchant); }} className="inline-flex items-center gap-1 text-xs text-sky-400 hover:text-sky-300"><UserPlus className="w-3 h-3" /> Link user</button><a
+                  <div className="flex flex-wrap items-center gap-3"><button onClick={(event) => { event.stopPropagation(); setLinkingMerchant(merchant); }} className="inline-flex min-h-11 items-center gap-1 text-xs text-sky-400 hover:text-sky-300"><UserPlus className="w-3 h-3" /> Link user</button><a
+                    href={`/merchant/preview?merchant=${encodeURIComponent(merchant.id)}&as=admin`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex min-h-11 items-center gap-1 text-xs text-sky-400 hover:text-sky-300"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Preview <ExternalLink className="w-3 h-3" />
+                  </a><a
                     href={`/store/${merchant.slug}`}
                     target="_blank"
                     rel="noopener noreferrer"
