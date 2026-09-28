@@ -617,7 +617,7 @@ export default function MerchantDashboardPage() {
 
       <div className="mx-auto grid max-w-6xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[15rem_minmax(0,1fr)] lg:py-8">
         <aside className="min-w-0 lg:sticky lg:top-6 lg:self-start">
-          <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-5">
+          {listing?.stateSource !== 'managed' && <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-5">
             <div className="flex items-baseline justify-between gap-2">
               <h2 className="text-sm font-semibold text-[#2C3E2D]">Listing checklist</h2>
               <span className="text-xs font-semibold text-emerald-800">{completed}/{checklist.length}</span>
@@ -634,7 +634,7 @@ export default function MerchantDashboardPage() {
                 </li>
               ))}
             </ul>
-          </div>
+          </div>}
           <nav aria-label="Dashboard sections" className="mt-4">
             <ul className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible">
               {SECTIONS.map((section) => (
