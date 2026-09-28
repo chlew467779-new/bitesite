@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import { createRequire } from 'node:module';
 import { validateCredentials, validateRestaurantDraft } from '../lib/merchant-auth-validation.mjs';
+import { MERCHANT_TERMS_VERSION } from '../lib/merchant-terms.mjs';
 const require = createRequire(import.meta.url);
 const ts = require('typescript');
 const { NextRequest, NextResponse } = require('next/server');
@@ -36,6 +37,7 @@ const passwordRoute = load('app/api/auth/password/route.ts', {
 const restaurantRoute = load('app/api/merchant/restaurants/route.ts', {
   '@/lib/supabase-admin': { supabaseAdmin: admin }, '@/lib/bounded-json': bounded,
   '@/lib/merchant-auth-validation.mjs': validation,
+  '@/lib/merchant-terms.mjs': { MERCHANT_TERMS_VERSION },
   '@/app/api/merchant/_lib/merchant-access': {
     requireMerchantUser: async () => authenticated,
     merchantErrorResponse: (status, code, error) => NextResponse.json({ code, error }, { status }),
@@ -62,8 +64,11 @@ reset(); finished.data.accepted = false; response = await password(); assert.equ
 reset(); process.env.NODE_ENV = 'production'; response = await password(); assert.equal(response.status, 503); assert.equal(calls.length, 0);
 reset(); process.env.NODE_ENV = 'production'; process.env.VERCEL = '1'; response = await password(); assert.equal(response.status, 503);
 reset(); process.env.NODE_ENV = 'production'; process.env.VERCEL = '1'; response = await passwordRoute.POST(req('/api/auth/password', credentials, { 'x-vercel-forwarded-for': '203.0.113.1', 'x-forwarded-for': 'forged' })); assert.equal(response.status, 200); assert.match(calls[0].args.p_source, /^[0-9a-f]{64}$/);
-const draft = { name: 'New restaurant', requestId: '00000000-0000-4000-8000-000000000001' };
-reset(); response = await restaurantRoute.POST(req('/api/merchant/restaurants', draft)); assert.equal(response.status, 201); assert.equal(calls[0].args.p_actor_user_id, 'verified-owner');
+const draft = { name: 'New restaurant', requestId: '00000000-0000-4000-8000-000000000001', termsVersion: MERCHANT_TERMS_VERSION, rightsDeclared: true };
+reset(); response = await restaurantRoute.POST(req('/api/merchant/restaurants', draft)); assert.equal(response.status, 201); assert.equal(calls[0].args.p_actor_user_id, 'verified-owner'); assert.equal(calls[0].name, 'merchant_restaurant_create_v2'); assert.equal(calls[0].args.p_terms_version, MERCHANT_TERMS_VERSION);
+reset(); response = await restaurantRoute.POST(req('/api/merchant/restaurants', { name: draft.name, requestId: draft.requestId })); assert.equal(response.status, 400); assert.equal(calls.length, 0);
+reset(); response = await restaurantRoute.POST(req('/api/merchant/restaurants', { ...draft, rightsDeclared: false })); assert.equal(response.status, 400); assert.equal(calls.length, 0);
+reset(); response = await restaurantRoute.POST(req('/api/merchant/restaurants', { ...draft, termsVersion: 'old-version' })); assert.equal(response.status, 409); assert.equal((await response.json()).code, 'TERMS_OUTDATED'); assert.equal(calls.length, 0);
 reset(); authenticated = { response: NextResponse.json({ error: 'signed out' }, { status: 401 }) }; response = await restaurantRoute.POST(req('/api/merchant/restaurants', draft)); assert.equal(response.status, 401); assert.equal(calls.length, 0);
 reset(); authenticated.user.email_confirmed_at = null; response = await restaurantRoute.POST(req('/api/merchant/restaurants', draft)); assert.equal(response.status, 403); assert.equal(calls.length, 0);
 reset(); authenticated.user.is_anonymous = true; response = await restaurantRoute.POST(req('/api/merchant/restaurants', draft)); assert.equal(response.status, 403);
@@ -72,4 +77,5 @@ for (const field of ['merchantId', 'userId', 'role', 'is_published']) {
 }
 reset(); createResult.error = {}; response = await restaurantRoute.POST(req('/api/merchant/restaurants', draft)); assert.equal(response.status, 503);
 reset(); createResult.data = { code: 'REQUEST_CONFLICT' }; response = await restaurantRoute.POST(req('/api/merchant/restaurants', draft)); assert.equal(response.status, 409);
-console.log('merchant auth routes PASS (25 request scenarios; real handlers, mocked provider I/O)');
+reset(); createResult.data = { code: 'TERMS_OUTDATED' }; response = await restaurantRoute.POST(req('/api/merchant/restaurants', draft)); assert.equal(response.status, 409); assert.equal((await response.json()).code, 'TERMS_OUTDATED');
+console.log('merchant auth routes PASS (29 request scenarios; real handlers, mocked provider I/O)');

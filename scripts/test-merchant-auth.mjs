@@ -1,11 +1,15 @@
 import assert from 'node:assert/strict';
 import { validateCredentials, validateRestaurantDraft } from '../lib/merchant-auth-validation.mjs';
+import { MERCHANT_TERMS_VERSION } from '../lib/merchant-terms.mjs';
 assert.deepEqual(validateCredentials({ email: ' OWNER@Example.com ', password: ' with spaces ' }), { email: 'owner@example.com', password: ' with spaces ' });
 for (const input of [null, [], {}, { email: 'invalid', password: 'password' }, { email: 'a@b.com', password: '' }, { email: 'a@b.com', password: 'a'.repeat(1025) }]) assert.equal(validateCredentials(input), null);
 assert.equal(validateCredentials({ email: 'a@b.com', password: '1234567' }, true), null);
 assert.ok(validateCredentials({ email: 'a@b.com', password: '12345678' }, true));
-const draft = { name: ' My restaurant ', requestId: '00000000-0000-4000-8000-000000000001' };
+const draft = { name: ' My restaurant ', requestId: '00000000-0000-4000-8000-000000000001', termsVersion: MERCHANT_TERMS_VERSION, rightsDeclared: true };
 assert.equal(validateRestaurantDraft(draft).name, 'My restaurant');
+assert.equal(validateRestaurantDraft({ name: draft.name, requestId: draft.requestId }), null);
+assert.equal(validateRestaurantDraft({ ...draft, termsVersion: 'old-version' }), null);
+assert.equal(validateRestaurantDraft({ ...draft, rightsDeclared: false }), null);
 for (const extra of ['merchantId', 'userId', 'is_published', 'role', 'slug', 'state_source']) assert.equal(validateRestaurantDraft({ ...draft, [extra]: 'arbitrary' }), null, extra);
 for (const name of ['', ' ', 'a'.repeat(121), null, 42]) assert.equal(validateRestaurantDraft({ ...draft, name }), null);
 assert.equal(validateRestaurantDraft({ ...draft, requestId: 'not-a-uuid' }), null);

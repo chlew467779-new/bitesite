@@ -186,3 +186,8 @@ A new feature idea must not silently become a decision. Add it here only after C
 ## SYNC-057 — Owners mark temporarily closed (DECIDED by Claude under CH delegation, 2026-09-27)
 
 - Owners switch OPEN ↔ TEMPORARILY_CLOSED with an optional note (≤200) and reopening date (today..+1 year); MOVED/PERMANENTLY_CLOSED stay Admin-only. The public page says "<name> is temporarily closed" with the note and date instead of the generic unavailable text.
+
+## SYNC-058 — Merchant pilot terms acceptance (RECOMMENDATION, ChatGPT 2026-09-28)
+
+- Creating a self-service restaurant requires agreement to pilot Merchant Terms version `2026-09-pilot` and an explicit declaration of authority to represent the restaurant and rights to use supplied text and photos. The accepted version and declaration are recorded privately with the new draft.
+- The terms page is a draft for CH review. CH must approve the wording before hosted release; changing the version or accepted terms later needs an explicit rollout decision.

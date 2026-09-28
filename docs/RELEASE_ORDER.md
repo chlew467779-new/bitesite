@@ -127,3 +127,10 @@ For each released step retain: application SHA/deployment URL, exact executed SQ
 - Migration: `20260927210000_owner_temporary_closure.sql`, after `20260927200000`. New table + two RPCs; merchant projection unchanged.
 - Application: `/api/merchant/restaurants/[id]/business-status`, dashboard panel in Opening hours, store page closed view.
 - Rollback FIRST: `supabase/rollback/20260927210000_owner_temporary_closure.rollback.STAGING_ONLY.sql`.
+
+## 15. Merchant terms acceptance
+
+- Migration: `20260927220000_merchant_terms_acceptance.sql`, after `20260927210000`. Adds private acceptance records and service-only `merchant_restaurant_create_v2`; the existing create RPC remains for rollback compatibility.
+- Application: `/terms` displays the pilot draft, and restaurant creation requires terms agreement plus a rights declaration. The create API sends version `2026-09-pilot` to v2 and returns `TERMS_OUTDATED` if the version changed.
+- Local verification: `supabase/tests/terms_acceptance_behavior_tests.sql`, `npm run test:merchant-auth`, and `npm run verify`. CH must review the terms wording before any hosted release.
+- Rollback FIRST: `supabase/rollback/20260927220000_merchant_terms_acceptance.rollback.STAGING_ONLY.sql`. Revert the application to the previous RPC first; rollback deletes acceptance records.
