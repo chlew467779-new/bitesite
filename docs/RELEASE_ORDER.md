@@ -146,3 +146,10 @@ For each released step retain: application SHA/deployment URL, exact executed SQ
 - Migration: `20260928100000_story_submission_merchant_id.sql`, after `20260928090000`. Adds a nullable column + trigger + two indexes and backfills; check `select count(*) from story_submissions where merchant_slug is not null and merchant_id is null` after applying (unlinked relayed submissions, expected 0 or explained).
 - Application: `/api/merchant/story-submissions` GET filters by `merchant_id` — deploy after the migration.
 - Rollback FIRST: `supabase/rollback/20260928100000_story_submission_merchant_id.rollback.STAGING_ONLY.sql`.
+
+## 19. Owner notifications for basics review decisions
+
+- Migration: `20260928150000_basics_review_notifications.sql`, after `20260928090000`. Extends the notification kind constraint with `basics_approved` and `basics_rejected`, and updates `merchant_basics_review` to enqueue one Owner notification per decision. The retired claim kinds are not included.
+- Application: the existing notification delivery worker sends the decision email to active Owners using the dashboard link; no new provider configuration is needed. Apply the migration before relying on the new kinds.
+- Local verification: `supabase/tests/basics_review_notifications_behavior_tests.sql`, `npm run test:notifications`, and `npm run verify`. The SQL test checks one approval and one rejection notification.
+- Rollback FIRST: `supabase/rollback/20260928150000_basics_review_notifications.rollback.STAGING_ONLY.sql`. It deletes the two new kinds, restores the four review kinds, and restores the previous review function.
