@@ -217,3 +217,9 @@ A new feature idea must not silently become a decision. Add it here only after C
 ## SYNC-065 — Area and cuisine landing pages (implements Master Spec §27, Claude 2026-09-28)
 
 - `/area/<slug>` and `/cuisine/<slug>` list the public restaurants of one area or cuisine (cuisine = the `cuisine` tags plus the legacy `cuisine_type`, case-insensitive). Slugs are lowercase-hyphenated labels; other spellings redirect permanently; unknown groups 404. Pages with fewer than two restaurants render but are `noindex` and stay out of the sitemap (no thin pages). Each page has ItemList and BreadcrumbList JSON-LD and links to the other areas and cuisines; every store page links to its area and cuisine pages. Page views are tracked as `discovery`. No migration (public projection only).
+
+## SYNC-066 — Visitors can report a problem on restaurant and Story pages (implements Master Spec §30 and §10.5 report path, Claude 2026-09-28)
+
+- Every public restaurant and Story page has a collapsed "Report a problem with this page" form: a reason (restaurant: closed/moved, hours, phone, address, menu/prices, duplicate, fake, other; Story: my photo/text used without permission, shows me or my personal details, misleading, offensive, other), optional details and optional email. No sign-in.
+- Reports only reach the new Admin "Visitor Reports" inbox (badge counts new ones); **nothing changes automatically** — a report is a hint, not a fact. Admin checks, fixes the page with the existing tools (or hides a Story in Stories Editor when the risk is material), and marks it resolved or dismissed with a note, or reopens it.
+- Abuse limits: honeypot field, per-IP request limit, and a per-reporter cap of 20 per 24 hours with duplicates (same reporter, page and reason within 24 hours) dropped. The reporter is an HMAC of the IP with a server secret (`REPORT_HASH_SECRET`, else `ADMIN_SESSION_SECRET`); raw IPs are never stored. The reporter's email is optional and only visible to Admin.

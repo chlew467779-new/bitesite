@@ -152,3 +152,10 @@ For each released step retain: application SHA/deployment URL, exact executed SQ
 - Migration: `20260928120000_merchant_owner_assign.sql`, after `20260928100000` (independent of §19). One RPC, no table change.
 - Application: `/api/admin/merchant-memberships` POST uses it; Merchant Manager confirm + result message. Deploy after the migration.
 - Rollback FIRST: `supabase/rollback/20260928120000_merchant_owner_assign.rollback.STAGING_ONLY.sql`.
+
+## 21. Visitor reports
+
+- Migration: `20260928130000_public_reports.sql`, after `20260928120000`. New private table + three RPCs; no change to public data.
+- Application: `/api/reports` (public), `/api/admin/reports`, "Report a problem" on store and Story pages, Admin "Visitor Reports" page and badge.
+- Environment: optional `REPORT_HASH_SECRET` (falls back to `ADMIN_SESSION_SECRET`; without either, reporting answers 503).
+- Rollback FIRST: `supabase/rollback/20260928130000_public_reports.rollback.STAGING_ONLY.sql`.

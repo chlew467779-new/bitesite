@@ -24,6 +24,7 @@ import { GrabFoodOrderButton } from "@/components/sections/grabfood-order-button
 import { getSiteUrl } from "@/lib/site-url";
 import { safeJsonLd } from "@/lib/safe-json-ld.mjs";
 import { discoveryPath, discoverySlug, merchantArea, merchantCuisines } from "@/lib/discovery-core.mjs";
+import { ReportProblem } from "@/app/components/report-problem";
 import type { PublicMerchant } from "@/types";
 
 export const revalidate = 60;
@@ -295,6 +296,7 @@ export default async function MerchantPage({ params }: PageProps) {
       />
       <RelatedMerchants merchants={publicRelatedMerchants} variant={layoutKey} />
       <DiscoveryLinks area={merchantArea(merchant)} cuisines={merchantCuisines(merchant)} />
+      <ReportProblem targetType="merchant" slug={merchant.slug} />
     </>
   );
 }
