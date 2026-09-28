@@ -54,7 +54,7 @@ for (const path of ["app/api/admin/merchants/[merchantId]/links/route.ts", "app/
   assert.match(await read(path), /verifyAdminToken/, `${path}: Admin session`);
 }
 assert.match(await read("app/admin/components/admin-shell.tsx"), /id: 'link-reviews'/);
-assert.match(await read("app/admin/page.tsx"), /<LinkReviewQueue \/>/);
+assert.match(await read("app/admin/page.tsx"), /<LinkReviewQueue searchQuery=\{changeRequestSearch\} \/>/);
 assert.match(await read("app/admin/components/merchant-form.tsx"), /<MerchantLinksPanel /);
 const requests = await read("app/merchant/components/link-requests.tsx");
 assert.match(requests, /inputMode="url"/, "URL keyboard on phones");

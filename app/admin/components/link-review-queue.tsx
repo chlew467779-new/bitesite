@@ -19,7 +19,7 @@ function safeHref(value: string | null) {
   try { const url = new URL(value); return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : null; } catch { return null; }
 }
 
-export default function LinkReviewQueue() {
+export default function LinkReviewQueue({ searchQuery = '' }: { searchQuery?: string }) {
   const { token } = useAuth();
   const [items, setItems] = useState<LinkQueueItem[] | null>(null);
   const [error, setError] = useState('');
@@ -42,6 +42,10 @@ export default function LinkReviewQueue() {
   }, [token]);
 
   useEffect(() => { void load(); }, [load]);
+
+  const query = searchQuery.trim().toLocaleLowerCase();
+  const visibleItems = items?.filter((item) =>
+    item.merchantName.toLocaleLowerCase().includes(query) || item.slug.toLocaleLowerCase().includes(query));
 
   const decide = async (item: LinkQueueItem, decision: 'approve' | 'reject') => {
     if (!token || working) return;
@@ -83,7 +87,8 @@ export default function LinkReviewQueue() {
       {error && <p className="rounded-lg bg-red-950/40 px-4 py-3 text-sm text-red-300" role="alert">{error} <button type="button" className="ml-2 underline" onClick={() => void load()}>Try again</button></p>}
       {!items && !error && <Loader2 className="h-6 w-6 animate-spin text-amber-500" />}
       {items && items.length === 0 && <p className="text-sm text-slate-400">No link requests are waiting.</p>}
-      {items?.map((item) => {
+      {items && items.length > 0 && visibleItems?.length === 0 && <p className="text-sm text-slate-400">No link requests match this restaurant.</p>}
+      {visibleItems?.map((item) => {
         const proposed = safeHref(item.proposedUrl);
         const current = safeHref(item.currentUrl);
         return (
