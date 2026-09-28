@@ -146,3 +146,9 @@ For each released step retain: application SHA/deployment URL, exact executed SQ
 - Migration: `20260928100000_story_submission_merchant_id.sql`, after `20260928090000`. Adds a nullable column + trigger + two indexes and backfills; check `select count(*) from story_submissions where merchant_slug is not null and merchant_id is null` after applying (unlinked relayed submissions, expected 0 or explained).
 - Application: `/api/merchant/story-submissions` GET filters by `merchant_id` — deploy after the migration.
 - Rollback FIRST: `supabase/rollback/20260928100000_story_submission_merchant_id.rollback.STAGING_ONLY.sql`.
+
+## 20. Admin Owner transfer fix
+
+- Migration: `20260928120000_merchant_owner_assign.sql`, after `20260928100000` (independent of §19). One RPC, no table change.
+- Application: `/api/admin/merchant-memberships` POST uses it; Merchant Manager confirm + result message. Deploy after the migration.
+- Rollback FIRST: `supabase/rollback/20260928120000_merchant_owner_assign.rollback.STAGING_ONLY.sql`.

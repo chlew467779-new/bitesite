@@ -209,3 +209,7 @@ A new feature idea must not silently become a decision. Add it here only after C
 ## SYNC-062 — No restaurant claim flow (DECIDED by CH, 2026-09-28)
 
 - BiteSite does not offer "claim an existing restaurant" (Master Spec §21 claim flow, P1 "Merchant Claim flow", OQ-002 are out of scope). CH: claims add risk of the wrong person getting a restaurant. The only merchant journey is: register → confirm email → sign in with email and password → create own restaurant draft → submit for review → approved → publish. A first implementation (fa0c115) was reverted the same day. Admin can still link an Owner to a restaurant in Merchant Manager.
+
+## SYNC-064 — Admin can move a restaurant to a new Owner account (DECIDED by CH, 2026-09-28)
+
+- When a business changes hands, Admin links the new person's account by email in Merchant Manager; the restaurant moves to it and the previous Owner loses access (membership suspended, not deleted). One database transaction (`merchant_owner_assign`) suspends the old Owner before activating the new one and audits both steps; before this, linking a second account always failed on the one-active-Owner index. Admin confirms before linking and sees who lost access.

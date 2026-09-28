@@ -83,6 +83,7 @@ export default function MerchantManager() {
   const [linkingMerchant, setLinkingMerchant] = useState<Merchant | null>(null);
   const [membershipEmail, setMembershipEmail] = useState('');
   const [linking, setLinking] = useState(false);
+  const [linkNotice, setLinkNotice] = useState('');
 
   const fetchMerchants = useCallback(async () => {
     try {
@@ -171,8 +172,10 @@ export default function MerchantManager() {
 
   const linkUser = async () => {
     if (!token || !linkingMerchant || !membershipEmail.trim()) return;
+    if (!window.confirm(`Make ${membershipEmail.trim()} the Owner of ${linkingMerchant.name}? If the restaurant already has an Owner, that account loses access.`)) return;
     setLinking(true);
     setError('');
+    setLinkNotice('');
     try {
       const res = await fetch('/api/admin/merchant-memberships', {
         method: 'POST',
@@ -181,6 +184,9 @@ export default function MerchantManager() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Could not link user');
+      setLinkNotice(data.outcome === 'noop'
+        ? `${membershipEmail.trim()} already owns ${linkingMerchant.name}.`
+        : `${membershipEmail.trim()} now owns ${linkingMerchant.name}.${data.previousOwnerEmail ? ` ${data.previousOwnerEmail} no longer has access.` : ''}`);
       setLinkingMerchant(null);
       setMembershipEmail('');
     } catch (err) {
@@ -258,10 +264,11 @@ export default function MerchantManager() {
         <MerchantProfileChangeRequests />
       {linkingMerchant && (
         <div className="rounded-xl border border-amber-500/40 bg-slate-900 p-4 space-y-3">
-          <div className="flex items-center justify-between gap-3"><div><h2 className="font-semibold text-white">Link merchant user</h2><p className="text-xs text-slate-400">{linkingMerchant.name} — the user must have signed in with a magic link first.</p></div><button onClick={() => setLinkingMerchant(null)} className="text-slate-400 hover:text-white text-sm">Cancel</button></div>
+          <div className="flex items-center justify-between gap-3"><div><h2 className="font-semibold text-white">Link merchant user</h2><p className="text-xs text-slate-400">{linkingMerchant.name} — the person needs a confirmed BiteSite merchant account. Linking a new account moves the restaurant to it; the previous Owner loses access.</p></div><button onClick={() => setLinkingMerchant(null)} className="text-slate-400 hover:text-white text-sm">Cancel</button></div>
           <div className="flex flex-col sm:flex-row gap-2"><input type="email" value={membershipEmail} onChange={(event) => setMembershipEmail(event.target.value)} placeholder="owner@example.com" className="flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white" /><button onClick={linkUser} disabled={linking || !membershipEmail.trim()} className="rounded-lg bg-amber-500 px-3 py-2 text-sm font-medium text-slate-950 disabled:opacity-50">{linking ? 'Linking…' : 'Link user'}</button></div>
         </div>
       )}
+      {linkNotice && <p role="status" className="rounded-lg bg-emerald-950/40 px-4 py-3 text-sm text-emerald-300">{linkNotice}</p>}
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
