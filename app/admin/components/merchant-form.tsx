@@ -11,7 +11,7 @@
  * (PATCH /api/admin/merchants/[merchantId]/fields). Only changed fields are sent, each with the
  * value this editor loaded, so an Owner's change made meanwhile is reported as a conflict instead
  * of being overwritten; changes to other fields merge. Links and GrabFood are edited in
- * MerchantLinksPanel (compare-and-set; Owner requests are reviewed on Link Reviews). The web
+ * MerchantLinksPanel (compare-and-set; Owner requests are reviewed on Change Requests). The web
  * address is renamed in MerchantSlugPanel (old addresses redirect). Payment methods are shown
  * read-only: they need a workflow that is not built yet, and the old whole-form save is retired. Publish / hide / suspend / lift
  * suspension / archive / restore and the business status are dedicated, audited actions in
@@ -27,6 +27,7 @@ import MenuEditor from './menu-editor';
 import MerchantStatusPanel from './merchant-status-panel';
 import MerchantLinksPanel from './merchant-links-panel';
 import MerchantSlugPanel from './merchant-slug-panel';
+import MerchantHistoryPanel from './merchant-history-panel';
 import { ProfileImagesPanel } from '@/app/components/media/profile-images-panel';
 import { AMENITY_TAGS, CUISINE_TAGS, OCCASION_TAGS } from '@/lib/presets';
 import { getPersistableLayouts } from '@/lib/layout-registry.mjs';
@@ -614,7 +615,7 @@ export default function MerchantForm({ merchant, onBack, onSaved, loadWarning }:
               <TextFieldsSection key={`contact:${sectionKey}`} id="contact" title="Contact" fieldsConfig={[{ path: 'profile.phone', label: 'Phone' }, { path: 'profile.whatsapp', label: 'WhatsApp (optional; international, e.g. +60 12-345 6789)' }, { path: 'profile.email', label: 'Email' }]} {...props} />
               <LocationSection key={`location:${sectionKey}`} {...props} />
               <div className={panel}>
-                <PanelTitle title="Links" note="Links must use https. Owner requests wait on the Link Reviews page; saving here replaces a waiting request." />
+                <PanelTitle title="Links" note="Links must use https. Owner requests wait on the Change Requests page; saving here replaces a waiting request." />
                 <MerchantLinksPanel key={`links:${current.id}`} merchantId={current.id} token={token} />
               </div>
             </div>
@@ -625,6 +626,7 @@ export default function MerchantForm({ merchant, onBack, onSaved, loadWarning }:
             <div hidden={activeTab !== 3} className="space-y-4">
               <FeaturesSection key={`features:${sectionKey}`} {...props} />
               <MerchantStatusPanel key={`status:${current.id}`} merchantId={current.id} merchantName={current.name} token={token} />
+              <MerchantHistoryPanel key={`history:${current.id}`} merchantId={current.id} token={token} />
               <div className={panel}>
                 <PanelTitle title="Not editable here" note="The menu section is always shown; it cannot be switched off." />
                 <ReadOnlyList items={[

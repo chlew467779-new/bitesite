@@ -196,3 +196,7 @@ A new feature idea must not silently become a decision. Add it here only after C
 ## SYNC-060 — Story submissions reference the restaurant by id (implements FINAL_AUDIT 05 §Stories, Claude 2026-09-28)
 
 - `story_submissions.merchant_id` (FK, ON DELETE SET NULL) next to `merchant_slug`; a database trigger keeps the pair consistent for every writer (Owner RPC, Admin relayed submissions, the slug-change cascade) and resolves old addresses through slug history. A relayed submission whose slug matches no restaurant stays unlinked (null) instead of being guessed. Existing rows are backfilled. The Owner Story list is scoped by id. Articles keep `merchant_slug` (FK ON UPDATE CASCADE) for now.
+
+## SYNC-061 — Admin sees each restaurant's change history (DECIDED by Claude under CH delegation, 2026-09-28)
+
+- Merchant Manager → Features & status → "Change history" reads `merchant_change_log` (the D1a audit trail), newest first, 30 per page: operation, who (Owner shown by account email, "BiteSite Admin", or "Unknown" for direct database changes), and old → new values where the trail keeps them (state columns and the field-save paths); slug, links and photos are listed by name only. Read-only, Admin only, no migration. Owners do not see this history.

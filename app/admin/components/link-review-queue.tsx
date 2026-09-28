@@ -2,7 +2,7 @@
 'use client';
 
 /**
- * Link Reviews page: every waiting Owner link request, oldest first. Approve applies the link only
+ * Links part of the Change Requests page: every waiting Owner link request, oldest first. Approve applies the link only
  * if it has not changed since the Owner asked; Reject needs a note, which the Owner sees. Each
  * decision has its own request id and is retried with the same id when the result is unknown.
  */

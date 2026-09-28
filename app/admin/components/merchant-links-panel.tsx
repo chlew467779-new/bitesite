@@ -4,7 +4,7 @@
 /**
  * Admin links for one restaurant: edit each link directly (compare-and-set on the value shown, so
  * a change made meanwhile is reported), and see the restaurant's waiting request for each link.
- * Reviewing Owner requests happens on the Link Reviews page.
+ * Reviewing Owner requests happens on the Change Requests page.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -92,7 +92,7 @@ export default function MerchantLinksPanel({ merchantId, token }: { merchantId: 
                 {saving === field ? 'Saving…' : 'Save'}
               </button>
             </div>
-            {pending && <p className="mt-1 text-xs text-amber-800">Owner request waiting: {pending.proposedUrl ?? 'remove the link'} (review it on the Link Reviews page; saving here replaces it)</p>}
+            {pending && <p className="mt-1 text-xs text-amber-800">Owner request waiting: {pending.proposedUrl ?? 'remove the link'} (review it on the Change Requests page; saving here replaces it)</p>}
             {status[field] && <p className={`mt-1 text-xs ${status[field]?.kind === 'ok' ? 'text-emerald-800' : 'text-red-700'}`}>{status[field]?.text}</p>}
           </div>
         );
