@@ -192,6 +192,7 @@ export default async function MerchantPage({ params }: PageProps) {
                   ← Back to BiteSite
                 </Link>
               </div>
+              <ReportProblem targetType="merchant" slug={merchant.slug} />
             </div>
           </div>
           <footer className="py-8 px-4 text-center border-t border-[#DDE5DC]">
