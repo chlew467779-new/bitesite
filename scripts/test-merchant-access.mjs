@@ -193,7 +193,7 @@ for (const [path, capabilities] of Object.entries(expectCapability)) {
 const stories = await read("app/api/merchant/story-submissions/route.ts");
 // D2-A: the POST slug is set by merchant_story_submission_create from the locked restaurant.
 assert.match(stories, /p_merchant_id: context\.merchant\.id/, "Story submissions name the verified restaurant");
-assert.match(stories, /\.eq\('merchant_slug', context\.merchant\.slug\)/);
+assert.match(stories, /\.eq\('merchant_id', context\.merchant\.id\)/, "the Story list is scoped by the verified restaurant id");
 
 const helper = await read("app/api/merchant/_lib/merchant-access.ts");
 assert.match(helper, /^import 'server-only';/m, "the helper is server-only");

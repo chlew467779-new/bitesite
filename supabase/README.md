@@ -74,6 +74,9 @@ Only the SECURITY LOCKDOWN work lives here for now (branch `fix/security-lockdow
 | `migrations/20260928090000_merchant_basics_requests.sql` | Owner name/location/cuisine change requests after approval: `merchant_basics_requests`, submit / withdraw / review (applied via `merchant_field_patch`) / read / queue | Local; hosted only with approval |
 | `tests/basics_requests_behavior_tests.sql` | Synthetic transaction, rolled back | Local / staging only |
 | `rollback/20260928090000_merchant_basics_requests.rollback.STAGING_ONLY.sql` | Guarded rollback; drops requests and RPCs, approved changes stay | Staging only |
+| `migrations/20260928100000_story_submission_merchant_id.sql` | `story_submissions.merchant_id` (FK, set null on delete), backfill via slug and slug history, sync trigger with `merchant_slug`, one pending per restaurant id | Local; hosted only with approval |
+| `tests/story_submission_merchant_id_behavior_tests.sql` | Synthetic transaction, rolled back | Local / staging only |
+| `rollback/20260928100000_story_submission_merchant_id.rollback.STAGING_ONLY.sql` | Guarded rollback; drops trigger, indexes and column | Staging only |
 | `scripts/test-d2b-cutover-local.mjs` | D2-B write cutover over HTTP: retired Merchant/Admin whole-form saves and hard DELETE refuse (410) and change nothing, no GrabFood write, hidden-draft create accepts only name/slug, profile image upload tickets refused (Story/menu uploads open), B0 Admin paths work | Local only (needs a local Next server) |
 | `rollback/20260926131040_…STAGING_ONLY.sql` | Undoes D1c; every articles column and the old `published`-only rule come back. The D1c code keeps working | Staging; production only as an approved emergency |
 

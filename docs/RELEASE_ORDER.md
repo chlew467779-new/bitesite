@@ -133,3 +133,9 @@ For each released step retain: application SHA/deployment URL, exact executed SQ
 - Migration: `20260928090000_merchant_basics_requests.sql`, after `20260927210000` (and after ChatGPT T11 `20260927220000` if released together). New private table + five RPCs; merchant projection unchanged.
 - Application: `/api/merchant/restaurants/[id]/basics`, `/api/admin/basics-reviews`, dashboard request form under Listing basics, Admin Change Requests page, attention badge.
 - Rollback FIRST: `supabase/rollback/20260928090000_merchant_basics_requests.rollback.STAGING_ONLY.sql`.
+
+## 17. Story submissions by restaurant id
+
+- Migration: `20260928100000_story_submission_merchant_id.sql`, after `20260928090000`. Adds a nullable column + trigger + two indexes and backfills; check `select count(*) from story_submissions where merchant_slug is not null and merchant_id is null` after applying (unlinked relayed submissions, expected 0 or explained).
+- Application: `/api/merchant/story-submissions` GET filters by `merchant_id` — deploy after the migration.
+- Rollback FIRST: `supabase/rollback/20260928100000_story_submission_merchant_id.rollback.STAGING_ONLY.sql`.

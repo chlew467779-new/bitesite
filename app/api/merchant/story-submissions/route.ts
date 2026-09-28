@@ -12,12 +12,12 @@ function validUrl(value: unknown) {
   try { return ['http:', 'https:'].includes(new URL(value).protocol); } catch { return false; }
 }
 
-// Story submissions are still keyed by merchant_slug; the slug is always taken from the verified
-// merchant (inside the insert transaction for POST), never from the request.
+// Story submissions belong to the verified restaurant by merchant_id (kept in sync with
+// merchant_slug by the database); both come from the verified merchant, never from the request.
 export async function GET(request: NextRequest) {
   const context = await requireMerchantAccess(request, 'read');
   if ('response' in context) return context.response;
-  const { data, error } = await supabase.from('story_submissions').select('id, title, excerpt, content, story_angle, cover_image, image_urls, rights_declared, rights_note, status, review_notes, submitted_at, created_at, updated_at').eq('merchant_slug', context.merchant.slug).order('created_at', { ascending: false });
+  const { data, error } = await supabase.from('story_submissions').select('id, title, excerpt, content, story_angle, cover_image, image_urls, rights_declared, rights_note, status, review_notes, submitted_at, created_at, updated_at').eq('merchant_id', context.merchant.id).order('created_at', { ascending: false });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ submissions: data || [] });
 }
