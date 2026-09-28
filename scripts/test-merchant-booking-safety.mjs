@@ -13,7 +13,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { getBookingUrl, normalizeBookingWhatsApp } from "../lib/merchant-booking-target.mjs";
 
-const read = (relPath) => readFile(new URL(`../${relPath}`, import.meta.url), "utf8");
+const read = async (relPath) => (await readFile(new URL(`../${relPath}`, import.meta.url), "utf8")).replace(/\r\n/g, "\n");
 
 /* ── normalizeBookingWhatsApp ──────────────────────────────────────────────────────────────── */
 

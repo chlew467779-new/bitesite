@@ -2,7 +2,7 @@
 
 import { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import {
   getMerchantBySlug,
   getCategoriesByMerchant,
@@ -11,6 +11,7 @@ import {
   getPublishedMerchants,
   getRelatedMerchants,
   getEventsByMerchant,
+  getRenamedMerchantSlug,
 } from "@/lib/supabase";
 import { supabase } from "@/lib/supabase";
 import { getSettings } from "@/lib/settings";
@@ -22,6 +23,8 @@ import { PageViewTracker } from "@/app/components/page-view-tracker";
 import { GrabFoodOrderButton } from "@/components/sections/grabfood-order-button";
 import { getSiteUrl } from "@/lib/site-url";
 import { safeJsonLd } from "@/lib/safe-json-ld.mjs";
+import { discoveryPath, discoverySlug, merchantArea, merchantCuisines } from "@/lib/discovery-core.mjs";
+import { ReportProblem } from "@/app/components/report-problem";
 import type { PublicMerchant } from "@/types";
 
 export const revalidate = 60;
@@ -115,7 +118,12 @@ export default async function MerchantPage({ params }: PageProps) {
     getMerchantBySlug(slug),
   ]);
 
-  if (!merchant) notFound();
+  if (!merchant) {
+    // A renamed restaurant: send old links to the current address (permanent redirect).
+    const renamed = await getRenamedMerchantSlug(slug);
+    if (renamed) permanentRedirect(`/store/${encodeURIComponent(renamed)}`);
+    notFound();
+  }
 
   // Inactive merchant friendly page
   if (merchant.status === 'inactive' || ['TEMPORARILY_CLOSED', 'MOVED', 'PERMANENTLY_CLOSED'].includes(merchant.business_status || '')) {
@@ -126,6 +134,11 @@ export default async function MerchantPage({ params }: PageProps) {
       merchant.area,
       3
     );
+    const temporarilyClosed = merchant.business_status === "TEMPORARILY_CLOSED";
+    const { data: closure } = temporarilyClosed
+      ? await supabase.from("merchant_closure_notices").select("note, reopen_on").eq("merchant_id", merchant.id).maybeSingle()
+      : { data: null };
+    const reopenOn = closure?.reopen_on ? new Date(`${closure.reopen_on}T00:00:00`).toLocaleDateString("en-MY", { day: "numeric", month: "long", year: "numeric" }) : null;
 
     return (
       <>
@@ -133,16 +146,25 @@ export default async function MerchantPage({ params }: PageProps) {
         <div className="min-h-screen bg-[#FAFBF7] flex flex-col">
           <div className="flex-1 flex items-center justify-center px-4 py-20">
             <div className="max-w-md w-full text-center">
-              <div className="mb-6 text-6xl">😔</div>
+              <div className="mb-6 text-6xl">{temporarilyClosed ? "🌙" : "😔"}</div>
               <h1 className="text-2xl font-bold text-[#2C3E2D] mb-3">
-                This Restaurant is Unavailable
+                {temporarilyClosed ? `${merchant.name} is temporarily closed` : "This Restaurant is Unavailable"}
               </h1>
-              <p className="text-[#6B6560] mb-2">
-                We&apos;re sorry, but <strong>{merchant.name}</strong> is not taking orders
-              </p>
-              <p className="text-[#6B6560] mb-8">
-                or reservations at the moment.
-              </p>
+              {temporarilyClosed ? (
+                <div className="mb-8 space-y-2 text-[#6B6560]">
+                  {closure?.note && <p className="whitespace-pre-wrap break-words rounded-xl bg-amber-50 p-4 text-amber-900">{closure.note}</p>}
+                  <p>{reopenOn ? <>Expected to reopen on <strong>{reopenOn}</strong>.</> : "Please check back soon."}</p>
+                </div>
+              ) : (
+                <>
+                <p className="text-[#6B6560] mb-2">
+                  We&apos;re sorry, but <strong>{merchant.name}</strong> is not taking orders
+                </p>
+                <p className="text-[#6B6560] mb-8">
+                  or reservations at the moment.
+                </p>
+                </>
+              )}
               {relatedMerchants.length > 0 && (
                 <div className="border-t border-[#DDE5DC] pt-8">
                   <p className="text-sm font-medium text-[#8A968B] mb-4">
@@ -273,6 +295,24 @@ export default async function MerchantPage({ params }: PageProps) {
         footerText={settings.footer_text}
       />
       <RelatedMerchants merchants={publicRelatedMerchants} variant={layoutKey} />
+      <DiscoveryLinks area={merchantArea(merchant)} cuisines={merchantCuisines(merchant)} />
+      <ReportProblem targetType="merchant" slug={merchant.slug} />
     </>
+  );
+}
+
+// Links to this restaurant's area and cuisine landing pages (internal links for visitors and search).
+function DiscoveryLinks({ area, cuisines }: { area: string | null; cuisines: string[] }) {
+  const links = [
+    ...(area ? [{ href: discoveryPath("area", discoverySlug(area)), label: `More in ${area}` }] : []),
+    ...cuisines.slice(0, 3).map((c) => ({ href: discoveryPath("cuisine", discoverySlug(c)), label: `More ${c} food` })),
+  ];
+  if (links.length === 0) return null;
+  return (
+    <nav aria-label="Explore similar places" className="mx-auto flex max-w-6xl flex-wrap justify-center gap-2 px-4 pb-10">
+      {links.map((link) => (
+        <a key={link.href} href={link.href} className="inline-flex min-h-11 items-center rounded-full border border-[#C9D6C7] bg-white px-4 text-sm text-[#2C3E2D] hover:border-emerald-700">{link.label}</a>
+      ))}
+    </nav>
   );
 }

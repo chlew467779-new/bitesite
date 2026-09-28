@@ -146,6 +146,19 @@ assert.deepEqual(merchantRoutes.sort(), [
   "app/api/merchant/me/route.ts",
   "app/api/merchant/media/upload-url/route.ts",
   "app/api/merchant/profile-change-requests/route.ts",
+  "app/api/merchant/restaurants/[merchantId]/basics/route.ts",
+  "app/api/merchant/restaurants/[merchantId]/business-status/route.ts",
+  "app/api/merchant/restaurants/[merchantId]/feedback/route.ts",
+  "app/api/merchant/restaurants/[merchantId]/fields/route.ts",
+  "app/api/merchant/restaurants/[merchantId]/links/route.ts",
+  "app/api/merchant/restaurants/[merchantId]/listing/route.ts",
+  "app/api/merchant/restaurants/[merchantId]/media/route.ts",
+  "app/api/merchant/restaurants/[merchantId]/media/ticket/route.ts",
+  "app/api/merchant/restaurants/[merchantId]/menu/dish-photo/route.ts",
+  "app/api/merchant/restaurants/[merchantId]/menu/dish-photo/ticket/route.ts",
+  "app/api/merchant/restaurants/[merchantId]/menu/route.ts",
+  "app/api/merchant/preview/route.ts",
+  "app/api/merchant/restaurants/[merchantId]/stats/route.ts",
   "app/api/merchant/restaurants/route.ts",
   "app/api/merchant/story-submissions/route.ts",
 ].sort(), "the merchant route list is known; a new route must be added to these checks");
@@ -161,15 +174,16 @@ for (const path of merchantRoutes) {
 }
 
 const me = await read("app/api/merchant/me/route.ts");
-const meGet = me.slice(me.indexOf("export async function GET"), me.indexOf("function fieldErrorResponse"));
+const meGet = me.slice(me.indexOf("export async function GET"), me.indexOf("export async function PUT"));
 const mePut = me.slice(me.indexOf("export async function PUT"));
 assert.match(meGet, /requireMerchantUser\(request\)/);
 assert.match(meGet, /loadOwnedMerchants\(auth\.user\.id\)/);
 assert.match(meGet, /capability: 'read'/, "the profile read uses read capability");
 assert.match(meGet, /merchants, merchant: null/, "no or several merchants: a list, no default target");
-assert.match(mePut, /requireMerchantAccess\(request, 'write'\)/, "profile save needs write access");
-assert.match(mePut, /\.update\(updateData\)\s*\.eq\('id', merchantId\)\s*\.eq\('platform_restriction', 'none'\)\s*\.or\(MERCHANT_WRITABLE_STATE_FILTER\)/,
-  "the UPDATE itself rechecks the merchant state");
+// D2-B: the old whole-form save is retired; it still authenticates and scopes, then refuses.
+assert.match(mePut, /requireMerchantAccess\(request, 'read'\)/, "retired PUT still resolves access first");
+assert.match(mePut, /410, 'LEGACY_WRITE_RETIRED'/, "…and writes nothing");
+assert.doesNotMatch(me, /\.update\(/, "no merchant UPDATE remains in /me");
 
 const expectCapability = { "app/api/merchant/media/upload-url/route.ts": ["write"], "app/api/merchant/profile-change-requests/route.ts": ["read", "write"], "app/api/merchant/story-submissions/route.ts": ["read", "write"] };
 for (const [path, capabilities] of Object.entries(expectCapability)) {
@@ -177,8 +191,9 @@ for (const [path, capabilities] of Object.entries(expectCapability)) {
   for (const capability of capabilities) assert.match(source, new RegExp(`requireMerchantAccess\\(request, '${capability}'\\)`), `${path}: ${capability} access`);
 }
 const stories = await read("app/api/merchant/story-submissions/route.ts");
-assert.match(stories, /merchant_slug: context\.merchant\.slug/, "Story submissions use the verified merchant's slug");
-assert.match(stories, /\.eq\('merchant_slug', context\.merchant\.slug\)/);
+// D2-A: the POST slug is set by merchant_story_submission_create from the locked restaurant.
+assert.match(stories, /p_merchant_id: context\.merchant\.id/, "Story submissions name the verified restaurant");
+assert.match(stories, /\.eq\('merchant_id', context\.merchant\.id\)/, "the Story list is scoped by the verified restaurant id");
 
 const helper = await read("app/api/merchant/_lib/merchant-access.ts");
 assert.match(helper, /^import 'server-only';/m, "the helper is server-only");
@@ -190,18 +205,23 @@ assert.match(helper, /searchParams\.get\('merchantId'\)/, "the merchant ID is an
 
 /* ── pages always name the restaurant ─────────────────────────────────────────────────────── */
 
+// Merchant API calls either name the restaurant with merchantApiUrl (?merchantId=), carry it in the
+// path (/api/merchant/restaurants/<id>/...), or are the account bootstrap /api/merchant/me.
 for (const path of ["app/merchant/page.tsx", "app/merchant/stories/page.tsx"]) {
   const source = await read(path);
-  const bare = [...source.matchAll(/fetch\((['"`])\/api\/merchant\//g)];
-  assert.equal(bare.length, 0, `${path}: every merchant API call goes through merchantApiUrl`);
+  const calls = [...source.matchAll(/fetch\(\s*(['"`])(\/api\/merchant\/[^'"`?]*)/g)].map((m) => m[2]);
+  for (const call of calls) {
+    assert.ok(call === "/api/merchant/me" || call.startsWith("/api/merchant/restaurants/${"), `${path}: ${call} must name the restaurant`);
+  }
   assert.match(source, /from '@\/lib\/merchant-context-url\.mjs'/, `${path}: uses the shared URL helper`);
 }
 const dashboard = await read("app/merchant/page.tsx");
-assert.match(dashboard, /merchantApiUrl\('\/api\/merchant\/me', merchant\.id\)/, "profile save names the restaurant");
-assert.match(dashboard, /merchantApiUrl\('\/api\/merchant\/media\/upload-url', merchant\.id\)/, "uploads name the restaurant");
+assert.match(dashboard, /selected \? `\/api\/merchant\/me\?merchantId=\$\{encodeURIComponent\(selected\)\}`/, "the bootstrap names the selected restaurant");
+assert.match(dashboard, /fetch\(`\/api\/merchant\/restaurants\/\$\{encodeURIComponent\(current\.profile\.id\)\}\/fields`/, "saves target the loaded restaurant by id");
+assert.match(dashboard, /session\.session\.user\.id !== current\.userId/, "a save is refused if the signed-in account changed");
 assert.match(dashboard, /kind: 'no-merchant'/, "an account without restaurants gets an explicit state");
 assert.match(dashboard, /kind: 'choose'/, "several restaurants: the Owner chooses");
-assert.match(dashboard, /disabled=\{[^}]*readOnly\}/, "suspended/archived restaurants cannot be saved from the page");
+assert.match(dashboard, /readOnly=\{props\.readOnly\}/, "suspended/archived restaurants cannot be saved from the page");
 const storiesPage = await read("app/merchant/stories/page.tsx");
 assert.match(storiesPage, /bitesite:merchant-story-draft:\$\{userId\}:\$\{currentMerchantId\}/, "Story drafts are kept per restaurant");
 

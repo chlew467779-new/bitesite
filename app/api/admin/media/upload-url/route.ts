@@ -5,7 +5,8 @@ import { InvalidJsonBodyError, readBoundedJson, RequestBodyTooLargeError } from 
 
 const MAX_UPLOAD_REQUEST_BYTES = 16 * 1024;
 const specs = {
-  merchant: { bucket: 'merchant-media', maxBytes: 5 * 1024 * 1024 },
+  // D2-B: no 'merchant' (logo/cover) kind. Profile images cannot be bound to a restaurant until
+  // trusted media upload (M6b); Story and menu images are unchanged.
   story: { bucket: 'story-media', maxBytes: 5 * 1024 * 1024 },
   menu: { bucket: 'merchant-media', maxBytes: 2 * 1024 * 1024 },
 } as const;

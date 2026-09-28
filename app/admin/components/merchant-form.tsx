@@ -1,720 +1,586 @@
 /* bitesite/app/admin/components/merchant-form.tsx */
-
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+/**
+ * Admin restaurant editor (D2-B write cutover).
+ *
+ * Create: only a name (and optional web address) makes a hidden draft (POST
+ * /api/admin/merchants-crud); nothing is published and no links or images are set.
+ *
+ * Edit: every section saves on its own through the field-level save contract
+ * (PATCH /api/admin/merchants/[merchantId]/fields). Only changed fields are sent, each with the
+ * value this editor loaded, so an Owner's change made meanwhile is reported as a conflict instead
+ * of being overwritten; changes to other fields merge. Links and GrabFood are edited in
+ * MerchantLinksPanel (compare-and-set; Owner requests are reviewed on Change Requests). The web
+ * address is renamed in MerchantSlugPanel (old addresses redirect). Payment methods are shown
+ * read-only: they need a workflow that is not built yet, and the old whole-form save is retired. Publish / hide / suspend / lift
+ * suspension / archive / restore and the business status are dedicated, audited actions in
+ * MerchantStatusPanel (D2-C), never part of a section save. Logo and cover upload through the
+ * checked photo flow (M6b, ProfileImagesPanel).
+ */
+
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowLeft, FileText, Globe, Image as ImageIcon, Loader2, MapPin, Phone, UtensilsCrossed } from 'lucide-react';
 import { useAuth } from './auth-context';
-import { normalizeBookingWhatsApp } from '@/lib/merchant-booking-target.mjs';
-import {
-  Save,
-  Trash2,
-  ChevronLeft,
-  Loader2,
-  Image as ImageIcon,
-  MapPin,
-  Phone,
-  Mail,
-  Globe,
-  Instagram,
-  Facebook,
-  FileText,
-  Check,
-  AlertCircle,
-  AlertTriangle,
-  Plus,
-  X,
-  Copy,
-  Clock,
-  UtensilsCrossed,
-} from 'lucide-react';
-import {
-  parseOperatingHoursString,
-  formatOperatingHoursToString,
-  isValidOperatingHours,
-  type DayHours,
-  type TimeSlot,
-} from '@/lib/hours';
-import { AMENITY_TAGS, AREAS, CUISINE_TAGS, OCCASION_TAGS, PAYMENT_METHODS } from '@/lib/presets';
-import { getPersistableLayouts, isLayoutKey, isPersistableLayout } from '@/lib/layout-registry.mjs';
-import ImageUpload from './image-upload';
+import { registerLeaveCheck } from '@/lib/unsaved-guard';
 import MenuEditor from './menu-editor';
+import MerchantStatusPanel from './merchant-status-panel';
+import MerchantLinksPanel from './merchant-links-panel';
+import MerchantSlugPanel from './merchant-slug-panel';
+import MerchantHistoryPanel from './merchant-history-panel';
+import { ProfileImagesPanel } from '@/app/components/media/profile-images-panel';
+import { AMENITY_TAGS, CUISINE_TAGS, OCCASION_TAGS } from '@/lib/presets';
+import { getPersistableLayouts } from '@/lib/layout-registry.mjs';
+import { defaultFeatures } from '@/types';
+import { snapshotValue, type Snapshot } from '@/lib/section-save.mjs';
+import { useSectionSave, type SectionHandle, type SendSave } from '@/app/components/section-save/use-section-save';
+import { SectionSaveBar, formatValue } from '@/app/components/section-save/section-save-bar';
+import { HoursSection, type SectionProps } from '@/app/components/section-save/hours-section';
 
 interface MerchantFormProps {
   merchant?: {
     id: string;
     slug: string;
     name: string;
-    tagline?: string;
-    description?: string;
-    layout?: string;
-    cuisine?: string[] | null;
-    amenities?: string[] | null;
-    occasion?: string[] | null;
-    area?: string;
     payment_methods?: string[] | null;
-    address?: string;
-    phone?: string;
-    whatsapp?: string;
-    email?: string;
+    tags?: string[] | null;
     website?: string;
     instagram?: string;
     facebook?: string;
-    latitude?: number | null;
-    longitude?: number | null;
-    operating_hours?: Record<string, string> | null;
+    grabfood_url?: string;
+    menu_pdf_url?: string;
+    logo_image?: string;
+    cover_image?: string;
     is_published?: boolean;
     status?: string;
     platform_status?: string;
     business_status?: string;
-    features?: Record<string, boolean> | null;
-    logo_image?: string;
-    cover_image?: string;
-    menu_pdf_url?: string;
-    grabfood_url?: string;
   } | null;
   onBack: () => void;
   onSaved: () => void;
-  /** Non-blocking warning shown when the caller could not confirm this record is server-fresh
-   *  (e.g. the pre-edit refresh in MerchantManager failed) — the form still opens with the
-   *  best-available data rather than staying blank. */
+  /** Non-blocking warning shown when the caller could not confirm this record is server-fresh. */
   loadWarning?: string;
 }
 
-/** Layout choices come from lib/layout-registry.mjs — only production-ready layouts may be
- *  saved onto a merchant row, so unfinished layouts never appear here. */
+type Current = { id: string; name: string; slug: string };
+
 const LAYOUTS = getPersistableLayouts();
-
-const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-
-const FEATURES = [
+const LAYOUT_KEYS: readonly string[] = LAYOUTS.map((layout) => layout.key);
+const WRITABLE_FEATURES = [
   { key: 'hero', label: 'Hero', desc: 'Full-bleed cover image' },
   { key: 'about', label: 'About', desc: 'Brand story text' },
-  { key: 'menu', label: 'Menu', desc: 'Menu section with categories' },
-  { key: 'contact', label: 'Contact', desc: 'Contact info + WhatsApp CTA' },
-  { key: 'related', label: 'Related', desc: '"You May Also Like" merchants' },
-  { key: 'events', label: 'Events', desc: 'Events/promotions carousel' },
-  { key: 'video', label: 'Video', desc: 'Video player section' },
+  { key: 'contact', label: 'Contact', desc: 'Contact info (the phone/WhatsApp/email values are not changed)' },
   { key: 'gallery', label: 'Gallery', desc: 'Photo gallery' },
-  { key: 'testimonials', label: 'Testimonials', desc: 'Customer reviews' },
+  { key: 'events', label: 'Events', desc: 'Events/promotions carousel' },
+  { key: 'appointment', label: 'Book a Table', desc: 'Shown only when the restaurant has a valid WhatsApp number' },
+  { key: 'seasonal_popup', label: 'Seasonal popup', desc: 'Seasonal items popup' },
 ];
+const TAG_GROUPS = [
+  { path: 'tags.cuisine', label: 'Cuisine', options: CUISINE_TAGS, max: 3 },
+  { path: 'tags.amenities', label: 'Amenities', options: AMENITY_TAGS, max: 5 },
+  { path: 'tags.occasion', label: 'Occasion', options: OCCASION_TAGS, max: 3 },
+] as const;
 
-/* ── URL validation helpers ── */
-function isLikelyImageUrl(url: string): boolean {
-  if (!url.trim()) return true;
-  const clean = url.split('?')[0].toLowerCase();
-  return /\.(jpg|jpeg|png|webp|gif|svg|bmp)$/.test(clean);
+const panel = 'rounded-xl bg-white p-5 text-[#2C3E2D]';
+const input = 'mt-1 block w-full min-w-0 rounded-lg border border-[#C9D6C7] bg-white px-3 py-2 text-sm text-[#2C3E2D] focus:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-700/20';
+const labelClass = 'block text-sm font-medium text-[#2C3E2D]';
+
+function textOf(value: unknown) {
+  return typeof value === 'string' ? value : '';
 }
 
-function isLikelyPdfUrl(url: string): boolean {
-  if (!url.trim()) return true;
-  const clean = url.split('?')[0].toLowerCase();
-  return /\.pdf$/.test(clean);
-}
-
-function isValidHttpUrl(url: string): boolean {
-  if (!url.trim()) return true;
+function safeHref(value: unknown) {
+  if (typeof value !== 'string' || !value) return null;
   try {
-    const parsed = new URL(url.trim());
-    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    const url = new URL(value);
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : null;
   } catch {
-    return false;
+    return null;
   }
 }
 
-function isValidEmail(email: string): boolean {
-  if (!email.trim()) return true;
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+function PanelTitle({ title, note }: { title: string; note?: string }) {
+  return (
+    <div className="mb-4">
+      <h3 className="font-semibold text-[#2C3E2D]">{title}</h3>
+      {note && <p className="mt-1 text-xs text-[#6B6560]">{note}</p>}
+    </div>
+  );
 }
 
-function generateSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '');
+function ReadOnlyList({ items }: { items: { label: string; value: unknown; link?: boolean }[] }) {
+  return (
+    <dl className="grid gap-3 text-sm sm:grid-cols-2">
+      {items.map((item) => {
+        const href = item.link ? safeHref(item.value) : null;
+        return (
+          <div key={item.label} className="min-w-0">
+            <dt className="text-xs font-medium text-[#6B6560]">{item.label}</dt>
+            <dd className="mt-0.5 break-words">
+              {href ? <a href={href} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">{href}</a> : formatValue(item.value === '' ? null : item.value)}
+            </dd>
+          </div>
+        );
+      })}
+    </dl>
+  );
 }
 
-/* ── Toast type ── */
-interface Toast {
-  id: string;
-  message: string;
-  type: 'success' | 'error';
+/* ── generic sections ─────────────────────────────────────────────────────────────────────── */
+
+type TextFieldConfig = { path: string; label: string; multiline?: boolean; maxLength?: number; placeholder?: string };
+
+function TextFieldsSection({ id, title, fieldsConfig, ...props }: SectionProps & { id: string; title: string; fieldsConfig: TextFieldConfig[] }) {
+  const paths = useMemo(() => fieldsConfig.map((item) => item.path), [fieldsConfig]);
+  const section = useSectionSave(paths, props.fields, props.send, props.onConfirmed);
+  const { register } = props;
+  useEffect(() => { register(id, section.handle); return () => register(id, null); }, [id, register, section.handle]);
+  return (
+    <div className={panel}>
+      <PanelTitle title={title} />
+      <div className="space-y-4">
+        {fieldsConfig.map((item) => {
+          const error = section.state.error?.fieldErrors?.[item.path];
+          const common = {
+            id: `admin-${item.path}`,
+            value: textOf(section.state.draft[item.path]),
+            placeholder: item.placeholder,
+            maxLength: item.maxLength,
+            readOnly: props.readOnly,
+            'aria-invalid': Boolean(error),
+            className: input,
+            onChange: (event: { target: { value: string } }) => section.edit(item.path, event.target.value.trim() === '' ? null : event.target.value),
+          };
+          return (
+            <div key={item.path}>
+              <label htmlFor={`admin-${item.path}`} className={labelClass}>{item.label}</label>
+              {item.multiline ? <textarea {...common} rows={5} /> : <input {...common} />}
+              {error && <p className="mt-1 text-xs text-red-700">{error}</p>}
+            </div>
+          );
+        })}
+      </div>
+      <SectionSaveBar state={section.state} labels={fieldsConfig} canSave={section.canSave} dirty={section.dirty} readOnly={props.readOnly} lastOutcome={section.lastOutcome}
+        onSave={() => void section.save()} onRetry={() => void section.retry()} onKeepCurrent={section.chooseCurrent} onUseMine={section.chooseMine} />
+    </div>
+  );
 }
 
-const DEFAULT_DAY_HOURS: DayHours = { slots: [{ start: '', end: '' }], isClosed: false };
+function LayoutSection(props: SectionProps) {
+  const paths = useMemo(() => ['presentation.layout'], []);
+  const section = useSectionSave(paths, props.fields, props.send, props.onConfirmed);
+  const { register } = props;
+  useEffect(() => { register('layout', section.handle); return () => register('layout', null); }, [register, section.handle]);
+  const value = textOf(section.state.draft['presentation.layout']);
+  const known = LAYOUT_KEYS.includes(value);
+  return (
+    <div className={panel}>
+      <PanelTitle title="Layout" note={value && !known ? `Stored value "${value}" is not a production layout and renders as Classic. Choose one to replace it.` : undefined} />
+      <label htmlFor="admin-layout" className="sr-only">Layout</label>
+      <select id="admin-layout" value={known ? value : ''} disabled={props.readOnly} onChange={(event) => section.edit('presentation.layout', event.target.value)} className={input}>
+        {!known && <option value="" disabled>{value ? 'Not a production layout' : 'Classic (default)'}</option>}
+        {LAYOUTS.map((layout) => <option key={layout.key} value={layout.key}>{layout.displayName}</option>)}
+      </select>
+      <SectionSaveBar state={section.state} labels={[{ path: 'presentation.layout', label: 'Layout' }]} canSave={section.canSave} dirty={section.dirty} readOnly={props.readOnly} lastOutcome={section.lastOutcome}
+        onSave={() => void section.save()} onRetry={() => void section.retry()} onKeepCurrent={section.chooseCurrent} onUseMine={section.chooseMine} />
+    </div>
+  );
+}
+
+function TagsSection(props: SectionProps) {
+  const paths = useMemo(() => TAG_GROUPS.map((group) => group.path), []);
+  const section = useSectionSave(paths, props.fields, props.send, props.onConfirmed);
+  const { register } = props;
+  useEffect(() => { register('tags', section.handle); return () => register('tags', null); }, [register, section.handle]);
+  const toggle = (path: string, tag: string) => {
+    const current = Array.isArray(section.state.draft[path]) ? (section.state.draft[path] as string[]) : [];
+    section.edit(path, current.includes(tag) ? current.filter((item) => item !== tag) : [...current, tag]);
+  };
+  return (
+    <div className={panel}>
+      <PanelTitle title="Discovery tags" note="Each group is saved as a whole. Older tags that are no longer in the list stay until removed." />
+      <div className="space-y-5">
+        {TAG_GROUPS.map((group) => {
+          const selected = Array.isArray(section.state.draft[group.path]) ? (section.state.draft[group.path] as string[]) : [];
+          const legacy = selected.filter((tag) => !(group.options as readonly string[]).includes(tag));
+          const error = section.state.error?.fieldErrors?.[group.path];
+          return (
+            <fieldset key={group.path} disabled={props.readOnly}>
+              <legend className="text-sm font-medium">{group.label} <span className="font-normal text-[#6B6560]">({selected.length}/{group.max})</span></legend>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {[...group.options, ...legacy].map((tag) => {
+                  const on = selected.includes(tag);
+                  return (
+                    <button key={tag} type="button" aria-pressed={on} onClick={() => toggle(group.path, tag)}
+                      disabled={!on && selected.length >= group.max}
+                      className={`rounded-full border px-3 py-1 text-xs ${on ? 'border-emerald-700 bg-emerald-700 text-white' : 'border-[#C9D6C7] text-[#2C3E2D]'} disabled:opacity-40`}>
+                      {tag}{(group.options as readonly string[]).includes(tag) ? '' : ' (older tag)'}
+                    </button>
+                  );
+                })}
+              </div>
+              {error && <p className="mt-1 text-xs text-red-700">{error}</p>}
+            </fieldset>
+          );
+        })}
+      </div>
+      <SectionSaveBar state={section.state} labels={TAG_GROUPS.map((group) => ({ path: group.path, label: group.label }))} canSave={section.canSave} dirty={section.dirty} readOnly={props.readOnly} lastOutcome={section.lastOutcome}
+        onSave={() => void section.save()} onRetry={() => void section.retry()} onKeepCurrent={section.chooseCurrent} onUseMine={section.chooseMine} />
+    </div>
+  );
+}
+
+type LocationValue = { address: string | null; area: string | null; latitude: number | string | null; longitude: number | string | null };
+
+function LocationSection(props: SectionProps) {
+  const paths = useMemo(() => ['location'], []);
+  const section = useSectionSave(paths, props.fields, props.send, props.onConfirmed);
+  const [localError, setLocalError] = useState('');
+  const { register } = props;
+  useEffect(() => { register('location', section.handle); return () => register('location', null); }, [register, section.handle]);
+  const value = (section.state.draft.location as LocationValue | null) ?? { address: null, area: null, latitude: null, longitude: null };
+  const set = (key: keyof LocationValue, raw: string) => {
+    const text = raw.trim() === '' ? null : raw;
+    // Coordinates are numbers; while a typed value is not a number it stays text and saving is blocked.
+    const next = key === 'latitude' || key === 'longitude' ? (text === null ? null : Number.isFinite(Number(text)) ? Number(text) : text) : text;
+    section.edit('location', { ...value, [key]: next });
+    setLocalError('');
+  };
+  const save = () => {
+    if (typeof value.latitude === 'string' || typeof value.longitude === 'string') { setLocalError('Latitude and longitude must be numbers.'); return; }
+    if ((value.latitude === null) !== (value.longitude === null)) { setLocalError('Enter both latitude and longitude, or clear both.'); return; }
+    void section.save();
+  };
+  const error = localError || section.state.error?.fieldErrors?.location;
+  return (
+    <div className={panel}>
+      <PanelTitle title="Location" note="Address, area and coordinates are saved together so they cannot mismatch. 0 is a valid coordinate." />
+      <fieldset disabled={props.readOnly} className="grid gap-4 sm:grid-cols-2">
+        <div className="sm:col-span-2">
+          <label htmlFor="admin-address" className={labelClass}>Address</label>
+          <textarea id="admin-address" rows={2} maxLength={500} className={input} value={textOf(value.address)} onChange={(e) => set('address', e.target.value)} />
+        </div>
+        <div className="sm:col-span-2">
+          <label htmlFor="admin-area" className={labelClass}>Area</label>
+          <input id="admin-area" maxLength={160} className={input} value={textOf(value.area)} onChange={(e) => set('area', e.target.value)} />
+        </div>
+        {(['latitude', 'longitude'] as const).map((key) => (
+          <div key={key}>
+            <label htmlFor={`admin-${key}`} className={labelClass}>{key === 'latitude' ? 'Latitude' : 'Longitude'}</label>
+            <input id={`admin-${key}`} inputMode="decimal" className={input} value={value[key] === null ? '' : String(value[key])} onChange={(e) => set(key, e.target.value)} />
+          </div>
+        ))}
+      </fieldset>
+      {error && <p className="mt-2 text-xs text-red-700">{error}</p>}
+      <SectionSaveBar state={section.state} labels={[{ path: 'location', label: 'Location' }]} canSave={section.canSave} dirty={section.dirty} readOnly={props.readOnly} lastOutcome={section.lastOutcome}
+        onSave={save} onRetry={() => void section.retry()} onKeepCurrent={section.chooseCurrent} onUseMine={section.chooseMine} />
+    </div>
+  );
+}
+
+function FeaturesSection(props: SectionProps) {
+  const paths = useMemo(() => WRITABLE_FEATURES.map((feature) => `features.${feature.key}`), []);
+  const section = useSectionSave(paths, props.fields, props.send, props.onConfirmed);
+  const { register } = props;
+  useEffect(() => { register('features', section.handle); return () => register('features', null); }, [register, section.handle]);
+  const defaults = defaultFeatures as unknown as Record<string, boolean>;
+  return (
+    <div className={panel}>
+      <PanelTitle title="Page sections" note="A switch shows the page default until it has been set. Changing it back to the default leaves the stored value unset." />
+      <fieldset disabled={props.readOnly} className="grid gap-3 sm:grid-cols-2">
+        {WRITABLE_FEATURES.map((feature) => {
+          const path = `features.${feature.key}`;
+          const stored = section.state.baseline[path];
+          const draft = section.state.draft[path];
+          const shown = typeof draft === 'boolean' ? draft : Boolean(defaults[feature.key]);
+          return (
+            <label key={feature.key} className="flex items-start gap-3 rounded-lg border border-[#EEF2EC] p-3">
+              <input type="checkbox" className="mt-1 h-4 w-4" checked={shown}
+                onChange={() => {
+                  const next = !shown;
+                  // A default shown for a missing key is not a stored value: going back to it clears the edit.
+                  section.edit(path, !stored?.exists && next === Boolean(defaults[feature.key]) ? null : next);
+                }} />
+              <span>
+                <span className="block text-sm font-medium">{feature.label}{!stored?.exists && <span className="ml-1 text-xs font-normal text-[#6B6560]">(default)</span>}</span>
+                <span className="block text-xs text-[#6B6560]">{feature.desc}</span>
+              </span>
+            </label>
+          );
+        })}
+      </fieldset>
+      <SectionSaveBar state={section.state} labels={WRITABLE_FEATURES.map((feature) => ({ path: `features.${feature.key}`, label: feature.label }))} canSave={section.canSave} dirty={section.dirty} readOnly={props.readOnly} lastOutcome={section.lastOutcome}
+        onSave={() => void section.save()} onRetry={() => void section.retry()} onKeepCurrent={section.chooseCurrent} onUseMine={section.chooseMine} />
+    </div>
+  );
+}
+
+/* ── editor ───────────────────────────────────────────────────────────────────────────────── */
+
+const tabs = [
+  { label: 'Basic Info', icon: FileText },
+  { label: 'Contact', icon: Phone },
+  { label: 'Hours', icon: MapPin },
+  { label: 'Settings', icon: Globe },
+  { label: 'Images', icon: ImageIcon },
+  { label: 'Menu', icon: UtensilsCrossed },
+];
 
 export default function MerchantForm({ merchant, onBack, onSaved, loadWarning }: MerchantFormProps) {
   const { token } = useAuth();
-  const isEditing = !!merchant;
+  const [current, setCurrent] = useState<Current | null>(merchant ? { id: merchant.id, name: merchant.name, slug: merchant.slug } : null);
   const [activeTab, setActiveTab] = useState(0);
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [saveError, setSaveError] = useState('');
-  const [dirty, setDirty] = useState(false);
+  const [fields, setFields] = useState<Record<string, Snapshot> | null>(null);
+  const [loadError, setLoadError] = useState('');
+  const [loadId, setLoadId] = useState(0);
+  const [leavePrompt, setLeavePrompt] = useState<string | null>(null);
+  const [savingAll, setSavingAll] = useState(false);
+  const savingAllRef = useRef(false);
+  const pendingLeave = useRef<(() => void) | null>(null);
+  const leaveDialog = useRef<HTMLDivElement | null>(null);
+  const [createName, setCreateName] = useState('');
+  const [createSlug, setCreateSlug] = useState('');
+  const [createError, setCreateError] = useState('');
+  const [creating, setCreating] = useState(false);
+  const handles = useRef(new Map<string, SectionHandle>());
+  const loadSeq = useRef(0);
 
-  /* Toast state */
-  const [toasts, setToasts] = useState<Toast[]>([]);
+  // Profile images (M6b) are uploaded and bound through the media endpoint, not the section saves.
+  const mediaHeaders = useCallback(async () => (token ? { 'x-admin-token': token } : null), [token]);
 
-  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
-    const id = Math.random().toString(36).slice(2);
-    setToasts((prev) => [...prev, { id, message, type }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 3000);
-  };
+  const register = useCallback((id: string, handle: SectionHandle | null) => {
+    if (handle) handles.current.set(id, handle); else handles.current.delete(id);
+  }, []);
+  const onConfirmed = useCallback((values: Record<string, Snapshot>) => setFields((f) => (f ? { ...f, ...values } : f)), []);
 
-  const [form, setForm] = useState({
-    name: '',
-    slug: '',
-    tagline: '',
-    description: '',
-    layout: 'classic',
-    cuisine: [] as string[],
-    amenities: [] as string[],
-    occasion: [] as string[],
-    area: '',
-    payment_methods: '',
-    address: '',
-    phone: '',
-    whatsapp: '',
-    email: '',
-    website: '',
-    instagram: '',
-    facebook: '',
-    latitude: '',
-    longitude: '',
-    operating_hours: {
-      monday: '',
-      tuesday: '',
-      wednesday: '',
-      thursday: '',
-      friday: '',
-      saturday: '',
-      sunday: '',
-    },
-    is_published: false,
-    status: 'active',
-    platform_status: 'DRAFT',
-    business_status: 'OPEN',
-    features: {
-      hero: true,
-      about: true,
-      menu: true,
-      contact: true,
-      related: true,
-      events: false,
-      video: false,
-      gallery: false,
-      testimonials: false,
-    },
-    logo_image: '',
-    cover_image: '',
-    menu_pdf_url: '',
-    grabfood_url: '',
-  });
+  const load = useCallback(async (id: string) => {
+    const seq = ++loadSeq.current;
+    setFields(null);
+    setLoadError('');
+    try {
+      const response = await fetch(`/api/admin/merchants/${encodeURIComponent(id)}/fields`, { headers: { 'x-admin-token': token || '' }, cache: 'no-store' });
+      const data = await response.json().catch(() => ({}));
+      if (seq !== loadSeq.current) return;
+      if (!response.ok) { setLoadError(data?.error?.message || 'Could not load this restaurant.'); return; }
+      setFields(data.data.fields);
+      setLoadId(seq);
+    } catch {
+      if (seq === loadSeq.current) setLoadError('Could not reach the server.');
+    }
+  }, [token]);
 
-  /* Structured hours state for Admin editing */
-  const [hoursSlots, setHoursSlots] = useState<Record<string, DayHours>>(() =>
-    Object.fromEntries(DAYS.map((d) => [d, { ...DEFAULT_DAY_HOURS }]))
-  );
-  const originalOperatingHoursRef = useRef<Record<string, string>>({});
-  const initialHoursSlotsRef = useRef<Record<string, DayHours>>({});
+  // Reload only when the restaurant changes, not when its name or web address is updated here.
+  const currentId = current?.id ?? null;
+  useEffect(() => { if (currentId) void load(currentId); }, [currentId, load]);
 
-  /* Image preview error states */
-  const [logoError, setLogoError] = useState(false);
-  const [coverError, setCoverError] = useState(false);
+  const send: SendSave = useCallback(async (body) => {
+    if (!currentId || !token) {
+      return new Response(JSON.stringify({ error: { code: 'AUTH_REQUIRED', message: 'Your Admin session has ended. Sign in again in a new tab, then retry.' } }), { status: 401 });
+    }
+    return fetch(`/api/admin/merchants/${encodeURIComponent(currentId)}/fields`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
+      body: JSON.stringify(body),
+    });
+  }, [currentId, token]);
 
-  /* Payment methods custom input state */
-  const [paymentMethodInput, setPaymentMethodInput] = useState('');
+  const anyStatus = useCallback(() => {
+    const statuses = [...handles.current.values()].map((handle) => handle.status());
+    return { dirty: statuses.some((s) => s.dirty || s.conflicts), busy: savingAllRef.current || statuses.some((s) => s.pending || s.unknown) };
+  }, []);
 
-  /* Derived selected payment methods array */
-  const selectedPaymentMethods = form.payment_methods
-    ? form.payment_methods.split(',').map((t) => t.trim()).filter(Boolean)
-    : [];
+  const openLeavePrompt = useCallback((continueLeave: () => void) => {
+    // Keep the first destination, including when the user clicks the sidebar repeatedly.
+    if (pendingLeave.current) return;
+    pendingLeave.current = continueLeave;
+    const s = anyStatus();
+    setLeavePrompt(s.busy ? 'A save is still in progress or unconfirmed. Wait for it (or choose Retry) before leaving.' : '');
+  }, [anyStatus]);
 
-  const togglePaymentMethod = (pm: string) => {
-    const exists = selectedPaymentMethods.includes(pm);
-    const next = exists
-      ? selectedPaymentMethods.filter((t) => t !== pm)
-      : [...selectedPaymentMethods, pm];
-    updateField('payment_methods', next.join(', '));
-  };
+  const cancelLeave = useCallback(() => {
+    if (savingAllRef.current) return;
+    pendingLeave.current = null;
+    setLeavePrompt(null);
+  }, []);
 
-  const addCustomPaymentMethod = () => {
-    const raw = paymentMethodInput.trim();
-    if (!raw) return;
-    const newMethods = raw.split(',').map((t) => t.trim()).filter(Boolean);
-    const combined = [...new Set([...selectedPaymentMethods, ...newMethods])];
-    updateField('payment_methods', combined.join(', '));
-    setPaymentMethodInput('');
-  };
+  const promptOpen = leavePrompt !== null;
+  useEffect(() => {
+    if (!promptOpen) return;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const dialog = leaveDialog.current;
+    dialog?.querySelector<HTMLButtonElement>('button')?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { event.preventDefault(); cancelLeave(); return; }
+      if (event.key !== 'Tab' || !dialog) return;
+      const buttons = [...dialog.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')];
+      const first = buttons[0];
+      const last = buttons[buttons.length - 1];
+      if (!first) { event.preventDefault(); return; }
+      if (event.shiftKey && (document.activeElement === first || !dialog.contains(document.activeElement))) {
+        event.preventDefault(); last.focus();
+      } else if (!event.shiftKey && (document.activeElement === last || !dialog.contains(document.activeElement))) {
+        event.preventDefault(); first.focus();
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => { document.removeEventListener('keydown', onKeyDown); previousFocus?.focus(); };
+  }, [promptOpen, cancelLeave]);
 
-  const removePaymentMethod = (pm: string) => {
-    const next = selectedPaymentMethods.filter((t) => t !== pm);
-    updateField('payment_methods', next.join(', '));
-  };
+  // In-app navigation (sidebar, sign-out) asks before unmounting this editor.
+  useEffect(() => registerLeaveCheck(() => {
+    const s = anyStatus();
+    if (s.busy) return { block: true, message: 'A restaurant section is still saving or its result is unconfirmed. Wait for it (or choose Retry) before leaving.' };
+    if (s.dirty) return { block: false, message: 'You have unsaved restaurant changes.', prompt: openLeavePrompt };
+    return null;
+  }), [anyStatus, openLeavePrompt]);
 
   useEffect(() => {
-    if (merchant) {
-      setForm({
-        name: merchant.name || '',
-        slug: merchant.slug || '',
-        tagline: merchant.tagline || '',
-        description: merchant.description || '',
-        // `??` not `||`: a null layout is the ordinary default and normalises to classic, but an
-        // empty string is bad data and must stay visible rather than silently becoming classic.
-        layout: merchant.layout ?? 'classic',
-        cuisine: merchant.cuisine || [],
-        amenities: merchant.amenities || [],
-        occasion: merchant.occasion || [],
-        area: merchant.area || '',
-        payment_methods: merchant.payment_methods?.join(', ') || '',
-        address: merchant.address || '',
-        phone: merchant.phone || '',
-        whatsapp: merchant.whatsapp || '',
-        email: merchant.email || '',
-        website: merchant.website || '',
-        instagram: merchant.instagram || '',
-        facebook: merchant.facebook || '',
-        latitude: merchant.latitude?.toString() || '',
-        longitude: merchant.longitude?.toString() || '',
-        operating_hours: {
-          monday: merchant.operating_hours?.monday || '',
-          tuesday: merchant.operating_hours?.tuesday || '',
-          wednesday: merchant.operating_hours?.wednesday || '',
-          thursday: merchant.operating_hours?.thursday || '',
-          friday: merchant.operating_hours?.friday || '',
-          saturday: merchant.operating_hours?.saturday || '',
-          sunday: merchant.operating_hours?.sunday || '',
-        },
-        is_published: merchant.is_published ?? false,
-        status: merchant.status || 'active',
-        platform_status: merchant.platform_status || (merchant.is_published ? 'PUBLISHED' : 'DRAFT'),
-        business_status: merchant.business_status || (merchant.status === 'inactive' ? 'TEMPORARILY_CLOSED' : 'OPEN'),
-        features: {
-          hero: merchant.features?.hero ?? true,
-          about: merchant.features?.about ?? true,
-          menu: merchant.features?.menu ?? true,
-          contact: merchant.features?.contact ?? true,
-          related: merchant.features?.related ?? true,
-          events: merchant.features?.events ?? false,
-          video: merchant.features?.video ?? false,
-          gallery: merchant.features?.gallery ?? false,
-          testimonials: merchant.features?.testimonials ?? false,
-        },
-        logo_image: merchant.logo_image || '',
-        cover_image: merchant.cover_image || '',
-        menu_pdf_url: merchant.menu_pdf_url || '',
-        grabfood_url: merchant.grabfood_url || '',
-      });
+    const warn = (event: BeforeUnloadEvent) => { const s = anyStatus(); if (s.dirty || s.busy) event.preventDefault(); };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [anyStatus]);
 
-      /* Parse operating_hours into structured slots */
-      const parsed: Record<string, DayHours> = {};
-      for (const day of DAYS) {
-        parsed[day] = parseOperatingHoursString(merchant.operating_hours?.[day]);
-      }
-      originalOperatingHoursRef.current = { ...(merchant.operating_hours || {}) };
-      initialHoursSlotsRef.current = JSON.parse(JSON.stringify(parsed)) as Record<string, DayHours>;
-      setHoursSlots(parsed);
-
-      setLogoError(false);
-      setCoverError(false);
-      setPaymentMethodInput('');
-    }
-  }, [merchant]);
-
-  const updateField = (field: string, value: unknown) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-    setDirty(true);
-    if (errors[field]) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next[field];
-        return next;
-      });
-    }
-    /* Reset image errors when URL changes */
-    if (field === 'logo_image') setLogoError(false);
-    if (field === 'cover_image') setCoverError(false);
+  const leave = () => { onSaved(); onBack(); };
+  const requestBack = () => {
+    const s = anyStatus();
+    if (s.dirty || s.busy) { openLeavePrompt(leave); return; }
+    leave();
   };
-
-  const updateFeature = (key: string, checked: boolean) => {
-    setForm((prev) => ({
-      ...prev,
-      features: { ...prev.features, [key]: checked },
-    }));
-    setDirty(true);
+  const finishLeave = () => {
+    const s = anyStatus();
+    if (s.dirty || s.busy) { setLeavePrompt('Changes are still unsaved or unconfirmed. Stay here and resolve them before leaving.'); return; }
+    const continueLeave = pendingLeave.current;
+    pendingLeave.current = null;
+    setLeavePrompt(null);
+    continueLeave?.();
   };
-
-  const toggleControlledTag = (
-    field: 'cuisine' | 'amenities' | 'occasion',
-    tag: string,
-    max: number,
-  ) => {
-    const selected = form[field];
-    if (selected.includes(tag)) {
-      updateField(field, selected.filter((value) => value !== tag));
-      return;
-    }
-    if (selected.length < max) updateField(field, [...selected, tag]);
-  };
-
-  /* ── Hours slot helpers ── */
-  const addSlot = (day: string) => {
-    setHoursSlots((prev) => ({
-      ...prev,
-      [day]: { ...prev[day], slots: [...prev[day].slots, { start: '', end: '' }] },
-    }));
-    setDirty(true);
-  };
-
-  const removeSlot = (day: string, idx: number) => {
-    setHoursSlots((prev) => ({
-      ...prev,
-      [day]: { ...prev[day], slots: prev[day].slots.filter((_, i) => i !== idx) },
-    }));
-    setDirty(true);
-  };
-
-  const updateSlot = (day: string, idx: number, field: keyof TimeSlot, value: string) => {
-    setHoursSlots((prev) => {
-      const newSlots = [...prev[day].slots];
-      newSlots[idx] = { ...newSlots[idx], [field]: value };
-      return { ...prev, [day]: { ...prev[day], slots: newSlots } };
-    });
-    setDirty(true);
-  };
-
-  const setDayClosed = (day: string, closed: boolean) => {
-    setHoursSlots((prev) => ({
-      ...prev,
-      [day]: { slots: closed ? [] : [{ start: '', end: '' }], isClosed: closed },
-    }));
-    setDirty(true);
-  };
-
-  const copyMondayToAll = () => {
-    const monday = hoursSlots.monday;
-    setHoursSlots((prev) => {
-      const next = { ...prev };
-      for (const day of DAYS) {
-        if (day !== 'monday') {
-          next[day] = { slots: monday.slots.map((s) => ({ ...s })), isClosed: monday.isClosed };
+  const saveAllAndLeave = async () => {
+    if (!pendingLeave.current || anyStatus().busy) return;
+    // A ref closes the double-click gap before React renders the disabled buttons.
+    savingAllRef.current = true;
+    setSavingAll(true);
+    let savedAll = false;
+    try {
+      for (const handle of handles.current.values()) {
+        const status = handle.status();
+        if (status.pending || status.unknown) {
+          setLeavePrompt('A save is still in progress or unconfirmed. Wait for it (or choose Retry) before leaving.');
+          return;
+        }
+        if (!status.dirty && !status.conflicts) continue;
+        const outcome = await handle.save();
+        if (outcome !== 'saved' && outcome !== 'noop') {
+          setLeavePrompt('Not leaving: a section has a conflict or could not be saved. Sections saved before it stay saved. Cancel to resolve the section or retry an unconfirmed save.');
+          return;
         }
       }
-      return next;
-    });
-    setDirty(true);
-    showToast('Monday hours copied to all days', 'success');
+      // Ignore only our own loop lock; another section may have started a save in the meantime.
+      const statuses = [...handles.current.values()].map((handle) => handle.status());
+      if (statuses.some((s) => s.dirty || s.conflicts || s.pending || s.unknown)) {
+        setLeavePrompt('Changes are still unsaved or unconfirmed. Save or resolve those changes first.');
+        return;
+      }
+      savedAll = true;
+    } catch {
+      setLeavePrompt('Not leaving: a section could not be saved. Sections saved before it stay saved. Cancel to check the section.');
+    } finally {
+      savingAllRef.current = false;
+      setSavingAll(false);
+    }
+    if (savedAll) finishLeave();
+  };
+  const discardAndLeave = () => {
+    if (!pendingLeave.current || anyStatus().busy) return;
+    for (const handle of handles.current.values()) handle.discard();
+    finishLeave();
   };
 
-  useEffect(() => {
-    if (!dirty) return;
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-      event.returnValue = '';
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [dirty]);
+  const create = async () => {
+    setCreating(true);
+    setCreateError('');
+    try {
+      const response = await fetch('/api/admin/merchants-crud', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-token': token || '' },
+        body: JSON.stringify(createSlug.trim() ? { name: createName, slug: createSlug.trim() } : { name: createName }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) { setCreateError(data.error || 'The restaurant could not be created.'); return; }
+      // Stay in the editor for the new draft; the list refreshes when the editor is closed.
+      setCurrent(data.merchant as Current);
+    } catch {
+      setCreateError('Could not reach the server.');
+    } finally {
+      setCreating(false);
+    }
+  };
 
-  const hasUnchangedLegacyHours = (day: string): boolean => {
-    const original = originalOperatingHoursRef.current[day];
-    return Boolean(
-      original
-      && !isValidOperatingHours(original)
-      && JSON.stringify(hoursSlots[day]) === JSON.stringify(initialHoursSlotsRef.current[day])
+  const header = (
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <button type="button" onClick={requestBack} className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-200">
+        <ArrowLeft className="h-4 w-4" /> Back to merchants
+      </button>
+      {current && <p className="text-sm text-slate-400">Editing <span className="font-medium text-slate-100">{current.name}</span> · /{current.slug}</p>}
+    </div>
+  );
+
+  if (!current) {
+    return (
+      <div className="space-y-6">
+        {header}
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+          <div className={panel}>
+            <PanelTitle title="New restaurant" note="Creates a hidden draft. Fill in the details after it is created; it is not published." />
+            <label htmlFor="create-name" className={labelClass}>Name</label>
+            <input id="create-name" className={input} maxLength={160} value={createName} onChange={(e) => setCreateName(e.target.value)} />
+            <label htmlFor="create-slug" className={`${labelClass} mt-4`}>Web address (optional)</label>
+            <input id="create-slug" className={input} maxLength={64} placeholder="generated from the name" value={createSlug} onChange={(e) => setCreateSlug(e.target.value)} />
+            <p className="mt-1 text-xs text-[#6B6560]">Lowercase letters, numbers and hyphens. It cannot be changed here later.</p>
+            {createError && <p className="mt-2 text-sm text-red-700" role="alert">{createError}</p>}
+            <button type="button" disabled={creating || !createName.trim()} onClick={() => void create()} className="mt-4 rounded-lg bg-[#2C3E2D] px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
+              {creating ? 'Creating…' : 'Create draft'}
+            </button>
+          </div>
+        </div>
+      </div>
     );
-  };
+  }
 
-  const buildOperatingHoursPayload = (): Record<string, string> => {
-    const payload: Record<string, string> = {};
-    for (const day of DAYS) {
-      if (hasUnchangedLegacyHours(day)) {
-        payload[day] = originalOperatingHoursRef.current[day];
-        continue;
-      }
-      const value = formatOperatingHoursToString(hoursSlots[day]);
-      if (value) payload[day] = value;
-    }
-    return payload;
-  };
-
-  const validate = (): boolean => {
-    const newErrors: Record<string, string> = {};
-    if (!form.name.trim()) newErrors.name = 'Name is required';
-    if (!form.slug.trim()) newErrors.slug = 'Slug is required';
-    else if (!/^[a-z0-9-]+$/.test(form.slug)) {
-      newErrors.slug = 'Slug can only contain lowercase letters, numbers, and hyphens';
-    }
-    if (
-      form.whatsapp.trim()
-      && form.whatsapp.trim() !== (merchant?.whatsapp || '').trim()
-      && !normalizeBookingWhatsApp(form.whatsapp)
-    ) {
-      newErrors.whatsapp = 'Enter an international number with the country code (for example 60123456789), or leave it empty';
-    }
-    if (form.cuisine.length > 3) newErrors.cuisine = 'Choose at most 3 cuisine tags';
-    if (form.amenities.length > 5) newErrors.amenities = 'Choose at most 5 amenity tags';
-    if (form.occasion.length > 3) newErrors.occasion = 'Choose at most 3 occasion tags';
-    if (!isValidEmail(form.email)) newErrors.email = 'Enter a valid email address';
-    for (const day of DAYS) {
-      const slots = hoursSlots[day].slots;
-      const hasPartialSlot = slots.some((slot) => Boolean(slot.start.trim()) !== Boolean(slot.end.trim()));
-      const value = formatOperatingHoursToString(hoursSlots[day]);
-      if (hasPartialSlot || (value && !isValidOperatingHours(value) && !hasUnchangedLegacyHours(day))) {
-        newErrors.operating_hours = 'Each opening-hours slot must use a valid start and end time (for example, 09:00 - 18:00).';
-        break;
-      }
-    }
-
-    const urlFields: Array<[keyof typeof form, string]> = [
-      ['grabfood_url', 'GrabFood URL'],
-      ['website', 'Website URL'],
-      ['instagram', 'Instagram URL'],
-      ['facebook', 'Facebook URL'],
-      ['logo_image', 'Logo image URL'],
-      ['cover_image', 'Cover image URL'],
-      ['menu_pdf_url', 'Menu PDF URL'],
-    ];
-    for (const [field, label] of urlFields) {
-      const value = form[field];
-      if (typeof value === 'string' && value.trim() && !isValidHttpUrl(value)) {
-        newErrors[field] = `${label} must start with http:// or https://`;
-      }
-    }
-
-    const latitude = form.latitude.trim();
-    if (latitude && (!Number.isFinite(Number(latitude)) || Number(latitude) < -90 || Number(latitude) > 90)) {
-      newErrors.latitude = 'Latitude must be between -90 and 90';
-    }
-    const longitude = form.longitude.trim();
-    if (longitude && (!Number.isFinite(Number(longitude)) || Number(longitude) < -180 || Number(longitude) > 180)) {
-      newErrors.longitude = 'Longitude must be between -180 and 180';
-    }
-    setErrors(newErrors);
-    const firstError = Object.keys(newErrors)[0];
-    if (firstError) {
-      const errorTab = new Set(['name', 'slug', 'cuisine', 'amenities', 'occasion', 'area', 'payment_methods']).has(firstError)
-        ? 0
-        : new Set(['whatsapp', 'phone', 'email', 'website', 'instagram', 'facebook', 'grabfood_url', 'latitude', 'longitude']).has(firstError)
-          ? 1
-          : firstError === 'operating_hours'
-            ? 2
-          : new Set(['logo_image', 'cover_image', 'menu_pdf_url']).has(firstError)
-            ? 4
-            : 0;
-      setActiveTab(errorTab);
-    }
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSave = async () => {
-    if (!validate()) return;
-    setSaving(true);
-    setSaveError('');
-
-    /* Build operating_hours from structured slots */
-    const operatingHoursPayload = buildOperatingHoursPayload();
-
-    const payload: Record<string, unknown> = {
-      name: form.name,
-      slug: form.slug,
-      tagline: form.tagline || null,
-      description: form.description || null,
-      cuisine: form.cuisine,
-      amenities: form.amenities,
-      occasion: form.occasion,
-      area: form.area || null,
-      payment_methods: form.payment_methods ? form.payment_methods.split(',').map((t) => t.trim()).filter(Boolean) : null,
-      address: form.address || null,
-      phone: form.phone || null,
-      whatsapp: form.whatsapp,
-      email: form.email || null,
-      website: form.website || null,
-      instagram: form.instagram || null,
-      facebook: form.facebook || null,
-      latitude: form.latitude ? parseFloat(form.latitude) : null,
-      longitude: form.longitude ? parseFloat(form.longitude) : null,
-      operating_hours: operatingHoursPayload,
-      is_published: form.is_published,
-      status: form.status,
-      platform_status: form.platform_status,
-      business_status: form.business_status,
-      features: form.features,
-      logo_image: form.logo_image || null,
-      cover_image: form.cover_image || null,
-      menu_pdf_url: form.menu_pdf_url || null,
-      grabfood_url: form.grabfood_url || null,
-    };
-
-    // The API whitelists layout strictly. If this merchant still holds a historical value that is
-    // unknown or not public-ready, omit the field instead of resubmitting it: every other field
-    // keeps saving normally, and the bad value is only corrected once an operator picks a layout.
-    if (isPersistableLayout(form.layout)) {
-      payload.layout = form.layout;
-    }
-
-    if (isEditing) {
-      payload.id = merchant!.id;
-    }
-
-    try {
-      const res = await fetch('/api/admin/merchants-crud', {
-        method: isEditing ? 'PUT' : 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-admin-token': token || '',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Save failed');
-      }
-      showToast(isEditing ? 'Merchant updated successfully' : 'Merchant created successfully', 'success');
-      setDirty(false);
-      onSaved();
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Save failed';
-      setSaveError(msg);
-      showToast(msg, 'error');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleBack = () => {
-    if (dirty && !window.confirm('You have unsaved changes. Leave without saving?')) return;
-    onBack();
-  };
-
-  const handleDelete = async () => {
-    if (!merchant) return;
-    setDeleting(true);
-    try {
-      const res = await fetch(`/api/admin/merchants-crud?id=${merchant.id}`, {
-        method: 'DELETE',
-        headers: { 'x-admin-token': token || '' },
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Delete failed');
-      }
-      showToast('Merchant deleted successfully', 'success');
-      onSaved();
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Delete failed';
-      setSaveError(msg);
-      showToast(msg, 'error');
-    } finally {
-      setDeleting(false);
-      setShowDeleteConfirm(false);
-    }
-  };
-
-  const tabs = [
-    { label: 'Basic Info', icon: FileText },
-    { label: 'Contact', icon: Phone },
-    { label: 'Hours', icon: MapPin },
-    { label: 'Settings', icon: Globe },
-    { label: 'Images', icon: ImageIcon },
-    { label: 'Menu', icon: UtensilsCrossed },
-  ];
-
-  /* URL warning helpers */
-  const websiteWarning = form.website && !isValidHttpUrl(form.website);
-  const instagramWarning = form.instagram && !isValidHttpUrl(form.instagram);
-  const facebookWarning = form.facebook && !isValidHttpUrl(form.facebook);
-  const logoWarning = form.logo_image && !isLikelyImageUrl(form.logo_image);
-  const coverWarning = form.cover_image && !isLikelyImageUrl(form.cover_image);
-  const pdfWarning = form.menu_pdf_url && !isLikelyPdfUrl(form.menu_pdf_url);
+  const sectionKey = `${current.id}:${loadId}`;
+  const readOnly = false; // Admin: the database refuses archived/pending restaurants and says why.
+  const props = fields ? { fields, send, readOnly, register, onConfirmed } : null;
+  const stored = (path: string) => snapshotValue(fields?.[path]);
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <button
-          onClick={handleBack}
-          className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
-        <div>
-          <h1 className="text-2xl font-bold text-white">
-            {isEditing ? 'Edit Merchant' : 'New Merchant'}
-          </h1>
-          <p className="text-slate-400 text-sm">
-            {isEditing ? `Editing ${merchant?.name}` : 'Create a new restaurant partner'}
-          </p>
-        </div>
-      </div>
+      {header}
+      {loadWarning && <p className="rounded-lg border border-amber-500/30 bg-amber-950/40 px-4 py-2 text-sm text-amber-300">{loadWarning}</p>}
 
-      {loadWarning && (
-        <div className="flex items-center gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-amber-300 text-sm">
-          <AlertTriangle className="w-4 h-4 shrink-0" />
-          {loadWarning}
-        </div>
-      )}
-
-      {saveError && (
-        <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
-          <AlertCircle className="w-4 h-4 shrink-0" />
-          {saveError}
-        </div>
-      )}
-
-      {Object.keys(errors).length > 0 && (
-        <div className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-amber-300 text-sm">
-          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-          <p>
-            Please fix the highlighted fields before saving:{' '}
-            {Object.keys(errors).map((field) => field.replace(/_/g, ' ')).join(', ')}.
-          </p>
-        </div>
-      )}
-
-      {/* Toast Container */}
-      <div className="fixed top-4 right-4 z-[60] space-y-2">
-        {toasts.map((t) => (
-          <div
-            key={t.id}
-            className={`flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg border text-sm font-medium transition-all animate-in slide-in-from-right ${
-              t.type === 'success'
-                ? 'bg-emerald-950/90 border-emerald-500/30 text-emerald-400'
-                : 'bg-red-950/90 border-red-500/30 text-red-400'
-            }`}
-          >
-            {t.type === 'success' ? (
-              <Check className="w-4 h-4 shrink-0" />
-            ) : (
-              <AlertCircle className="w-4 h-4 shrink-0" />
-            )}
-            {t.message}
+      {leavePrompt !== null && (
+        <div ref={leaveDialog} role="dialog" aria-modal="true" aria-labelledby="leave-title" className="fixed inset-0 z-[60] flex items-end justify-center bg-black/50 p-4 sm:items-center">
+          <div className="w-full max-w-md rounded-2xl bg-white p-5 text-[#2C3E2D] shadow-xl">
+            <h2 id="leave-title" className="font-semibold">Unsaved changes</h2>
+            <p className="mt-2 text-sm">{leavePrompt || `You have unsaved changes for ${current.name}. Save them, discard them, or stay.`}</p>
+            <div className="mt-5 flex flex-wrap justify-end gap-2">
+              <button type="button" disabled={savingAll} onClick={cancelLeave} className="rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50">Cancel</button>
+              {(!anyStatus().busy || savingAll) && (
+                <>
+                  <button type="button" disabled={savingAll} onClick={discardAndLeave} className="rounded-lg border border-red-700 px-4 py-2 text-sm font-medium text-red-700">Discard</button>
+                  <button type="button" disabled={savingAll} onClick={() => void saveAllAndLeave()} className="rounded-lg bg-[#2C3E2D] px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{savingAll ? 'Saving…' : 'Save'}</button>
+                </>
+              )}
+            </div>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
 
-      {/* Tab Navigation */}
       <div className="flex gap-2 overflow-x-auto pb-2">
         {tabs.map((tab, idx) => {
           const Icon = tab.icon;
           const isActive = activeTab === idx;
           return (
-            <button
-              key={tab.label}
-              onClick={() => setActiveTab(idx)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                isActive
-                  ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent'
-              }`}
-            >
+            <button key={tab.label} type="button" onClick={() => setActiveTab(idx)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${isActive ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent'}`}>
               <Icon className="w-4 h-4" />
               {tab.label}
             </button>
@@ -722,780 +588,62 @@ export default function MerchantForm({ merchant, onBack, onSaved, loadWarning }:
         })}
       </div>
 
-      {/* Tab Content */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-6">
-        {/* Tab 1: Basic Info */}
-        {activeTab === 0 && (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">
-                Restaurant Name <span className="text-red-400">*</span>
-              </label>
-              <input
-                type="text"
-                value={form.name}
-                onChange={(e) => {
-                  updateField('name', e.target.value);
-                  if (!isEditing && !form.slug) {
-                    updateField('slug', generateSlug(e.target.value));
-                  }
-                }}
-                placeholder="e.g. The Hearth Bakery"
-                className={`w-full px-4 py-2.5 bg-slate-950 border rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors ${
-                  errors.name ? 'border-red-500/50' : 'border-slate-700'
-                }`}
-              />
-              {errors.name && <p className="mt-1 text-xs text-red-400">{errors.name}</p>}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">
-                Slug <span className="text-red-400">*</span>
-              </label>
-              <div className="flex items-center gap-2">
-                <span className="text-slate-500 text-sm shrink-0">/store/</span>
-                <input
-                  type="text"
-                  value={form.slug}
-                  onChange={(e) => updateField('slug', e.target.value)}
-                  placeholder="the-hearth-bakery"
-                  className={`flex-1 px-4 py-2.5 bg-slate-950 border rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors ${
-                    errors.slug ? 'border-red-500/50' : 'border-slate-700'
-                  }`}
-                />
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 sm:p-6 space-y-4">
+        {loadError && <p className="rounded-lg bg-red-950/40 px-4 py-3 text-sm text-red-300" role="alert">{loadError} <button type="button" className="ml-2 underline" onClick={() => void load(current.id)}>Try again</button></p>}
+        {!props && !loadError && <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-amber-500" /></div>}
+        {props && (
+          <>
+            {/* Tabs stay mounted so unsaved edits survive switching tabs. */}
+            <div hidden={activeTab !== 0} className="space-y-4">
+              <TextFieldsSection key={`name:${sectionKey}`} id="name" title="Name" fieldsConfig={[{ path: 'profile.name', label: 'Restaurant name', maxLength: 160 }]} {...props} />
+              <TextFieldsSection key={`about:${sectionKey}`} id="about" title="About" fieldsConfig={[{ path: 'profile.tagline', label: 'Tagline', maxLength: 300 }, { path: 'profile.description', label: 'Description', multiline: true, maxLength: 10000 }]} {...props} />
+              <LayoutSection key={`layout:${sectionKey}`} {...props} />
+              <TagsSection key={`tags:${sectionKey}`} {...props} />
+              <div className={panel}>
+                <PanelTitle title="Web address" note="Renaming keeps old links working: they redirect permanently to the new address." />
+                <MerchantSlugPanel key={`slug:${current.id}`} merchantId={current.id} token={token} onChanged={(slug) => setCurrent((c) => (c ? { ...c, slug } : c))} />
               </div>
-              {errors.slug ? (
-                <p className="mt-1 text-xs text-red-400">{errors.slug}</p>
-              ) : (
-                <p className="mt-1 text-xs text-slate-500">
-                  URL-friendly name. Auto-generated from name. Use only lowercase letters, numbers, and hyphens.
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Tagline</label>
-              <input
-                type="text"
-                value={form.tagline}
-                onChange={(e) => updateField('tagline', e.target.value)}
-                placeholder="Short catchy phrase"
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Description</label>
-              <textarea
-                value={form.description}
-                onChange={(e) => updateField('description', e.target.value)}
-                placeholder="Full description of the restaurant..."
-                rows={4}
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors resize-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Layout</label>
-              {!isPersistableLayout(form.layout) && (
-                <p className="mb-2 flex items-start gap-2 text-xs text-amber-400">
-                  <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-                  <span>
-                    {isLayoutKey(form.layout)
-                      ? 'Saved layout is not yet public-ready. Public page currently renders as Classic. Choose a layout to correct this value.'
-                      : 'Unknown saved layout. Public page currently renders as Classic. Choose a layout to correct this value.'}
-                  </span>
-                </p>
-              )}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {LAYOUTS.map((l) => (
-                  <button
-                    key={l.key}
-                    onClick={() => updateField('layout', l.key)}
-                    className={`p-3 rounded-lg border text-left transition-colors ${
-                      form.layout === l.key
-                        ? 'bg-amber-500/10 border-amber-500/30 text-amber-400'
-                        : 'bg-slate-950 border-slate-700 text-slate-400 hover:border-slate-600'
-                    }`}
-                  >
-                    <div className="font-medium text-sm">{l.displayName}</div>
-                    <div className="text-xs mt-0.5 opacity-70">{l.shortDescription}</div>
-                  </button>
-                ))}
+              <div className={panel}>
+                <PanelTitle title="Not editable here" note="Payment methods and legacy tags need a defined list." />
+                <ReadOnlyList items={[
+                  { label: 'Payment methods', value: merchant?.payment_methods ?? null },
+                  { label: 'Legacy tags', value: merchant?.tags ?? null },
+                ]} />
               </div>
             </div>
-
-            {/* Area */}
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Area</label>
-              <select
-                value={AREAS.includes(form.area as (typeof AREAS)[number]) ? form.area : 'Other'}
-                onChange={(e) => updateField('area', e.target.value === 'Other' ? '' : e.target.value)}
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white focus:border-amber-500 focus:outline-none transition-colors mb-2"
-              >
-                <option value="" disabled>Select area...</option>
-                {AREAS.map((a) => <option key={a} value={a}>{a}</option>)}
-                <option value="Other">Other (custom)</option>
-              </select>
-              {(!form.area || !AREAS.includes(form.area as (typeof AREAS)[number])) && (
-                <input
-                  type="text"
-                  value={form.area}
-                  onChange={(e) => updateField('area', e.target.value)}
-                  placeholder="Enter custom area"
-                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors"
-                />
-              )}
-            </div>
-
-            {([
-              { field: 'cuisine' as const, label: 'Cuisine', help: 'Choose up to 3', values: CUISINE_TAGS, max: 3 },
-              { field: 'amenities' as const, label: 'Amenities', help: 'Choose up to 5', values: AMENITY_TAGS, max: 5 },
-              { field: 'occasion' as const, label: 'Occasion', help: 'Choose up to 3', values: OCCASION_TAGS, max: 3 },
-            ]).map(({ field, label, help, values, max }) => (
-              <div key={field}>
-                <div className="flex items-center justify-between gap-3 mb-2">
-                  <label className="block text-sm font-medium text-slate-300">{label}</label>
-                  <span className={form[field].length >= max ? 'text-xs text-amber-400' : 'text-xs text-slate-500'}>
-                    {form[field].length >= max ? `Maximum ${max}` : `${form[field].length}/${max} · ${help}`}
-                  </span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {values.map((tag) => {
-                    const active = form[field].includes(tag);
-                    const disabled = !active && form[field].length >= max;
-                    return (
-                      <button
-                        key={tag}
-                        type="button"
-                        disabled={disabled}
-                        onClick={() => toggleControlledTag(field, tag, max)}
-                        className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                          active
-                            ? 'bg-amber-500/10 border-amber-500/30 text-amber-400'
-                            : disabled
-                              ? 'bg-slate-950 border-slate-800 text-slate-700 cursor-not-allowed'
-                              : 'bg-slate-950 border-slate-700 text-slate-400 hover:border-slate-600'
-                        }`}
-                      >
-                        {active && <Check className="w-3 h-3" />}
-                        {tag}
-                      </button>
-                    );
-                  })}
-                </div>
-                {errors[field] && <p className="mt-2 text-xs text-red-400">{errors[field]}</p>}
-              </div>
-            ))}
-
-            {/* Payment Methods */}
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Payment Methods</label>
-              
-              {/* Preset payment method pills */}
-              <div className="flex flex-wrap gap-2 mb-3">
-                {PAYMENT_METHODS.map((pm) => {
-                  const active = selectedPaymentMethods.includes(pm);
-                  return (
-                    <button
-                      key={pm}
-                      type="button"
-                      onClick={() => togglePaymentMethod(pm)}
-                      className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                        active
-                          ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                          : 'bg-slate-950 border-slate-700 text-slate-400 hover:border-slate-600'
-                      }`}
-                    >
-                      {active && <Check className="w-3 h-3" />}
-                      {pm}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Custom payment method input */}
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={paymentMethodInput}
-                  onChange={(e) => setPaymentMethodInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addCustomPaymentMethod();
-                    }
-                  }}
-                  placeholder="Add custom payment method (press Enter or click +)"
-                  className="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors"
-                />
-                <button
-                  type="button"
-                  onClick={addCustomPaymentMethod}
-                  className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors"
-                  title="Add payment method"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Selected payment methods display */}
-              {selectedPaymentMethods.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {selectedPaymentMethods.map((pm) => (
-                    <span
-                      key={pm}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-xs text-emerald-400"
-                    >
-                      {pm}
-                      <button
-                        type="button"
-                        onClick={() => removePaymentMethod(pm)}
-                        className="hover:text-emerald-300 transition-colors"
-                        title="Remove payment method"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Tab 2: Contact */}
-        {activeTab === 1 && (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Address</label>
-              <textarea
-                value={form.address}
-                onChange={(e) => updateField('address', e.target.value)}
-                placeholder="Full address"
-                rows={3}
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors resize-none"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1.5">Phone</label>
-                <input
-                  type="text"
-                  value={form.phone}
-                  onChange={(e) => updateField('phone', e.target.value)}
-                  placeholder="Display phone number"
-                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1.5">
-                  WhatsApp <span className="text-slate-500 font-normal">(optional)</span>
-                </label>
-                <input
-                  type="text"
-                  value={form.whatsapp}
-                  onChange={(e) => updateField('whatsapp', e.target.value)}
-                  placeholder="60123456789"
-                  className={`w-full px-4 py-2.5 bg-slate-950 border rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors ${
-                    errors.whatsapp ? 'border-red-500/50' : 'border-slate-700'
-                  }`}
-                />
-                {errors.whatsapp && <p className="mt-1 text-xs text-red-400">{errors.whatsapp}</p>}
-                <p className="mt-1 text-xs text-slate-500">The restaurant&apos;s own WhatsApp, with country code (for example 60123456789). Leave empty if it has none: Book a Table is then hidden on the public page.</p>
+            <div hidden={activeTab !== 1} className="space-y-4">
+              <TextFieldsSection key={`contact:${sectionKey}`} id="contact" title="Contact" fieldsConfig={[{ path: 'profile.phone', label: 'Phone' }, { path: 'profile.whatsapp', label: 'WhatsApp (optional; international, e.g. +60 12-345 6789)' }, { path: 'profile.email', label: 'Email' }]} {...props} />
+              <LocationSection key={`location:${sectionKey}`} {...props} />
+              <div className={panel}>
+                <PanelTitle title="Links" note="Links must use https. Owner requests wait on the Change Requests page; saving here replaces a waiting request." />
+                <MerchantLinksPanel key={`links:${current.id}`} merchantId={current.id} token={token} />
               </div>
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Email</label>
-              <input
-                type="email"
-                value={form.email}
-                onChange={(e) => updateField('email', e.target.value)}
-                placeholder="hello@restaurant.com"
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors"
-              />
+            <div hidden={activeTab !== 2} className={panel}>
+              <PanelTitle title="Opening hours" note="Each day is saved separately from other editors' changes. Older text values stay unless you change that day." />
+              <HoursSection key={`hours:${sectionKey}`} {...props} />
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">GrabFood URL</label>
-              <input
-                type="url"
-                value={form.grabfood_url}
-                onChange={(e) => updateField('grabfood_url', e.target.value)}
-                placeholder="https://food.grab.com/..."
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors"
-              />
-              <p className="mt-1 text-xs text-slate-500">Optional. This opens the merchant&apos;s own GrabFood store; BiteSite never processes an order or payment.</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Website</label>
-              <input
-                type="text"
-                value={form.website}
-                onChange={(e) => updateField('website', e.target.value)}
-                placeholder="https://restaurant.com"
-                className={`w-full px-4 py-2.5 bg-slate-950 border rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors ${
-                  websiteWarning ? 'border-yellow-500/50' : 'border-slate-700'
-                }`}
-              />
-              {websiteWarning && (
-                <p className="mt-1 text-xs text-yellow-400 flex items-center gap-1">
-                  <AlertTriangle className="w-3 h-3" />
-                  URL should start with https://
-                </p>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1.5">Instagram</label>
-                <input
-                  type="text"
-                  value={form.instagram}
-                  onChange={(e) => updateField('instagram', e.target.value)}
-                  placeholder="https://instagram.com/..."
-                  className={`w-full px-4 py-2.5 bg-slate-950 border rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors ${
-                    instagramWarning ? 'border-yellow-500/50' : 'border-slate-700'
-                  }`}
-                />
-                {instagramWarning && (
-                  <p className="mt-1 text-xs text-yellow-400 flex items-center gap-1">
-                    <AlertTriangle className="w-3 h-3" />
-                    URL should start with https://
-                  </p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1.5">Facebook</label>
-                <input
-                  type="text"
-                  value={form.facebook}
-                  onChange={(e) => updateField('facebook', e.target.value)}
-                  placeholder="https://facebook.com/..."
-                  className={`w-full px-4 py-2.5 bg-slate-950 border rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors ${
-                    facebookWarning ? 'border-yellow-500/50' : 'border-slate-700'
-                  }`}
-                />
-                {facebookWarning && (
-                  <p className="mt-1 text-xs text-yellow-400 flex items-center gap-1">
-                    <AlertTriangle className="w-3 h-3" />
-                    URL should start with https://
-                  </p>
-                )}
+            <div hidden={activeTab !== 3} className="space-y-4">
+              <FeaturesSection key={`features:${sectionKey}`} {...props} />
+              <MerchantStatusPanel key={`status:${current.id}`} merchantId={current.id} merchantName={current.name} token={token} />
+              <MerchantHistoryPanel key={`history:${current.id}`} merchantId={current.id} token={token} />
+              <div className={panel}>
+                <PanelTitle title="Not editable here" note="The menu section is always shown; it cannot be switched off." />
+                <ReadOnlyList items={[
+                  { label: 'Menu section (protected)', value: stored('features.menu') ?? '(default)' },
+                ]} />
               </div>
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1.5">Latitude</label>
-                <input
-                  type="text"
-                  value={form.latitude}
-                  onChange={(e) => updateField('latitude', e.target.value)}
-                  placeholder="3.1489"
-                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1.5">Longitude</label>
-                <input
-                  type="text"
-                  value={form.longitude}
-                  onChange={(e) => updateField('longitude', e.target.value)}
-                  placeholder="101.7103"
-                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors"
-                />
-              </div>
+            <div hidden={activeTab !== 4} className={panel}>
+              <PanelTitle title="Images" note="Photos are resized on the device and checked by the server before they appear on the restaurant page." />
+              <ProfileImagesPanel key={`media:${current.id}`} apiBase={`/api/admin/merchants/${encodeURIComponent(current.id)}/media`} getHeaders={mediaHeaders} />
             </div>
-          </div>
-        )}
-
-        {/* Tab 3: Hours — Structured */}
-        {activeTab === 2 && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-slate-400">
-                Add time slots for each day. Click <strong className="text-slate-300">Closed</strong> if not open.
-              </p>
-              <button
-                onClick={copyMondayToAll}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg transition-colors"
-              >
-                <Copy className="w-3 h-3" />
-                Copy Monday to all
-              </button>
+            <div hidden={activeTab !== 5}>
+              <MenuEditor merchantId={current.id} merchantName={current.name} />
             </div>
-
-            <div className="grid gap-3">
-              {DAYS.map((day) => {
-                const dayData = hoursSlots[day];
-                const isClosed = dayData.isClosed;
-
-                return (
-                  <div
-                    key={day}
-                    className={`p-4 rounded-lg border transition-colors ${
-                      isClosed
-                        ? 'bg-slate-950/50 border-slate-800'
-                        : 'bg-slate-950 border-slate-700'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-sm font-medium text-slate-300 capitalize">{day}</span>
-                      <button
-                        onClick={() => setDayClosed(day, !isClosed)}
-                        className={`text-xs font-medium px-2.5 py-1 rounded-md transition-colors ${
-                          isClosed
-                            ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'
-                            : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-300'
-                        }`}
-                      >
-                        {isClosed ? 'Set as Open' : 'Set as Closed'}
-                      </button>
-                    </div>
-
-                    {isClosed ? (
-                      <p className="text-sm text-slate-500 italic">Closed</p>
-                    ) : (
-                      <div className="space-y-2">
-                        {dayData.slots.map((slot, idx) => (
-                          <div key={idx} className="flex items-center gap-2">
-                            <Clock className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                            <input
-                              type="text"
-                              value={slot.start}
-                              onChange={(e) => updateSlot(day, idx, 'start', e.target.value)}
-                              placeholder="9:00 AM"
-                              className="flex-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded-md text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors"
-                            />
-                            <span className="text-slate-500 text-sm">-</span>
-                            <input
-                              type="text"
-                              value={slot.end}
-                              onChange={(e) => updateSlot(day, idx, 'end', e.target.value)}
-                              placeholder="10:00 PM"
-                              className="flex-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded-md text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors"
-                            />
-                            {dayData.slots.length > 1 && (
-                              <button
-                                onClick={() => removeSlot(day, idx)}
-                                className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-colors"
-                                title="Remove slot"
-                              >
-                                <X className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                          </div>
-                        ))}
-                        <button
-                          onClick={() => addSlot(day)}
-                          className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-amber-400 transition-colors mt-1"
-                        >
-                          <Plus className="w-3 h-3" />
-                          Add time slot
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Tab 4: Settings */}
-        {activeTab === 3 && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between p-4 bg-slate-950 border border-slate-700 rounded-lg">
-              <div>
-                <div className="text-sm font-medium text-slate-300">Published</div>
-                <div className="text-xs text-slate-500 mt-0.5">
-                  {form.is_published
-                    ? 'Merchant page is visible on the website'
-                    : 'Merchant page is hidden (draft mode)'}
-                </div>
-              </div>
-              <button
-                onClick={() => updateField('is_published', !form.is_published)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  form.is_published ? 'bg-amber-500' : 'bg-slate-700'
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    form.is_published ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </button>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Status</label>
-              <div className="flex gap-3">
-                {['active', 'inactive'].map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => updateField('status', s)}
-                    className={`flex-1 px-4 py-2.5 rounded-lg border text-sm font-medium transition-colors ${
-                      form.status === s
-                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                        : 'bg-slate-950 border-slate-700 text-slate-400 hover:border-slate-600'
-                    }`}
-                  >
-                    {s.charAt(0).toUpperCase() + s.slice(1)}
-                  </button>
-                ))}
-              </div>
-              <p className="mt-1 text-xs text-slate-500">
-                Inactive merchants show a friendly &quot;Unavailable&quot; page instead of their menu.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <label className="block text-sm font-medium text-slate-300">Platform status
-                <select value={form.platform_status} onChange={(e) => updateField('platform_status', e.target.value)} className="mt-1.5 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white">
-                  <option value="DRAFT">Draft</option><option value="PENDING_REVIEW">Pending review</option><option value="PUBLISHED">Published</option><option value="SUSPENDED">Suspended</option><option value="ARCHIVED">Archived</option>
-                </select>
-                <span className="mt-1 block text-xs font-normal text-slate-500">Controls BiteSite listing visibility.</span>
-              </label>
-              <label className="block text-sm font-medium text-slate-300">Business status
-                <select value={form.business_status} onChange={(e) => updateField('business_status', e.target.value)} className="mt-1.5 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white">
-                  <option value="OPEN">Open</option><option value="TEMPORARILY_CLOSED">Temporarily closed</option><option value="MOVED">Moved</option><option value="PERMANENTLY_CLOSED">Permanently closed</option>
-                </select>
-                <span className="mt-1 block text-xs font-normal text-slate-500">Describes the merchant in the real world.</span>
-              </label>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-3">Page Sections</label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {FEATURES.map((f) => (
-                  <label
-                    key={f.key}
-                    className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                      form.features[f.key as keyof typeof form.features]
-                        ? 'bg-amber-500/5 border-amber-500/20'
-                        : 'bg-slate-950 border-slate-700 hover:border-slate-600'
-                    }`}
-                  >
-                    <div className="mt-0.5">
-                      <div
-                        className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
-                          form.features[f.key as keyof typeof form.features]
-                            ? 'bg-amber-500 border-amber-500'
-                            : 'border-slate-600'
-                        }`}
-                      >
-                        {form.features[f.key as keyof typeof form.features] && (
-                          <Check className="w-3 h-3 text-slate-950" />
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-sm font-medium text-slate-300">{f.label}</div>
-                      <div className="text-xs text-slate-500">{f.desc}</div>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={form.features[f.key as keyof typeof form.features]}
-                      onChange={(e) => updateFeature(f.key, e.target.checked)}
-                      className="sr-only"
-                    />
-                  </label>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Tab 5: Images */}
-        {activeTab === 4 && (
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Logo Image URL</label>
-              <input
-                type="text"
-                value={form.logo_image}
-                onChange={(e) => updateField('logo_image', e.target.value)}
-                placeholder="https://..."
-                className={`w-full px-4 py-2.5 bg-slate-950 border rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors ${
-                  logoWarning ? 'border-yellow-500/50' : 'border-slate-700'
-                }`}
-              />
-              {logoWarning && (
-                <p className="mt-1 text-xs text-yellow-400 flex items-center gap-1">
-                  <AlertTriangle className="w-3 h-3" />
-                  This doesn&apos;t look like a direct image URL. Make sure it ends with .jpg, .png, etc.
-                </p>
-              )}
-              <p className="mt-1 text-xs text-slate-500">
-                Paste the direct image URL (ends with .jpg or .png). Right-click image &rarr; Copy image address.
-              </p>
-              {form.logo_image && (
-                <div className="mt-3">
-                  {!logoError ? (
-                    <img
-                      src={form.logo_image}
-                      alt="Logo preview"
-                      className="w-16 h-16 rounded-lg object-cover border border-slate-700"
-                      onError={() => setLogoError(true)}
-                    />
-                  ) : (
-                    <div className="w-16 h-16 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center">
-                      <span className="text-xs text-slate-500 text-center px-1">Failed to load</span>
-                    </div>
-                  )}
-                </div>
-              )}
-              <div className="mt-3"><ImageUpload kind="merchant" value={form.logo_image} onChange={(value) => updateField('logo_image', value)} label="Or upload logo" help="JPG, PNG, or WebP; compressed to 1200px and max 5MB." /></div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Cover Image URL</label>
-              <input
-                type="text"
-                value={form.cover_image}
-                onChange={(e) => updateField('cover_image', e.target.value)}
-                placeholder="https://..."
-                className={`w-full px-4 py-2.5 bg-slate-950 border rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors ${
-                  coverWarning ? 'border-yellow-500/50' : 'border-slate-700'
-                }`}
-              />
-              {coverWarning && (
-                <p className="mt-1 text-xs text-yellow-400 flex items-center gap-1">
-                  <AlertTriangle className="w-3 h-3" />
-                  This doesn&apos;t look like a direct image URL. Make sure it ends with .jpg, .png, etc.
-                </p>
-              )}
-              <p className="mt-1 text-xs text-slate-500">
-                Paste the direct image URL (ends with .jpg or .png). Right-click image &rarr; Copy image address.
-              </p>
-              {form.cover_image && (
-                <div className="mt-3">
-                  {!coverError ? (
-                    <img
-                      src={form.cover_image}
-                      alt="Cover preview"
-                      className="w-full h-32 rounded-lg object-cover border border-slate-700"
-                      onError={() => setCoverError(true)}
-                    />
-                  ) : (
-                    <div className="w-full h-32 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center">
-                      <span className="text-sm text-slate-500">Failed to load image. Check the URL.</span>
-                    </div>
-                  )}
-                </div>
-              )}
-              <div className="mt-3"><ImageUpload kind="merchant" value={form.cover_image} onChange={(value) => updateField('cover_image', value)} label="Or upload cover" help="JPG, PNG, or WebP; compressed to 1200px and max 5MB." /></div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Menu PDF URL</label>
-              <input
-                type="text"
-                value={form.menu_pdf_url}
-                onChange={(e) => updateField('menu_pdf_url', e.target.value)}
-                placeholder="https://..."
-                className={`w-full px-4 py-2.5 bg-slate-950 border rounded-lg text-sm text-white placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors ${
-                  pdfWarning ? 'border-yellow-500/50' : 'border-slate-700'
-                }`}
-              />
-              {pdfWarning && (
-                <p className="mt-1 text-xs text-yellow-400 flex items-center gap-1">
-                  <AlertTriangle className="w-3 h-3" />
-                  This doesn&apos;t look like a PDF URL. Make sure it ends with .pdf.
-                </p>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Tab 6: Menu (categories + products) */}
-        {activeTab === 5 && (
-          <div>
-            {isEditing && merchant ? (
-              <MenuEditor merchantId={merchant.id} merchantName={merchant.name} />
-            ) : (
-              <div className="text-center py-12 bg-slate-950 border border-slate-800 rounded-xl">
-                <UtensilsCrossed className="w-8 h-8 text-slate-700 mx-auto mb-3" />
-                <p className="text-slate-500 text-sm">Save this merchant first, then come back here to add menu categories and dishes.</p>
-              </div>
-            )}
-          </div>
+          </>
         )}
       </div>
-
-      {/* Actions */}
-      <div className="flex items-center justify-between">
-        <div>
-          {isEditing && (
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              disabled={deleting}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-            >
-              <Trash2 className="w-4 h-4" />
-              {deleting ? 'Deleting...' : 'Delete'}
-            </button>
-          )}
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleBack}
-            className="px-4 py-2.5 text-slate-400 hover:text-white text-sm font-medium transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="inline-flex items-center gap-2 px-6 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-medium text-sm rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {saving ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="w-4 h-4" />
-                {isEditing ? 'Update' : 'Create'}
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 max-w-sm w-full">
-            <h3 className="text-lg font-semibold text-white mb-2">Delete Merchant?</h3>
-            <p className="text-slate-400 text-sm mb-6">
-              This will permanently delete <strong className="text-white">{merchant?.name}</strong> and all its menu items, categories, and videos. This action cannot be undone.
-            </p>
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="px-4 py-2 text-slate-400 hover:text-white text-sm font-medium transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-400 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
-              >
-                {deleting && <Loader2 className="w-4 h-4 animate-spin" />}
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

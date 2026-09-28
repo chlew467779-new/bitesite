@@ -37,6 +37,21 @@ export async function getMerchantBySlug(slug: string): Promise<PublicMerchant | 
   return data;
 }
 
+/**
+ * Current slug of a restaurant that used to live at `oldSlug` (renamed; see
+ * public.merchant_slug_history). Only restaurants that are public now are found.
+ */
+export async function getRenamedMerchantSlug(oldSlug: string): Promise<string | null> {
+  const { data: moved } = await supabase
+    .from("merchant_slug_history")
+    .select("merchant_id")
+    .eq("old_slug", oldSlug)
+    .maybeSingle();
+  if (!moved?.merchant_id) return null;
+  const { data } = await supabase.from("merchants").select("slug").eq("id", moved.merchant_id).maybeSingle();
+  return data?.slug && data.slug !== oldSlug ? data.slug : null;
+}
+
 export async function getCategoriesByMerchant(merchantId: string): Promise<Category[]> {
   const { data, error } = await supabase
     .from("categories")

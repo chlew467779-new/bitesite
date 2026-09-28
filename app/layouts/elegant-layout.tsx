@@ -18,6 +18,7 @@ import { normalizeBookingWhatsApp } from "@/lib/merchant-booking-target.mjs";
 import Link from "next/link";
 import { getTodayKey, formatOperatingHours, DAYS } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
+import { formatPrice } from "@/lib/price-format.mjs";
 
 export function ElegantLayout({
   merchant, categories, products, videos, features, events, footerText,
@@ -89,7 +90,7 @@ export function ElegantLayout({
                 <div className="flex items-center gap-2 mb-3 flex-wrap">
                   {merchant.cuisine_type && <span className="inline-block px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-semibold border border-amber-500/30">{merchant.cuisine_type}</span>}
                 </div>
-                <h1 className="text-3xl sm:text-5xl font-bold text-white mb-2">{merchant.name}</h1>
+                <h1 className="break-words text-3xl sm:text-5xl font-bold text-white mb-2">{merchant.name}</h1>
                 {merchant.description && <p className="text-slate-400 text-sm sm:text-base max-w-xl">{merchant.description}</p>}
               </div>
             </div>
@@ -122,14 +123,14 @@ export function ElegantLayout({
                             </div>
                           )}
                           <div className="flex-1 min-w-0">
-                            <div className="flex justify-between items-start gap-2">
-                              <h4 className="font-semibold text-slate-200">{product.name}</h4>
+                            <div className="flex flex-col sm:flex-row sm:justify-between items-start gap-2">
+                              <h4 className="min-w-0 break-words font-semibold text-slate-200">{product.name}</h4>
                               {shouldShowPrice(product) && (
                                 <span className="font-bold text-amber-400 whitespace-nowrap">
                                   {product.discount_price ? (
-                                    <><span className="line-through opacity-50 text-sm mr-1">RM {product.price}</span>RM {product.discount_price}</>
+                                    <><span className="line-through opacity-50 text-sm mr-1">{formatPrice(product.price)}</span>{formatPrice(product.discount_price)}</>
                                   ) : (
-                                    `RM ${product.price}`
+                                    formatPrice(product.price)
                                   )}
                                 </span>
                               )}

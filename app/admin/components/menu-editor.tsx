@@ -20,6 +20,7 @@ import {
   GripVertical,
   EyeOff,
 } from 'lucide-react';
+import { formatPrice } from '@/lib/price-format.mjs';
 
 interface Category {
   id: string;
@@ -705,11 +706,11 @@ function ProductRow({
           <span>
             {product.discount_price ? (
               <>
-                <span className="line-through mr-1">RM {product.price}</span>
-                RM {product.discount_price}
+                <span className="line-through mr-1">{formatPrice(product.price)}</span>
+                {formatPrice(product.discount_price)}
               </>
             ) : product.price !== null ? (
-              `RM ${product.price}`
+              formatPrice(product.price)
             ) : (
               'No price set'
             )}
@@ -952,11 +953,11 @@ function MenuPreview({
                           <span className="font-bold text-amber-700 whitespace-nowrap">
                             {product.discount_price ? (
                               <>
-                                <span className="line-through opacity-50 text-sm mr-1">RM {product.price}</span>
-                                RM {product.discount_price}
+                                <span className="line-through opacity-50 text-sm mr-1">{formatPrice(product.price)}</span>
+                                {formatPrice(product.discount_price)}
                               </>
                             ) : product.price !== null ? (
-                              `RM ${product.price}`
+                              formatPrice(product.price)
                             ) : (
                               ''
                             )}

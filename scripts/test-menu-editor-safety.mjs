@@ -22,7 +22,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
 async function read(relPath) {
-  return readFile(new URL(`../${relPath}`, import.meta.url), "utf8");
+  return (await readFile(new URL(`../${relPath}`, import.meta.url), "utf8")).replace(/\r\n/g, "\n");
 }
 
 const categoriesSource = await read("app/api/admin/menu-categories/route.ts");
@@ -112,7 +112,9 @@ assert.match(editorSource, /'use client'/, "menu-editor.tsx must be a client com
 assert.match(formSource, /import MenuEditor from '\.\/menu-editor'/, "merchant-form.tsx must import MenuEditor");
 assert.match(
   formSource,
-  /isEditing && merchant[\s\S]{0,80}<MenuEditor merchantId=\{merchant\.id\} merchantName=\{merchant\.name\} \/>/,
+  // D2-B: the editor renders tabs only after `if (!current) return <create form>`, so the menu
+  // editor always has a saved restaurant id.
+  /if \(!current\) \{[\s\S]*?\n  \}[\s\S]*<MenuEditor merchantId=\{current\.id\} merchantName=\{current\.name\} \/>/,
   "merchant-form.tsx must only render MenuEditor once an existing merchant (with an id) is being edited",
 );
 

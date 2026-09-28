@@ -2,8 +2,9 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from './auth-context';
+import { requestLeave } from '@/lib/unsaved-guard';
 import {
   LayoutDashboard,
   TrendingUp,
@@ -16,6 +17,9 @@ import {
   BookOpen,
   PenLine,
   Inbox,
+  ShieldCheck,
+  MessageSquare,
+  Flag,
   Building2,
   Map,
   Clock,
@@ -42,6 +46,10 @@ const navItems = [
   { id: 'stories-analytics', label: 'Stories Analytics', icon: BookOpen },
   { id: 'stories-editor', label: 'Stories Editor', icon: PenLine },
   { id: 'story-submissions', label: 'Story Submissions', icon: Inbox },
+  { id: 'restaurant-reviews', label: 'Restaurant Reviews', icon: ShieldCheck },
+  { id: 'link-reviews', label: 'Change Requests', icon: ShieldCheck },
+  { id: 'feedback', label: 'Feedback', icon: MessageSquare },
+  { id: 'reports', label: 'Visitor Reports', icon: Flag },
   { id: 'content-service', label: 'Content Service', icon: CalendarClock },
   { id: 'merchant-manager', label: 'Merchant Manager', icon: Building2 },
   { id: 'map', label: 'Map Stats', icon: Map },
@@ -55,13 +63,37 @@ interface AdminShellProps {
 }
 
 export default function AdminShell({ activeTab, onTabChange, children }: AdminShellProps) {
-  const { logout } = useAuth();
+  const { logout, token } = useAuth();
+  const [attention, setAttention] = useState<Record<string, number>>({});
+
+  // Sidebar badges: what needs the team now. Refreshed on page change and every minute.
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const response = await fetch('/api/admin/attention', { headers: { 'x-admin-token': token }, cache: 'no-store' });
+        const body = await response.json().catch(() => null);
+        if (!cancelled && response.ok && body?.data) {
+          const { notifications, ...counts } = body.data as Record<string, number> & { notifications: unknown };
+          void notifications;
+          setAttention(counts);
+        }
+      } catch { /* badges are a convenience; the pages themselves stay authoritative */ }
+    };
+    void load();
+    const timer = window.setInterval(load, 60_000);
+    return () => { cancelled = true; window.clearInterval(timer); };
+  }, [token, activeTab]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const handleTabChange = (tab: string) => {
-    onTabChange(tab);
-    setSidebarOpen(false);
+    // Keep the destination until the editor has saved or discarded its changes.
+    requestLeave(() => {
+      onTabChange(tab);
+      setSidebarOpen(false);
+    });
   };
 
   return (
@@ -103,8 +135,10 @@ export default function AdminShell({ activeTab, onTabChange, children }: AdminSh
           
           {/* Mobile close */}
           <button
+            type="button"
+            aria-label="Close menu"
             onClick={() => setSidebarOpen(false)}
-            className="lg:hidden text-slate-400 hover:text-white ml-auto"
+            className="lg:hidden inline-flex min-h-11 min-w-11 items-center justify-center text-slate-400 hover:text-white ml-auto"
           >
             <X className="w-5 h-5" />
           </button>
@@ -146,6 +180,9 @@ export default function AdminShell({ activeTab, onTabChange, children }: AdminSh
                 {!sidebarCollapsed && (
                   <>
                     <span className="flex-1 text-left truncate">{item.label}</span>
+                    {(attention[item.id] ?? 0) > 0 && (
+                      <span className="shrink-0 rounded-full bg-amber-500 px-2 py-0.5 text-xs font-semibold text-slate-950" aria-label={`${attention[item.id]} waiting`}>{attention[item.id]}</span>
+                    )}
                     {isActive && <ChevronRight className="w-3.5 h-3.5 shrink-0" />}
                   </>
                 )}
@@ -198,8 +235,10 @@ export default function AdminShell({ activeTab, onTabChange, children }: AdminSh
           </button>
           <button
             onClick={() => {
-              setSidebarOpen(false);
-              logout();
+              requestLeave(() => {
+                setSidebarOpen(false);
+                logout();
+              });
             }}
             className={`
               w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all
@@ -218,8 +257,11 @@ export default function AdminShell({ activeTab, onTabChange, children }: AdminSh
         {/* Top Bar - Mobile only */}
         <header className="flex items-center justify-between px-4 py-3 bg-slate-900/50 border-b border-slate-800 lg:hidden">
           <button
+            type="button"
+            aria-label="Open admin menu"
+            aria-expanded={sidebarOpen}
             onClick={() => setSidebarOpen(true)}
-            className="text-slate-400 hover:text-white"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center text-slate-400 hover:text-white"
           >
             <Menu className="w-6 h-6" />
           </button>

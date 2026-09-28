@@ -1,26 +1,22 @@
 /* bitesite/app/api/admin/merchants-crud/route.ts */
 
+/**
+ * Admin restaurant list and creation.
+ *
+ * D2-B write cutover: restaurant fields are edited only through the field-level save contract
+ * (PATCH /api/admin/merchants/[merchantId]/fields). The old whole-form PUT, which also wrote
+ * publication state, links, images and the GrabFood link without a baseline, is retired, and
+ * hard DELETE is closed until a reviewed governance operation exists (both 410
+ * LEGACY_WRITE_RETIRED). POST creates only a hidden draft from a name (and optional slug);
+ * everything else is filled in afterwards through the field contract.
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminToken } from '@/lib/admin-auth';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
-import { revalidatePath } from 'next/cache';
 import { InvalidJsonBodyError, readBoundedJson, RequestBodyTooLargeError } from '@/lib/bounded-json';
-import { AMENITY_TAGS, CUISINE_TAGS, OCCASION_TAGS } from '@/lib/presets';
-import { isPersistableLayout } from '@/lib/layout-registry.mjs';
-import { DAYS, isValidOperatingHours } from '@/lib/hours';
-import { normalizeBookingWhatsApp } from '@/lib/merchant-booking-target.mjs';
 
-const MAX_MERCHANT_BODY_BYTES = 128 * 1024;
-
-function bodyErrorResponse(error: unknown) {
-  if (error instanceof RequestBodyTooLargeError) {
-    return NextResponse.json({ error: error.message }, { status: 413 });
-  }
-  if (error instanceof InvalidJsonBodyError) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
-  }
-  return null;
-}
+const MAX_CREATE_BODY_BYTES = 4 * 1024;
 
 function generateSlug(name: string): string {
   return name
@@ -33,168 +29,7 @@ function generateSlug(name: string): string {
 }
 
 function isValidSlug(slug: string): boolean {
-  return /^[a-z0-9-]+$/.test(slug) && slug.length > 0;
-}
-
-const merchantTextFields = [
-  'name', 'slug', 'tagline', 'description', 'layout', 'area',
-  'address', 'phone', 'whatsapp', 'email', 'website', 'instagram', 'facebook',
-  'logo_image', 'cover_image', 'menu_pdf_url', 'grabfood_url',
-] as const;
-
-const merchantTextLimits: Partial<Record<typeof merchantTextFields[number], number>> = {
-  name: 160,
-  slug: 200,
-  tagline: 300,
-  description: 10000,
-  area: 160,
-  address: 500,
-  phone: 40,
-  whatsapp: 40,
-  email: 254,
-  website: 2048,
-  instagram: 2048,
-  facebook: 2048,
-  logo_image: 2048,
-  cover_image: 2048,
-  menu_pdf_url: 2048,
-  grabfood_url: 2048,
-};
-
-const controlledTagFields = [
-  { field: 'cuisine', values: CUISINE_TAGS, max: 3 },
-  { field: 'amenities', values: AMENITY_TAGS, max: 5 },
-  { field: 'occasion', values: OCCASION_TAGS, max: 3 },
-] as const;
-
-function normalizeStringArray(value: unknown): string[] {
-  return Array.isArray(value) ? [...new Set(value)] as string[] : [];
-}
-
-function normalizeControlledTags(value: unknown, allowed: readonly string[]): string[] {
-  return normalizeStringArray(value).filter(item => allowed.includes(item));
-}
-
-const WHATSAPP_FORMAT_MESSAGE =
-  'WhatsApp must be an international number with the country code (for example 60123456789), or left empty';
-
-function validateMerchantPayload(
-  body: Record<string, unknown>,
-  requireBaseFields: boolean,
-  existingOperatingHours?: Record<string, unknown> | null,
-  existingWhatsapp?: string | null,
-): string | null {
-  if (!body || typeof body !== 'object' || Array.isArray(body)) return 'Invalid request body';
-
-  for (const field of merchantTextFields) {
-    const value = body[field];
-    if (value !== undefined && value !== null && typeof value !== 'string') {
-      return `${field} must be a string`;
-    }
-    const maxLength = merchantTextLimits[field];
-    if (typeof value === 'string' && maxLength && value.length > maxLength) {
-      return `${field} must be ${maxLength} characters or fewer`;
-    }
-  }
-
-  if (requireBaseFields && (typeof body.name !== 'string' || !body.name.trim())) return 'Name is required';
-  if (!requireBaseFields && body.name !== undefined && (typeof body.name !== 'string' || !body.name.trim())) return 'Name is required';
-
-  // WhatsApp is optional (DEC-21: without a valid number the public page simply has no Book a Table).
-  // A new or changed number must be an international WhatsApp number; an unchanged stored value is
-  // not re-validated, so an old entry never blocks saving unrelated fields.
-  if (typeof body.whatsapp === 'string' && body.whatsapp.trim()) {
-    const unchanged = typeof existingWhatsapp === 'string' && body.whatsapp.trim() === existingWhatsapp.trim();
-    if (!unchanged && !normalizeBookingWhatsApp(body.whatsapp)) return WHATSAPP_FORMAT_MESSAGE;
-  }
-
-  if (typeof body.email === 'string' && body.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email.trim())) {
-    return 'Email must be valid';
-  }
-
-  for (const field of ['website', 'instagram', 'facebook', 'logo_image', 'cover_image', 'menu_pdf_url', 'grabfood_url']) {
-    const value = body[field];
-    if (typeof value !== 'string' || !value.trim()) continue;
-    try {
-      const url = new URL(value.trim());
-      if (url.protocol !== 'http:' && url.protocol !== 'https:') return `${field} must use http:// or https://`;
-    } catch {
-      return `${field} must be a valid URL`;
-    }
-  }
-
-  for (const [field, min, max] of [['latitude', -90, 90], ['longitude', -180, 180] ] as const) {
-    const value = body[field];
-    if (value === undefined || value === null || value === '') continue;
-    const numeric = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : Number.NaN;
-    if (!Number.isFinite(numeric) || numeric < min || numeric > max) return `${field} must be between ${min} and ${max}`;
-  }
-
-  for (const field of ['tags', 'payment_methods'] as const) {
-    const value = body[field];
-    if (value !== undefined && value !== null && (!Array.isArray(value) || value.some(item => typeof item !== 'string'))) {
-      return `${field} must be an array of strings`;
-    }
-  }
-  for (const { field, values, max } of controlledTagFields) {
-    const value = body[field];
-    if (value === undefined || value === null) continue;
-    if (!Array.isArray(value) || value.some(item => typeof item !== 'string')) {
-      return `${field} must be an array of strings`;
-    }
-    const unique = normalizeControlledTags(value, values);
-    if (unique.length > max) return `${field} can contain at most ${max} tags`;
-  }
-  if (body.operating_hours !== undefined && body.operating_hours !== null) {
-    if (typeof body.operating_hours !== 'object' || Array.isArray(body.operating_hours)) {
-      return 'operating_hours must be an object';
-    }
-    for (const [day, value] of Object.entries(body.operating_hours)) {
-      if (!DAYS.includes(day)) return `operating_hours has an invalid day: ${day}`;
-      if (typeof value !== 'string') return `operating_hours.${day} must be a string`;
-      if (value.length > 200) return `operating_hours.${day} must be 200 characters or fewer`;
-      const unchangedLegacyValue = existingOperatingHours?.[day] === value;
-      if (value.trim() && !isValidOperatingHours(value) && !unchangedLegacyValue) {
-        return `operating_hours.${day} must use valid HH:MM or H:MM AM/PM ranges`;
-      }
-    }
-  }
-  // Strict whitelist: only registered, production-ready layouts may be written to a merchant row,
-  // so an unfinished layout can never reach a public page. Historical bad values are not allowed
-  // through either — the Admin form omits the field instead of resubmitting an invalid value.
-  if (body.layout !== undefined && !isPersistableLayout(body.layout)) return 'Invalid layout';
-
-  const platformStatuses = ['DRAFT', 'PENDING_REVIEW', 'PUBLISHED', 'SUSPENDED', 'ARCHIVED'];
-  const businessStatuses = ['OPEN', 'TEMPORARILY_CLOSED', 'MOVED', 'PERMANENTLY_CLOSED'];
-  if (body.platform_status !== undefined && !platformStatuses.includes(String(body.platform_status))) return 'Invalid platform_status';
-  if (body.business_status !== undefined && !businessStatuses.includes(String(body.business_status))) return 'Invalid business_status';
-  return null;
-}
-
-function normalizeGrabFoodUrl(value: unknown): string | null | 'invalid' {
-  if (value === undefined || value === null || value === '') return null;
-  if (typeof value !== 'string') return 'invalid';
-  try {
-    const url = new URL(value.trim());
-    return url.protocol === 'https:' ? url.toString() : 'invalid';
-  } catch {
-    return 'invalid';
-  }
-}
-
-async function saveGrabFoodLink(merchantId: string, value: unknown): Promise<string | null> {
-  if (value === undefined) return null;
-  const url = normalizeGrabFoodUrl(value);
-  if (url === 'invalid') return 'GrabFood URL must start with https://';
-  if (!url) {
-    const { error } = await supabase.from('merchant_external_links').delete().eq('merchant_id', merchantId).eq('link_type', 'grabfood');
-    return error?.message || null;
-  }
-  const { error } = await supabase.from('merchant_external_links').upsert(
-    { merchant_id: merchantId, link_type: 'grabfood', url, is_active: true, updated_at: new Date().toISOString() },
-    { onConflict: 'merchant_id,link_type' }
-  );
-  return error?.message || null;
+  return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) && slug.length >= 2 && slug.length <= 64;
 }
 
 async function verifyToken(request: NextRequest): Promise<boolean> {
@@ -203,21 +38,8 @@ async function verifyToken(request: NextRequest): Promise<boolean> {
   return verifyAdminToken(token);
 }
 
-// Managed merchants (D1a) derive is_published / platform_status from their canonical state, and
-// the database refuses direct writes of those two fields. The old form still sends them, so say
-// clearly why the save was refused instead of returning a raw 500.
-const MERCHANT_STATE_ERRORS: Record<string, string> = {
-  LEGACY_STATE_WRITE_FORBIDDEN:
-    'This restaurant uses the new review and publishing workflow, so "Published" and "Platform status" cannot be set from this form.',
-  STATE_SOURCE_DOWNGRADE: 'This restaurant cannot be moved back to the old publishing workflow.',
-};
-
-function merchantWriteError(error: { message: string }) {
-  const code = Object.keys(MERCHANT_STATE_ERRORS).find((key) => error.message.startsWith(key));
-  if (code) {
-    return NextResponse.json({ error: MERCHANT_STATE_ERRORS[code], code }, { status: 422 });
-  }
-  return NextResponse.json({ error: error.message }, { status: 500 });
+function retired(message: string) {
+  return NextResponse.json({ error: message, code: 'LEGACY_WRITE_RETIRED' }, { status: 410 });
 }
 
 export async function GET(request: NextRequest) {
@@ -268,243 +90,57 @@ export async function GET(request: NextRequest) {
   }
 }
 
+/**
+ * Create a hidden draft restaurant: only `name` and an optional `slug`. It is never published,
+ * has no links or images, and uses the database defaults for everything else.
+ */
 export async function POST(request: NextRequest) {
+  if (!(await verifyToken(request))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  let body: unknown;
   try {
-    if (!(await verifyToken(request))) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const body = await readBoundedJson(request, MAX_MERCHANT_BODY_BYTES);
-
-    const validationError = validateMerchantPayload(body, true);
-    if (validationError) return NextResponse.json({ error: validationError }, { status: 400 });
-
-    const slug = body.slug?.trim() || generateSlug(body.name);
-    if (!isValidSlug(slug)) {
-      return NextResponse.json({ error: 'Invalid slug format' }, { status: 400 });
-    }
-
-    const { data: existing } = await supabase
-      .from('merchants')
-      .select('id')
-      .eq('slug', slug)
-      .single();
-
-    if (existing) {
-      return NextResponse.json({ error: 'Slug already exists' }, { status: 409 });
-    }
-
-    const insertData: Record<string, unknown> = {
-      slug,
-      name: body.name.trim(),
-      tagline: body.tagline?.trim() || null,
-      description: body.description?.trim() || null,
-      layout: body.layout || 'classic',
-      cuisine: normalizeControlledTags(body.cuisine, CUISINE_TAGS),
-      amenities: normalizeControlledTags(body.amenities, AMENITY_TAGS),
-      occasion: normalizeControlledTags(body.occasion, OCCASION_TAGS),
-      area: body.area?.trim() || null,
-      payment_methods: body.payment_methods?.length ? body.payment_methods : null,
-      address: body.address?.trim() || null,
-      phone: body.phone?.trim() || null,
-      whatsapp: body.whatsapp?.trim() || null,
-      email: body.email?.trim() || null,
-      website: body.website?.trim() || null,
-      instagram: body.instagram?.trim() || null,
-      facebook: body.facebook?.trim() || null,
-      latitude: body.latitude ? parseFloat(body.latitude) : null,
-      longitude: body.longitude ? parseFloat(body.longitude) : null,
-      operating_hours: Object.fromEntries(
-        Object.entries(body.operating_hours || {}).filter(([, v]) => (v as string)?.trim())
-      ) || null,
-      is_published: body.is_published === true,
-      status: body.status || 'active',
-      platform_status: body.platform_status || (body.is_published === true ? 'PUBLISHED' : 'DRAFT'),
-      business_status: body.business_status || (body.status === 'inactive' ? 'TEMPORARILY_CLOSED' : 'OPEN'),
-      features: body.features || null,
-      logo_image: body.logo_image?.trim() || null,
-      cover_image: body.cover_image?.trim() || null,
-      menu_pdf_url: body.menu_pdf_url?.trim() || null,
-    };
-
-    const { data, error } = await supabase
-      .from('merchants')
-      .insert(insertData)
-      .select()
-      .single();
-
-    if (error) {
-      return merchantWriteError(error);
-    }
-
-    const linkError = await saveGrabFoodLink(data.id, body.grabfood_url);
-    if (linkError) return NextResponse.json({ error: linkError }, { status: 400 });
-
-    // Revalidate pages immediately
-    revalidatePath(`/store/${data.slug}`);
-    revalidatePath('/');
-
-    return NextResponse.json({ merchant: data }, { status: 201 });
+    body = await readBoundedJson(request, MAX_CREATE_BODY_BYTES);
   } catch (error) {
-    const bodyError = bodyErrorResponse(error);
-    if (bodyError) return bodyError;
-    console.error('Merchants CRUD POST error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    if (error instanceof RequestBodyTooLargeError) return NextResponse.json({ error: error.message }, { status: 413 });
+    if (error instanceof InvalidJsonBodyError) return NextResponse.json({ error: error.message }, { status: 400 });
+    return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+  const input = body as Record<string, unknown>;
+  const unknown = Object.keys(input).filter((key) => key !== 'name' && key !== 'slug');
+  if (unknown.length > 0) {
+    return NextResponse.json({ error: `Only name and slug can be set when creating a restaurant (got ${unknown[0]}). Fill in the rest after it is created.`, code: 'UNKNOWN_FIELD' }, { status: 400 });
+  }
+  if (typeof input.name !== 'string' || !input.name.trim() || input.name.trim().length > 160) {
+    return NextResponse.json({ error: 'Enter a name of up to 160 characters.', code: 'VALIDATION_FAILED' }, { status: 400 });
+  }
+  if (input.slug !== undefined && input.slug !== null && typeof input.slug !== 'string') {
+    return NextResponse.json({ error: 'slug must be text.', code: 'VALIDATION_FAILED' }, { status: 400 });
+  }
+  const name = input.name.trim();
+  const slug = (typeof input.slug === 'string' && input.slug.trim()) || generateSlug(name);
+  if (!isValidSlug(slug)) {
+    return NextResponse.json({ error: 'Use 2–64 lowercase letters, numbers and single hyphens for the web address.', code: 'VALIDATION_FAILED' }, { status: 400 });
+  }
+
+  const { data, error } = await supabase
+    .from('merchants')
+    .insert({ name, slug, is_published: false, platform_status: 'DRAFT' })
+    .select('id, name, slug')
+    .single();
+  if (error) {
+    if (error.code === '23505') return NextResponse.json({ error: 'This web address is already used.', code: 'SLUG_TAKEN' }, { status: 409 });
+    console.error('Merchant draft create failed:', error.message);
+    return NextResponse.json({ error: 'The restaurant could not be created.', code: 'INTERNAL_ERROR' }, { status: 500 });
+  }
+  return NextResponse.json({ merchant: data }, { status: 201 });
 }
 
 export async function PUT(request: NextRequest) {
-  try {
-    if (!(await verifyToken(request))) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const body = await readBoundedJson(request, MAX_MERCHANT_BODY_BYTES);
-    const { id } = body;
-
-    if (!id) {
-      return NextResponse.json({ error: 'Merchant ID is required' }, { status: 400 });
-    }
-
-    const { data: existingMerchant, error: existingMerchantError } = await supabase
-      .from('merchants')
-      .select('operating_hours, whatsapp')
-      .eq('id', id)
-      .single();
-
-    if (existingMerchantError || !existingMerchant) {
-      return NextResponse.json({ error: 'Merchant not found' }, { status: 404 });
-    }
-
-    const existingOperatingHours =
-      existingMerchant.operating_hours
-      && typeof existingMerchant.operating_hours === 'object'
-      && !Array.isArray(existingMerchant.operating_hours)
-        ? existingMerchant.operating_hours as Record<string, unknown>
-        : null;
-
-    const validationError = validateMerchantPayload(body, false, existingOperatingHours, existingMerchant.whatsapp);
-    if (validationError) return NextResponse.json({ error: validationError }, { status: 400 });
-
-    const slug = body.slug?.trim();
-    if (slug && !isValidSlug(slug)) {
-      return NextResponse.json({ error: 'Invalid slug format' }, { status: 400 });
-    }
-
-    if (slug) {
-      const { data: existing } = await supabase
-        .from('merchants')
-        .select('id')
-        .eq('slug', slug)
-        .neq('id', id)
-        .single();
-
-      if (existing) {
-        return NextResponse.json({ error: 'Slug already exists' }, { status: 409 });
-      }
-    }
-
-    const updateData: Record<string, unknown> = {};
-    if (body.name !== undefined) updateData.name = body.name.trim();
-    if (body.slug !== undefined) updateData.slug = slug;
-    if (body.tagline !== undefined) updateData.tagline = body.tagline?.trim() || null;
-    if (body.description !== undefined) updateData.description = body.description?.trim() || null;
-    if (body.layout !== undefined) updateData.layout = body.layout; // whitelisted in validateMerchantPayload
-    if (body.cuisine !== undefined) updateData.cuisine = normalizeControlledTags(body.cuisine, CUISINE_TAGS);
-    if (body.amenities !== undefined) updateData.amenities = normalizeControlledTags(body.amenities, AMENITY_TAGS);
-    if (body.occasion !== undefined) updateData.occasion = normalizeControlledTags(body.occasion, OCCASION_TAGS);
-    if (body.area !== undefined) updateData.area = body.area?.trim() || null;
-    if (body.payment_methods !== undefined) updateData.payment_methods = body.payment_methods?.length ? body.payment_methods : null;
-    if (body.address !== undefined) updateData.address = body.address?.trim() || null;
-    if (body.phone !== undefined) updateData.phone = body.phone?.trim() || null;
-    if (body.whatsapp !== undefined) updateData.whatsapp = body.whatsapp?.trim() || null;
-    if (body.email !== undefined) updateData.email = body.email?.trim() || null;
-    if (body.website !== undefined) updateData.website = body.website?.trim() || null;
-    if (body.instagram !== undefined) updateData.instagram = body.instagram?.trim() || null;
-    if (body.facebook !== undefined) updateData.facebook = body.facebook?.trim() || null;
-    if (body.latitude !== undefined) updateData.latitude = body.latitude ? parseFloat(body.latitude) : null;
-    if (body.longitude !== undefined) updateData.longitude = body.longitude ? parseFloat(body.longitude) : null;
-    if (body.operating_hours !== undefined) {
-      updateData.operating_hours = Object.fromEntries(
-        Object.entries(body.operating_hours).filter(([, v]) => (v as string)?.trim())
-      ) || null;
-    }
-    if (body.is_published !== undefined) updateData.is_published = body.is_published === true;
-    if (body.status !== undefined) updateData.status = body.status;
-    if (body.platform_status !== undefined) updateData.platform_status = body.platform_status;
-    if (body.business_status !== undefined) updateData.business_status = body.business_status;
-    if (body.features !== undefined) updateData.features = body.features;
-    if (body.logo_image !== undefined) updateData.logo_image = body.logo_image?.trim() || null;
-    if (body.cover_image !== undefined) updateData.cover_image = body.cover_image?.trim() || null;
-    if (body.menu_pdf_url !== undefined) updateData.menu_pdf_url = body.menu_pdf_url?.trim() || null;
-
-    const { data, error } = await supabase
-      .from('merchants')
-      .update(updateData)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
-      return merchantWriteError(error);
-    }
-
-    const linkError = await saveGrabFoodLink(data.id, body.grabfood_url);
-    if (linkError) return NextResponse.json({ error: linkError }, { status: 400 });
-
-    // Revalidate pages immediately
-    revalidatePath(`/store/${data.slug}`);
-    revalidatePath('/');
-
-    return NextResponse.json({ merchant: data });
-  } catch (error) {
-    const bodyError = bodyErrorResponse(error);
-    if (bodyError) return bodyError;
-    console.error('Merchants CRUD PUT error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
+  if (!(await verifyToken(request))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  return retired('This editor was replaced. Reload the Admin page and edit the restaurant section by section.');
 }
 
 export async function DELETE(request: NextRequest) {
-  try {
-    if (!(await verifyToken(request))) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-
-    if (!id) {
-      return NextResponse.json({ error: 'Merchant ID is required' }, { status: 400 });
-    }
-
-    // Get slug before deleting for revalidation
-    const { data: merchantToDelete } = await supabase
-      .from('merchants')
-      .select('slug')
-      .eq('id', id)
-      .single();
-
-    await supabase.from('products').delete().eq('merchant_id', id);
-    await supabase.from('categories').delete().eq('merchant_id', id);
-    await supabase.from('merchant_videos').delete().eq('merchant_id', id);
-    await supabase.from('events').delete().eq('merchant_id', id);
-
-    const { error } = await supabase.from('merchants').delete().eq('id', id);
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    // Revalidate after deletion
-    if (merchantToDelete?.slug) {
-      revalidatePath(`/store/${merchantToDelete.slug}`);
-    }
-    revalidatePath('/');
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Merchants CRUD DELETE error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
+  if (!(await verifyToken(request))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  return retired('Deleting restaurants is not available. Ask the BiteSite team to hide or archive the restaurant instead.');
 }

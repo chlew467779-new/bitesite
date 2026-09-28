@@ -14,6 +14,7 @@ import type { PublicArticle } from "@/types";
 import { PUBLIC_ARTICLE_SELECT } from "@/lib/public-article-projection.mjs";
 import { getSiteUrl } from "@/lib/site-url";
 import { safeJsonLd } from "@/lib/safe-json-ld.mjs";
+import { ReportProblem } from "@/app/components/report-problem";
 
 export const revalidate = 60;
 
@@ -160,6 +161,8 @@ export default async function StoryPage({ params }: PageProps) {
             </div>
           </section>
         )}
+
+        <ReportProblem targetType="story" slug={slug} />
 
         <Footer />
       </main>

@@ -11,6 +11,7 @@ import type { PublicMerchant, Product, EventItem } from "@/types";
 import { shouldShowPrice } from "@/lib/menu-display.mjs";
 import { normalizeBookingWhatsApp } from "@/lib/merchant-booking-target.mjs";
 import type { LayoutVariant } from "./gallery-section";
+import { formatPrice } from "@/lib/price-format.mjs";
 
 interface TierSectionsProps {
   merchant: PublicMerchant;
@@ -48,9 +49,9 @@ export function TierSections({
       price: !shouldShowPrice(p)
         ? undefined
         : p.discount_price
-        ? `RM ${p.discount_price}`
+        ? formatPrice(p.discount_price)
         : p.price
-        ? `RM ${p.price}`
+        ? formatPrice(p.price)
         : undefined,
     }));
 

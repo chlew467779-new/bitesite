@@ -21,6 +21,7 @@ type Props = {
   multiline?: boolean;
   rows?: number;
   showCount?: boolean;
+  readOnly?: boolean;
 };
 
 const baseClass =
@@ -43,6 +44,7 @@ export function TextField({
   multiline = false,
   rows = 4,
   showCount = false,
+  readOnly = false,
 }: Props) {
   const id = `field-${name}`;
   const describedBy = [error && `${id}-error`, warning && !error && `${id}-warning`, hint && `${id}-hint`].filter(Boolean).join(' ') || undefined;
@@ -58,7 +60,9 @@ export function TextField({
     'aria-invalid': Boolean(error),
     'aria-describedby': describedBy,
     onBlur,
-    className: `${baseClass} ${stateClass}`,
+    readOnly,
+    'aria-readonly': readOnly || undefined,
+    className: `${baseClass} ${stateClass}${readOnly ? ' bg-[#F4F6F1] text-[#6B6560]' : ''}`,
   };
 
   return (

@@ -9,9 +9,8 @@
  * request may act on. The merchant ID comes from the `merchantId` query parameter.
  *
  * It lives under app/api/ (a private `_lib` folder, not a route) because it uses the service-role
- * client, which may only be imported there (scripts/check-service-role-usage.mjs). Writes must
- * still scope themselves to the returned merchant ID and recheck its state in the write itself;
- * see MERCHANT_WRITABLE_STATE_FILTER.
+ * client, which may only be imported there (scripts/check-service-role-usage.mjs). Writes recheck
+ * ownership and restaurant state inside their database transaction (D2-A RPCs).
  */
 
 import 'server-only';
@@ -28,12 +27,6 @@ import type { MerchantAccessRow, MerchantCapability, MerchantRestriction, Mercha
 
 export type MerchantAccess = { user: User; merchant: MerchantAccessRow; restriction: MerchantRestriction };
 type Denied = { response: NextResponse };
-
-/**
- * PostgREST filter for writes to `merchants`: the row is only changed while it is neither
- * suspended nor archived, checked by the UPDATE statement itself (legacy and managed rows).
- */
-export const MERCHANT_WRITABLE_STATE_FILTER = 'platform_status.is.null,platform_status.not.in.(SUSPENDED,ARCHIVED)';
 
 export function merchantErrorResponse(status: number, code: string, message: string) {
   return NextResponse.json({ error: message, code }, { status });

@@ -23,6 +23,11 @@ import { SettingsPanel } from './components/settings-panel';
 import StoriesManager from './components/stories-manager';
 import StoryEditor from './components/story-editor';
 import StorySubmissionsManager from './components/story-submissions-manager';
+import LinkReviewQueue from './components/link-review-queue';
+import BasicsReviewQueue from './components/basics-review-queue';
+import FeedbackInbox from './components/feedback-inbox';
+import RestaurantReviewQueue from './components/restaurant-review-queue';
+import ReportsInbox from './components/reports-inbox';
 import MerchantManager from './components/merchant-manager';
 import ContentServiceManager from './components/content-service-manager';
 import { Lock, Loader2 } from 'lucide-react';
@@ -36,6 +41,7 @@ export default function AdminPage() {
   const [showEditor, setShowEditor] = useState(false);
   const [editingSlug, setEditingSlug] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [changeRequestSearch, setChangeRequestSearch] = useState('');
 
   // Login form state
   const [password, setPassword] = useState('');
@@ -343,6 +349,21 @@ export default function AdminPage() {
         }} />
       )}
 
+      {activeTab === 'link-reviews' && (
+        <div className="space-y-10">
+          <label className="block space-y-2 text-sm font-medium text-slate-200">
+            Search change requests by restaurant
+            <input type="search" value={changeRequestSearch} onChange={(event) => setChangeRequestSearch(event.target.value)}
+              placeholder="Restaurant name or slug" className="block min-h-11 w-full rounded-lg border border-slate-700 bg-slate-900 px-4 text-sm text-white placeholder:text-slate-500 focus:border-amber-500 focus:outline-none" />
+          </label>
+          <BasicsReviewQueue searchQuery={changeRequestSearch} />
+          <LinkReviewQueue searchQuery={changeRequestSearch} />
+        </div>
+      )}
+      {activeTab === 'feedback' && <FeedbackInbox />}
+      {activeTab === 'restaurant-reviews' && <RestaurantReviewQueue />}
+      {activeTab === 'reports' && <ReportsInbox />}
+
       {activeTab === 'content-service' && (
         <ContentServiceManager />
       )}
@@ -350,7 +371,7 @@ export default function AdminPage() {
       {/* Merchant Manager */}
       {activeTab === 'merchant-manager' && (
         <div className="space-y-6">
-          <MerchantManager />
+          <MerchantManager onOpenChangeRequests={() => setActiveTab('link-reviews')} />
         </div>
       )}
 

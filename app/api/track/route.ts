@@ -14,6 +14,7 @@ const ALLOWED_PAGE_TYPES = new Set([
   'story_list',
   'join_us',
   'our_partner',
+  'discovery',
   'other',
 ]);
 const SLUG_PATTERN = /^[a-z0-9-]{1,200}$/;

@@ -10,8 +10,8 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const source = await readFile(new URL("../app/dev/layout-fixtures/page.tsx", import.meta.url), "utf8");
-const fixtures = await readFile(new URL("../app/dev/layout-fixtures/fixtures.ts", import.meta.url), "utf8");
+const source = (await readFile(new URL("../app/dev/layout-fixtures/page.tsx", import.meta.url), "utf8")).replace(/\r\n/g, "\n");
+const fixtures = (await readFile(new URL("../app/dev/layout-fixtures/fixtures.ts", import.meta.url), "utf8")).replace(/\r\n/g, "\n");
 const both = `${source}\n${fixtures}`;
 
 /* ── unreachable outside development ───────────────────────────────────────────────────────── */

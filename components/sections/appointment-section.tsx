@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { FadeIn } from "@/app/components/animations";
 import {
   Calendar, Clock, Users, MessageSquare, Phone, User, CheckCircle2, Send,
@@ -71,6 +71,7 @@ export function AppointmentSection({
   id,
   slug,
 }: AppointmentSectionProps) {
+  const fieldId = useId();
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -175,23 +176,23 @@ export function AppointmentSection({
               </div>
               <div className="grid sm:grid-cols-2 gap-5">
                 <div>
-                  <label className={`block text-sm font-medium mb-1.5 ${textColor[variant]}`}>
+                  <label htmlFor={`${fieldId}-date`} className={`block text-sm font-medium mb-1.5 ${textColor[variant]}`}>
                     <Calendar size={14} className="inline mr-1.5 -mt-0.5 opacity-60" />Date
                   </label>
-                  <input type="date" required value={formData.date} onChange={(e) => updateField("date", e.target.value)} className={inputStyles[variant]} min={new Date().toISOString().split("T")[0]} />
+                  <input id={`${fieldId}-date`} type="date" required value={formData.date} onChange={(e) => updateField("date", e.target.value)} className={inputStyles[variant]} min={new Date().toISOString().split("T")[0]} />
                 </div>
                 <div>
-                  <label className={`block text-sm font-medium mb-1.5 ${textColor[variant]}`}>
+                  <label htmlFor={`${fieldId}-time`} className={`block text-sm font-medium mb-1.5 ${textColor[variant]}`}>
                     <Clock size={14} className="inline mr-1.5 -mt-0.5 opacity-60" />Time
                   </label>
-                  <input type="time" required value={formData.time} onChange={(e) => updateField("time", e.target.value)} className={inputStyles[variant]} />
+                  <input id={`${fieldId}-time`} type="time" required value={formData.time} onChange={(e) => updateField("time", e.target.value)} className={inputStyles[variant]} />
                 </div>
               </div>
               <div>
-                <label className={`block text-sm font-medium mb-1.5 ${textColor[variant]}`}>
+                <label htmlFor={`${fieldId}-guests`} className={`block text-sm font-medium mb-1.5 ${textColor[variant]}`}>
                   <Users size={14} className="inline mr-1.5 -mt-0.5 opacity-60" />Number of Guests
                 </label>
-                <select value={formData.guests} onChange={(e) => updateField("guests", e.target.value)} className={inputStyles[variant]}>
+                <select id={`${fieldId}-guests`} value={formData.guests} onChange={(e) => updateField("guests", e.target.value)} className={inputStyles[variant]}>
                   {[1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 15, 20].map((n) => (
                     <option key={n} value={n}>{n} {n === 1 ? "person" : "people"}</option>
                   ))}

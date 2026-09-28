@@ -99,7 +99,7 @@ export function ReviewsSection({
 
               <div>
                 <p className={`font-semibold text-sm ${theme.text}`}>{review.author}</p>
-                <p className={`text-xs opacity-50 ${theme.text}`}>{review.date}</p>
+                <p className={`text-xs ${theme.text}`}>{review.date}</p>
               </div>
             </div>
 
