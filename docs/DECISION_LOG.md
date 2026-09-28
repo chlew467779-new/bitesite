@@ -213,3 +213,7 @@ A new feature idea must not silently become a decision. Add it here only after C
 ## SYNC-064 — Admin can move a restaurant to a new Owner account (DECIDED by CH, 2026-09-28)
 
 - When a business changes hands, Admin links the new person's account by email in Merchant Manager; the restaurant moves to it and the previous Owner loses access (membership suspended, not deleted). One database transaction (`merchant_owner_assign`) suspends the old Owner before activating the new one and audits both steps; before this, linking a second account always failed on the one-active-Owner index. Admin confirms before linking and sees who lost access.
+
+## SYNC-065 — Area and cuisine landing pages (implements Master Spec §27, Claude 2026-09-28)
+
+- `/area/<slug>` and `/cuisine/<slug>` list the public restaurants of one area or cuisine (cuisine = the `cuisine` tags plus the legacy `cuisine_type`, case-insensitive). Slugs are lowercase-hyphenated labels; other spellings redirect permanently; unknown groups 404. Pages with fewer than two restaurants render but are `noindex` and stay out of the sitemap (no thin pages). Each page has ItemList and BreadcrumbList JSON-LD and links to the other areas and cuisines; every store page links to its area and cuisine pages. Page views are tracked as `discovery`. No migration (public projection only).

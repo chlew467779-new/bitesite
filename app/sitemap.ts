@@ -3,6 +3,8 @@
 import { MetadataRoute } from "next";
 import { createClient } from "@supabase/supabase-js";
 import { getSiteUrl } from "@/lib/site-url";
+import { PUBLIC_MERCHANT_SELECT } from "@/lib/public-merchant-projection.mjs";
+import { discoveryGroups, discoveryPath, type DiscoveryKind } from "@/lib/discovery-core.mjs";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,6 +25,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: "weekly" as const,
     priority: 0.8,
   }));
+  // Area and cuisine landing pages with at least two public restaurants (no thin pages).
+  const { data: listed } = await supabase.from("merchants").select(PUBLIC_MERCHANT_SELECT);
+  const landingUrls = (['area', 'cuisine'] as DiscoveryKind[]).flatMap((kind) =>
+    discoveryGroups(kind, (listed ?? []) as { area?: string | null; cuisine?: string[] | null; cuisine_type?: string | null }[])
+      .filter((group) => group.indexable)
+      .map((group) => ({ url: `${siteUrl}${discoveryPath(kind, group.slug)}`, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.6 })));
   // Row level security (private.article_is_public) returns only public Stories.
   const { data: stories } = await supabase
     .from('articles')
@@ -43,6 +51,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 1.0,
     },
     ...merchantUrls,
+    ...landingUrls,
     ...storyUrls,
   ];
 }
