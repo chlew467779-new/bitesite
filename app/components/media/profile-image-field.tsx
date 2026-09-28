@@ -160,7 +160,7 @@ export function ProfileImageField({ slot, productId, label, value, apiBase, getH
 
       <div className="flex flex-col gap-2 sm:flex-row">
         <label htmlFor={inputId}
-          className={`inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-[#2C3E2D] px-4 text-sm font-medium text-white sm:w-auto ${locked ? 'pointer-events-none opacity-50' : 'cursor-pointer'}`}>
+          className={`inline-flex min-h-11 w-full items-center justify-center rounded-lg px-4 text-sm font-medium sm:w-auto ${slot === 'dish' ? 'border border-[#2C3E2D] bg-white text-[#2C3E2D]' : 'bg-[#2C3E2D] text-white'} ${locked ? 'pointer-events-none opacity-50' : 'cursor-pointer'}`}>
           {value ? 'Change photo' : 'Choose photo'}
         </label>
         {/* JPEG/PNG/WebP only: phones convert HEIC photos to JPEG for these types. */}

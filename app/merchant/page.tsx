@@ -58,6 +58,10 @@ type SwitchPrompt = { targetId: string; message?: string } | null;
 type LeaveKind = 'stories' | 'signout' | 'new';
 type LeavePrompt = { kind: LeaveKind; message?: string } | null;
 
+function archivedLast(choices: Choice[]) {
+  return [...choices].sort((a, b) => Number(a.restriction === 'archived') - Number(b.restriction === 'archived'));
+}
+
 const SECTIONS = [
   { id: 'basics', label: 'Listing basics' },
   { id: 'about', label: 'About' },
@@ -347,7 +351,7 @@ export default function MerchantDashboardPage() {
       results.push(`${id}: ${outcome}`);
       if (outcome !== 'saved' && outcome !== 'noop') {
         setSwitching(false);
-        setSwitchPrompt({ targetId, message: `Not switched. ${outcome === 'conflict' ? 'A section has a conflict to resolve.' : 'A section could not be saved.'} Sections saved before it stay saved.` });
+        setSwitchPrompt({ targetId, message: `Not switched. ${outcome === 'skipped' ? 'Finish or cancel the open edit in Photos / Links / Menu first.' : outcome === 'conflict' ? 'A section has a conflict to resolve.' : 'A section could not be saved.'} Sections saved before it stay saved.` });
         return;
       }
     }
@@ -437,7 +441,7 @@ export default function MerchantDashboardPage() {
       const outcome = await handle.save();
       if (outcome !== 'saved' && outcome !== 'noop') {
         setSwitching(false);
-        setLeavePrompt({ kind, message: `Not leaving. ${outcome === 'conflict' ? 'A section has a conflict to resolve.' : 'A section could not be saved.'} Your changes are still here.` });
+        setLeavePrompt({ kind, message: `Not leaving. ${outcome === 'skipped' ? 'Finish or cancel the open edit in Photos / Links / Menu first.' : outcome === 'conflict' ? 'A section has a conflict to resolve.' : 'A section could not be saved.'} Your changes are still here.` });
         return;
       }
     }
@@ -476,12 +480,12 @@ export default function MerchantDashboardPage() {
               <p className="mt-4 text-sm text-[#6B6560]">Choose the restaurant you want to manage.</p>
               <Link href="/merchant/new" className="mt-4 inline-block text-sm text-emerald-800 underline">Create another restaurant</Link>
               <ul className="mt-4 space-y-2">
-                {load.merchants.map((choice) => (
+                {archivedLast(load.merchants).map((choice) => (
                   <li key={choice.id}>
                     {/* A full page load, so nothing from one restaurant carries over to another. */}
                     <a href={merchantPageUrl('/merchant', choice.id)} className="flex items-center justify-between gap-3 rounded-lg border border-[#DDE5DC] px-4 py-3 text-sm font-medium text-[#2C3E2D] hover:border-emerald-700">
                       <span className="min-w-0 break-words">{choice.name}</span>
-                      {choice.restriction !== 'none' && <span className="shrink-0 text-xs font-normal text-[#6B6560]">Read only</span>}
+                      {choice.restriction !== 'none' && <span className="shrink-0 text-xs font-normal text-[#6B6560]">{choice.restriction === 'archived' ? 'Discarded' : 'Read only'}</span>}
                     </a>
                   </li>
                 ))}
@@ -551,8 +555,8 @@ export default function MerchantDashboardPage() {
                   onChange={(event) => requestSwitch(event.target.value)}
                   className="min-w-0 max-w-full rounded-lg border border-[#C9D6C7] bg-white px-3 py-2 text-sm"
                 >
-                  {merchants.map((choice) => (
-                    <option key={choice.id} value={choice.id}>{choice.name}{choice.restriction !== 'none' ? ' (read only)' : ''}</option>
+                  {archivedLast(merchants).map((choice) => (
+                    <option key={choice.id} value={choice.id}>{choice.name}{choice.restriction === 'archived' ? ' (Discarded)' : choice.restriction !== 'none' ? ' (read only)' : ''}</option>
                   ))}
                 </select>
               </label>
@@ -618,7 +622,7 @@ export default function MerchantDashboardPage() {
 
       <div className="mx-auto grid max-w-6xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[15rem_minmax(0,1fr)] lg:py-8">
         <aside className="min-w-0 lg:sticky lg:top-6 lg:self-start">
-          <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-5">
+          {listing?.stateSource !== 'managed' && <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-5">
             <div className="flex items-baseline justify-between gap-2">
               <h2 className="text-sm font-semibold text-[#2C3E2D]">Listing checklist</h2>
               <span className="text-xs font-semibold text-emerald-800">{completed}/{checklist.length}</span>
@@ -635,7 +639,7 @@ export default function MerchantDashboardPage() {
                 </li>
               ))}
             </ul>
-          </div>
+          </div>}
           <nav aria-label="Dashboard sections" className="mt-4">
             <ul className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible">
               {SECTIONS.map((section) => (

@@ -187,6 +187,11 @@ A new feature idea must not silently become a decision. Add it here only after C
 
 - Owners switch OPEN ↔ TEMPORARILY_CLOSED with an optional note (≤200) and reopening date (today..+1 year); MOVED/PERMANENTLY_CLOSED stay Admin-only. The public page says "<name> is temporarily closed" with the note and date instead of the generic unavailable text.
 
+## SYNC-058 — Merchant pilot terms acceptance (RECOMMENDATION, ChatGPT 2026-09-28)
+
+- Creating a self-service restaurant requires agreement to pilot Merchant Terms version `2026-09-pilot` and an explicit declaration of authority to represent the restaurant and rights to use supplied text and photos. The accepted version and declaration are recorded privately with the new draft.
+- The terms page is a draft for CH review. CH must approve the wording before hosted release; changing the version or accepted terms later needs an explicit rollout decision.
+
 ## SYNC-059 — Owners request name/address/cuisine changes after approval (DECIDED by Claude under CH delegation, 2026-09-28)
 
 - After approval (and always for legacy restaurants) name, location and cuisine stay Admin-only, but the Owner can now send one reviewed request for any of them instead of "contact BiteSite". Approval applies every requested detail at once through the field-save contract (compare-and-set against the values when the Owner asked); reject needs a note the Owner sees. A newer request replaces the waiting one; it can be withdrawn.
