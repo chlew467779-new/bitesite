@@ -195,7 +195,7 @@ A new feature idea must not silently become a decision. Add it here only after C
 ## SYNC-059 — Owners request name/address/cuisine changes after approval (DECIDED by Claude under CH delegation, 2026-09-28)
 
 - After approval (and always for legacy restaurants) name, location and cuisine stay Admin-only, but the Owner can now send one reviewed request for any of them instead of "contact BiteSite". Approval applies every requested detail at once through the field-save contract (compare-and-set against the values when the Owner asked); reject needs a note the Owner sees. A newer request replaces the waiting one; it can be withdrawn.
-- Owners cannot move the map pin or change the web address this way; Admin updates the pin after an address change (the queue reminds them) and keeps the slug panel. Shown on the Admin "Change Requests" page (formerly Link Reviews), counted in its badge. No email for these decisions yet (links have none either).
+- Owners cannot move the map pin or change the web address this way; Admin updates the pin after an address change (the queue reminds them) and keeps the slug panel. Shown on the Admin "Change Requests" page (formerly Link Reviews), counted in its badge. SYNC-063 adds decision emails for basics requests; links still have none.
 - The older `merchant_profile_change_requests` (manual "resolved" flag, no Owner UI since D2-B) is left in place; retire it in the release review.
 
 ## SYNC-060 — Story submissions reference the restaurant by id (implements FINAL_AUDIT 05 §Stories, Claude 2026-09-28)
@@ -209,6 +209,11 @@ A new feature idea must not silently become a decision. Add it here only after C
 ## SYNC-062 — No restaurant claim flow (DECIDED by CH, 2026-09-28)
 
 - BiteSite does not offer "claim an existing restaurant" (Master Spec §21 claim flow, P1 "Merchant Claim flow", OQ-002 are out of scope). CH: claims add risk of the wrong person getting a restaurant. The only merchant journey is: register → confirm email → sign in with email and password → create own restaurant draft → submit for review → approved → publish. A first implementation (fa0c115) was reverted the same day. Admin can still link an Owner to a restaurant in Merchant Manager.
+
+## SYNC-063 — Email Owners about basics review decisions (DECIDED by Claude under CH delegation, 2026-09-28)
+
+- An Admin approval or rejection of an Owner's name, address, or cuisine request queues one Owner email through the existing notification outbox. The email links to the merchant dashboard and includes the Admin note when supplied. Delivery uses the existing active Owner recipient lookup.
+- The notification kind constraint contains only the four listing review kinds and `basics_approved` / `basics_rejected`; claim kinds remain retired. No real email is sent as part of local verification.
 
 ## SYNC-064 — Admin can move a restaurant to a new Owner account (DECIDED by CH, 2026-09-28)
 

@@ -147,6 +147,13 @@ For each released step retain: application SHA/deployment URL, exact executed SQ
 - Application: `/api/merchant/story-submissions` GET filters by `merchant_id` — deploy after the migration.
 - Rollback FIRST: `supabase/rollback/20260928100000_story_submission_merchant_id.rollback.STAGING_ONLY.sql`.
 
+## 19. Owner notifications for basics review decisions
+
+- Migration: `20260928150000_basics_review_notifications.sql`, after `20260928090000`. Extends the notification kind constraint with `basics_approved` and `basics_rejected`, and updates `merchant_basics_review` to enqueue one Owner notification per decision. The retired claim kinds are not included.
+- Application: the existing notification delivery worker sends the decision email to active Owners using the dashboard link; no new provider configuration is needed. Apply the migration before relying on the new kinds.
+- Local verification: `supabase/tests/basics_review_notifications_behavior_tests.sql`, `npm run test:notifications`, and `npm run verify`. The SQL test checks one approval and one rejection notification.
+- Rollback FIRST: `supabase/rollback/20260928150000_basics_review_notifications.rollback.STAGING_ONLY.sql`. It deletes the two new kinds, restores the four review kinds, and restores the previous review function.
+
 ## 20. Admin Owner transfer fix
 
 - Migration: `20260928120000_merchant_owner_assign.sql`, after `20260928100000` (independent of §19). One RPC, no table change.

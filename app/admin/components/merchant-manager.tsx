@@ -7,7 +7,6 @@ import { useAuth } from './auth-context';
 import { Search, Plus, Eye, EyeOff, Store, Loader2, ExternalLink, Pencil, Circle, UserPlus } from 'lucide-react';
 import { merchantListState, merchantReviewLabel } from '@/lib/merchant-list-state.mjs';
 import MerchantForm from './merchant-form';
-import MerchantProfileChangeRequests from './merchant-profile-change-requests';
 import { describeLayoutValueForLog, getLayoutMeta, isLayoutKey, isPersistableLayout } from '@/lib/layout-registry.mjs';
 
 /** A stored value the public page renders as intended: a production-ready key, or null, which is
@@ -67,7 +66,7 @@ function getPlatformStatusBadge(merchant: Merchant) {
   </span>;
 }
 
-export default function MerchantManager() {
+export default function MerchantManager({ onOpenChangeRequests }: { onOpenChangeRequests: () => void }) {
   const { token } = useAuth();
   const [merchants, setMerchants] = useState<Merchant[]>([]);
   const [loading, setLoading] = useState(true);
@@ -261,7 +260,12 @@ export default function MerchantManager() {
 
   return (
       <div className="space-y-6">
-        <MerchantProfileChangeRequests />
+        <div className="flex flex-col gap-3 rounded-xl border border-slate-700 bg-slate-900 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-slate-300">Review restaurant detail and link requests in Change Requests.</p>
+          <button type="button" onClick={onOpenChangeRequests} className="min-h-11 w-full rounded-lg border border-amber-500/50 px-4 py-2 text-sm font-medium text-amber-400 hover:bg-amber-500/10 sm:w-auto">
+            Open Change Requests
+          </button>
+        </div>
       {linkingMerchant && (
         <div className="rounded-xl border border-amber-500/40 bg-slate-900 p-4 space-y-3">
           <div className="flex items-center justify-between gap-3"><div><h2 className="font-semibold text-white">Link merchant user</h2><p className="text-xs text-slate-400">{linkingMerchant.name} — the person needs a confirmed BiteSite merchant account. Linking a new account moves the restaurant to it; the previous Owner loses access.</p></div><button onClick={() => setLinkingMerchant(null)} className="text-slate-400 hover:text-white text-sm">Cancel</button></div>

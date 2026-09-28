@@ -25,7 +25,7 @@ function rows(item: BasicsQueueItem) {
   return out;
 }
 
-export default function BasicsReviewQueue() {
+export default function BasicsReviewQueue({ searchQuery = '' }: { searchQuery?: string }) {
   const { token } = useAuth();
   const [items, setItems] = useState<BasicsQueueItem[] | null>(null);
   const [error, setError] = useState('');
@@ -49,6 +49,10 @@ export default function BasicsReviewQueue() {
   }, [token]);
 
   useEffect(() => { void load(); }, [load]);
+
+  const query = searchQuery.trim().toLocaleLowerCase();
+  const visibleItems = items?.filter((item) =>
+    item.merchantName.toLocaleLowerCase().includes(query) || item.slug.toLocaleLowerCase().includes(query));
 
   const decide = async (item: BasicsQueueItem, decision: 'approve' | 'reject') => {
     if (!token || working) return;
@@ -94,7 +98,8 @@ export default function BasicsReviewQueue() {
       {error && <p className="rounded-lg bg-red-950/40 px-4 py-3 text-sm text-red-300" role="alert">{error} <button type="button" className="ml-2 underline" onClick={() => void load()}>Try again</button></p>}
       {!items && !error && <Loader2 className="h-6 w-6 animate-spin text-amber-500" />}
       {items && items.length === 0 && <p className="text-sm text-slate-400">No name, address or cuisine requests are waiting.</p>}
-      {items?.map((item) => (
+      {items && items.length > 0 && visibleItems?.length === 0 && <p className="text-sm text-slate-400">No name, address or cuisine requests match this restaurant.</p>}
+      {visibleItems?.map((item) => (
         <div key={item.id} className="rounded-xl bg-white p-4 text-[#2C3E2D]">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <p className="font-semibold">{item.merchantName} <span className="text-sm font-normal text-[#6B6560]">/{item.slug}</span></p>

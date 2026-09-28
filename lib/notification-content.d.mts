@@ -2,7 +2,7 @@ export interface ClaimedNotification {
   id: string;
   merchantId: string;
   audience: "owner" | "admin";
-  kind: "review_submitted" | "review_withdrawn" | "review_approved" | "review_rejected";
+  kind: "review_submitted" | "review_withdrawn" | "review_approved" | "review_rejected" | "basics_approved" | "basics_rejected";
   message: string | null;
   attempts: number;
   createdAt: string;

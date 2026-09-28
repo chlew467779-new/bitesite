@@ -8,6 +8,7 @@ import { verifyAdminToken } from '@/lib/admin-auth';
 import { InvalidJsonBodyError, readBoundedJson, RequestBodyTooLargeError } from '@/lib/bounded-json';
 
 const MAX_SUBMISSION_BODY_BYTES = 512 * 1024;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const channels = ['self_service_form', 'admin_relayed'] as const;
 const statuses = ['draft', 'pending_review', 'approved', 'rejected', 'archived', 'converted'] as const;
@@ -62,11 +63,14 @@ export async function GET(request: NextRequest) {
   const params = new URL(request.url).searchParams;
   const status = params.get('status');
   const merchantSlug = params.get('merchant_slug');
+  const merchantId = params.get('merchant_id');
   if (status && !validEnum(status, statuses)) return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
+  if (merchantId !== null && !UUID_PATTERN.test(merchantId)) return NextResponse.json({ error: 'Invalid merchant_id' }, { status: 400 });
 
-  let query = supabase.from('story_submissions').select('*').order('created_at', { ascending: false });
+  let query = supabase.from('story_submissions').select('*, merchant:merchants(name, slug)').order('created_at', { ascending: false });
   if (status) query = query.eq('status', status);
   if (merchantSlug) query = query.eq('merchant_slug', merchantSlug);
+  if (merchantId) query = query.eq('merchant_id', merchantId);
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ submissions: data || [] });

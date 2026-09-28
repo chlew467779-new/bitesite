@@ -49,7 +49,7 @@ assert.doesNotMatch(owner, /merchant_basics_review|merchant_basics_queue/, "Owne
 const admin = await read("app/api/admin/basics-reviews/route.ts");
 assert.match(admin, /verifyAdminToken/);
 assert.match(admin, /p_actor_id: ADMIN_PRINCIPAL/);
-assert.match(await read("app/admin/page.tsx"), /<BasicsReviewQueue \/>/);
+assert.match(await read("app/admin/page.tsx"), /<BasicsReviewQueue searchQuery=\{changeRequestSearch\} \/>/);
 assert.match(await read("app/api/admin/attention/route.ts"), /count\('merchant_basics_requests'\)/, "the badge counts basics requests");
 const page = await read("app/merchant/page.tsx");
 assert.match(page, /!listing\.basicsEditable && <BasicsRequests /, "requests only when basics are not directly editable");
