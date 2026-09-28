@@ -46,7 +46,7 @@ const navItems = [
   { id: 'stories-editor', label: 'Stories Editor', icon: PenLine },
   { id: 'story-submissions', label: 'Story Submissions', icon: Inbox },
   { id: 'restaurant-reviews', label: 'Restaurant Reviews', icon: ShieldCheck },
-  { id: 'link-reviews', label: 'Link Reviews', icon: ShieldCheck },
+  { id: 'link-reviews', label: 'Change Requests', icon: ShieldCheck },
   { id: 'feedback', label: 'Feedback', icon: MessageSquare },
   { id: 'content-service', label: 'Content Service', icon: CalendarClock },
   { id: 'merchant-manager', label: 'Merchant Manager', icon: Building2 },

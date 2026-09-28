@@ -77,7 +77,7 @@ export default function LinkReviewQueue() {
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-xl font-semibold text-slate-100">Link Reviews</h2>
+        <h3 className="text-lg font-semibold text-slate-100">Links</h3>
         <p className="text-sm text-slate-400">Restaurants ask for website, social, menu and GrabFood link changes here. Nothing appears on their page until you approve it.</p>
       </div>
       {error && <p className="rounded-lg bg-red-950/40 px-4 py-3 text-sm text-red-300" role="alert">{error} <button type="button" className="ml-2 underline" onClick={() => void load()}>Try again</button></p>}

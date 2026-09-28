@@ -127,3 +127,9 @@ For each released step retain: application SHA/deployment URL, exact executed SQ
 - Migration: `20260927210000_owner_temporary_closure.sql`, after `20260927200000`. New table + two RPCs; merchant projection unchanged.
 - Application: `/api/merchant/restaurants/[id]/business-status`, dashboard panel in Opening hours, store page closed view.
 - Rollback FIRST: `supabase/rollback/20260927210000_owner_temporary_closure.rollback.STAGING_ONLY.sql`.
+
+## 16. Owner basics change requests
+
+- Migration: `20260928090000_merchant_basics_requests.sql`, after `20260927210000` (and after ChatGPT T11 `20260927220000` if released together). New private table + five RPCs; merchant projection unchanged.
+- Application: `/api/merchant/restaurants/[id]/basics`, `/api/admin/basics-reviews`, dashboard request form under Listing basics, Admin Change Requests page, attention badge.
+- Rollback FIRST: `supabase/rollback/20260928090000_merchant_basics_requests.rollback.STAGING_ONLY.sql`.

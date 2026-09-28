@@ -24,7 +24,7 @@ export function ListingBasics(props: SectionProps) {
     setError(''); void section.save();
   };
   return <div className="space-y-5">
-    {props.readOnly && <p className="text-sm text-[#6B6560]">After approval, contact BiteSite to change your restaurant name, address or cuisine.</p>}
+    {props.readOnly && <p className="text-sm text-[#6B6560]">BiteSite checks changes to your restaurant name, address or cuisine before they appear on your page.</p>}
     <TextField name="name" label="Restaurant name" autoComplete="organization" maxLength={160} showCount value={text(draft['profile.name'])} onChange={(v) => section.edit('profile.name', v)} readOnly={props.readOnly} error={section.state.error?.fieldErrors?.['profile.name']} />
     <TextField name="address" label="Address" autoComplete="street-address" multiline maxLength={500} showCount value={text(location.address)} onChange={(v) => section.edit('location', { ...location, address: v.trim() ? v : null })} readOnly={props.readOnly} error={section.state.error?.fieldErrors?.location} />
     <TextField name="area" label="Area (optional)" maxLength={160} value={text(location.area)} onChange={(v) => section.edit('location', { ...location, area: v.trim() ? v : null })} readOnly={props.readOnly} />

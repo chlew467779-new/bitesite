@@ -186,3 +186,9 @@ A new feature idea must not silently become a decision. Add it here only after C
 ## SYNC-057 — Owners mark temporarily closed (DECIDED by Claude under CH delegation, 2026-09-27)
 
 - Owners switch OPEN ↔ TEMPORARILY_CLOSED with an optional note (≤200) and reopening date (today..+1 year); MOVED/PERMANENTLY_CLOSED stay Admin-only. The public page says "<name> is temporarily closed" with the note and date instead of the generic unavailable text.
+
+## SYNC-059 — Owners request name/address/cuisine changes after approval (DECIDED by Claude under CH delegation, 2026-09-28)
+
+- After approval (and always for legacy restaurants) name, location and cuisine stay Admin-only, but the Owner can now send one reviewed request for any of them instead of "contact BiteSite". Approval applies every requested detail at once through the field-save contract (compare-and-set against the values when the Owner asked); reject needs a note the Owner sees. A newer request replaces the waiting one; it can be withdrawn.
+- Owners cannot move the map pin or change the web address this way; Admin updates the pin after an address change (the queue reminds them) and keeps the slug panel. Shown on the Admin "Change Requests" page (formerly Link Reviews), counted in its badge. No email for these decisions yet (links have none either).
+- The older `merchant_profile_change_requests` (manual "resolved" flag, no Owner UI since D2-B) is left in place; retire it in the release review.

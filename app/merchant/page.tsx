@@ -9,6 +9,7 @@ import { ListingBasics } from './components/listing-basics';
 import type { ListingState } from '@/lib/merchant-review-core.mjs';
 import { MenuManager } from './components/menu-manager';
 import { LinkRequests } from './components/link-requests';
+import { BasicsRequests } from './components/basics-requests';
 import { validateProfileField } from '@/lib/merchant-profile-validation.mjs';
 import { WEEK_DAYS, type WeekDay } from '@/lib/merchant-hours.mjs';
 import { merchantPageUrl, selectedMerchantIdFromSearch } from '@/lib/merchant-context-url.mjs';
@@ -645,7 +646,7 @@ export default function MerchantDashboardPage() {
             </ul>
           </nav>
           <p className="mt-4 hidden text-xs leading-relaxed text-[#6B6560] lg:block">
-            Save each section separately. You can edit listing basics until approval; later changes to those details go through BiteSite. External links are reviewed.
+            Save each section separately. You can edit listing basics until approval; later changes to those details are requested and checked by BiteSite. External links are reviewed.
           </p>
         </aside>
 
@@ -654,6 +655,7 @@ export default function MerchantDashboardPage() {
           {listing && <ListingPanel key={sectionKey} merchantId={profile.id} state={listing} getHeaders={photoHeaders} refresh={refreshListing} onState={onListingState} onBusy={setListingBusy} register={register} beforeAction={() => { const status = anyStatus(); return !status.dirty && !status.busy; }} />}
           <SectionCard id="basics" title="Listing basics" description="Your restaurant name, location and cuisine.">
             <ListingBasics key={`basics:${sectionKey}`} {...sectionProps} readOnly={readOnly || !listing?.basicsEditable} />
+            {listing && !listing.basicsEditable && <BasicsRequests key={`basics-requests:${profile.id}:${data.loadId}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={readOnly} register={register} />}
           </SectionCard>
           <SectionCard id="about" title="About" description="A short line and description help visitors decide to come in.">
             <TextSection key={`about:${sectionKey}`} id="about" config={ABOUT_FIELDS} {...sectionProps} />
