@@ -16,6 +16,7 @@ import { trackEvent } from "@/lib/analytics";
 import { CUISINE_TYPES } from "@/lib/presets";
 import type { PublicMerchant } from "@/types";
 import { PUBLIC_MERCHANT_SELECT } from "@/lib/public-merchant-projection.mjs";
+import { discoveryGroups, discoveryPath } from "@/lib/discovery-core.mjs";
 
 function readHomeFilters() {
   if (typeof window === "undefined") {
@@ -156,6 +157,12 @@ export default function HomePage() {
     });
     return Array.from(allMore).sort();
   }, [merchants]);
+
+  const browseGroups = useMemo(() => (["area", "cuisine"] as const).map((kind) => ({
+    kind,
+    title: kind === "area" ? "Browse by area" : "Browse by cuisine",
+    groups: discoveryGroups(kind, merchants).filter((group) => group.indexable).slice(0, 12),
+  })), [merchants]);
 
   // Filter logic
   const filtered = useMemo(() => {
@@ -356,6 +363,26 @@ export default function HomePage() {
           )}
         </div>
       </section>
+
+      {browseGroups.some(({ groups }) => groups.length > 0) && (
+        <section className="px-4 pb-16" aria-label="Browse restaurants">
+          <div className="mx-auto max-w-6xl space-y-8">
+            {browseGroups.map(({ kind, title, groups }) => groups.length > 0 && (
+              <div key={kind}>
+                <h2 className="mb-3 text-xl font-semibold text-[#2C3E2D]">{title}</h2>
+                <div className="flex flex-wrap gap-2">
+                  {groups.map((group) => (
+                    <a key={group.slug} href={discoveryPath(kind, group.slug)}
+                      className="inline-flex min-h-11 items-center rounded-full border border-[#C9D6C7] bg-white px-4 text-sm font-medium text-[#2C3E2D] transition-colors hover:bg-[#F0F4EC]">
+                      {group.label}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <LatestStories />
       <Footer />
