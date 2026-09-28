@@ -346,7 +346,7 @@ export default function MerchantDashboardPage() {
       results.push(`${id}: ${outcome}`);
       if (outcome !== 'saved' && outcome !== 'noop') {
         setSwitching(false);
-        setSwitchPrompt({ targetId, message: `Not switched. ${outcome === 'conflict' ? 'A section has a conflict to resolve.' : 'A section could not be saved.'} Sections saved before it stay saved.` });
+        setSwitchPrompt({ targetId, message: `Not switched. ${outcome === 'skipped' ? 'Finish or cancel the open edit in Photos / Links / Menu first.' : outcome === 'conflict' ? 'A section has a conflict to resolve.' : 'A section could not be saved.'} Sections saved before it stay saved.` });
         return;
       }
     }
@@ -436,7 +436,7 @@ export default function MerchantDashboardPage() {
       const outcome = await handle.save();
       if (outcome !== 'saved' && outcome !== 'noop') {
         setSwitching(false);
-        setLeavePrompt({ kind, message: `Not leaving. ${outcome === 'conflict' ? 'A section has a conflict to resolve.' : 'A section could not be saved.'} Your changes are still here.` });
+        setLeavePrompt({ kind, message: `Not leaving. ${outcome === 'skipped' ? 'Finish or cancel the open edit in Photos / Links / Menu first.' : outcome === 'conflict' ? 'A section has a conflict to resolve.' : 'A section could not be saved.'} Your changes are still here.` });
         return;
       }
     }
