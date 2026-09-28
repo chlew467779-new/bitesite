@@ -200,3 +200,9 @@ A new feature idea must not silently become a decision. Add it here only after C
 ## SYNC-061 — Admin sees each restaurant's change history (DECIDED by Claude under CH delegation, 2026-09-28)
 
 - Merchant Manager → Features & status → "Change history" reads `merchant_change_log` (the D1a audit trail), newest first, 30 per page: operation, who (Owner shown by account email, "BiteSite Admin", or "Unknown" for direct database changes), and old → new values where the trail keeps them (state columns and the field-save paths); slug, links and photos are listed by name only. Read-only, Admin only, no migration. Owners do not see this history.
+
+## SYNC-062 — Claim an existing restaurant, V1 verification (answers OQ-002 for V1; DECIDED by Claude under CH delegation, 2026-09-28)
+
+- Every public restaurant page links to "Claim this restaurant". A signed-in account with a confirmed email says whether it owns or manages the restaurant, gives a name, phone and free-text evidence (e.g. SSM number, a time BiteSite may call the listed phone). Only public restaurants without an active Owner can be claimed; one waiting claim per account, at most five per restaurant.
+- **Every claim is reviewed by Admin** on the new "Restaurant Claims" page, which shows the claimant next to the restaurant's listed phone/email/website so the reviewer can call or cross-check. The only automatic signal is "account email domain matches the restaurant website" (free-mail domains never match); nothing is approved automatically. Approval creates the Owner membership (audited as 'linked'), closes competing claims and emails everyone; rejection needs a note the claimant receives. OQ-002 stays open for later automation (phone OTP, document upload).
+- The notification outbox gains claim kinds and `recipient_user_id` (a claimant is not an Owner). Login accepts `?next=` for same-site `/merchant` paths only, so claimants return to the claim page after signing in or confirming their email.

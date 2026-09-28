@@ -293,6 +293,10 @@ export default async function MerchantPage({ params }: PageProps) {
         footerText={settings.footer_text}
       />
       <RelatedMerchants merchants={publicRelatedMerchants} variant={layoutKey} />
+      <p className="px-4 pb-8 pt-2 text-center text-sm text-[#6B6560]">
+        Is this your restaurant?{" "}
+        <a href={`/merchant/claim?restaurant=${encodeURIComponent(merchant.slug)}`} rel="nofollow" className="inline-flex min-h-11 items-center text-emerald-800 underline underline-offset-2">Claim this restaurant</a>
+      </p>
     </>
   );
 }

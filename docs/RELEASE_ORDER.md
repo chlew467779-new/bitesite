@@ -139,3 +139,10 @@ For each released step retain: application SHA/deployment URL, exact executed SQ
 - Migration: `20260928100000_story_submission_merchant_id.sql`, after `20260928090000`. Adds a nullable column + trigger + two indexes and backfills; check `select count(*) from story_submissions where merchant_slug is not null and merchant_id is null` after applying (unlinked relayed submissions, expected 0 or explained).
 - Application: `/api/merchant/story-submissions` GET filters by `merchant_id` — deploy after the migration.
 - Rollback FIRST: `supabase/rollback/20260928100000_story_submission_merchant_id.rollback.STAGING_ONLY.sql`.
+
+## 18. Restaurant claims
+
+- Migration: `20260928110000_merchant_claims.sql`, after `20260928100000`. New private table, six RPCs, notification kinds + `recipient_user_id`, replaces `merchant_notification_claim` (same output plus the explicit recipient).
+- Application: `/merchant/claim`, `/api/merchant/claims`, `/api/admin/claims`, Admin "Restaurant Claims" page and badge, store page link, login `?next=`, claim email templates.
+- Hosted Auth prerequisite: the redirect allow-list must accept `<site>/merchant/**` so sign-up confirmation links can return to `/merchant/claim?restaurant=…` (otherwise they fall back to the site URL; claiming still works after signing in).
+- Rollback FIRST: `supabase/rollback/20260928110000_merchant_claims.rollback.STAGING_ONLY.sql` (keeps memberships created by approved claims).

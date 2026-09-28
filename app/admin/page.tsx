@@ -27,6 +27,7 @@ import LinkReviewQueue from './components/link-review-queue';
 import BasicsReviewQueue from './components/basics-review-queue';
 import FeedbackInbox from './components/feedback-inbox';
 import RestaurantReviewQueue from './components/restaurant-review-queue';
+import ClaimQueue from './components/claim-queue';
 import MerchantManager from './components/merchant-manager';
 import ContentServiceManager from './components/content-service-manager';
 import { Lock, Loader2 } from 'lucide-react';
@@ -350,6 +351,7 @@ export default function AdminPage() {
       {activeTab === 'link-reviews' && <div className="space-y-10"><BasicsReviewQueue /><LinkReviewQueue /></div>}
       {activeTab === 'feedback' && <FeedbackInbox />}
       {activeTab === 'restaurant-reviews' && <RestaurantReviewQueue />}
+      {activeTab === 'claims' && <ClaimQueue />}
 
       {activeTab === 'content-service' && (
         <ContentServiceManager />
