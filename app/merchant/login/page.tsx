@@ -2,10 +2,6 @@
 import { FormEvent, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { validateCredentials } from '@/lib/merchant-auth-validation.mjs';
-import { safeMerchantNext } from '@/lib/merchant-claim-core.mjs';
-
-// Where to go after sign-in: a same-site /merchant path from ?next= (e.g. the claim page), else the dashboard.
-const afterSignIn = () => safeMerchantNext(new URLSearchParams(window.location.search).get('next'));
 
 type Mode = 'login' | 'register' | 'forgot' | 'magic';
 export default function MerchantLoginPage() {
@@ -28,15 +24,15 @@ export default function MerchantLoginPage() {
         if (!response.ok) throw new Error(data.error || 'Could not sign in.');
         const { error } = await supabase.auth.setSession(data.session);
         if (error) throw new Error('Could not sign in. Please try again.');
-        window.location.href = afterSignIn();
+        window.location.href = '/merchant';
       } else if (mode === 'register') {
         const input = validateCredentials({ email, password }, true);
         if (!input) throw new Error('Use a valid email and a password of at least 8 characters.');
         if (password !== confirm) throw new Error('Passwords do not match.');
-        const { data, error } = await supabase.auth.signUp({ ...input, options: { emailRedirectTo: `${window.location.origin}${afterSignIn()}` } });
+        const { data, error } = await supabase.auth.signUp({ ...input, options: { emailRedirectTo: `${window.location.origin}/merchant` } });
         if (error) throw new Error('Could not register. Please try again or sign in to your existing account.');
         setPassword(''); setConfirm('');
-        if (data.session) window.location.href = afterSignIn();
+        if (data.session) window.location.href = '/merchant';
         else setMessage('Check your inbox to confirm your email, then sign in to create your restaurant draft. If you already have an account, sign in or reset your password.');
       } else {
         const result = mode === 'forgot'
