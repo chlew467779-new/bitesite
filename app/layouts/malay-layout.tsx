@@ -9,7 +9,7 @@ import { TierSections } from "@/app/components/sections/tier-sections";
 import { ShareButtons } from "@/components/sections/share-buttons";
 import { mergeFeatures } from "@/types";
 import type { LayoutProps } from "@/types";
-import { MapPin, Phone, Mail, Instagram, Globe, ArrowLeft, MessageSquare, Clock, Banknote, Smartphone, CreditCard } from "lucide-react";
+import { MapPin, Phone, Mail, Instagram, Facebook, Globe, ArrowLeft, MessageSquare, Clock, Banknote, Smartphone, CreditCard } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { MenuViewTracker } from "@/components/sections/menu-view-tracker";
 import { shouldShowPrice } from "@/lib/menu-display.mjs";
@@ -186,6 +186,7 @@ export function MalayLayout({
                   )}
                   {merchant.email && <a href={`mailto:${merchant.email}`} onClick={() => trackEvent('email_click', { slug: merchant.slug, pageType: 'merchant' })} className={`flex items-center gap-3 text-emerald-900 active:scale-[0.98] transition-transform ${focusRing}`} style={{ WebkitTapHighlightColor: "transparent" }}><Mail size={18} /><span className="text-sm break-all">{merchant.email}</span></a>}
                   {merchant.instagram && <a href={merchant.instagram} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-3 text-emerald-900 active:scale-[0.98] transition-transform ${focusRing}`} style={{ WebkitTapHighlightColor: "transparent" }}><Instagram size={18} /><span className="text-sm">Instagram</span></a>}
+                  {merchant.facebook && <a href={merchant.facebook} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-3 text-emerald-900 active:scale-[0.98] transition-transform ${focusRing}`} style={{ WebkitTapHighlightColor: "transparent" }}><Facebook size={18} /><span className="text-sm">Facebook</span></a>}
                 </div>
                 <div className="space-y-1.5">
                   {hasHours && DAYS.map((day) => {
@@ -201,7 +202,7 @@ export function MalayLayout({
               </div>
 
               {/* Map */}
-              <MapEmbed address={merchant.address} borderColor="#A7F3D0" />
+              <MapEmbed address={merchant.address} latitude={merchant.latitude} longitude={merchant.longitude} borderColor="#A7F3D0" />
 
               {/* Payment Methods */}
               {merchant.payment_methods && merchant.payment_methods.length > 0 && (

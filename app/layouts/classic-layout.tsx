@@ -5,7 +5,7 @@
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
 import { TierSections } from "@/app/components/sections/tier-sections";
-import { MapPin, Phone, Clock, Mail, Instagram, Globe, ArrowLeft, MessageSquare, Banknote, Smartphone, CreditCard } from "lucide-react";
+import { MapPin, Phone, Clock, Mail, Instagram, Facebook, Globe, ArrowLeft, MessageSquare, Banknote, Smartphone, CreditCard } from "lucide-react";
 import Link from "next/link";
 import type { LayoutProps } from "@/types";
 import { mergeFeatures } from "@/types";
@@ -281,11 +281,23 @@ export function ClassicLayout({
                       <span className="text-sm">Instagram</span>
                     </a>
                   )}
+                  {merchant.facebook && (
+                    <a
+                      href={merchant.facebook}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 text-amber-800 active:scale-[0.98] transition-transform"
+                      style={{ WebkitTapHighlightColor: "transparent" }}
+                    >
+                      <Facebook size={18} />
+                      <span className="text-sm">Facebook</span>
+                    </a>
+                  )}
                 </div>
               </div>
               
               {/* Map */}
-              <MapEmbed address={merchant.address} borderColor="#FCD34D" />
+              <MapEmbed address={merchant.address} latitude={merchant.latitude} longitude={merchant.longitude} borderColor="#FCD34D" />
   
               {/* Payment Methods */}
               {merchant.payment_methods && merchant.payment_methods.length > 0 && (

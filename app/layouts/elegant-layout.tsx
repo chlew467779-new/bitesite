@@ -9,7 +9,7 @@ import { ShareButtons } from "@/components/sections/share-buttons";
 import { mergeFeatures } from "@/types";
 import type { LayoutProps } from "@/types";
 import {
-  MapPin, Phone, Mail, Instagram, Globe, ArrowLeft, MessageSquare, Banknote, Smartphone, CreditCard,
+  MapPin, Phone, Mail, Instagram, Facebook, Globe, ArrowLeft, MessageSquare, Banknote, Smartphone, CreditCard,
 } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { MenuViewTracker } from "@/components/sections/menu-view-tracker";
@@ -201,6 +201,16 @@ export function ElegantLayout({
                     <Globe size={18} /><span className="text-sm">Website</span>
                   </a>
                 )}
+                {merchant.instagram && (
+                  <a href={merchant.instagram} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-slate-400 hover:text-slate-200 transition-colors">
+                    <Instagram size={18} /><span className="text-sm">Instagram</span>
+                  </a>
+                )}
+                {merchant.facebook && (
+                  <a href={merchant.facebook} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-slate-400 hover:text-slate-200 transition-colors">
+                    <Facebook size={18} /><span className="text-sm">Facebook</span>
+                  </a>
+                )}
                 {merchant.email && (
                   <a href={`mailto:${merchant.email}`} onClick={() => trackEvent('email_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-3 text-slate-400 hover:text-slate-200 transition-colors">
                     <Mail size={18} /><span className="text-sm">{merchant.email}</span>
@@ -220,7 +230,7 @@ export function ElegantLayout({
               </div>
 
               {/* Map */}
-              <MapEmbed address={merchant.address} borderColor="#334155" />
+              <MapEmbed address={merchant.address} latitude={merchant.latitude} longitude={merchant.longitude} borderColor="#334155" />
 
               {/* Payment Methods */}
               {merchant.payment_methods && merchant.payment_methods.length > 0 && (
