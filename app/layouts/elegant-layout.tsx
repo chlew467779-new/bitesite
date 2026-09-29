@@ -11,6 +11,7 @@ import type { LayoutProps } from "@/types";
 import {
   MapPin, Phone, Mail, Instagram, Facebook, Globe, ArrowLeft, MessageSquare, Banknote, Smartphone, CreditCard,
 } from "lucide-react";
+import { formatPhone, phoneLinkDigits } from "@/lib/phone-core.mjs";
 import { trackEvent } from "@/lib/analytics";
 import { MenuViewTracker } from "@/components/sections/menu-view-tracker";
 import { shouldShowPrice } from "@/lib/menu-display.mjs";
@@ -192,8 +193,8 @@ export function ElegantLayout({
                   </a>
                 )}
                 {merchant.phone && (
-                  <a href={`tel:${merchant.phone}`} onClick={() => trackEvent('phone_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-3 text-slate-400 hover:text-slate-200 transition-colors">
-                    <Phone size={18} /><span className="text-sm">{merchant.phone}</span>
+                  <a href={`tel:+${phoneLinkDigits(merchant.phone)}`} onClick={() => trackEvent('phone_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-3 text-slate-400 hover:text-slate-200 transition-colors">
+                    <Phone size={18} /><span className="text-sm">{formatPhone(merchant.phone)}</span>
                   </a>
                 )}
                 {merchant.website && (
@@ -218,7 +219,7 @@ export function ElegantLayout({
                 )}
                 {merchant.whatsapp && (
                   <a
-                    href={`https://wa.me/${merchant.whatsapp.replace(/\D/g, "")}`}
+                    href={`https://wa.me/${phoneLinkDigits(merchant.whatsapp)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => trackEvent('whatsapp_click', { slug: merchant.slug, pageType: 'merchant' })}

@@ -21,6 +21,7 @@ import { FeedbackPanel } from './components/feedback-panel';
 import { StatsPanel } from './components/stats-panel';
 import { ClosurePanel } from './components/closure-panel';
 import { TextField } from './components/text-field';
+import { PhoneField } from './components/phone-field';
 
 /**
  * Merchant self-service dashboard (D2-B / M1-B).
@@ -153,7 +154,21 @@ function TextSection({ id, config, ...props }: SectionProps & { id: string; conf
   return (
     <>
       <div className={id === 'about' ? 'space-y-5' : 'grid gap-5 sm:grid-cols-2'}>
-        {config.map((item) => (
+        {config.map((item) => item.field === 'phone' || item.field === 'whatsapp' ? (
+          <PhoneField
+            key={item.path}
+            name={item.field}
+            label={item.label}
+            value={textOf(section.state.draft[item.path])}
+            onChange={(value) => {
+              section.edit(item.path, value === '' ? null : value);
+              setFormatErrors((current) => { const next = { ...current }; delete next[item.path]; return next; });
+            }}
+            onBlur={() => check(item.path, item.field)}
+            error={formatErrors[item.path] ?? section.state.error?.fieldErrors?.[item.path]}
+            readOnly={props.readOnly}
+          />
+        ) : (
           <TextField
             key={item.path}
             name={item.field}
@@ -200,8 +215,8 @@ const ABOUT_FIELDS = [
   { path: 'profile.description', field: 'description', label: 'About your restaurant', placeholder: 'e.g. We serve family recipes and freshly brewed kopi every morning in Sungai Besi.', multiline: true, rows: 6, maxLength: 10000 },
 ];
 const CONTACT_FIELDS = [
-  { path: 'profile.phone', field: 'phone', label: 'Phone', type: 'tel', inputMode: 'tel' as const, placeholder: '+60 3-1234 5678' },
-  { path: 'profile.whatsapp', field: 'whatsapp', label: 'WhatsApp', type: 'tel', inputMode: 'tel' as const, placeholder: '+60 12-345 6789', hint: 'Include the country code so customers can message you.' },
+  { path: 'profile.phone', field: 'phone', label: 'Phone' },
+  { path: 'profile.whatsapp', field: 'whatsapp', label: 'WhatsApp' },
   { path: 'profile.email', field: 'email', label: 'Email', type: 'email', inputMode: 'email' as const, placeholder: 'hello@yourshop.my' },
 ];
 

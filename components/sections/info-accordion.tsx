@@ -5,6 +5,7 @@ import { getTodayKey } from "@/lib/hours";
 
 import { useState } from "react";
 import { ChevronDown, MapPin, Clock, Shirt, Instagram, Facebook, Globe } from "lucide-react";
+import { formatPhone, phoneLinkDigits } from "@/lib/phone-core.mjs";
 import { cn } from "@/lib/utils";
 import type { PublicMerchant } from "@/types";
 import type { StyleConfig } from "@/lib/styles";
@@ -89,7 +90,7 @@ export function InfoAccordion({ merchant, style }: InfoAccordionProps) {
               {merchant.phone && (
                 <p className="mt-2">
                   <span style={{ color: style.muted }}>Phone: </span>
-                  <a href={`tel:${merchant.phone}`} style={{ color: style.accent }} className="hover:underline">{merchant.phone}</a>
+                  <a href={`tel:+${phoneLinkDigits(merchant.phone)}`} style={{ color: style.accent }} className="hover:underline">{formatPhone(merchant.phone)}</a>
                 </p>
               )}
             </AccordionItem>
