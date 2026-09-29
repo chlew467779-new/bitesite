@@ -108,7 +108,10 @@ export default function MerchantPreviewPage() {
     <div {...analyticsSuppressedProps}>
       <div className="sticky top-0 z-[70] border-b border-amber-300 bg-amber-50 px-4 py-2 text-amber-950" role="status">
         <div className="mx-auto flex max-w-6xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm"><span className="font-semibold">{asAdmin ? 'Admin preview.' : 'Preview — only you can see this.'}</span> {statusText(data.status)}</p>
+          <div className="text-sm">
+            <p><span className="font-semibold">{asAdmin ? 'Admin preview.' : 'Preview — only you can see this.'}</span> {statusText(data.status)}</p>
+            <p className="mt-1">Changes waiting for BiteSite review (links, name, address, cuisine) are not shown here until approved.</p>
+          </div>
           <Link href={back} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-amber-800 px-4 text-sm font-medium">{backLabel}</Link>
         </div>
       </div>
