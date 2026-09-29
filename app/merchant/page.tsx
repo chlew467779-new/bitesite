@@ -21,6 +21,8 @@ import { FeedbackPanel } from './components/feedback-panel';
 import { StatsPanel } from './components/stats-panel';
 import { ClosurePanel } from './components/closure-panel';
 import { TextField } from './components/text-field';
+import { PhoneField } from './components/phone-field';
+import { PaymentSection } from './components/payment-section';
 
 /**
  * Merchant self-service dashboard (D2-B / M1-B).
@@ -153,7 +155,21 @@ function TextSection({ id, config, ...props }: SectionProps & { id: string; conf
   return (
     <>
       <div className={id === 'about' ? 'space-y-5' : 'grid gap-5 sm:grid-cols-2'}>
-        {config.map((item) => (
+        {config.map((item) => item.field === 'phone' || item.field === 'whatsapp' ? (
+          <PhoneField
+            key={item.path}
+            name={item.field}
+            label={item.label}
+            value={textOf(section.state.draft[item.path])}
+            onChange={(value) => {
+              section.edit(item.path, value === '' ? null : value);
+              setFormatErrors((current) => { const next = { ...current }; delete next[item.path]; return next; });
+            }}
+            onBlur={() => check(item.path, item.field)}
+            error={formatErrors[item.path] ?? section.state.error?.fieldErrors?.[item.path]}
+            readOnly={props.readOnly}
+          />
+        ) : (
           <TextField
             key={item.path}
             name={item.field}
@@ -197,11 +213,11 @@ function TextSection({ id, config, ...props }: SectionProps & { id: string; conf
 
 const ABOUT_FIELDS = [
   { path: 'profile.tagline', field: 'tagline', label: 'Tagline', placeholder: 'e.g. Kopi and kaya toast since 1968', maxLength: 300 },
-  { path: 'profile.description', field: 'description', label: 'About your restaurant', multiline: true, rows: 6, maxLength: 10000 },
+  { path: 'profile.description', field: 'description', label: 'About your restaurant', placeholder: 'e.g. We serve family recipes and freshly brewed kopi every morning in Sungai Besi.', multiline: true, rows: 6, maxLength: 10000 },
 ];
 const CONTACT_FIELDS = [
-  { path: 'profile.phone', field: 'phone', label: 'Phone', type: 'tel', inputMode: 'tel' as const, placeholder: '+60 3-1234 5678' },
-  { path: 'profile.whatsapp', field: 'whatsapp', label: 'WhatsApp', type: 'tel', inputMode: 'tel' as const, placeholder: '+60 12-345 6789', hint: 'Include the country code so customers can message you.' },
+  { path: 'profile.phone', field: 'phone', label: 'Phone' },
+  { path: 'profile.whatsapp', field: 'whatsapp', label: 'WhatsApp' },
   { path: 'profile.email', field: 'email', label: 'Email', type: 'email', inputMode: 'email' as const, placeholder: 'hello@yourshop.my' },
 ];
 
@@ -667,6 +683,12 @@ export default function MerchantDashboardPage() {
 
           <SectionCard id="contact" title="Contact & links" description="All optional. Leave a field empty to hide it from your page.">
             <TextSection key={`contact:${sectionKey}`} id="contact" config={CONTACT_FIELDS} {...sectionProps} />
+            {/* Shown once the database offers tags.payment (migration 20260929120000). */}
+            {'tags.payment' in sectionProps.fields && (
+              <div className="mt-6 border-t border-[#EEF2EC] pt-5">
+                <PaymentSection key={`payment:${sectionKey}`} {...sectionProps} />
+              </div>
+            )}
             <div className="mt-6 rounded-lg border border-[#EEF2EC] bg-[#FAFBF7] p-4">
               <h3 className="mb-2 text-sm font-semibold text-[#2C3E2D]">Links</h3>
               <LinkRequests key={`links:${profile.id}:${data.loadId}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={readOnly} register={register} />

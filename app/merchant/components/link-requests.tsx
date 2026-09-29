@@ -34,14 +34,22 @@ export function LinkRequests({ merchantId, getHeaders, readOnly, register }: {
   const [links, setLinks] = useState<Links | null>(null);
   const [requests, setRequests] = useState<LinkRequestItem[]>([]);
   const [loadError, setLoadError] = useState('');
-  const [editing, setEditing] = useState<{ field: LinkField; value: string } | null>(null);
-  const [formError, setFormError] = useState('');
+  // One draft per link, so opening a second link never throws away the first one's typing.
+  const [drafts, setDrafts] = useState<Partial<Record<LinkField, string>>>({});
+  const [formErrors, setFormErrors] = useState<Partial<Record<LinkField, string>>>({});
+  const setDraft = (field: LinkField, value: string | null) => setDrafts((prev) => {
+    const next = { ...prev };
+    if (value === null) delete next[field]; else next[field] = value;
+    return next;
+  });
+  const setFormError = (field: LinkField, text: string) => setFormErrors((prev) => ({ ...prev, [field]: text }));
+  const editing = Object.keys(drafts).length > 0;
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
   const [unknown, setUnknown] = useState<Pending | null>(null);
   const busyRef = useRef(false);
   useEffect(() => {
-    register?.('links', { status: () => ({ dirty: !!editing, pending: busy, unknown: !!unknown, conflicts: false }), save: async () => 'skipped', discard: () => { setEditing(null); } });
+    register?.('links', { status: () => ({ dirty: editing, pending: busy, unknown: !!unknown, conflicts: false }), save: async () => 'skipped', discard: () => { setDrafts({}); setFormErrors({}); } });
     return () => register?.('links', null);
   }, [register, busy, unknown, editing]);
 
@@ -101,9 +109,9 @@ export function LinkRequests({ merchantId, getHeaders, readOnly, register }: {
   const locked = readOnly || busy || !!unknown;
   const submit = async (field: LinkField, value: string) => {
     const problem = linkProblem(field, value);
-    if (problem) { setFormError(LINK_PROBLEM_TEXT[problem]); return; }
+    if (problem) { setFormError(field, LINK_PROBLEM_TEXT[problem]); return; }
     const url = value.trim() || null;
-    if (await send({ requestId: crypto.randomUUID(), body: { action: 'request', field, url }, success: url ? 'Sent. BiteSite will check the link before it appears on your page.' : 'Sent. BiteSite will remove the link after checking.' })) setEditing(null);
+    if (await send({ requestId: crypto.randomUUID(), body: { action: 'request', field, url }, success: url ? 'Sent. BiteSite will check the link before it appears on your page.' : 'Sent. BiteSite will remove the link after checking.' })) setDraft(field, null);
   };
 
   return (
@@ -114,6 +122,8 @@ export function LinkRequests({ merchantId, getHeaders, readOnly, register }: {
         const pending = requests.find((r) => r.field === field && r.status === 'pending');
         const rejected = requests.find((r) => r.field === field && r.status === 'rejected' && !pending);
         const href = safeHref(current);
+        const draft = drafts[field];
+        const formError = formErrors[field];
         return (
           <div key={field} className="rounded-xl border border-[#DDE5DC] p-3">
             <p className="text-sm font-medium text-[#2C3E2D]">{label}</p>
@@ -128,21 +138,21 @@ export function LinkRequests({ merchantId, getHeaders, readOnly, register }: {
               </div>
             )}
             {rejected && <p className="mt-2 text-sm text-red-700">Not approved: {rejected.reviewNote}</p>}
-            {editing?.field === field ? (
-              <form className="mt-2 space-y-2" onSubmit={(event) => { event.preventDefault(); void submit(field, editing.value); }}>
+            {draft !== undefined ? (
+              <form className="mt-2 space-y-2" onSubmit={(event) => { event.preventDefault(); void submit(field, draft); }}>
                 <label className="block text-sm">New link
-                  <input className={input} type="url" inputMode="url" autoCapitalize="off" autoCorrect="off" placeholder={placeholder} value={editing.value}
-                    onChange={(event) => { setEditing({ field, value: event.target.value }); setFormError(''); }} autoFocus />
+                  <input className={input} type="url" inputMode="url" autoCapitalize="off" autoCorrect="off" placeholder={placeholder} value={draft}
+                    onChange={(event) => { setDraft(field, event.target.value); setFormError(field, ''); }} autoFocus />
                 </label>
                 {formError && <p className="text-sm text-red-700" role="alert">{formError}</p>}
                 <div className="flex flex-col gap-2 sm:flex-row">
-                  <button type="submit" disabled={locked || !editing.value.trim()} className={`${btn} bg-[#2C3E2D] text-white`}>Send for review</button>
+                  <button type="submit" disabled={locked || !draft.trim()} className={`${btn} bg-[#2C3E2D] text-white`}>Send for review</button>
                   {current && <button type="button" disabled={locked} onClick={() => void submit(field, '')} className={`${btn} border border-red-700 text-red-700`}>Ask to remove this link</button>}
-                  <button type="button" onClick={() => setEditing(null)} className={`${btn} border border-[#C9D6C7]`}>Cancel</button>
+                  <button type="button" onClick={() => { setDraft(field, null); setFormError(field, ''); }} className={`${btn} border border-[#C9D6C7]`}>Cancel</button>
                 </div>
               </form>
             ) : (
-              <button type="button" disabled={locked} onClick={() => { setEditing({ field, value: pending?.proposedUrl ?? current ?? '' }); setFormError(''); }}
+              <button type="button" disabled={locked} onClick={() => { setDraft(field, pending?.proposedUrl ?? current ?? ''); setFormError(field, ''); }}
                 className={`${btn} mt-2 w-full border border-[#2C3E2D] text-[#2C3E2D] sm:w-auto`}>{pending ? 'Change request' : 'Request a change'}</button>
             )}
           </div>

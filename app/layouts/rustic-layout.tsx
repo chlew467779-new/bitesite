@@ -8,7 +8,8 @@ import { TierSections } from "@/app/components/sections/tier-sections";
 import { ShareButtons } from "@/components/sections/share-buttons";
 import { mergeFeatures } from "@/types";
 import type { LayoutProps } from "@/types";
-import { MapPin, Phone, Mail, Instagram, Globe, ArrowLeft, MessageSquare, Clock, Banknote, Smartphone, CreditCard } from "lucide-react";
+import { MapPin, Phone, Mail, Instagram, Facebook, Globe, ArrowLeft, MessageSquare, Clock, Banknote, Smartphone, CreditCard } from "lucide-react";
+import { formatPhone, phoneLinkDigits } from "@/lib/phone-core.mjs";
 import { trackEvent } from "@/lib/analytics";
 import { MenuViewTracker } from "@/components/sections/menu-view-tracker";
 import { shouldShowPrice } from "@/lib/menu-display.mjs";
@@ -121,11 +122,13 @@ export function RusticLayout({
               <div className="grid sm:grid-cols-2 gap-8">
                 <div className="space-y-4">
                   {merchant.address && <a href={`https://maps.google.com/?q=${encodeURIComponent(merchant.address)}`} onClick={() => trackEvent('directions_click', { slug: merchant.slug, pageType: 'merchant' })} target="_blank" rel="noopener noreferrer" className="flex items-start gap-3 text-orange-800 active:scale-[0.98] transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}><MapPin size={18} className="mt-0.5 flex-shrink-0" /><span className="text-sm">{merchant.address}</span></a>}
-                  {merchant.phone && <a href={`tel:${merchant.phone}`} onClick={() => trackEvent('phone_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-3 text-orange-800 active:scale-[0.98] transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}><Phone size={18} /><span className="text-sm">{merchant.phone}</span></a>}
+                  {merchant.phone && <a href={`tel:+${phoneLinkDigits(merchant.phone)}`} onClick={() => trackEvent('phone_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-3 text-orange-800 active:scale-[0.98] transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}><Phone size={18} /><span className="text-sm">{formatPhone(merchant.phone)}</span></a>}
                   {merchant.website && <a href={merchant.website} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent('website_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-3 text-orange-800 active:scale-[0.98] transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}><Globe size={18} /><span className="text-sm">Website</span></a>}
+                  {merchant.instagram && <a href={merchant.instagram} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-orange-800 active:scale-[0.98] transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}><Instagram size={18} /><span className="text-sm">Instagram</span></a>}
+                  {merchant.facebook && <a href={merchant.facebook} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-orange-800 active:scale-[0.98] transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}><Facebook size={18} /><span className="text-sm">Facebook</span></a>}
                   {merchant.whatsapp && (
                     <a
-                      href={`https://wa.me/${merchant.whatsapp.replace(/\D/g, "")}`}
+                      href={`https://wa.me/${phoneLinkDigits(merchant.whatsapp)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={() => trackEvent('whatsapp_click', { slug: merchant.slug, pageType: 'merchant' })}
@@ -151,7 +154,7 @@ export function RusticLayout({
               </div>
 
               {/* Map */}
-              <MapEmbed address={merchant.address} borderColor="#FED7AA" />
+              <MapEmbed address={merchant.address} latitude={merchant.latitude} longitude={merchant.longitude} borderColor="#FED7AA" />
 
               {/* Payment Methods */}
               {merchant.payment_methods && merchant.payment_methods.length > 0 && (
@@ -186,6 +189,7 @@ export function RusticLayout({
 
       <footer className="py-8 px-4 text-center border-t border-orange-200">
         <Link href="/" className="text-sm text-orange-700 hover:text-orange-900 transition-colors">{footerText || "Discover more restaurants on BiteSite"}</Link>
+        <Link href="/support-us" className="mt-2 block text-sm text-orange-700 underline hover:text-orange-900">Support us</Link>
       </footer>
     </div>
   );

@@ -2,8 +2,6 @@
 
 import { FadeIn } from "@/app/components/animations";
 import { ArrowRight } from "lucide-react";
-import { BITESITE_WHATSAPP_URL } from "@/lib/whatsapp";
-import { trackEvent } from "@/lib/analytics";
 
 export function JoinUsHero() {
   return (
@@ -23,10 +21,7 @@ export function JoinUsHero() {
             your restaurant, menu, and story.
           </p>
           <a
-            href={BITESITE_WHATSAPP_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => trackEvent("whatsapp_click", { pageType: "join_us", detail: "hero_cta" })}
+            href="/merchant/login?mode=register"
             className="inline-flex items-center gap-2 rounded-full bg-[#5A8F6E] px-8 py-4 text-base font-semibold text-white transition-all hover:bg-[#4A7A5E] active:scale-[0.98]"
             style={{ WebkitTapHighlightColor: "transparent" }}
           >

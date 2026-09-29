@@ -3,6 +3,7 @@
 "use client";
 
 import { Phone, MessageCircle } from "lucide-react";
+import { formatPhone, phoneLinkDigits } from "@/lib/phone-core.mjs";
 import type { Merchant } from "@/types";
 import type { StyleConfig } from "@/lib/styles";
 import { trackEvent } from "@/lib/analytics";
@@ -26,16 +27,16 @@ export function StoreFooter({ merchant, style }: StoreFooterProps) {
         )}
 
         {merchant.phone && (
-          <a href={`tel:${merchant.phone}`} onClick={() => trackEvent("phone_click", { slug: merchant.slug, pageType: "merchant" })} className="mb-5 inline-flex items-center gap-2 transition-colors hover:opacity-80" style={{ color: style.footerText }}>
+          <a href={`tel:+${phoneLinkDigits(merchant.phone)}`} onClick={() => trackEvent("phone_click", { slug: merchant.slug, pageType: "merchant" })} className="mb-5 inline-flex items-center gap-2 transition-colors hover:opacity-80" style={{ color: style.footerText }}>
             <Phone className="h-4 w-4" />
-            {merchant.phone}
+            {formatPhone(merchant.phone)}
           </a>
         )}
 
         {merchant.whatsapp && (
           <div className="mt-4">
             <a
-              href={`https://wa.me/${merchant.whatsapp.replace(/\D/g, "")}`}
+              href={`https://wa.me/${phoneLinkDigits(merchant.whatsapp)}`}
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => trackEvent("whatsapp_click", { slug: merchant.slug, pageType: "merchant" })}

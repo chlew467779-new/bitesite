@@ -9,8 +9,9 @@ import { ShareButtons } from "@/components/sections/share-buttons";
 import { mergeFeatures } from "@/types";
 import type { LayoutProps } from "@/types";
 import {
-  MapPin, Phone, Mail, Instagram, Globe, ArrowLeft, MessageSquare, Banknote, Smartphone, CreditCard,
+  MapPin, Phone, Mail, Instagram, Facebook, Globe, ArrowLeft, MessageSquare, Banknote, Smartphone, CreditCard,
 } from "lucide-react";
+import { formatPhone, phoneLinkDigits } from "@/lib/phone-core.mjs";
 import { trackEvent } from "@/lib/analytics";
 import { MenuViewTracker } from "@/components/sections/menu-view-tracker";
 import { shouldShowPrice } from "@/lib/menu-display.mjs";
@@ -192,13 +193,23 @@ export function ElegantLayout({
                   </a>
                 )}
                 {merchant.phone && (
-                  <a href={`tel:${merchant.phone}`} onClick={() => trackEvent('phone_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-3 text-slate-400 hover:text-slate-200 transition-colors">
-                    <Phone size={18} /><span className="text-sm">{merchant.phone}</span>
+                  <a href={`tel:+${phoneLinkDigits(merchant.phone)}`} onClick={() => trackEvent('phone_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-3 text-slate-400 hover:text-slate-200 transition-colors">
+                    <Phone size={18} /><span className="text-sm">{formatPhone(merchant.phone)}</span>
                   </a>
                 )}
                 {merchant.website && (
                   <a href={merchant.website} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent('website_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-3 text-slate-400 hover:text-slate-200 transition-colors">
                     <Globe size={18} /><span className="text-sm">Website</span>
+                  </a>
+                )}
+                {merchant.instagram && (
+                  <a href={merchant.instagram} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-slate-400 hover:text-slate-200 transition-colors">
+                    <Instagram size={18} /><span className="text-sm">Instagram</span>
+                  </a>
+                )}
+                {merchant.facebook && (
+                  <a href={merchant.facebook} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-slate-400 hover:text-slate-200 transition-colors">
+                    <Facebook size={18} /><span className="text-sm">Facebook</span>
                   </a>
                 )}
                 {merchant.email && (
@@ -208,7 +219,7 @@ export function ElegantLayout({
                 )}
                 {merchant.whatsapp && (
                   <a
-                    href={`https://wa.me/${merchant.whatsapp.replace(/\D/g, "")}`}
+                    href={`https://wa.me/${phoneLinkDigits(merchant.whatsapp)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => trackEvent('whatsapp_click', { slug: merchant.slug, pageType: 'merchant' })}
@@ -220,7 +231,7 @@ export function ElegantLayout({
               </div>
 
               {/* Map */}
-              <MapEmbed address={merchant.address} borderColor="#334155" />
+              <MapEmbed address={merchant.address} latitude={merchant.latitude} longitude={merchant.longitude} borderColor="#334155" />
 
               {/* Payment Methods */}
               {merchant.payment_methods && merchant.payment_methods.length > 0 && (
@@ -255,6 +266,7 @@ export function ElegantLayout({
 
       <footer className="py-8 px-4 text-center border-t border-slate-800">
         <Link href="/" className="text-sm text-slate-500 hover:text-slate-300 transition-colors">{footerText || "Discover more restaurants on BiteSite"}</Link>
+        <Link href="/support-us" className="mt-2 block text-sm text-slate-400 underline hover:text-slate-200">Support us</Link>
       </footer>
     </div>
   );

@@ -6,9 +6,26 @@ import { HowItWorks } from "@/components/sections/how-it-works";
 import { PricingCard } from "@/components/sections/pricing-card";
 import { FaqAccordion } from "@/components/sections/faq-accordion";
 import { JoinUsCta } from "@/components/sections/join-us-cta";
+import { PartnerCount } from "@/components/sections/partner-count";
 import { Footer } from "@/components/sections/footer";
 import { PageViewTracker } from "@/app/components/page-view-tracker";
 import { safeJsonLd } from "@/lib/safe-json-ld.mjs";
+import { createClient } from "@supabase/supabase-js";
+
+export const revalidate = 300;
+
+async function getPartnerCount(): Promise<number | null> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+  try {
+    const { data, error } = await createClient(url, key).rpc("partner_count");
+    return !error && Number.isSafeInteger(data) && data > 0 ? data : null;
+  } catch {
+    // The page stays usable before the migration is deployed or during a read failure.
+    return null;
+  }
+}
 
 export const metadata: Metadata = {
   title: "Join BiteSite — Every Bite Tells a Story",
@@ -22,7 +39,8 @@ export const metadata: Metadata = {
   },
 };
 
-export default function JoinUsPage() {
+export default async function JoinUsPage() {
+  const partnerCount = await getPartnerCount();
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -72,7 +90,7 @@ export default function JoinUsPage() {
         name: "How do I join?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Send us a message on WhatsApp with your restaurant name, area, and best contact email. We will explain the next steps and invite you when ready.",
+          text: "Create a merchant account, confirm your email, then make a private restaurant draft and submit it for review.",
         },
       },
     ],
@@ -84,6 +102,7 @@ export default function JoinUsPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(faqSchema) }} />
       <main>
         <JoinUsHero />
+        {partnerCount !== null && <PartnerCount count={partnerCount} />}
         <HowItWorks />
 
         {/* What's Included */}

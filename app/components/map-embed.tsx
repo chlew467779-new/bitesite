@@ -4,13 +4,18 @@
 
 interface MapEmbedProps {
   address: string | null | undefined;
+  latitude?: number | null;
+  longitude?: number | null;
   borderColor?: string;
 }
 
-export function MapEmbed({ address, borderColor = "#DDE5DC" }: MapEmbedProps) {
-  if (!address) return null;
+export function MapEmbed({ address, latitude, longitude, borderColor = "#DDE5DC" }: MapEmbedProps) {
+  // Pin the saved coordinates when present so this map matches the Our Partners map; fall back to the address.
+  const hasCoords = typeof latitude === "number" && typeof longitude === "number";
+  if (!hasCoords && !address) return null;
 
-  const embedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(address)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+  const query = hasCoords ? `${latitude},${longitude}` : address!;
+  const embedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(query)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
 
   return (
     <div

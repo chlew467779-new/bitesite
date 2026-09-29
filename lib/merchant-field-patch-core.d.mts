@@ -32,6 +32,7 @@ export type ParsedFieldPatchRequest =
   | { ok: false; status: number; code: string; message: string; fieldErrors?: Record<string, string> };
 
 export declare const MERCHANT_FIELD_REGISTRY: readonly FieldRegistryRow[];
+export declare const PAYMENT_TAGS: readonly string[];
 export declare const MAX_PATCHES: number;
 export declare const MAX_FIELD_PATCH_BODY_BYTES: number;
 

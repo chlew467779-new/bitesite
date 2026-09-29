@@ -1,8 +1,13 @@
 # Merchant feature release order
 
-This is the release map for the local stack at `e24c720` (2026-09-27), not an instruction to run migrations or evidence that the whole stack is live. Sources: each migration's header, `supabase/README.md`, and Decision Log SYNC-042–047. No hosted changes were performed by the cleanup tasks.
+This release map began at `e24c720` (2026-09-27). Sources: each migration's header, `supabase/README.md`, and the Decision Log. This document does not authorize hosted operations.
 
-## Current environment evidence
+## Released 2026-09-28
+
+- Application: `main` @ `44e380b` (PR #65, merging `integ/main-64` @ `e36ac93`).
+- Production database: installed through `20260928150000`, covering §1–§21 except the reverted §18 restaurant claim flow. This release status is recorded from the Batch 6 handoff; no hosted SQL was run for this document update.
+
+## Historical environment evidence (2026-09-27)
 
 Production `bitesite-db` (`zpfkmzdtcbfpypntnkem`) migration history was read on 2026-09-27. It contains D1a `20260926093811`, D2-A under hosted version `20260927094252` / name `merchant_field_cas`, and password onboarding `20260927094313` / name `merchant_password_onboarding`. D2-A was applied during password feature PR #64; its application deployment did **not** include the D2-B editor stack. B0, D2-C, M6b, M3a and link review were absent from that history. Password auth is a separate branch/package and its migration is not present in this cleanup baseline.
 
@@ -146,6 +151,10 @@ For each released step retain: application SHA/deployment URL, exact executed SQ
 - Migration: `20260928100000_story_submission_merchant_id.sql`, after `20260928090000`. Adds a nullable column + trigger + two indexes and backfills; check `select count(*) from story_submissions where merchant_slug is not null and merchant_id is null` after applying (unlinked relayed submissions, expected 0 or explained).
 - Application: `/api/merchant/story-submissions` GET filters by `merchant_id` — deploy after the migration.
 - Rollback FIRST: `supabase/rollback/20260928100000_story_submission_merchant_id.rollback.STAGING_ONLY.sql`.
+
+## 18. Restaurant claim flow — reverted before release (SYNC-062)
+
+- The claim flow and its migration were removed before the 2026-09-28 release. No claim migration or application step belongs to the released sequence.
 
 ## 19. Owner notifications for basics review decisions
 

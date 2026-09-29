@@ -51,5 +51,8 @@ assert.match(component, /safeJsonLd\(itemList\)/);
 assert.match(await read("app/sitemap.ts"), /filter\(\(group\) => group\.indexable\)/, "sitemap lists indexable landing pages only");
 assert.match(await read("app/api/track/route.ts"), /'discovery',/);
 assert.match(await read("app/store/[merchant]/page.tsx"), /<DiscoveryLinks area=/, "store pages link to their area and cuisine pages");
+const home = await read("app/page.tsx");
+assert.match(home, /discoveryGroups\(kind, merchants\)\.filter\(\(group\) => group\.indexable\)\.slice\(0, 12\)/, "home only links to up to 12 indexable groups per kind");
+assert.match(home, /href=\{discoveryPath\(kind, group\.slug\)\}/, "home chips use landing page paths");
 
 console.log("discovery checks passed");

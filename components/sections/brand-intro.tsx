@@ -7,6 +7,7 @@ import { CuisineTag } from "@/components/ui/cuisine-tag";
 import type { PublicMerchant } from "@/types";
 import type { StyleConfig } from "@/lib/styles";
 import { trackEvent } from "@/lib/analytics";
+import { phoneLinkDigits } from "@/lib/phone-core.mjs";
 
 interface BrandIntroProps {
   merchant: PublicMerchant;
@@ -42,7 +43,7 @@ export function BrandIntro({ merchant, style }: BrandIntroProps) {
         )}
         {merchant.whatsapp && (
           <a
-            href={`https://wa.me/${merchant.whatsapp.replace(/\D/g, "")}`}
+            href={`https://wa.me/${phoneLinkDigits(merchant.whatsapp)}`}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => trackEvent("whatsapp_click", { slug: merchant.slug, pageType: "merchant" })}

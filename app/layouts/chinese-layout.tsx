@@ -9,7 +9,8 @@ import { TierSections } from "@/app/components/sections/tier-sections";
 import { ShareButtons } from "@/components/sections/share-buttons";
 import { mergeFeatures } from "@/types";
 import type { LayoutProps } from "@/types";
-import { MapPin, Phone, Mail, Instagram, Globe, ArrowLeft, MessageSquare, Clock, Banknote, Smartphone, CreditCard } from "lucide-react";
+import { MapPin, Phone, Mail, Instagram, Facebook, Globe, ArrowLeft, MessageSquare, Clock, Banknote, Smartphone, CreditCard } from "lucide-react";
+import { formatPhone, phoneLinkDigits } from "@/lib/phone-core.mjs";
 import { trackEvent } from "@/lib/analytics";
 import { MenuViewTracker } from "@/components/sections/menu-view-tracker";
 import { shouldShowPrice } from "@/lib/menu-display.mjs";
@@ -173,11 +174,11 @@ export function ChineseLayout({
               <div className="grid sm:grid-cols-2 gap-8">
                 <div className="space-y-4">
                   {merchant.address && <a href={`https://maps.google.com/?q=${encodeURIComponent(merchant.address)}`} onClick={() => trackEvent('directions_click', { slug: merchant.slug, pageType: 'merchant' })} target="_blank" rel="noopener noreferrer" className={`flex items-start gap-3 text-red-900 active:scale-[0.98] transition-transform ${focusRing}`} style={{ WebkitTapHighlightColor: "transparent" }}><MapPin size={18} className="mt-0.5 flex-shrink-0" /><span className="text-sm break-words min-w-0">{merchant.address}</span></a>}
-                  {merchant.phone && <a href={`tel:${merchant.phone}`} onClick={() => trackEvent('phone_click', { slug: merchant.slug, pageType: 'merchant' })} className={`flex items-center gap-3 text-red-900 active:scale-[0.98] transition-transform ${focusRing}`} style={{ WebkitTapHighlightColor: "transparent" }}><Phone size={18} /><span className="text-sm">{merchant.phone}</span></a>}
+                  {merchant.phone && <a href={`tel:+${phoneLinkDigits(merchant.phone)}`} onClick={() => trackEvent('phone_click', { slug: merchant.slug, pageType: 'merchant' })} className={`flex items-center gap-3 text-red-900 active:scale-[0.98] transition-transform ${focusRing}`} style={{ WebkitTapHighlightColor: "transparent" }}><Phone size={18} /><span className="text-sm">{formatPhone(merchant.phone)}</span></a>}
                   {merchant.website && <a href={merchant.website} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent('website_click', { slug: merchant.slug, pageType: 'merchant' })} className={`flex items-center gap-3 text-red-900 active:scale-[0.98] transition-transform ${focusRing}`} style={{ WebkitTapHighlightColor: "transparent" }}><Globe size={18} /><span className="text-sm">Website</span></a>}
                   {merchant.whatsapp && (
                     <a
-                      href={`https://wa.me/${merchant.whatsapp.replace(/\D/g, "")}`}
+                      href={`https://wa.me/${phoneLinkDigits(merchant.whatsapp)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={() => trackEvent('whatsapp_click', { slug: merchant.slug, pageType: 'merchant' })}
@@ -189,6 +190,7 @@ export function ChineseLayout({
                   )}
                   {merchant.email && <a href={`mailto:${merchant.email}`} onClick={() => trackEvent('email_click', { slug: merchant.slug, pageType: 'merchant' })} className={`flex items-center gap-3 text-red-900 active:scale-[0.98] transition-transform ${focusRing}`} style={{ WebkitTapHighlightColor: "transparent" }}><Mail size={18} /><span className="text-sm break-all">{merchant.email}</span></a>}
                   {merchant.instagram && <a href={merchant.instagram} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-3 text-red-900 active:scale-[0.98] transition-transform ${focusRing}`} style={{ WebkitTapHighlightColor: "transparent" }}><Instagram size={18} /><span className="text-sm">Instagram</span></a>}
+                  {merchant.facebook && <a href={merchant.facebook} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-3 text-red-900 active:scale-[0.98] transition-transform ${focusRing}`} style={{ WebkitTapHighlightColor: "transparent" }}><Facebook size={18} /><span className="text-sm">Facebook</span></a>}
                 </div>
                 <div className="space-y-1.5">
                   {hasHours && DAYS.map((day) => {
@@ -204,7 +206,7 @@ export function ChineseLayout({
               </div>
 
               {/* Map */}
-              <MapEmbed address={merchant.address} borderColor="#FBBF24" />
+              <MapEmbed address={merchant.address} latitude={merchant.latitude} longitude={merchant.longitude} borderColor="#FBBF24" />
 
               {/* Payment Methods */}
               {merchant.payment_methods && merchant.payment_methods.length > 0 && (
@@ -241,6 +243,7 @@ export function ChineseLayout({
         <div aria-hidden="true" className="h-1.5 bg-gradient-to-r from-amber-500 via-amber-300 to-amber-500" />
         <div className="py-8 px-4">
           <Link href="/" className={`text-sm text-amber-100 hover:text-white transition-colors ${focusRing} focus-visible:ring-offset-red-900`}>{footerText || "Discover more restaurants on BiteSite"}</Link>
+          <Link href="/support-us" className={`mt-2 block text-sm text-amber-100 underline hover:text-white ${focusRing} focus-visible:ring-offset-red-900`}>Support us</Link>
         </div>
       </footer>
     </div>

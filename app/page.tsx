@@ -9,21 +9,35 @@ import { MerchantCard } from "@/components/sections/merchant-card";
 import { MerchantCardSkeleton } from "@/components/sections/merchant-card-skeleton";
 import { Footer } from "@/components/sections/footer";
 import { LatestStories } from "@/components/sections/latest-stories";
-import { supabase } from "@/lib/supabase";
+import { supabase, getAreas } from "@/lib/supabase";
 import { FadeIn } from "@/app/components/animations";
 import { isCurrentlyOpen, getTodayKey } from "@/lib/hours";
 import { trackEvent } from "@/lib/analytics";
 import { CUISINE_TYPES } from "@/lib/presets";
 import type { PublicMerchant } from "@/types";
 import { PUBLIC_MERCHANT_SELECT } from "@/lib/public-merchant-projection.mjs";
+import { discoveryGroups, discoveryPath } from "@/lib/discovery-core.mjs";
+
+const STATE_KEY = "bitesite.home.state";
+
+// The chosen state is remembered in this browser; storage can be blocked, so every access is guarded.
+function readSavedState(): string | null {
+  try { return window.localStorage.getItem(STATE_KEY); } catch { return null; }
+}
+function saveState(state: string | null) {
+  try {
+    if (state) window.localStorage.setItem(STATE_KEY, state); else window.localStorage.removeItem(STATE_KEY);
+  } catch { /* storage unavailable */ }
+}
 
 function readHomeFilters() {
   if (typeof window === "undefined") {
-    return { cuisines: [] as string[], area: null as string | null, more: [] as string[], openNow: false, search: "" };
+    return { cuisines: [] as string[], state: null as string | null, area: null as string | null, more: [] as string[], openNow: false, search: "" };
   }
   const params = new URLSearchParams(window.location.search);
   return {
     cuisines: params.get("cuisine")?.split(",").map(value => value.trim()).filter(Boolean) || [],
+    state: params.get("state") || readSavedState(),
     area: params.get("area") || null,
     more: params.get("more")?.split(",").map(value => value.trim()).filter(Boolean) || [],
     openNow: params.get("open") === "1",
@@ -35,6 +49,8 @@ export default function HomePage() {
   const [merchants, setMerchants] = useState<PublicMerchant[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCuisines, setActiveCuisines] = useState<string[]>(() => readHomeFilters().cuisines);
+  const [activeState, setActiveState] = useState<string | null>(() => readHomeFilters().state);
+  const [areaStates, setAreaStates] = useState<Map<string, string>>(new Map());
   const [activeArea, setActiveArea] = useState<string | null>(() => readHomeFilters().area);
   const [activeMore, setActiveMore] = useState<string[]>(() => readHomeFilters().more);
   const [searchQuery, setSearchQuery] = useState(() => readHomeFilters().search);
@@ -48,6 +64,7 @@ export default function HomePage() {
     const onPopState = () => {
       const filters = readHomeFilters();
       setActiveCuisines(filters.cuisines);
+      setActiveState(filters.state);
       setActiveArea(filters.area);
       setActiveMore(filters.more);
       setSearchQuery(filters.search);
@@ -61,12 +78,13 @@ export default function HomePage() {
     const params = new URLSearchParams();
     if (searchQuery.trim()) params.set("q", searchQuery.trim());
     if (activeCuisines.length > 0) params.set("cuisine", activeCuisines.join(","));
+    if (activeState) params.set("state", activeState);
     if (activeArea && activeArea !== "All Areas") params.set("area", activeArea);
     if (activeMore.length > 0) params.set("more", activeMore.join(","));
     if (openNow) params.set("open", "1");
     const query = params.toString();
     window.history.replaceState(window.history.state, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
-  }, [activeCuisines, activeArea, activeMore, searchQuery, openNow]);
+  }, [activeCuisines, activeState, activeArea, activeMore, searchQuery, openNow]);
 
   // Fetch merchants + products on mount. View counts are private (DEC-29) and not read here.
   // Only the public merchant columns are readable; row level security decides which merchants.
@@ -101,6 +119,8 @@ export default function HomePage() {
       setLoading(false);
     }
     fetchData();
+    // The state picker needs each area's state; without the list it simply stays hidden.
+    getAreas().then((list) => setAreaStates(new Map(list.map((a) => [a.name, a.state]))), () => {});
 
     // Track homepage view
     trackEvent('page_view', { pageType: 'home' });
@@ -119,14 +139,25 @@ export default function HomePage() {
     };
   }, [searchQuery]);
 
-  // 动态提取所有 area
+  // States that have at least one restaurant; the picker only appears when there are two or more.
+  const availableStates = useMemo(() => {
+    const states = new Set<string>();
+    merchants.forEach((m) => {
+      const state = m.area ? areaStates.get(m.area) : undefined;
+      if (state) states.add(state);
+    });
+    return Array.from(states).sort();
+  }, [merchants, areaStates]);
+  const currentState = activeState && availableStates.length > 1 && availableStates.includes(activeState) ? activeState : null;
+
+  // 动态提取所有 area (within the chosen state)
   const availableAreas = useMemo(() => {
     const areas = new Set<string>();
     merchants.forEach((m) => {
-      if (m.area) areas.add(m.area);
+      if (m.area && (!currentState || areaStates.get(m.area) === currentState)) areas.add(m.area);
     });
     return ["All Areas", ...Array.from(areas).sort()];
-  }, [merchants]);
+  }, [merchants, areaStates, currentState]);
 
   // 动态提取所有 cuisine_type（预设内按预设顺序，预设外归类为 "Other"）
   const availableCuisines = useMemo(() => {
@@ -157,6 +188,12 @@ export default function HomePage() {
     return Array.from(allMore).sort();
   }, [merchants]);
 
+  const browseGroups = useMemo(() => (["area", "cuisine"] as const).map((kind) => ({
+    kind,
+    title: kind === "area" ? "Browse by area" : "Browse by cuisine",
+    groups: discoveryGroups(kind, merchants).filter((group) => group.indexable).slice(0, 12),
+  })), [merchants]);
+
   // Filter logic
   const filtered = useMemo(() => {
     return merchants.filter((m) => {
@@ -172,6 +209,7 @@ export default function HomePage() {
           );
         });
 
+      const matchesState = !currentState || (m.area ? areaStates.get(m.area) === currentState : false);
       const matchesArea = !activeArea || activeArea === "All Areas" || m.area === activeArea;
 
       const matchesMore =
@@ -200,9 +238,9 @@ export default function HomePage() {
         return merchantProducts.some((name) => name.includes(q));
       })();
 
-      return matchesCuisine && matchesArea && matchesMore && matchesOpenNow && searchMatch;
+      return matchesCuisine && matchesState && matchesArea && matchesMore && matchesOpenNow && searchMatch;
     });
-  }, [activeCuisines, activeArea, activeMore, openNow, searchQuery, merchants, productIndex]);
+  }, [activeCuisines, currentState, areaStates, activeArea, activeMore, openNow, searchQuery, merchants, productIndex]);
 
   // Handle search with loading state
   const handleSearch = useCallback((query: string) => {
@@ -216,6 +254,15 @@ export default function HomePage() {
     setActiveCuisines(tags);
     setTimeout(() => setIsSearching(false), 300);
   }, []);
+
+  const handleStateChange = useCallback((state: string | null) => {
+    setIsSearching(true);
+    setActiveState(state);
+    saveState(state);
+    // An area from another state would hide every restaurant, so it is cleared.
+    setActiveArea((area) => (area && state && areaStates.get(area) !== state ? null : area));
+    setTimeout(() => setIsSearching(false), 300);
+  }, [areaStates]);
 
   const handleAreaChange = useCallback((area: string | null) => {
     setIsSearching(true);
@@ -239,6 +286,8 @@ export default function HomePage() {
     setIsSearching(true);
     setSearchQuery("");
     setActiveCuisines([]);
+    setActiveState(null);
+    saveState(null);
     setActiveArea(null);
     setActiveMore([]);
     setOpenNow(false);
@@ -249,6 +298,7 @@ export default function HomePage() {
 
   const activeFilterCount =
     activeCuisines.length +
+    (currentState ? 1 : 0) +
     (activeArea && activeArea !== "All Areas" ? 1 : 0) +
     activeMore.length +
     (openNow ? 1 : 0) +
@@ -269,6 +319,20 @@ export default function HomePage() {
         </p>
       </div>
       <Hero searchQuery={searchQuery} onSearch={handleSearch} />
+
+      {availableStates.length > 1 && (
+        <div className="px-4 pt-6">
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-2" role="group" aria-label="Choose a state">
+            <span className="mr-1 text-sm font-medium text-[#2C3E2D]">State</span>
+            {[null, ...availableStates].map((state) => (
+              <button key={state ?? "all"} type="button" aria-pressed={currentState === state} onClick={() => handleStateChange(state)}
+                className={`inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-medium transition-colors ${currentState === state ? "border-[#2C3E2D] bg-[#2C3E2D] text-white" : "border-[#C9D6C7] bg-white text-[#2C3E2D] hover:bg-[#F0F4EC]"}`}>
+                {state ?? "All states"}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <CategoryFilter
         activeCuisines={activeCuisines}
@@ -344,7 +408,7 @@ export default function HomePage() {
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {filtered.map((merchant, index) => (
                 <FadeIn
-                  key={`${merchant.id}-${activeCuisines.join(",")}-${activeArea}-${activeMore.join(",")}-${openNow}-${searchQuery}`}
+                  key={`${merchant.id}-${activeCuisines.join(",")}-${currentState}-${activeArea}-${activeMore.join(",")}-${openNow}-${searchQuery}`}
                   delay={index * 0.06}
                   duration={0.4}
                   direction="up"
@@ -356,6 +420,26 @@ export default function HomePage() {
           )}
         </div>
       </section>
+
+      {browseGroups.some(({ groups }) => groups.length > 0) && (
+        <section className="px-4 pb-16" aria-label="Browse restaurants">
+          <div className="mx-auto max-w-6xl space-y-8">
+            {browseGroups.map(({ kind, title, groups }) => groups.length > 0 && (
+              <div key={kind}>
+                <h2 className="mb-3 text-xl font-semibold text-[#2C3E2D]">{title}</h2>
+                <div className="flex flex-wrap gap-2">
+                  {groups.map((group) => (
+                    <a key={group.slug} href={discoveryPath(kind, group.slug)}
+                      className="inline-flex min-h-11 items-center rounded-full border border-[#C9D6C7] bg-white px-4 text-sm font-medium text-[#2C3E2D] transition-colors hover:bg-[#F0F4EC]">
+                      {group.label}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <LatestStories />
       <Footer />

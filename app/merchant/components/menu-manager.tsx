@@ -203,7 +203,7 @@ export function MenuManager({ merchantId, getHeaders, readOnly, register, onChan
             <div className="flex items-center gap-2 border-b border-[#EEF2EC] p-3">
               {rename?.id === category.id ? (
                 <form className="flex flex-1 flex-col gap-2 sm:flex-row" onSubmit={(event) => { event.preventDefault(); if (rename.name.trim()) void change({ type: 'rename_category', id: category.id, name: rename.name, expectedName: rename.original }, 'Category renamed.').then((ok) => { if (ok) setRename(null); }); }}>
-                  <input aria-label="Category name" className={input} maxLength={MENU_LIMITS.categoryName} value={rename.name} onChange={(event) => setRename({ ...rename, name: event.target.value })} autoFocus />
+                  <input aria-label="Category name" className={input} maxLength={MENU_LIMITS.categoryName} placeholder="e.g. Mains" value={rename.name} onChange={(event) => setRename({ ...rename, name: event.target.value })} autoFocus />
                   <div className="flex gap-2">
                     <button type="submit" disabled={locked || !rename.name.trim()} className={`${btn} flex-1 bg-[#2C3E2D] text-white`}>Save</button>
                     <button type="button" onClick={() => setRename(null)} className={`${btn} flex-1 border border-[#C9D6C7]`}>Cancel</button>
@@ -281,20 +281,20 @@ export function MenuManager({ merchantId, getHeaders, readOnly, register, onChan
             onSubmit={(event) => { event.preventDefault(); void saveDish(); }}>
             <h2 id="dish-title" className="text-lg font-semibold">{dish.id ? 'Edit dish' : 'New dish'}</h2>
             <label className="mt-4 block text-sm font-medium">Name
-              <input className={input} maxLength={MENU_LIMITS.dishName} value={dish.name} onChange={(event) => setDish({ ...dish, name: event.target.value })} autoFocus={!dish.id} />
+              <input className={input} maxLength={MENU_LIMITS.dishName} placeholder="e.g. Nasi lemak with ayam berempah" value={dish.name} onChange={(event) => setDish({ ...dish, name: event.target.value })} autoFocus={!dish.id} />
             </label>
             <label className="mt-3 block text-sm font-medium">Description (optional)
-              <textarea className={input} rows={3} maxLength={MENU_LIMITS.description} value={dish.description} onChange={(event) => setDish({ ...dish, description: event.target.value })} />
+              <textarea className={input} rows={3} maxLength={MENU_LIMITS.description} placeholder="e.g. Coconut rice with sambal, egg, cucumber and spiced chicken." value={dish.description} onChange={(event) => setDish({ ...dish, description: event.target.value })} />
             </label>
             <div className="mt-3 grid grid-cols-2 gap-3">
               <label className="block text-sm font-medium">Price (RM)
-                <input className={input} inputMode="decimal" placeholder="No price" value={dish.price} onChange={(event) => setDish({ ...dish, price: event.target.value })} />
+                <input className={input} inputMode="decimal" placeholder="e.g. 18.00" value={dish.price} onChange={(event) => setDish({ ...dish, price: event.target.value })} />
               </label>
               <label className="block text-sm font-medium">Discount (RM)
-                <input className={input} inputMode="decimal" placeholder="None" value={dish.discountPrice} onChange={(event) => setDish({ ...dish, discountPrice: event.target.value })} />
+                <input className={input} inputMode="decimal" placeholder="e.g. 15.00" value={dish.discountPrice} onChange={(event) => setDish({ ...dish, discountPrice: event.target.value })} />
               </label>
             </div>
-            <p className="mt-1 text-xs text-[#6B6560]">Leave the price empty for “no price”. 0 means free.</p>
+            <p className="mt-1 text-xs text-[#6B6560]">Leave the price empty for “no price” and discount empty for none. 0 means free.</p>
             <div className="mt-3 space-y-1">
               {([['isAvailable', 'Available (off = sold out)'], ['showPrices', 'Show the price'], ['isFeatured', 'Featured dish']] as const).map(([key, label]) => (
                 <label key={key} className="flex min-h-11 items-center gap-3 text-sm">
