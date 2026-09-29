@@ -31,6 +31,9 @@ interface CategoryFilterProps {
   availableAreas: string[];
   availableCuisines: string[];
   availableMore: string[];
+  nearbyActive: boolean;
+  nearbyLoading: boolean;
+  onNearbyChange: (active: boolean) => void;
 }
 
 export function CategoryFilter({
@@ -45,6 +48,9 @@ export function CategoryFilter({
   availableAreas,
   availableCuisines,
   availableMore,
+  nearbyActive,
+  nearbyLoading,
+  onNearbyChange,
 }: CategoryFilterProps) {
   const [collapsed, setCollapsed] = useState(false);
 
@@ -93,9 +99,11 @@ export function CategoryFilter({
     (activeArea && activeArea !== "All Areas" ? 1 : 0) +
     activeMore.length +
     (openNow ? 1 : 0);
+  const filterCount = activeCount + (nearbyActive ? 1 : 0);
 
   const summaryItems: { label: string; type: string }[] = [];
   if (openNow) summaryItems.push({ label: "Open Now", type: "open" });
+  if (nearbyActive) summaryItems.push({ label: "Nearby", type: "nearby" });
   activeCuisines.forEach((c) => summaryItems.push({ label: c, type: "cuisine" }));
   if (activeArea && activeArea !== "All Areas") summaryItems.push({ label: activeArea, type: "area" });
   activeMore.forEach((m) => summaryItems.push({ label: m, type: "more" }));
@@ -105,7 +113,8 @@ export function CategoryFilter({
     onAreaChange(null);
     onMoreChange([]);
     onOpenNowChange(false);
-  }, [onCuisineChange, onAreaChange, onMoreChange, onOpenNowChange]);
+    if (nearbyActive) onNearbyChange(false);
+  }, [onCuisineChange, onAreaChange, onMoreChange, onOpenNowChange, nearbyActive, onNearbyChange]);
 
   return (
     <div className="sticky top-0 z-40 border-b border-[#DDE5DC] bg-[#FAFBF7]/95 backdrop-blur-sm px-4 py-3">
@@ -126,9 +135,9 @@ export function CategoryFilter({
             >
               <ChevronDown className={cn("h-3.5 w-3.5 transition-transform duration-300", collapsed && "rotate-180")} />
               Filters
-              {activeCount > 0 && (
+              {filterCount > 0 && (
                 <span className="ml-0.5 rounded-full bg-[#5A8F6E] text-white px-1.5 py-0 text-[10px]">
-                  {activeCount}
+                  {filterCount}
                 </span>
               )}
             </button>
@@ -145,7 +154,7 @@ export function CategoryFilter({
               ))}
             </div>
 
-            {activeCount > 0 && (
+            {filterCount > 0 && (
               <button
                 onClick={handleClearAll}
                 className="shrink-0 text-[10px] text-[#8A968B] hover:text-[#5A8F6E] transition-colors underline underline-offset-2"
@@ -222,6 +231,10 @@ export function CategoryFilter({
               <span className="text-xs text-[#8A968B] mr-1 flex items-center gap-1">
                 <MapPin className="h-3 w-3" /> Area
               </span>
+              <button type="button" disabled={nearbyLoading} aria-pressed={nearbyActive} onClick={() => onNearbyChange(!nearbyActive)}
+                className={cn("rounded-full px-3 py-1.5 text-xs font-medium transition-all disabled:opacity-50", nearbyActive ? "bg-[#2C3E2D] text-white" : "border border-[#DDE5DC] bg-white text-[#6B6560] hover:border-[#2C3E2D] hover:text-[#2C3E2D]") }>
+                <MapPin className="mr-1 inline h-3 w-3" />{nearbyLoading ? "Locating…" : "Nearby"}
+              </button>
               {availableAreas.map((area, i) => (
                 <button
                   key={area}
@@ -274,7 +287,7 @@ export function CategoryFilter({
                 );
               })}
 
-              {activeCount > 0 && (
+              {filterCount > 0 && (
                 <button
                   onClick={handleClearAll}
                   className="text-xs text-[#8A968B] underline underline-offset-2 active:text-[#5A8F6E] transition-colors ml-1 hover:text-[#5A8F6E]"
