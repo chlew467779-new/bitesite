@@ -126,7 +126,11 @@
 
 ### Merchant auth and self-registration — 2026-09-27
 
-User approved ChatGPT implementation: email/password daily login, email-confirmed self-registration and creation of an own private draft with atomic Owner membership; Magic Link remains for transition/recovery. No invitation or claim of an existing restaurant is needed to create a new draft. Five consecutive bad-password attempts from the current login source trigger 15 minutes of cooldown; recovery remains available, no permanent account lock, no effect on public listings. Minimum 8 characters, long passphrases allowed; shared accounts represent one identity. Hosted Auth configuration remains an environment prerequisite, not a code assumption.
+User approved ChatGPT implementation: email/password daily login, email-confirmed self-registration and creation of an own private draft with atomic Owner membership. At that time, Magic Link was retained for transition/recovery; the 2026-09-29 decision below supersedes that part. No invitation or claim of an existing restaurant is needed to create a new draft. Five consecutive bad-password attempts from the current login source trigger 15 minutes of cooldown; password recovery remains available, no permanent account lock, no effect on public listings. Minimum 8 characters, long passphrases allowed; shared accounts represent one identity. Hosted Auth configuration remains an environment prerequisite, not a code assumption.
+
+### Merchant Magic Link sign-in removed - 2026-09-29
+
+CH decided to remove the Magic Link sign-in option because email sending is limited. Merchant daily access uses email/password; Forgot password and password reset remain available, including for existing accounts that need to set a password. Batch 7 removed the Magic Link login UI.
 
 A new feature idea must not silently become a decision. Add it here only after CH explicitly approves it or after the Master Spec is formally revised and approved.
 
