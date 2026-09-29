@@ -10,9 +10,10 @@ import type { PublicMerchant } from "@/types";
 
 interface MerchantCardProps {
   merchant: PublicMerchant;
+  distanceKm?: number;
 }
 
-export function MerchantCard({ merchant }: MerchantCardProps) {
+export function MerchantCard({ merchant, distanceKm }: MerchantCardProps) {
   const { isOpen, hoursText } = getTodayHours(merchant.operating_hours);
 
   return (
@@ -75,6 +76,7 @@ export function MerchantCard({ merchant }: MerchantCardProps) {
               <Clock className="h-3 w-3" />
               Today: {hoursText}
             </p>
+            {distanceKm !== undefined && <p className="mb-3 text-xs font-medium text-[#5A8F6E]">About {distanceKm < 0.1 ? "<0.1" : distanceKm.toFixed(1)} km away</p>}
             <span className="inline-flex items-center gap-1.5 text-sm font-medium text-[#5A8F6E] transition-colors group-hover:text-[#4A7A5E]">
               View Menu
               <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
