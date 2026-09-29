@@ -29,6 +29,7 @@ import FeedbackInbox from './components/feedback-inbox';
 import RestaurantReviewQueue from './components/restaurant-review-queue';
 import ReportsInbox from './components/reports-inbox';
 import MerchantManager from './components/merchant-manager';
+import TodayPanel from './components/today-panel';
 import ContentServiceManager from './components/content-service-manager';
 import AreasManager from './components/areas-manager';
 import AnnouncementsManager from './components/announcements-manager';
@@ -38,7 +39,9 @@ const rawAnalyticsTabs = new Set(['overview', 'merchants', 'devices', 'referrers
 
 export default function AdminPage() {
   const { isAuthenticated, isLoading, login } = useAuth();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('today');
+  // Set by Today's "Fix" button: Merchant Manager opens this restaurant's editor once, then clears it.
+  const [openMerchantId, setOpenMerchantId] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState('7d');
   const [showEditor, setShowEditor] = useState(false);
   const [editingSlug, setEditingSlug] = useState<string | null>(null);
@@ -149,6 +152,10 @@ export default function AdminPage() {
           Yearly view trends use retained aggregates. Detailed analytics based on raw visitor logs, including unique visitors, devices, sources, search terms, events, peak hours, maps, and Story conversions, cover the most recent 90 days.
         </div>
       )}
+      {activeTab === 'today' && (
+        <TodayPanel onOpenTab={setActiveTab} onOpenMerchant={(id) => { setOpenMerchantId(id); setActiveTab('merchant-manager'); }} />
+      )}
+
       {/* Overview - Full Dashboard */}
       {activeTab === 'overview' && (
         <div className="space-y-6">
@@ -382,7 +389,7 @@ export default function AdminPage() {
       {/* Merchant Manager */}
       {activeTab === 'merchant-manager' && (
         <div className="space-y-6">
-          <MerchantManager onOpenChangeRequests={() => setActiveTab('link-reviews')} />
+          <MerchantManager onOpenChangeRequests={() => setActiveTab('link-reviews')} openMerchantId={openMerchantId} onOpened={() => setOpenMerchantId(null)} />
         </div>
       )}
 

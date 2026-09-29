@@ -7,6 +7,7 @@ import { useAuth } from './auth-context';
 import { requestLeave } from '@/lib/unsaved-guard';
 import {
   LayoutDashboard,
+  ListChecks,
   TrendingUp,
   Store,
   Smartphone,
@@ -37,6 +38,7 @@ import {
 } from 'lucide-react';
 
 const navItems = [
+  { id: 'today', label: 'Today', icon: ListChecks },
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
   { id: 'trends', label: 'Trends', icon: TrendingUp },
   { id: 'merchants', label: 'Merchants', icon: Store },
