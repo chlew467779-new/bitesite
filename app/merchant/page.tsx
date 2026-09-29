@@ -197,7 +197,7 @@ function TextSection({ id, config, ...props }: SectionProps & { id: string; conf
 
 const ABOUT_FIELDS = [
   { path: 'profile.tagline', field: 'tagline', label: 'Tagline', placeholder: 'e.g. Kopi and kaya toast since 1968', maxLength: 300 },
-  { path: 'profile.description', field: 'description', label: 'About your restaurant', multiline: true, rows: 6, maxLength: 10000 },
+  { path: 'profile.description', field: 'description', label: 'About your restaurant', placeholder: 'e.g. We serve family recipes and freshly brewed kopi every morning in Sungai Besi.', multiline: true, rows: 6, maxLength: 10000 },
 ];
 const CONTACT_FIELDS = [
   { path: 'profile.phone', field: 'phone', label: 'Phone', type: 'tel', inputMode: 'tel' as const, placeholder: '+60 3-1234 5678' },

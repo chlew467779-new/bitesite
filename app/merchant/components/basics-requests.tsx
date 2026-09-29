@@ -142,9 +142,9 @@ export function BasicsRequests({ merchantId, getHeaders, readOnly, register }: {
       {approved && !draft && <p className="text-sm text-emerald-800">Your last change was approved and is on your page. Refresh to see it above.</p>}
       {draft ? (
         <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); void submit(); }}>
-          <TextField name="request-name" label="Restaurant name" autoComplete="organization" maxLength={160} showCount value={draft.name} onChange={(v) => { setDraft({ ...draft, name: v }); setFormError(''); }} />
-          <TextField name="request-address" label="Address" autoComplete="street-address" multiline maxLength={500} showCount value={draft.address} onChange={(v) => { setDraft({ ...draft, address: v }); setFormError(''); }} />
-          <TextField name="request-area" label="Area (optional)" maxLength={160} value={draft.area} onChange={(v) => { setDraft({ ...draft, area: v }); setFormError(''); }} />
+          <TextField name="request-name" label="Restaurant name" autoComplete="organization" placeholder="e.g. Kedai Kopi Seri Pagi" maxLength={160} showCount value={draft.name} onChange={(v) => { setDraft({ ...draft, name: v }); setFormError(''); }} />
+          <TextField name="request-address" label="Address" autoComplete="street-address" placeholder="e.g. 12 Jalan Tasik Utama 3, Sungai Besi, 57000 Kuala Lumpur" multiline maxLength={500} showCount value={draft.address} onChange={(v) => { setDraft({ ...draft, address: v }); setFormError(''); }} />
+          <TextField name="request-area" label="Area (optional)" placeholder="e.g. Sungai Besi" maxLength={160} value={draft.area} onChange={(v) => { setDraft({ ...draft, area: v }); setFormError(''); }} />
           <fieldset>
             <legend className="text-sm font-medium">Cuisine — choose up to 3</legend>
             <div className="mt-2 flex flex-wrap gap-2">{cuisineOptions.map((tag) => {

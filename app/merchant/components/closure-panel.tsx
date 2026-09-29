@@ -86,6 +86,7 @@ export function ClosurePanel({ merchantId, getHeaders, readOnly }: { merchantId:
             <input className={input} type="date" min={today} value={closing.reopenOn}
               onChange={(e) => { unknown.current = null; setClosing({ ...closing, reopenOn: e.target.value }); }} />
           </label>
+          <p className="text-xs text-[#6B6560]">For example, choose the day you expect to welcome visitors again.</p>
           <div className="flex flex-col gap-2 sm:flex-row">
             <button type="submit" disabled={locked} className={`${btn} bg-amber-700 text-white`}>{busy ? 'Saving…' : unknown.current ? 'Retry' : 'Mark temporarily closed'}</button>
             <button type="button" disabled={busy} onClick={() => { setClosing(null); unknown.current = null; }} className={`${btn} border border-[#C9D6C7]`}>Cancel</button>

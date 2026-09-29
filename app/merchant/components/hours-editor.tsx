@@ -93,6 +93,7 @@ function DayRow({ day, state, error, onChange }: { day: WeekDay; state: DayEdito
 
       {isOpen && (
         <div className="mt-3 space-y-3">
+          <p className="text-xs text-[#6B6560]">For example, choose 09:00 to 17:00 for a daytime service.</p>
           {state.slots.map((slot, index) => {
             const overnight = Boolean(slot.open && slot.close && slot.close < slot.open);
             return (
