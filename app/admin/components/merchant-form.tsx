@@ -36,6 +36,7 @@ import { snapshotValue, type Snapshot } from '@/lib/section-save.mjs';
 import { useSectionSave, type SectionHandle, type SendSave } from '@/app/components/section-save/use-section-save';
 import { SectionSaveBar, formatValue } from '@/app/components/section-save/section-save-bar';
 import { HoursSection, type SectionProps } from '@/app/components/section-save/hours-section';
+import { AreaField } from '@/app/merchant/components/area-field';
 
 interface MerchantFormProps {
   merchant?: {
@@ -261,8 +262,7 @@ function LocationSection(props: SectionProps) {
           <textarea id="admin-address" rows={2} maxLength={500} className={input} value={textOf(value.address)} onChange={(e) => set('address', e.target.value)} />
         </div>
         <div className="sm:col-span-2">
-          <label htmlFor="admin-area" className={labelClass}>Area</label>
-          <input id="admin-area" maxLength={160} className={input} value={textOf(value.area)} onChange={(e) => set('area', e.target.value)} />
+          <AreaField name="admin-area" label="Area" value={textOf(value.area)} onChange={(v) => set('area', v)} readOnly={props.readOnly} />
         </div>
         {(['latitude', 'longitude'] as const).map((key) => (
           <div key={key}>

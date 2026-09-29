@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { isCurrentlyOpen, getTodayKey } from "@/lib/hours";   // ← 新增
 import { PUBLIC_MERCHANT_SELECT } from "@/lib/public-merchant-projection.mjs";
 import type { PublicMerchant, Category, Product, MerchantVideo, EventItem } from "@/types";
+import type { AreaItem } from "@/lib/areas-core.mjs";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -20,6 +21,18 @@ export async function getPublishedMerchants(): Promise<PublicMerchant[]> {
     .select(PUBLIC_MERCHANT_SELECT)
     .order("created_at", { ascending: false })
     .returns<PublicMerchant[]>();
+
+  if (error) throw error;
+  return data || [];
+}
+
+/** The active area list (country -> state -> area); RLS hides inactive rows. */
+export async function getAreas(): Promise<AreaItem[]> {
+  const { data, error } = await supabase
+    .from("areas")
+    .select("name,state,country,aliases")
+    .order("name")
+    .returns<AreaItem[]>();
 
   if (error) throw error;
   return data || [];

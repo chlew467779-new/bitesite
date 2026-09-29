@@ -14,6 +14,7 @@ import { Loader2 } from 'lucide-react';
 import { CUISINE_TAGS } from '@/lib/presets';
 import { basicsChanges, type BasicsRead, type BasicsRequestItem, type BasicsValues } from '@/lib/merchant-basics-core.mjs';
 import { TextField } from './text-field';
+import { AreaField } from './area-field';
 
 type Draft = { name: string; address: string; area: string; cuisine: string[] };
 type Pending = { requestId: string; body: Record<string, unknown>; success: string };
@@ -144,7 +145,7 @@ export function BasicsRequests({ merchantId, getHeaders, readOnly, register }: {
         <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); void submit(); }}>
           <TextField name="request-name" label="Restaurant name" autoComplete="organization" placeholder="e.g. Kedai Kopi Seri Pagi" maxLength={160} showCount value={draft.name} onChange={(v) => { setDraft({ ...draft, name: v }); setFormError(''); }} />
           <TextField name="request-address" label="Address" autoComplete="street-address" placeholder="e.g. 12 Jalan Tasik Utama 3, Sungai Besi, 57000 Kuala Lumpur" multiline maxLength={500} showCount value={draft.address} onChange={(v) => { setDraft({ ...draft, address: v }); setFormError(''); }} />
-          <TextField name="request-area" label="Area (optional)" placeholder="e.g. Sungai Besi" maxLength={160} value={draft.area} onChange={(v) => { setDraft({ ...draft, area: v }); setFormError(''); }} />
+          <AreaField name="request-area" label="Area (optional)" value={draft.area} onChange={(v) => { setDraft({ ...draft, area: v }); setFormError(''); }} />
           <fieldset>
             <legend className="text-sm font-medium">Cuisine — choose up to 3</legend>
             <div className="mt-2 flex flex-wrap gap-2">{cuisineOptions.map((tag) => {
