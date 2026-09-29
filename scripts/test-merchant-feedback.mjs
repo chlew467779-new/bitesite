@@ -10,7 +10,7 @@ import { FEEDBACK_TOPICS, mapFeedbackRpcError, parseFeedbackSubmit, parseFeedbac
 const read = async (relPath) => (await readFile(new URL(`../${relPath}`, import.meta.url), "utf8")).replace(/\r\n/g, "\n");
 const REQ = "7d1c3a52-5b1e-4c8e-9a51-0e2c55d2f1a1";
 
-assert.deepEqual(FEEDBACK_TOPICS.map((t) => t.value), ["suggestion", "problem", "listing"], "topics match the database check");
+assert.deepEqual(FEEDBACK_TOPICS.map((t) => t.value).sort(), ["listing", "problem", "suggestion"], "topics match the database check");
 assert.deepEqual(parseFeedbackSubmit({ requestId: REQ, topic: "problem", message: "  Menu broken  " }), { ok: true, requestId: REQ, topic: "problem", message: "Menu broken" });
 assert.equal(parseFeedbackSubmit({ requestId: REQ, topic: "problem", message: "   " }).ok, false);
 assert.equal(parseFeedbackSubmit({ requestId: REQ, topic: "other", message: "x" }).ok, false);

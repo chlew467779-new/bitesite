@@ -333,6 +333,7 @@ export function ClassicLayout({
           {footerText || "Discover more restaurants on BiteSite"}
         </Link>
         <Link href="/support-us" className="mt-2 block text-sm text-amber-700 underline hover:text-amber-900">Support us</Link>
+        <Link href="/feedback" className="mt-1 block text-sm text-amber-700 underline hover:text-amber-900">Send feedback</Link>
       </footer>
     </div>
   );

@@ -11,6 +11,7 @@ import type { PublicMerchant } from "@/types";
 import { getTodayHours } from "@/lib/hours";
 import { getMarkerColor } from "@/lib/map-colors";
 import { trackEvent } from '@/lib/analytics';
+import { merchantCuisines } from "@/lib/discovery-core.mjs";
 
 interface MapSectionProps {
   merchants: PublicMerchant[];
@@ -85,9 +86,9 @@ export function MapSection({ merchants, selectedMerchant, onSelect }: MapSection
     onSelectRef.current(null);
 
     merchants.forEach((merchant) => {
-      if (!merchant.latitude || !merchant.longitude) return;
+      if (merchant.latitude === null || merchant.longitude === null) return;
 
-      const type = merchant.cuisine_type?.split(",")[0].trim() || "Other";
+      const type = merchantCuisines(merchant)[0] || "Other";
       const color = getMarkerColor(type);
       const img = merchant.cover_image || "";
 
@@ -148,7 +149,7 @@ export function MapSection({ merchants, selectedMerchant, onSelect }: MapSection
     }
   };
 
-  const selectedType = selectedMerchant?.cuisine_type?.split(",")[0].trim() || "Other";
+  const selectedType = selectedMerchant ? merchantCuisines(selectedMerchant)[0] || "Other" : "Other";
   const selectedColor = getMarkerColor(selectedType);
   const { isOpen } = selectedMerchant
     ? getTodayHours(selectedMerchant.operating_hours)

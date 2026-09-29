@@ -4,13 +4,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, ExternalLink, RefreshCw } from 'lucide-react';
 import { useAuth } from './auth-context';
 import { ISSUE_LABELS, type IssueKey } from '@/lib/admin-today-core.mjs';
+import { daysWaiting } from '@/lib/site-feedback-core.mjs';
 
 /**
  * Admin home (dashboard phase 1, CH 2026-09-29): what needs doing now, pilot places, and
  * restaurants with gaps. Every item opens the page where it is fixed.
  */
 
-type Attention = Record<string, number> & { notifications?: { pending: number; failed: number } };
+type Attention = Record<string, number> & { notifications?: { pending: number; failed: number }; ideas?: { count: number; oldestAt: string | null } };
 type Row = { id: string; slug: string; name: string; isPublic: boolean; status: 'public' | 'waiting' | 'draft' | 'suspended'; issues: IssueKey[] };
 type Today = { capacity: { pending: number; pendingCapacity: number; pilotUsed: number; pilotCapacity: number }; incomplete: Row[] };
 
@@ -18,7 +19,7 @@ const QUEUES: { key: string; tab: string; label: string; hint: string }[] = [
   { key: 'restaurant-reviews', tab: 'restaurant-reviews', label: 'Restaurants to review', hint: 'New restaurants waiting to go live' },
   { key: 'link-reviews', tab: 'link-reviews', label: 'Change requests', hint: 'Links, name, address or cuisine changes' },
   { key: 'reports', tab: 'reports', label: 'Visitor reports', hint: 'Problems visitors flagged on a page' },
-  { key: 'feedback', tab: 'feedback', label: 'Merchant feedback', hint: 'Messages from restaurant owners' },
+  { key: 'feedback', tab: 'feedback', label: 'Problems reported', hint: 'A merchant or visitor says something is wrong' },
   { key: 'story-submissions', tab: 'story-submissions', label: 'Stories to review', hint: 'Stories restaurants sent in' },
 ];
 const STATUS_STYLE: Record<Row['status'], string> = {
@@ -73,6 +74,8 @@ export default function TodayPanel({ onOpenTab, onOpenMerchant }: { onOpenTab: (
   const waiting = QUEUES.map((q) => ({ ...q, count: attention?.[q.key] ?? 0 }));
   const busyQueues = waiting.filter((q) => q.count > 0);
   const failedEmails = attention?.notifications?.failed ?? 0;
+  const ideas = attention?.ideas;
+  const ideaAge = daysWaiting(ideas?.oldestAt);
   const issueCounts = useMemo(() => {
     const counts = Object.fromEntries(ISSUE_KEYS.map((k) => [k, 0])) as Record<IssueKey, number>;
     for (const row of today?.incomplete ?? []) for (const issue of row.issues) counts[issue] += 1;
@@ -122,6 +125,14 @@ export default function TodayPanel({ onOpenTab, onOpenMerchant }: { onOpenTab: (
           <p className="mt-3 text-xs text-slate-500">Nothing in: {waiting.filter((q) => q.count === 0).map((q) => q.label.toLowerCase()).join(', ')}.</p>
         )}
       </section>
+
+      {/* Ideas are kept for a batch (CH: every two months), so they sit apart from the queues above. */}
+      {ideas && ideas.count > 0 && (
+        <button type="button" onClick={() => onOpenTab('feedback')} className="flex w-full flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-800 bg-slate-900 px-5 py-4 text-left transition-colors hover:bg-slate-800/60">
+          <span className="text-sm text-slate-200"><span className="font-semibold text-white">{ideas.count}</span> ideas and design comments saved for the next batch</span>
+          {ideaAge !== null && <span className={`text-xs ${ideaAge >= 60 ? 'font-medium text-amber-300' : 'text-slate-400'}`}>Oldest: {ideaAge} {ideaAge === 1 ? 'day' : 'days'}{ideaAge >= 60 ? ' · time for a batch' : ''}</span>}
+        </button>
+      )}
 
       {/* Pilot places */}
       {today && (

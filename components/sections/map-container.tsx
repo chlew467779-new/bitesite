@@ -7,6 +7,9 @@ import { useState, useMemo } from "react";
 import { MapFilter } from "./map-filter";
 import { MapSidebar } from "./map-sidebar";
 import type { PublicMerchant } from "@/types";
+import type { AreaItem } from "@/lib/areas-core.mjs";
+import { merchantCuisines } from "@/lib/discovery-core.mjs";
+import { mapDiscoveryOptions } from "@/lib/map-discovery-core.mjs";
 
 const MapSection = dynamic(
   () => import("./map-section").then((mod) => mod.MapSection),
@@ -22,40 +25,49 @@ const MapSection = dynamic(
 
 interface MapContainerProps {
   merchants: PublicMerchant[];
+  areas: AreaItem[];
 }
 
-export function MapContainer({ merchants }: MapContainerProps) {
+export function MapContainer({ merchants, areas }: MapContainerProps) {
   const [activeTypes, setActiveTypes] = useState<string[]>(["All"]);
+  const [activeArea, setActiveArea] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedMerchant, setSelectedMerchant] = useState<PublicMerchant | null>(null);
+  const options = useMemo(() => mapDiscoveryOptions(merchants, areas), [merchants, areas]);
 
   const filteredMerchants = useMemo(() => {
     let result = activeTypes.includes("All")
-      ? merchants
-      : merchants.filter((m) => {
-          const type = m.cuisine_type?.split(",")[0].trim();
-          return type && activeTypes.includes(type);
+      ? options.mapped
+      : options.mapped.filter((m) => {
+          return merchantCuisines(m).some((type) => activeTypes.some((selected) => selected.toLocaleLowerCase() === type.toLocaleLowerCase()));
         });
+
+    if (activeArea) result = result.filter((merchant) => merchant.area === activeArea);
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter(
         (m) =>
           m.name.toLowerCase().includes(q) ||
-          (m.cuisine_type || "").toLowerCase().includes(q) ||
+          merchantCuisines(m).some((type) => type.toLowerCase().includes(q)) ||
           (m.area || "").toLowerCase().includes(q) ||
           (m.description || "").toLowerCase().includes(q)
       );
     }
 
     return result;
-  }, [merchants, activeTypes, searchQuery]);
+  }, [merchants, options.mapped, activeTypes, activeArea, searchQuery]);
 
   return (
     <div className="flex flex-col h-full">
       <MapFilter
         activeTypes={activeTypes}
         onChange={setActiveTypes}
+        availableTypes={options.cuisines}
+        activeArea={activeArea}
+        onAreaChange={setActiveArea}
+        availableAreas={options.areas}
+        missingCount={options.missingCount}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
       />
