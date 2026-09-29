@@ -161,7 +161,7 @@ export function MalayLayout({
         </FadeIn>
       )}
 
-      <TierSections merchant={merchant} products={products} features={features} variant="malay" events={events} />
+      <TierSections merchant={merchant} categories={categories} products={products} features={features} variant="malay" events={events} />
 
       {resolvedFeatures.contact && (
         <FadeIn>

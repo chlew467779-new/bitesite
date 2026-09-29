@@ -97,7 +97,7 @@ export function MinimalLayout({
         </FadeIn>
       )}
 
-      <TierSections merchant={merchant} products={products} features={features} variant="minimal" events={events} />
+      <TierSections merchant={merchant} categories={categories} products={products} features={features} variant="minimal" events={events} />
 
       {resolvedFeatures.contact && (
         <FadeIn>

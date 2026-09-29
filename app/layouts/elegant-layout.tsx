@@ -154,7 +154,7 @@ export function ElegantLayout({
         </FadeIn>
       )}
 
-      <TierSections merchant={merchant} products={products} features={features} variant="elegant" events={events} />
+      <TierSections merchant={merchant} categories={categories} products={products} features={features} variant="elegant" events={events} />
 
       {/* Hours & Contact */}
       {resolvedFeatures.contact && (

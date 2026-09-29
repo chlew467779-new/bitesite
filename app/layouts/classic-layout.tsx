@@ -184,6 +184,7 @@ export function ClassicLayout({
       {/* ── TIER SECTIONS ── */}
       <TierSections
         merchant={merchant}
+        categories={categories}
         products={products}
         features={features}
         variant="classic"

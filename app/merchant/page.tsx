@@ -698,7 +698,7 @@ export default function MerchantDashboardPage() {
             </div>
           </SectionCard>
 
-          <SectionCard id="photos" title="Photos" description="Choose a photo from your phone or take a new one. It is resized before upload and appears on your page after BiteSite checks the file.">
+          <SectionCard id="photos" title="Photos" description="Choose a photo from your phone or take a new one. It is resized before upload and appears on your page after BiteSite checks the file. The public gallery shows up to 8 photos: your cover first, then dish photos in menu order.">
             <ProfileImagesPanel key={`photos:${profile.id}:${data.loadId}`} apiBase={`/api/merchant/restaurants/${encodeURIComponent(profile.id)}/media`} getHeaders={photoHeaders} disabled={readOnly} register={register} onChanged={onPhotoChanged} />
           </SectionCard>
 

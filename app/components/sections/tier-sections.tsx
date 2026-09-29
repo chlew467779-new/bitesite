@@ -7,7 +7,7 @@ import { AppointmentSection } from "./appointment-section";
 import { SeasonalSection } from "./seasonal-section";
 import { EventsSection } from "./events-section";
 import { mergeFeatures, type MerchantFeatures } from "@/types";
-import type { PublicMerchant, Product, EventItem } from "@/types";
+import type { PublicMerchant, Product, Category, EventItem } from "@/types";
 import { hasDisplayablePrice } from "@/lib/menu-display.mjs";
 import { normalizeBookingWhatsApp } from "@/lib/merchant-booking-target.mjs";
 import type { LayoutVariant } from "./gallery-section";
@@ -15,6 +15,7 @@ import { formatPrice } from "@/lib/price-format.mjs";
 
 interface TierSectionsProps {
   merchant: PublicMerchant;
+  categories: Category[];
   products: Product[];
   features?: Partial<MerchantFeatures>;
   variant: LayoutVariant;
@@ -23,19 +24,25 @@ interface TierSectionsProps {
 
 export function TierSections({
   merchant,
+  categories,
   products,
   features,
   variant,
   events,
 }: TierSectionsProps) {
   const resolved = mergeFeatures(features);
+  const categoryOrder = new Map(categories.map((category, index) => [category.id, index]));
+  const menuProducts = [...products].sort((a, b) =>
+    (categoryOrder.get(a.category_id ?? '') ?? categories.length) - (categoryOrder.get(b.category_id ?? '') ?? categories.length)
+    || a.sort_order - b.sort_order);
 
   const galleryImages = [
     merchant.cover_image,
-    ...products.map((p) => p.image_url),
+    ...menuProducts.map((p) => p.image_url),
   ]
     .filter((url): url is string => typeof url === "string" && url.length > 0)
-    .filter((url, i, arr) => arr.indexOf(url) === i);
+    .filter((url, i, arr) => arr.indexOf(url) === i)
+    .slice(0, 8);
 
   const seasonalItems = products
     .filter((p) => p.is_featured)

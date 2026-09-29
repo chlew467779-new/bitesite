@@ -164,7 +164,7 @@ export function ChineseLayout({
         </FadeIn>
       )}
 
-      <TierSections merchant={merchant} products={products} features={features} variant="chinese" events={events} />
+      <TierSections merchant={merchant} categories={categories} products={products} features={features} variant="chinese" events={events} />
 
       {resolvedFeatures.contact && (
         <FadeIn>
