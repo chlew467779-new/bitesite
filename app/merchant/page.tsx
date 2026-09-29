@@ -22,6 +22,7 @@ import { StatsPanel } from './components/stats-panel';
 import { ClosurePanel } from './components/closure-panel';
 import { TextField } from './components/text-field';
 import { PhoneField } from './components/phone-field';
+import { PaymentSection } from './components/payment-section';
 
 /**
  * Merchant self-service dashboard (D2-B / M1-B).
@@ -682,6 +683,12 @@ export default function MerchantDashboardPage() {
 
           <SectionCard id="contact" title="Contact & links" description="All optional. Leave a field empty to hide it from your page.">
             <TextSection key={`contact:${sectionKey}`} id="contact" config={CONTACT_FIELDS} {...sectionProps} />
+            {/* Shown once the database offers tags.payment (migration 20260929120000). */}
+            {'tags.payment' in sectionProps.fields && (
+              <div className="mt-6 border-t border-[#EEF2EC] pt-5">
+                <PaymentSection key={`payment:${sectionKey}`} {...sectionProps} />
+              </div>
+            )}
             <div className="mt-6 rounded-lg border border-[#EEF2EC] bg-[#FAFBF7] p-4">
               <h3 className="mb-2 text-sm font-semibold text-[#2C3E2D]">Links</h3>
               <LinkRequests key={`links:${profile.id}:${data.loadId}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={readOnly} register={register} />
