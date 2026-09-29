@@ -37,6 +37,7 @@ import { useSectionSave, type SectionHandle, type SendSave } from '@/app/compone
 import { SectionSaveBar, formatValue } from '@/app/components/section-save/section-save-bar';
 import { HoursSection, type SectionProps } from '@/app/components/section-save/hours-section';
 import { AreaField } from '@/app/merchant/components/area-field';
+import { outsideMalaysiaSingaporeBounds, parseCoordinates } from '@/lib/coordinates-core.mjs';
 
 interface MerchantFormProps {
   merchant?: {
@@ -237,6 +238,7 @@ function LocationSection(props: SectionProps) {
   const paths = useMemo(() => ['location'], []);
   const section = useSectionSave(paths, props.fields, props.send, props.onConfirmed);
   const [localError, setLocalError] = useState('');
+  const [coordinatesText, setCoordinatesText] = useState('');
   const { register } = props;
   useEffect(() => { register('location', section.handle); return () => register('location', null); }, [register, section.handle]);
   const value = (section.state.draft.location as LocationValue | null) ?? { address: null, area: null, latitude: null, longitude: null };
@@ -253,6 +255,8 @@ function LocationSection(props: SectionProps) {
     void section.save();
   };
   const error = localError || section.state.error?.fieldErrors?.location;
+  const address = textOf(value.address).trim();
+  const coordinatesOutsideLocalBounds = outsideMalaysiaSingaporeBounds(value.latitude, value.longitude);
   return (
     <div className={panel}>
       <PanelTitle title="Location" note="Address, area and coordinates are saved together so they cannot mismatch. 0 is a valid coordinate." />
@@ -260,9 +264,24 @@ function LocationSection(props: SectionProps) {
         <div className="sm:col-span-2">
           <label htmlFor="admin-address" className={labelClass}>Address</label>
           <textarea id="admin-address" rows={2} maxLength={500} className={input} value={textOf(value.address)} onChange={(e) => set('address', e.target.value)} />
+          <button type="button" disabled={!address} onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`, '_blank', 'noopener,noreferrer')}
+            className="mt-2 rounded-lg border border-[#C9D6C7] px-3 py-2 text-sm text-[#2C3E2D] disabled:opacity-50">Open address in Google Maps</button>
         </div>
         <div className="sm:col-span-2">
           <AreaField name="admin-area" label="Area" value={textOf(value.area)} onChange={(v) => set('area', v)} readOnly={props.readOnly} />
+        </div>
+        <div className="sm:col-span-2">
+          <label htmlFor="admin-paste-coordinates" className={labelClass}>Paste coordinates</label>
+          <input id="admin-paste-coordinates" className={input} value={coordinatesText} placeholder="3.0908, 101.6995 or a Google Maps URL" onChange={(event) => {
+            const text = event.target.value;
+            setCoordinatesText(text);
+            const parsed = parseCoordinates(text);
+            if (parsed) {
+              section.edit('location', { ...value, ...parsed });
+              setLocalError('');
+            }
+          }} />
+          <p className="mt-1 text-xs text-[#6B6560]">A coordinate pair or Google Maps link fills both fields automatically.</p>
         </div>
         {(['latitude', 'longitude'] as const).map((key) => (
           <div key={key}>
@@ -271,6 +290,7 @@ function LocationSection(props: SectionProps) {
           </div>
         ))}
       </fieldset>
+      {coordinatesOutsideLocalBounds && <p role="status" className="mt-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">These coordinates are outside the approximate Malaysia/Singapore range (latitude 0.8–7.5, longitude 99.5–119.5). Check whether they were reversed.</p>}
       {error && <p className="mt-2 text-xs text-red-700">{error}</p>}
       <SectionSaveBar state={section.state} labels={[{ path: 'location', label: 'Location' }]} canSave={section.canSave} dirty={section.dirty} readOnly={props.readOnly} lastOutcome={section.lastOutcome}
         onSave={save} onRetry={() => void section.retry()} onKeepCurrent={section.chooseCurrent} onUseMine={section.chooseMine} />
