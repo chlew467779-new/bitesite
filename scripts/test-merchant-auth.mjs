@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { validateCredentials, validateRestaurantDraft } from '../lib/merchant-auth-validation.mjs';
 import { MERCHANT_TERMS_VERSION } from '../lib/merchant-terms.mjs';
 assert.deepEqual(validateCredentials({ email: ' OWNER@Example.com ', password: ' with spaces ' }), { email: 'owner@example.com', password: ' with spaces ' });
@@ -13,4 +14,7 @@ assert.equal(validateRestaurantDraft({ ...draft, rightsDeclared: false }), null)
 for (const extra of ['merchantId', 'userId', 'is_published', 'role', 'slug', 'state_source']) assert.equal(validateRestaurantDraft({ ...draft, [extra]: 'arbitrary' }), null, extra);
 for (const name of ['', ' ', 'a'.repeat(121), null, 42]) assert.equal(validateRestaurantDraft({ ...draft, name }), null);
 assert.equal(validateRestaurantDraft({ ...draft, requestId: 'not-a-uuid' }), null);
+const loginPage = await readFile(new URL('../app/merchant/login/page.tsx', import.meta.url), 'utf8');
+assert.doesNotMatch(loginPage, /signInWithOtp|Use a magic link/, 'merchant login does not offer magic links');
+assert.match(loginPage, /resetPasswordForEmail/, 'password recovery remains available');
 console.log('merchant auth validation PASS');
