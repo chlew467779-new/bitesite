@@ -12,7 +12,7 @@ import { MapPin, Phone, Mail, Instagram, Facebook, Globe, ArrowLeft, MessageSqua
 import { formatPhone, phoneLinkDigits } from "@/lib/phone-core.mjs";
 import { trackEvent } from "@/lib/analytics";
 import { MenuViewTracker } from "@/components/sections/menu-view-tracker";
-import { shouldShowPrice } from "@/lib/menu-display.mjs";
+import { hasDisplayablePrice } from "@/lib/menu-display.mjs";
 import Link from "next/link";
 import { getTodayKey, formatOperatingHours, DAYS } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
@@ -78,9 +78,9 @@ export function MinimalLayout({
                               {product.description && <p className="text-xs text-stone-500 mt-0.5">{product.description}</p>}
                               {!product.is_available && <span className="text-xs text-red-500 mt-0.5 block">Unavailable</span>}
                             </div>
-                            {shouldShowPrice(product) && (
+                            {hasDisplayablePrice(product) && (
                               <span className="text-sm font-medium text-stone-600 whitespace-nowrap">
-                                {product.discount_price ? (
+                                {product.discount_price != null ? (
                                   <><span className="line-through opacity-50 text-xs mr-1">{formatPrice(product.price)}</span>{formatPrice(product.discount_price)}</>
                                 ) : formatPrice(product.price)}
                               </span>

@@ -13,7 +13,7 @@ import { MapPin, Phone, Mail, Instagram, Facebook, Globe, ArrowLeft, MessageSqua
 import { formatPhone, phoneLinkDigits } from "@/lib/phone-core.mjs";
 import { trackEvent } from "@/lib/analytics";
 import { MenuViewTracker } from "@/components/sections/menu-view-tracker";
-import { shouldShowPrice } from "@/lib/menu-display.mjs";
+import { hasDisplayablePrice } from "@/lib/menu-display.mjs";
 import Link from "next/link";
 import { getTodayKey, formatOperatingHours, DAYS } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
@@ -134,9 +134,9 @@ export function MalayLayout({
                             <div className="flex-1 min-w-0">
                               <div className="flex justify-between items-start gap-2">
                                 <h4 className="font-semibold text-stone-900 break-words min-w-0">{product.name}</h4>
-                                {shouldShowPrice(product) && (
+                                {hasDisplayablePrice(product) && (
                                   <span className="font-bold text-emerald-800 whitespace-nowrap">
-                                    {product.discount_price ? (
+                                  {product.discount_price != null ? (
                                       <><span className="line-through text-stone-500 text-sm font-normal mr-1">{formatPrice(product.price)}</span>{formatPrice(product.discount_price)}</>
                                     ) : formatPrice(product.price)}
                                   </span>

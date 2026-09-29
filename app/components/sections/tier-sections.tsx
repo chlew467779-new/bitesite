@@ -8,7 +8,7 @@ import { SeasonalSection } from "./seasonal-section";
 import { EventsSection } from "./events-section";
 import { mergeFeatures, type MerchantFeatures } from "@/types";
 import type { PublicMerchant, Product, EventItem } from "@/types";
-import { shouldShowPrice } from "@/lib/menu-display.mjs";
+import { hasDisplayablePrice } from "@/lib/menu-display.mjs";
 import { normalizeBookingWhatsApp } from "@/lib/merchant-booking-target.mjs";
 import type { LayoutVariant } from "./gallery-section";
 import { formatPrice } from "@/lib/price-format.mjs";
@@ -46,11 +46,11 @@ export function TierSections({
       image: p.image_url ?? undefined,
       // A dish with prices hidden must not leak its price here either. SeasonalSection skips the
       // price element entirely when this is undefined, so nothing empty is left behind.
-      price: !shouldShowPrice(p)
+      price: !hasDisplayablePrice(p)
         ? undefined
-        : p.discount_price
+        : p.discount_price != null
         ? formatPrice(p.discount_price)
-        : p.price
+        : p.price != null
         ? formatPrice(p.price)
         : undefined,
     }));

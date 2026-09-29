@@ -14,7 +14,7 @@ import { getTodayKey, formatOperatingHours, DAYS } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
 import { trackEvent } from "@/lib/analytics";
 import { MenuViewTracker } from "@/components/sections/menu-view-tracker";
-import { shouldShowPrice } from "@/lib/menu-display.mjs";
+import { hasDisplayablePrice } from "@/lib/menu-display.mjs";
 import { formatPrice } from "@/lib/price-format.mjs";
 
 export function ClassicLayout({
@@ -143,9 +143,9 @@ export function ClassicLayout({
                             <div className="flex-1 min-w-0">
                               <div className="flex justify-between items-start gap-2">
                                 <h4 className="font-semibold text-amber-900">{product.name}</h4>
-                                {shouldShowPrice(product) && (
+                                {hasDisplayablePrice(product) && (
                                   <span className="font-bold text-amber-700 whitespace-nowrap">
-                                    {product.discount_price ? (
+                                    {product.discount_price != null ? (
                                       <>
                                         <span className="line-through opacity-50 text-sm mr-1">
                                           {formatPrice(product.price)}
