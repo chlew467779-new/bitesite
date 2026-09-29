@@ -178,6 +178,7 @@ export function ModernLayout({
 
       <footer className="py-8 px-4 text-center border-t border-slate-100">
         <Link href="/" className="text-sm text-slate-400 hover:text-slate-600 transition-colors">{footerText || "Discover more restaurants on BiteSite"}</Link>
+        <Link href="/support-us" className="mt-2 block text-sm text-slate-500 underline hover:text-slate-700">Support us</Link>
       </footer>
     </div>
   );

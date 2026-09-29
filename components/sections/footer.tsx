@@ -40,6 +40,13 @@ export function Footer() {
             >
               Merchant login
             </Link>
+            <Link
+              href="/support-us"
+              className="transition-colors duration-200 active:text-[#5A8F6E]"
+              style={{ WebkitTapHighlightColor: "transparent" }}
+            >
+              Support us
+            </Link>
             <span className="text-[#DDE5DC]">|</span>
             <span className="text-[#8A968B]" suppressHydrationWarning>
               © {new Date().getFullYear()} BiteSite

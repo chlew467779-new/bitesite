@@ -265,6 +265,7 @@ export function ElegantLayout({
 
       <footer className="py-8 px-4 text-center border-t border-slate-800">
         <Link href="/" className="text-sm text-slate-500 hover:text-slate-300 transition-colors">{footerText || "Discover more restaurants on BiteSite"}</Link>
+        <Link href="/support-us" className="mt-2 block text-sm text-slate-400 underline hover:text-slate-200">Support us</Link>
       </footer>
     </div>
   );
