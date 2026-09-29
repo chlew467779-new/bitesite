@@ -190,6 +190,7 @@ export function RusticLayout({
       <footer className="py-8 px-4 text-center border-t border-orange-200">
         <Link href="/" className="text-sm text-orange-700 hover:text-orange-900 transition-colors">{footerText || "Discover more restaurants on BiteSite"}</Link>
         <Link href="/support-us" className="mt-2 block text-sm text-orange-700 underline hover:text-orange-900">Support us</Link>
+        <Link href="/feedback" className="mt-1 block text-sm text-orange-700 underline hover:text-orange-900">Send feedback</Link>
       </footer>
     </div>
   );

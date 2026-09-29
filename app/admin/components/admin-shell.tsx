@@ -81,8 +81,9 @@ export default function AdminShell({ activeTab, onTabChange, children }: AdminSh
         const response = await fetch('/api/admin/attention', { headers: { 'x-admin-token': token }, cache: 'no-store' });
         const body = await response.json().catch(() => null);
         if (!cancelled && response.ok && body?.data) {
-          const { notifications, ...counts } = body.data as Record<string, number> & { notifications: unknown };
-          void notifications;
+          // Ideas wait for a batch (shown on Today), so they never become a badge.
+          const { notifications, ideas, ...counts } = body.data as Record<string, number> & { notifications: unknown; ideas: unknown };
+          void notifications; void ideas;
           setAttention(counts);
         }
       } catch { /* badges are a convenience; the pages themselves stay authoritative */ }

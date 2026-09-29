@@ -47,6 +47,13 @@ export function Footer() {
             >
               Support us
             </Link>
+            <Link
+              href="/feedback"
+              className="transition-colors duration-200 active:text-[#5A8F6E]"
+              style={{ WebkitTapHighlightColor: "transparent" }}
+            >
+              Feedback
+            </Link>
             <span className="text-[#DDE5DC]">|</span>
             <span className="text-[#8A968B]" suppressHydrationWarning>
               © {new Date().getFullYear()} BiteSite
