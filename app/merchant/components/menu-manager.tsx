@@ -14,7 +14,7 @@
 import type { SectionHandle } from '@/app/components/section-save/use-section-save';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowDown, ArrowUp, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
-import { MENU_LIMITS, parsePriceInput, type MenuCategory, type MenuProduct, type MenuSnapshot } from '@/lib/merchant-menu-core.mjs';
+import { findDuplicateDishName, MENU_LIMITS, parsePriceInput, type MenuCategory, type MenuProduct, type MenuSnapshot } from '@/lib/merchant-menu-core.mjs';
 import { ProfileImageField } from '@/app/components/media/profile-image-field';
 
 type Op = { type: string } & Record<string, unknown>;
@@ -135,6 +135,9 @@ export function MenuManager({ merchantId, getHeaders, readOnly, register, onChan
   const productsOf = (categoryId: string | null) => byOrder(menu.products.filter((p) => p.categoryId === categoryId));
   const uncategorized = menu.products.filter((p) => !p.categoryId || !categories.some((c) => c.id === p.categoryId));
   const locked = readOnly || busy || !!unknown;
+  const originalDish = dish?.id ? menu.products.find((product) => product.id === dish.id) : null;
+  const nameOrCategoryChanged = dish && (!originalDish || originalDish.name.trim().toLocaleLowerCase() !== dish.name.trim().toLocaleLowerCase() || originalDish.categoryId !== dish.categoryId);
+  const duplicateDish = dish && nameOrCategoryChanged ? findDuplicateDishName(menu.products, dish.categoryId, dish.name, dish.id) : null;
 
   const openDish = (categoryId: string, product?: MenuProduct) => {
     setDishError('');
@@ -283,6 +286,7 @@ export function MenuManager({ merchantId, getHeaders, readOnly, register, onChan
             <label className="mt-4 block text-sm font-medium">Name
               <input className={input} maxLength={MENU_LIMITS.dishName} placeholder="e.g. Nasi lemak with ayam berempah" value={dish.name} onChange={(event) => setDish({ ...dish, name: event.target.value })} autoFocus={!dish.id} />
             </label>
+            {duplicateDish && <p role="status" className="mt-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">This category already has &quot;{duplicateDish.name}&quot;. Add it anyway?</p>}
             <label className="mt-3 block text-sm font-medium">Description (optional)
               <textarea className={input} rows={3} maxLength={MENU_LIMITS.description} placeholder="e.g. Coconut rice with sambal, egg, cucumber and spiced chicken." value={dish.description} onChange={(event) => setDish({ ...dish, description: event.target.value })} />
             </label>

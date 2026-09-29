@@ -26,5 +26,6 @@ export declare function parseMenuRequest(body: unknown):
   | { ok: true; requestId: string; op: { type: MenuOpType } & Record<string, unknown> }
   | { ok: false; status: number; code: string; message: string };
 export declare function parsePriceInput(text: unknown): { ok: true; value: number | null } | { ok: false; message: string };
+export declare function findDuplicateDishName<T extends Pick<MenuProduct, "id" | "categoryId" | "name">>(products: T[], categoryId: string, name: string, excludedId?: string | null): T | null;
 export declare function mapMenuRpcError(error: unknown): { status: number; code: string; message: string };
 export declare function menuResponse(result: unknown, requestId: string): { status: number; body: Record<string, unknown> };
