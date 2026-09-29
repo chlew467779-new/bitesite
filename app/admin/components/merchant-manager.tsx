@@ -66,7 +66,7 @@ function getPlatformStatusBadge(merchant: Merchant) {
   </span>;
 }
 
-export default function MerchantManager({ onOpenChangeRequests }: { onOpenChangeRequests: () => void }) {
+export default function MerchantManager({ onOpenChangeRequests, openMerchantId = null, onOpened }: { onOpenChangeRequests: () => void; openMerchantId?: string | null; onOpened?: () => void }) {
   const { token } = useAuth();
   const [merchants, setMerchants] = useState<Merchant[]>([]);
   const [loading, setLoading] = useState(true);
@@ -107,6 +107,17 @@ export default function MerchantManager({ onOpenChangeRequests }: { onOpenChange
   useEffect(() => {
     void fetchMerchants();
   }, [fetchMerchants, refreshKey]);
+
+  // Opened from Today's "Fix": the list was just fetched on mount, so its record is current.
+  useEffect(() => {
+    if (!openMerchantId || loading) return;
+    const target = merchants.find((m) => m.id === openMerchantId);
+    onOpened?.();
+    if (!target) { setError('That restaurant is no longer in the list.'); return; }
+    setEditLoadWarning('');
+    setEditingMerchant(target);
+    setShowForm(true);
+  }, [openMerchantId, loading, merchants, onOpened]);
 
   const handleNew = () => {
     setEditingMerchant(null);
