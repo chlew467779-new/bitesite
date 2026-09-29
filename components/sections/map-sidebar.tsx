@@ -9,6 +9,7 @@ import { getMarkerColor } from "@/lib/map-colors";
 import type { PublicMerchant } from "@/types";
 import { Clock, MapPin, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { merchantCuisines } from "@/lib/discovery-core.mjs";
 
 interface MapSidebarProps {
   merchants: PublicMerchant[];
@@ -55,7 +56,7 @@ export function MapSidebar({ merchants, selected, onSelect }: MapSidebarProps) {
         <div className="divide-y divide-[#DDE5DC]">
           {merchants.map((merchant) => {
             const isSelected = selected?.id === merchant.id;
-            const type = merchant.cuisine_type?.split(",")[0].trim() || "Other";
+            const type = merchantCuisines(merchant)[0] || "Other";
             const color = getMarkerColor(type);
             const { isOpen } = getTodayHours(merchant.operating_hours);
 
