@@ -30,6 +30,8 @@ import RestaurantReviewQueue from './components/restaurant-review-queue';
 import ReportsInbox from './components/reports-inbox';
 import MerchantManager from './components/merchant-manager';
 import ContentServiceManager from './components/content-service-manager';
+import AreasManager from './components/areas-manager';
+import AnnouncementsManager from './components/announcements-manager';
 import { Lock, Loader2 } from 'lucide-react';
 
 const rawAnalyticsTabs = new Set(['overview', 'merchants', 'devices', 'referrers', 'search', 'events', 'map', 'hourly', 'stories-analytics']);
@@ -373,6 +375,9 @@ export default function AdminPage() {
       {activeTab === 'content-service' && (
         <ContentServiceManager />
       )}
+
+      {activeTab === 'areas' && <AreasManager />}
+      {activeTab === 'popup' && <AnnouncementsManager />}
 
       {/* Merchant Manager */}
       {activeTab === 'merchant-manager' && (

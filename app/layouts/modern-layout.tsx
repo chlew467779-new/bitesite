@@ -12,7 +12,7 @@ import { MapPin, Phone, Mail, Instagram, Facebook, Globe, ArrowLeft, MessageSqua
 import { formatPhone, phoneLinkDigits } from "@/lib/phone-core.mjs";
 import { trackEvent } from "@/lib/analytics";
 import { MenuViewTracker } from "@/components/sections/menu-view-tracker";
-import { shouldShowPrice } from "@/lib/menu-display.mjs";
+import { hasDisplayablePrice } from "@/lib/menu-display.mjs";
 import Link from "next/link";
 import { getTodayKey, formatOperatingHours, DAYS } from "@/lib/hours";
 import { MapEmbed } from "@/app/components/map-embed";
@@ -84,9 +84,9 @@ export function ModernLayout({
                           <div key={product.id} className="group">
                             <div className="flex justify-between items-baseline gap-3">
                               <h4 className="font-semibold text-slate-800 group-hover:text-slate-600 transition-colors">{product.name}</h4>
-                              {shouldShowPrice(product) && (
+                              {hasDisplayablePrice(product) && (
                                 <span className="font-bold text-slate-900 whitespace-nowrap">
-                                  {product.discount_price ? (
+                                  {product.discount_price != null ? (
                                     <><span className="line-through opacity-40 text-sm mr-1">{formatPrice(product.price)}</span>{formatPrice(product.discount_price)}</>
                                   ) : formatPrice(product.price)}
                                 </span>
@@ -106,7 +106,7 @@ export function ModernLayout({
         </FadeIn>
       )}
 
-      <TierSections merchant={merchant} products={products} features={features} variant="modern" events={events} />
+      <TierSections merchant={merchant} categories={categories} products={products} features={features} variant="modern" events={events} />
 
       {resolvedFeatures.contact && (
         <FadeIn>

@@ -14,7 +14,7 @@ import {
 import { formatPhone, phoneLinkDigits } from "@/lib/phone-core.mjs";
 import { trackEvent } from "@/lib/analytics";
 import { MenuViewTracker } from "@/components/sections/menu-view-tracker";
-import { shouldShowPrice } from "@/lib/menu-display.mjs";
+import { hasDisplayablePrice } from "@/lib/menu-display.mjs";
 import { normalizeBookingWhatsApp } from "@/lib/merchant-booking-target.mjs";
 import Link from "next/link";
 import { getTodayKey, formatOperatingHours, DAYS } from "@/lib/hours";
@@ -126,9 +126,9 @@ export function ElegantLayout({
                           <div className="flex-1 min-w-0">
                             <div className="flex flex-col sm:flex-row sm:justify-between items-start gap-2">
                               <h4 className="min-w-0 break-words font-semibold text-slate-200">{product.name}</h4>
-                              {shouldShowPrice(product) && (
+                              {hasDisplayablePrice(product) && (
                                 <span className="font-bold text-amber-400 whitespace-nowrap">
-                                  {product.discount_price ? (
+                                  {product.discount_price != null ? (
                                     <><span className="line-through opacity-50 text-sm mr-1">{formatPrice(product.price)}</span>{formatPrice(product.discount_price)}</>
                                   ) : (
                                     formatPrice(product.price)
@@ -154,7 +154,7 @@ export function ElegantLayout({
         </FadeIn>
       )}
 
-      <TierSections merchant={merchant} products={products} features={features} variant="elegant" events={events} />
+      <TierSections merchant={merchant} categories={categories} products={products} features={features} variant="elegant" events={events} />
 
       {/* Hours & Contact */}
       {resolvedFeatures.contact && (

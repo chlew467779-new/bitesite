@@ -9,6 +9,7 @@ import { MerchantCard } from "@/components/sections/merchant-card";
 import { MerchantCardSkeleton } from "@/components/sections/merchant-card-skeleton";
 import { Footer } from "@/components/sections/footer";
 import { LatestStories } from "@/components/sections/latest-stories";
+import { SiteAnnouncement } from "@/components/sections/site-announcement";
 import { supabase, getAreas } from "@/lib/supabase";
 import { FadeIn } from "@/app/components/animations";
 import { isCurrentlyOpen, getTodayKey } from "@/lib/hours";
@@ -17,6 +18,7 @@ import { CUISINE_TYPES } from "@/lib/presets";
 import type { PublicMerchant } from "@/types";
 import { PUBLIC_MERCHANT_SELECT } from "@/lib/public-merchant-projection.mjs";
 import { discoveryGroups, discoveryPath } from "@/lib/discovery-core.mjs";
+import { selectNearby } from "@/lib/nearby-core.mjs";
 
 const STATE_KEY = "bitesite.home.state";
 
@@ -58,10 +60,19 @@ export default function HomePage() {
   const [isSearching, setIsSearching] = useState(false);
   const [productIndex, setProductIndex] = useState<Map<string, string[]>>(new Map());
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [nearbyActive, setNearbyActive] = useState(false);
+  const [nearbyLoading, setNearbyLoading] = useState(false);
+  const [coordinates, setCoordinates] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [locationError, setLocationError] = useState("");
+  const locationRequestRef = useRef(0);
 
   // Keep discovery state shareable and restore it when users navigate back.
   useEffect(() => {
     const onPopState = () => {
+      locationRequestRef.current += 1;
+      setNearbyActive(false);
+      setNearbyLoading(false);
+      setCoordinates(null);
       const filters = readHomeFilters();
       setActiveCuisines(filters.cuisines);
       setActiveState(filters.state);
@@ -242,6 +253,45 @@ export default function HomePage() {
     });
   }, [activeCuisines, currentState, areaStates, activeArea, activeMore, openNow, searchQuery, merchants, productIndex]);
 
+  const nearbySelection = useMemo(() => nearbyActive && coordinates
+    ? selectNearby(filtered, coordinates.latitude, coordinates.longitude)
+    : null, [nearbyActive, coordinates, filtered]);
+  const visibleMerchants = nearbySelection?.results.map((item) => item.merchant) ?? filtered;
+  const distanceById = new Map(nearbySelection?.results.map((item) => [item.merchant.id, item.distanceKm]) ?? []);
+
+  const handleNearbyChange = useCallback((active: boolean) => {
+    locationRequestRef.current += 1;
+    const requestId = locationRequestRef.current;
+    if (!active) {
+      setNearbyActive(false);
+      setNearbyLoading(false);
+      setCoordinates(null);
+      setLocationError("");
+      return;
+    }
+    setLocationError("");
+    if (!navigator.geolocation) {
+      setLocationError("Location is unavailable. Showing restaurants by your selected state or area instead.");
+      return;
+    }
+    setNearbyLoading(true);
+    navigator.geolocation.getCurrentPosition((position) => {
+      if (locationRequestRef.current !== requestId) return;
+      setCoordinates({ latitude: position.coords.latitude, longitude: position.coords.longitude });
+      setNearbyActive(true);
+      setNearbyLoading(false);
+      setActiveState(null);
+      setActiveArea(null);
+      saveState(null);
+    }, () => {
+      if (locationRequestRef.current !== requestId) return;
+      setCoordinates(null);
+      setNearbyActive(false);
+      setNearbyLoading(false);
+      setLocationError("Location permission was denied or unavailable. Showing restaurants by your selected state or area instead.");
+    }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 });
+  }, []);
+
   // Handle search with loading state
   const handleSearch = useCallback((query: string) => {
     setIsSearching(true);
@@ -256,19 +306,21 @@ export default function HomePage() {
   }, []);
 
   const handleStateChange = useCallback((state: string | null) => {
+    if (nearbyActive) handleNearbyChange(false);
     setIsSearching(true);
     setActiveState(state);
     saveState(state);
     // An area from another state would hide every restaurant, so it is cleared.
     setActiveArea((area) => (area && state && areaStates.get(area) !== state ? null : area));
     setTimeout(() => setIsSearching(false), 300);
-  }, [areaStates]);
+  }, [areaStates, nearbyActive, handleNearbyChange]);
 
   const handleAreaChange = useCallback((area: string | null) => {
+    if (nearbyActive) handleNearbyChange(false);
     setIsSearching(true);
     setActiveArea(area);
     setTimeout(() => setIsSearching(false), 300);
-  }, []);
+  }, [nearbyActive, handleNearbyChange]);
 
   const handleMoreChange = useCallback((more: string[]) => {
     setIsSearching(true);
@@ -283,6 +335,7 @@ export default function HomePage() {
   }, []);
 
   const handleClearAll = useCallback(() => {
+    handleNearbyChange(false);
     setIsSearching(true);
     setSearchQuery("");
     setActiveCuisines([]);
@@ -292,7 +345,7 @@ export default function HomePage() {
     setActiveMore([]);
     setOpenNow(false);
     setTimeout(() => setIsSearching(false), 300);
-  }, []);
+  }, [handleNearbyChange]);
 
   const showLoading = loading || isSearching;
 
@@ -302,6 +355,7 @@ export default function HomePage() {
     (activeArea && activeArea !== "All Areas" ? 1 : 0) +
     activeMore.length +
     (openNow ? 1 : 0) +
+    (nearbyActive ? 1 : 0) +
     (searchQuery ? 1 : 0);
 
   return (
@@ -346,15 +400,21 @@ export default function HomePage() {
         availableAreas={availableAreas}
         availableCuisines={availableCuisines}
         availableMore={availableMore}
+        nearbyActive={nearbyActive}
+        nearbyLoading={nearbyLoading}
+        onNearbyChange={handleNearbyChange}
       />
+
+      {locationError && <p role="status" className="mx-auto max-w-6xl px-4 pt-4 text-sm text-[#6B6560]">{locationError}</p>}
+      {nearbySelection && <p role="status" className="mx-auto max-w-6xl px-4 pt-4 text-sm text-[#6B6560]">Showing restaurants within {nearbySelection.radiusKm} km of your location.</p>}
 
       <section className="px-4 pb-16">
         <div className="mx-auto max-w-6xl">
-          {!showLoading && filtered.length > 0 && (
+          {!showLoading && visibleMerchants.length > 0 && (
             <FadeIn>
               <div className="mb-6 flex flex-wrap items-center gap-2">
                 <p className="text-sm text-[#8A968B]">
-                  {filtered.length} {filtered.length === 1 ? "restaurant" : "restaurants"} found
+                  {visibleMerchants.length} {visibleMerchants.length === 1 ? "restaurant" : "restaurants"} found
                 </p>
                 {activeFilterCount > 0 && (
                   <span className="rounded-full bg-[#5A8F6E]/10 px-2 py-0.5 text-xs text-[#5A8F6E]">
@@ -371,7 +431,7 @@ export default function HomePage() {
                 <MerchantCardSkeleton key={i} delay={i * 0.08} />
               ))}
             </div>
-          ) : filtered.length === 0 ? (
+          ) : visibleMerchants.length === 0 ? (
             <FadeIn>
               <div className="py-20 text-center">
                 <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-[#F0F4EC]">
@@ -391,7 +451,7 @@ export default function HomePage() {
                   No restaurants found
                 </p>
                 <p className="mt-2 text-sm text-[#8A968B]">
-                  Try adjusting your filters or search.
+                  {nearbySelection ? "No restaurants found nearby. Try another area or turn off Nearby." : "Try adjusting your filters or search."}
                 </p>
                 {activeFilterCount > 0 && (
                   <button
@@ -406,14 +466,14 @@ export default function HomePage() {
             </FadeIn>
           ) : (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {filtered.map((merchant, index) => (
+              {visibleMerchants.map((merchant, index) => (
                 <FadeIn
                   key={`${merchant.id}-${activeCuisines.join(",")}-${currentState}-${activeArea}-${activeMore.join(",")}-${openNow}-${searchQuery}`}
                   delay={index * 0.06}
                   duration={0.4}
                   direction="up"
                 >
-                  <MerchantCard merchant={merchant} />
+                  <MerchantCard merchant={merchant} distanceKm={distanceById.get(merchant.id)} />
                 </FadeIn>
               ))}
             </div>
@@ -443,6 +503,7 @@ export default function HomePage() {
 
       <LatestStories />
       <Footer />
+      <SiteAnnouncement />
     </main>
   );
 }
