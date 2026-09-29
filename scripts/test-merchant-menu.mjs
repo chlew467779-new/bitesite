@@ -5,7 +5,7 @@
 
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { MENU_OP_TYPES, mapMenuRpcError, menuResponse, parseMenuRequest, parsePriceInput } from "../lib/merchant-menu-core.mjs";
+import { findDuplicateDishName, MENU_OP_TYPES, mapMenuRpcError, menuResponse, parseMenuRequest, parsePriceInput } from "../lib/merchant-menu-core.mjs";
 
 const read = async (relPath) => (await readFile(new URL(`../${relPath}`, import.meta.url), "utf8")).replace(/\r\n/g, "\n");
 const REQ = "7d1c3a52-5b1e-4c8e-9a51-0e2c55d2a3a1";
@@ -24,6 +24,12 @@ assert.deepEqual(parsePriceInput(""), { ok: true, value: null }, "empty = no pri
 assert.deepEqual(parsePriceInput("0"), { ok: true, value: 0 }, "0 is a real price");
 assert.deepEqual(parsePriceInput("RM 12.5"), { ok: true, value: 12.5 });
 for (const text of ["12.345", "-1", "abc", "1e3", "100001"]) assert.equal(parsePriceInput(text).ok, false, text);
+
+const dishes = [{ id: "a", categoryId: "mains", name: "Nasi Lemak" }, { id: "b", categoryId: "drinks", name: "Teh Tarik" }];
+assert.equal(findDuplicateDishName(dishes, "mains", " nasi lemak ")?.id, "a", "trim and case-insensitive match");
+assert.equal(findDuplicateDishName(dishes, "mains", "NASI LEMAK", "a"), null, "editing the same dish is not a duplicate");
+assert.equal(findDuplicateDishName(dishes, "drinks", "Nasi Lemak"), null, "other categories are allowed");
+assert.equal(findDuplicateDishName(dishes, "mains", "   "), null, "blank names never warn");
 
 const rpc = (message, details = "") => ({ code: "P0001", message, details });
 assert.equal(mapMenuRpcError(rpc("PUBLIC_MENU_MINIMUM")).status, 422);
