@@ -72,7 +72,7 @@ export default function JoinUsPage() {
         name: "How do I join?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Send us a message on WhatsApp with your restaurant name, area, and best contact email. We will explain the next steps and invite you when ready.",
+          text: "Create a merchant account, confirm your email, then make a private restaurant draft and submit it for review.",
         },
       },
     ],

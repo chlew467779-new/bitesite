@@ -1,5 +1,5 @@
 "use client";
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { validateCredentials } from '@/lib/merchant-auth-validation.mjs';
 
@@ -12,6 +12,9 @@ export default function MerchantLoginPage() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('mode') === 'register') setMode('register');
+  }, []);
   function changeMode(next: Mode) { setMode(next); setPassword(''); setConfirm(''); setError(''); setMessage(''); }
   async function submit(event: FormEvent) {
     event.preventDefault(); setError(''); setMessage(''); setLoading(true);
