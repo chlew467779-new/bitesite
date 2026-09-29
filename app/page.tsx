@@ -9,6 +9,7 @@ import { MerchantCard } from "@/components/sections/merchant-card";
 import { MerchantCardSkeleton } from "@/components/sections/merchant-card-skeleton";
 import { Footer } from "@/components/sections/footer";
 import { LatestStories } from "@/components/sections/latest-stories";
+import { SiteAnnouncement } from "@/components/sections/site-announcement";
 import { supabase, getAreas } from "@/lib/supabase";
 import { FadeIn } from "@/app/components/animations";
 import { isCurrentlyOpen, getTodayKey } from "@/lib/hours";
@@ -502,6 +503,7 @@ export default function HomePage() {
 
       <LatestStories />
       <Footer />
+      <SiteAnnouncement />
     </main>
   );
 }
