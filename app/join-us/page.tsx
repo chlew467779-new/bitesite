@@ -11,6 +11,7 @@ import { Footer } from "@/components/sections/footer";
 import { PageViewTracker } from "@/app/components/page-view-tracker";
 import { safeJsonLd } from "@/lib/safe-json-ld.mjs";
 import { createClient } from "@supabase/supabase-js";
+import { intakeNotice } from "@/lib/merchant-review-core.mjs";
 
 export const revalidate = 300;
 
@@ -23,6 +24,19 @@ async function getPartnerCount(): Promise<number | null> {
     return !error && Number.isSafeInteger(data) && data > 0 ? data : null;
   } catch {
     // The page stays usable before the migration is deployed or during a read failure.
+    return null;
+  }
+}
+
+/** Shown near the top when new restaurants cannot submit right now (#34); null otherwise. */
+async function getIntakeNotice(): Promise<string | null> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+  try {
+    const { data, error } = await createClient(url, key).rpc("pilot_intake_status");
+    return error ? null : intakeNotice((data as { reason?: string } | null)?.reason);
+  } catch {
     return null;
   }
 }
@@ -40,7 +54,7 @@ export const metadata: Metadata = {
 };
 
 export default async function JoinUsPage() {
-  const partnerCount = await getPartnerCount();
+  const [partnerCount, intake] = await Promise.all([getPartnerCount(), getIntakeNotice()]);
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -102,6 +116,11 @@ export default async function JoinUsPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(faqSchema) }} />
       <main>
         <JoinUsHero />
+        {intake && (
+          <div className="mx-auto max-w-3xl px-4 pt-6">
+            <p role="status" className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">{intake}</p>
+          </div>
+        )}
         {partnerCount !== null && <PartnerCount count={partnerCount} />}
         <HowItWorks />
 

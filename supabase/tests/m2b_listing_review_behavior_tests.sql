@@ -1,6 +1,6 @@
 -- =====================================================================
 -- M2-B listing review: BEHAVIOUR tests. Local or staging only.
--- Needs migrations through 20260927130000_merchant_listing_review. One transaction, ROLLED BACK.
+-- Needs migrations through 20260930120000_pilot_intake_mode (areas list from 20260929100000). One transaction, ROLLED BACK.
 -- Synthetic rows only (zz-m2b-*). Concurrency of the last slot is covered by the HTTP smoke test.
 -- =====================================================================
 begin;
@@ -62,16 +62,16 @@ begin
   r := public.merchant_listing_basics_patch('owner', oa, a, req, jsonb_build_array(
     jsonb_build_object('path', 'location', 'expected', jsonb_build_object('exists', true, 'value',
       jsonb_build_object('address', null, 'area', null, 'latitude', null, 'longitude', null)),
-      'value', jsonb_build_object('address', '1 Jalan ZZ, Georgetown', 'area', 'Georgetown', 'latitude', null, 'longitude', null)),
+      'value', jsonb_build_object('address', '1 Jalan ZZ, Georgetown', 'area', 'Bangsar', 'latitude', null, 'longitude', null)),
     jsonb_build_object('path', 'tags.cuisine', 'expected', jsonb_build_object('exists', true, 'value', '[]'::jsonb), 'value', '["Chinese"]'::jsonb)));
   perform m2b_test.ok(r ->> 'status' = 'applied' and (select address from public.merchants where id = a) = '1 Jalan ZZ, Georgetown', 'Owner fills basics of a draft');
   perform m2b_test.ok((select actor_type from public.merchant_change_log where merchant_id = a order by created_at desc, revision desc limit 1) = 'owner', 'basics audited as the Owner');
   perform m2b_test.ok(coalesce(current_setting('app.listing_basics', true), '') = '', 'basics flag cleared after the call');
-  perform m2b_test.ok((select count(*) from private.merchant_field_registry() where owner_writable) = 12, 'registry back to Owner paths');
+  perform m2b_test.ok((select count(*) from private.merchant_field_registry() where owner_writable) = 13, 'registry back to Owner paths');
   r := public.merchant_listing_basics_patch('owner', oa, a, req, jsonb_build_array(
     jsonb_build_object('path', 'location', 'expected', jsonb_build_object('exists', true, 'value',
       jsonb_build_object('address', null, 'area', null, 'latitude', null, 'longitude', null)),
-      'value', jsonb_build_object('address', '1 Jalan ZZ, Georgetown', 'area', 'Georgetown', 'latitude', null, 'longitude', null)),
+      'value', jsonb_build_object('address', '1 Jalan ZZ, Georgetown', 'area', 'Bangsar', 'latitude', null, 'longitude', null)),
     jsonb_build_object('path', 'tags.cuisine', 'expected', jsonb_build_object('exists', true, 'value', '[]'::jsonb), 'value', '["Chinese"]'::jsonb)));
   perform m2b_test.ok((r ->> 'replayed')::boolean, 'basics replay');
   perform m2b_test.err(format(basics, oa, a, '[{"path":"profile.tagline","expected":{"exists":true,"value":null},"value":"x"}]'), 'VALIDATION_FAILED', 'basics call only takes basics paths');
@@ -93,10 +93,16 @@ begin
   perform m2b_test.err(format(apply, oa, leg, 'submit'), 'LISTING_ACTION_NOT_ALLOWED', 'legacy restaurants are not submitted');
   perform m2b_test.err(format(apply, oa, a, 'publish'), 'LISTING_ACTION_NOT_ALLOWED', 'cannot publish a draft');
 
-  -- Pilot capacity is independent of the pending queue (and drafts use neither).
-  perform public.merchant_review_capacity_set('admin', 'legacy_admin', 20, 0);
-  perform m2b_test.err(format(apply, oa, a, 'submit'), 'PILOT_CAPACITY_FULL', 'pilot full with queue free');
-  perform public.merchant_review_capacity_set('admin', 'legacy_admin', 20, 50);
+  -- Paused: nobody submits (and drafts are untouched). Pausing is the mode, never a 0 limit.
+  perform public.merchant_review_capacity_set('admin', 'legacy_admin', 20, 50, 'paused');
+  perform m2b_test.err(format(apply, oa, a, 'submit'), 'INTAKE_PAUSED', 'paused: submit refused');
+  perform m2b_test.ok(public.pilot_intake_status() = '{"accepting": false, "reason": "paused"}'::jsonb, 'public status: paused');
+  perform m2b_test.ok((public.merchant_review_queue('admin', 'legacy_admin') ->> 'intakeMode') = 'paused', 'queue shows the mode');
+  perform m2b_test.err($s$select public.merchant_review_capacity_set('admin', 'legacy_admin', 20, 0)$s$, 'VALIDATION_FAILED', 'pilot limit 0 refused');
+  perform m2b_test.err($s$select public.merchant_review_capacity_set('admin', 'legacy_admin', 0, 50)$s$, 'VALIDATION_FAILED', 'queue limit 0 refused');
+  perform m2b_test.err($s$select public.merchant_review_capacity_set('admin', 'legacy_admin', 20, 50, 'closed')$s$, 'VALIDATION_FAILED', 'unknown mode refused');
+  perform public.merchant_review_capacity_set('admin', 'legacy_admin', 20, 50, 'limited');
+  perform m2b_test.ok((public.pilot_intake_status() ->> 'accepting')::boolean, 'public status: open again');
   -- Submit: pending, frozen, snapshot, notification.
   req := gen_random_uuid();
   r := public.merchant_listing_apply('owner', oa, a, req, 'submit');
@@ -165,7 +171,17 @@ begin
   perform public.merchant_review_capacity_set('admin', 'legacy_admin', 20,
     (public.merchant_review_queue('admin', 'legacy_admin') ->> 'pilotUsed')::int);
   perform m2b_test.err(format(apply, ob, b, 'submit'), 'PILOT_CAPACITY_FULL', 'approved hidden restaurant retains pilot place');
-  perform public.merchant_review_capacity_set('admin', 'legacy_admin', 20, 50);
+  perform m2b_test.ok(public.pilot_intake_status() = '{"accepting": false, "reason": "full"}'::jsonb, 'public status: full');
+  -- Open: the same numbers, but no total limit. Rolled back by the raise, so B stays a draft.
+  begin
+    perform public.merchant_review_capacity_set('admin', 'legacy_admin', 20, null, 'open');
+    perform m2b_test.ok((public.pilot_intake_status() ->> 'accepting')::boolean, 'public status: open mode');
+    perform public.merchant_listing_apply('owner', ob, b, gen_random_uuid(), 'submit');
+    raise exception 'OPEN_MODE_OK';
+  exception when others then
+    if sqlerrm <> 'OPEN_MODE_OK' then raise exception 'M2B TEST FAILED: open mode ignores the pilot limit: %', sqlerrm; end if;
+  end;
+  perform public.merchant_review_capacity_set('admin', 'legacy_admin', 20, 50, 'limited');
 
   -- Publish: public, first slug from the name (numbered on collision), hide / publish again.
   req := gen_random_uuid();

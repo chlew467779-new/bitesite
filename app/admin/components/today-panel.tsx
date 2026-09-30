@@ -13,7 +13,7 @@ import { daysWaiting } from '@/lib/site-feedback-core.mjs';
 
 type Attention = Record<string, number> & { notifications?: { pending: number; failed: number }; ideas?: { count: number; oldestAt: string | null } };
 type Row = { id: string; slug: string; name: string; isPublic: boolean; status: 'public' | 'waiting' | 'draft' | 'suspended'; issues: IssueKey[] };
-type Today = { capacity: { pending: number; pendingCapacity: number; pilotUsed: number; pilotCapacity: number }; incomplete: Row[] };
+type Today = { capacity: { intakeMode: 'open' | 'limited' | 'paused'; pending: number; pendingCapacity: number; pilotUsed: number; pilotCapacity: number }; incomplete: Row[] };
 
 const QUEUES: { key: string; tab: string; label: string; hint: string }[] = [
   { key: 'restaurant-reviews', tab: 'restaurant-reviews', label: 'Restaurants to review', hint: 'New restaurants waiting to go live' },
@@ -137,9 +137,17 @@ export default function TodayPanel({ onOpenTab, onOpenMerchant }: { onOpenTab: (
       {/* Pilot places */}
       {today && (
         <section aria-labelledby="today-pilot" className="rounded-xl border border-slate-800 bg-slate-900 p-5">
-          <h2 id="today-pilot" className="text-base font-semibold text-white">Pilot places</h2>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 id="today-pilot" className="text-base font-semibold text-white">New restaurants</h2>
+            <button type="button" onClick={() => onOpenTab('restaurant-reviews')} className={`min-h-11 rounded-full px-4 text-sm font-medium ${today.capacity.intakeMode === 'paused' ? 'bg-red-500/15 text-red-300' : 'bg-emerald-500/15 text-emerald-300'}`}>
+              {today.capacity.intakeMode === 'paused' ? 'Paused' : today.capacity.intakeMode === 'open' ? 'Open, no limit' : 'Limited'} · Change
+            </button>
+          </div>
+          {today.capacity.intakeMode === 'paused' && <p className="mt-2 text-sm text-red-300">Nobody can submit a new restaurant until you reopen.</p>}
           <div className="mt-4 grid gap-6 sm:grid-cols-2">
-            <Meter label="Restaurants in the pilot" used={today.capacity.pilotUsed} total={today.capacity.pilotCapacity} hint="Live or waiting for review. New sign-ups stop when this is full." />
+            {today.capacity.intakeMode === 'limited'
+              ? <Meter label="Restaurants in the pilot" used={today.capacity.pilotUsed} total={today.capacity.pilotCapacity} hint="Live or waiting for review. New restaurants cannot submit when this is full." />
+              : <div><p className="text-sm font-medium text-slate-200">Restaurants in the pilot</p><p className="mt-1 text-lg font-semibold tabular-nums text-white">{today.capacity.pilotUsed}</p><p className="mt-1 text-xs text-slate-500">Live or waiting for review{today.capacity.intakeMode === 'open' ? '; no limit while Open' : ''}.</p></div>}
             <Meter label="Waiting for review" used={today.capacity.pending} total={today.capacity.pendingCapacity} hint="Restaurants can only submit while there is room here." />
           </div>
         </section>
