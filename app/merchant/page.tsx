@@ -23,6 +23,7 @@ import { ClosurePanel } from './components/closure-panel';
 import { TextField } from './components/text-field';
 import { PhoneField } from './components/phone-field';
 import { PaymentSection } from './components/payment-section';
+import { createAreaRequests } from '@/lib/area-requests.mjs';
 
 /**
  * Merchant self-service dashboard (D2-B / M1-B).
@@ -222,6 +223,7 @@ const CONTACT_FIELDS = [
 ];
 
 export default function MerchantDashboardPage() {
+  const [areaRequests] = useState(createAreaRequests);
   const [load, setLoad] = useState<LoadState>({ kind: 'loading' });
   const [data, setData] = useState<Loaded | null>(null);
   const [confirmed, setConfirmed] = useState<Record<string, Snapshot>>({});
@@ -677,8 +679,8 @@ export default function MerchantDashboardPage() {
           {listingError && <p role="alert" className="text-sm text-red-700">{listingError}</p>}
           {listing && <ListingPanel key={sectionKey} merchantId={profile.id} state={listing} getHeaders={photoHeaders} refresh={refreshListing} onState={onListingState} onBusy={setListingBusy} register={register} beforeAction={() => { const status = anyStatus(); return !status.dirty && !status.busy; }} />}
           <SectionCard id="basics" title="Listing basics" description="Your restaurant name, location and cuisine.">
-            <ListingBasics key={`basics:${sectionKey}`} {...sectionProps} readOnly={readOnly || !listing?.basicsEditable} />
-            {listing && !listing.basicsEditable && <BasicsRequests key={`basics-requests:${profile.id}:${data.loadId}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={readOnly} register={register} />}
+            <ListingBasics key={`basics:${sectionKey}`} {...sectionProps} readOnly={readOnly || !listing?.basicsEditable} merchantId={profile.id} getHeaders={photoHeaders} areaRequests={areaRequests} />
+            {listing && !listing.basicsEditable && <BasicsRequests key={`basics-requests:${profile.id}:${data.loadId}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={readOnly} register={register} areaRequests={areaRequests} />}
           </SectionCard>
           <SectionCard id="about" title="About" description="A short line and description help visitors decide to come in.">
             <TextSection key={`about:${sectionKey}`} id="about" config={ABOUT_FIELDS} {...sectionProps} />

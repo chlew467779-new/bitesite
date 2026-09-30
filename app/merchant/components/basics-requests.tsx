@@ -39,9 +39,10 @@ function draftFrom(current: BasicsValues, pending?: BasicsRequestItem): Draft {
   };
 }
 
-export function BasicsRequests({ merchantId, getHeaders, readOnly, register }: {
+export function BasicsRequests({ merchantId, getHeaders, readOnly, register, areaRequests }: {
   merchantId: string;
   getHeaders: () => Promise<Record<string, string> | null>;
+  areaRequests?: import('@/lib/area-requests.mjs').AreaRequests;
   readOnly: boolean;
   register?: (id: string, handle: SectionHandle | null) => void;
 }) {
@@ -145,7 +146,7 @@ export function BasicsRequests({ merchantId, getHeaders, readOnly, register }: {
         <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); void submit(); }}>
           <TextField name="request-name" label="Restaurant name" autoComplete="organization" placeholder="e.g. Kedai Kopi Seri Pagi" maxLength={160} showCount value={draft.name} onChange={(v) => { setDraft({ ...draft, name: v }); setFormError(''); }} />
           <TextField name="request-address" label="Address" autoComplete="street-address" placeholder="e.g. 12 Jalan Tasik Utama 3, Sungai Besi, 57000 Kuala Lumpur" multiline maxLength={500} showCount value={draft.address} onChange={(v) => { setDraft({ ...draft, address: v }); setFormError(''); }} />
-          <AreaField name="request-area" label="Area (optional)" value={draft.area} onChange={(v) => { setDraft({ ...draft, area: v }); setFormError(''); }} />
+          <AreaField name="request-area" label="Area (optional)" value={draft.area} onChange={(v) => { setDraft({ ...draft, area: v }); setFormError(''); }} merchantId={merchantId} address={draft.address} getHeaders={getHeaders} areaRequests={areaRequests} />
           <fieldset>
             <legend className="text-sm font-medium">Cuisine — choose up to 3</legend>
             <div className="mt-2 flex flex-wrap gap-2">{cuisineOptions.map((tag) => {
