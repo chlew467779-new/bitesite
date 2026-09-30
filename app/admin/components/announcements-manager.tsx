@@ -98,7 +98,7 @@ export default function AnnouncementsManager() {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold text-white">Homepage pop-up</h2>
-            <p className="mt-1 text-sm text-slate-400">Shows once to each visitor on the homepage. Only one pop-up is on at a time.</p>
+            <p className="mt-1 text-sm text-slate-400">Shows once to each visitor on the homepage; after they close it, it stays closed in that browser. A new pop-up shows to everyone again. Only one pop-up is on at a time.</p>
           </div>
           {editingId === null && <button type="button" className={buttonClass} onClick={() => { setEditingId('new'); setForm(EMPTY); setMessage(''); }}>New pop-up</button>}
         </div>
@@ -109,7 +109,7 @@ export default function AnnouncementsManager() {
       {editingId !== null && (
         <div className="grid gap-6 rounded-xl border border-slate-800 bg-slate-900 p-5 lg:grid-cols-[1fr_320px]">
           <div className="space-y-4">
-            <ImageUpload kind="story" label="Image (optional)" value={form.imageUrl} onChange={(v) => set('imageUrl', v)} help="Any shape works; tall images are shown whole." />
+            <ImageUpload kind="story" label="Image (optional)" value={form.imageUrl} onChange={(v) => set('imageUrl', v)} help="Any shape works and is shown whole. For a ready-made poster, upload it and leave the title, text and button empty: only the picture shows." />
             {form.imageUrl && <button type="button" className="text-sm text-slate-400 underline" onClick={() => set('imageUrl', '')}>Remove image</button>}
             <div>
               <label className={labelClass} htmlFor="popup-title">Title {form.imageUrl ? '(optional)' : ''}</label>
@@ -157,12 +157,12 @@ export default function AnnouncementsManager() {
                 // eslint-disable-next-line @next/next/no-img-element -- admin preview of an uploaded file
                 <img src={form.imageUrl} alt="" className="block max-h-80 w-full bg-[#F0F4EC] object-contain" />
               )}
-              <div className="space-y-2 p-4">
+              {(form.title || form.body || form.linkLabel || !form.imageUrl) && <div className="space-y-2 p-4">
                 {form.title && <p className="text-base font-semibold text-[#2C3E2D]">{form.title}</p>}
                 {form.body && <p className="whitespace-pre-line text-sm text-[#5C6B5D]">{form.body}</p>}
                 {form.linkLabel && <p className="rounded-full bg-[#5A8F6E] py-2 text-center text-sm font-medium text-white">{form.linkLabel}</p>}
                 <p className="py-1 text-center text-sm text-[#5C6B5D]">Close</p>
-              </div>
+              </div>}
             </div>
           </div>
         </div>
