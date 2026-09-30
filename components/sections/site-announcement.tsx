@@ -3,12 +3,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { SafeImage } from "@/app/components/safe-image";
+import Image from "next/image";
 
 /**
  * Homepage pop-up (CH 2026-09-29). Admin posts it; a visitor sees each pop-up once and can close it
  * with the large X, the Close button, the backdrop or Esc. Closed pop-ups are remembered in this
  * browser only; if storage is blocked the pop-up simply shows again next visit.
+ * An image with no title, text or button is shown as a poster: the whole picture, nothing else.
  */
 
 type Announcement = {
@@ -66,6 +67,7 @@ export function SiteAnnouncement() {
 
   if (!open || !item) return null;
   const headingId = `popup-${item.id}`;
+  const posterOnly = Boolean(item.image_url) && !item.title && !item.body && !(item.link_url && item.link_label);
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm" onClick={close}>
@@ -89,12 +91,12 @@ export function SiteAnnouncement() {
         </button>
 
         {item.image_url && (
-          <div className="bg-[#F0F4EC]">
-            <SafeImage src={item.image_url} alt={item.title ?? "Announcement"} width={800} height={800} sizes="(max-width: 640px) 100vw, 384px" className="block h-auto max-h-[60dvh] w-full object-contain" />
-          </div>
+          // Natural proportions: the whole poster or photo shows, never cropped or boxed into a square.
+          <Image src={item.image_url} alt={item.title ?? "Announcement"} width={800} height={1000} sizes="(max-width: 640px) 100vw, 384px"
+            className={`block h-auto w-full bg-[#F0F4EC] object-contain ${posterOnly ? "max-h-[calc(100dvh-2rem)]" : "max-h-[60dvh]"}`} />
         )}
 
-        <div className={`space-y-3 p-5 ${item.image_url ? "" : "pr-16"}`}>
+        {!posterOnly && <div className={`space-y-3 p-5 ${item.image_url ? "" : "pr-16"}`}>
           {item.title && <h2 id={headingId} className="text-lg font-semibold leading-snug text-[#2C3E2D]">{item.title}</h2>}
           {item.body && <p className="whitespace-pre-line text-sm leading-relaxed text-[#5C6B5D]">{item.body}</p>}
           {item.link_url && item.link_label && (
@@ -106,7 +108,7 @@ export function SiteAnnouncement() {
           <button type="button" onClick={close} className="flex min-h-11 w-full items-center justify-center rounded-full text-sm font-medium text-[#5C6B5D] hover:bg-[#F0F4EC]">
             Close
           </button>
-        </div>
+        </div>}
       </div>
     </div>
   );
