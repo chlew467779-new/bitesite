@@ -3,22 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { verifyAdminToken } from '@/lib/admin-auth';
-
-function getDateRange(range: string) {
-  const end = new Date();
-  const start = new Date();
-  
-  switch (range) {
-    case 'today': start.setHours(0,0,0,0); break;
-    case '7d': start.setDate(end.getDate() - 6); break;
-    case '30d': start.setDate(end.getDate() - 29); break;
-    case '90d': start.setDate(end.getDate() - 89); break;
-    case '365d': start.setDate(end.getDate() - 364); break;
-    default: start.setDate(end.getDate() - 6);
-  }
-  
-  return { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0] };
-}
+import { getMytDateRange } from '@/lib/myt-date';
 
 export async function GET(request: NextRequest) {
   const token = request.headers.get('x-admin-token');
@@ -28,7 +13,7 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const range = searchParams.get('range') || '7d';
-  const { start, end } = getDateRange(range);
+  const { startDateTime, endDateTime } = getMytDateRange(range);
 
   try {
     // 从原始日志查搜索关键词（因为 daily_views 没有 event_detail）
@@ -36,8 +21,8 @@ export async function GET(request: NextRequest) {
       .from('page_views')
       .select('event_detail')
       .eq('event_type', 'search')
-      .gte('created_at', `${start}T00:00:00Z`)
-      .lte('created_at', `${end}T23:59:59Z`);
+      .gte('created_at', startDateTime)
+      .lte('created_at', endDateTime);
 
     const keywordMap = new Map<string, number>();
     data?.forEach(row => {

@@ -19,14 +19,14 @@ insert into public.merchant_memberships (merchant_id, user_id, role, status)
   values ('00000000-0000-4000-8000-00000000c701', '00000000-0000-4000-8000-00000000c7a1', 'owner', 'active');
 insert into public.merchant_slug_history (old_slug, merchant_id) values ('zz-st-old', '00000000-0000-4000-8000-00000000c701');
 insert into public.page_views (path, slug, page_type, event_type, ip, created_at) values
-  ('/x', 'zz-st-new', 'merchant', 'page_view', '10.0.0.1', now()),
-  ('/x', 'zz-st-new', 'merchant', 'page_view', '10.0.0.1', now()),
-  ('/x', 'zz-st-old', 'merchant', 'page_view', '10.0.0.2', now() - interval '2 days'),
-  ('/x', 'zz-st-new', 'merchant', 'whatsapp_click', '10.0.0.1', now()),
-  ('/x', 'zz-st-new', 'merchant', 'menu_view', '10.0.0.1', now()),
-  ('/x', 'zz-st-new', 'story', 'page_view', '10.0.0.3', now()),                   -- a Story page, not the restaurant page
-  ('/x', 'zz-st-new', 'merchant', 'page_view', '10.0.0.4', now() - interval '40 days'), -- outside 30 days
-  ('/x', 'zz-st-else', 'merchant', 'page_view', '10.0.0.5', now());               -- another restaurant
+  ('/x', 'zz-st-new', 'merchant', 'page_view', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1', now()),
+  ('/x', 'zz-st-new', 'merchant', 'page_view', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1', now()),
+  ('/x', 'zz-st-old', 'merchant', 'page_view', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa2', now() - interval '2 days'),
+  ('/x', 'zz-st-new', 'merchant', 'whatsapp_click', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1', now()),
+  ('/x', 'zz-st-new', 'merchant', 'menu_view', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1', now()),
+  ('/x', 'zz-st-new', 'story', 'page_view', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa3', now()),                   -- a Story page, not the restaurant page
+  ('/x', 'zz-st-new', 'merchant', 'page_view', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa4', now() - interval '40 days'), -- outside 30 days
+  ('/x', 'zz-st-else', 'merchant', 'page_view', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa5', now());               -- another restaurant
 
 set local role service_role;
 
@@ -41,7 +41,7 @@ begin
   perform st_test.ok((r #>> '{totals,whatsapp_click}')::int = 1 and (r #>> '{totals,menu_view}')::int = 1, 'actions');
   perform st_test.ok(jsonb_array_length(r -> 'daily') = 30, 'one entry per day');
   perform st_test.ok((select sum((e ->> 'views')::int) from jsonb_array_elements(r -> 'daily') e) = 3, 'daily series adds up');
-  perform st_test.ok(r::text not like '%10.0.0%', 'no IPs leave the database');
+  perform st_test.ok(r::text not like '%aaaaaaaa%', 'no visitor hashes leave the database');
   perform st_test.ok((public.merchant_stats_read('owner', '00000000-0000-4000-8000-00000000c7a1', a, 90) #>> '{totals,page_view}')::int = 4, '90 days includes the older view');
   begin
     perform public.merchant_stats_read('owner', '00000000-0000-4000-8000-00000000c7a2', a, 30);

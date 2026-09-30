@@ -5,7 +5,6 @@
 import { useState } from 'react';
 import { useAuth } from './components/auth-context';
 import AdminShell from './components/admin-shell';
-import StatCards from './components/stat-cards';
 import TrendChart from './components/trend-chart';
 import DeviceChart from './components/device-chart';
 import ReferrerChart from './components/referrer-chart';
@@ -17,7 +16,6 @@ import MapStats from './components/map-stats';
 import SearchKeywordsTable from './components/search-keywords-table';
 import MerchantTable from './components/merchant-table';
 import ExportButton from './components/export-button';
-import RealtimeBadge from './components/realtime-badge';
 import DateRangePicker from './components/date-range-picker';
 import { SettingsPanel } from './components/settings-panel';
 import StoriesManager from './components/stories-manager';
@@ -30,12 +28,13 @@ import RestaurantReviewQueue from './components/restaurant-review-queue';
 import ReportsInbox from './components/reports-inbox';
 import MerchantManager from './components/merchant-manager';
 import TodayPanel from './components/today-panel';
+import PerformancePanel from './components/performance-panel';
 import ContentServiceManager from './components/content-service-manager';
 import AreasManager from './components/areas-manager';
 import AnnouncementsManager from './components/announcements-manager';
 import { Lock, Loader2 } from 'lucide-react';
 
-const rawAnalyticsTabs = new Set(['overview', 'merchants', 'devices', 'referrers', 'search', 'events', 'map', 'hourly', 'stories-analytics']);
+const rawAnalyticsTabs = new Set(['merchants', 'devices', 'referrers', 'search', 'events', 'map', 'hourly', 'stories-analytics']);
 
 export default function AdminPage() {
   const { isAuthenticated, isLoading, login } = useAuth();
@@ -156,48 +155,7 @@ export default function AdminPage() {
         <TodayPanel onOpenTab={setActiveTab} onOpenMerchant={(id) => { setOpenMerchantId(id); setActiveTab('merchant-manager'); }} />
       )}
 
-      {/* Overview - Full Dashboard */}
-      {activeTab === 'overview' && (
-        <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-white">Analytics Dashboard</h1>
-              <p className="text-slate-400 text-sm mt-1">Track your site performance and visitor behavior</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <RealtimeBadge />
-              <DateRangePicker value={dateRange} onChange={setDateRange} />
-              <ExportButton range={dateRange} />
-            </div>
-          </div>
-
-          <StatCards range={dateRange} />
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-              <TrendChart range={dateRange} />
-            </div>
-            <div>
-              <DeviceChart range={dateRange} />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <ReferrerChart range={dateRange} />
-            <EventsChart range={dateRange} />
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <LocationChart range={dateRange} />
-            <HourlyChart range={dateRange} />
-          </div>
-
-          <StoriesChart range={dateRange} />
-          <MapStats range={dateRange} />
-          <SearchKeywordsTable range={dateRange} />
-          <MerchantTable range={dateRange} />
-        </div>
-      )}
+      {activeTab === 'overview' && <PerformancePanel onOpenTab={setActiveTab} />}
 
       {/* Trends */}
       {activeTab === 'trends' && (

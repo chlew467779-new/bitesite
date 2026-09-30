@@ -60,6 +60,8 @@ export default function HomePage() {
   const [isSearching, setIsSearching] = useState(false);
   const [productIndex, setProductIndex] = useState<Map<string, string[]>>(new Map());
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // How many restaurants the current search shows (null while loading), sent with the search event.
+  const searchResultsRef = useRef<number | null>(null);
   const [nearbyActive, setNearbyActive] = useState(false);
   const [nearbyLoading, setNearbyLoading] = useState(false);
   const [coordinates, setCoordinates] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -142,7 +144,7 @@ export default function HomePage() {
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     if (searchQuery.trim()) {
       searchTimeoutRef.current = setTimeout(() => {
-        trackEvent('search', { pageType: 'home', detail: searchQuery.trim() });
+        trackEvent('search', { pageType: 'home', detail: searchQuery.trim(), results: searchResultsRef.current ?? undefined });
       }, 1000);
     }
     return () => {
@@ -252,6 +254,9 @@ export default function HomePage() {
       return matchesCuisine && matchesState && matchesArea && matchesMore && matchesOpenNow && searchMatch;
     });
   }, [activeCuisines, currentState, areaStates, activeArea, activeMore, openNow, searchQuery, merchants, productIndex]);
+  useEffect(() => {
+    searchResultsRef.current = loading ? null : filtered.length;
+  }, [loading, filtered]);
 
   const nearbySelection = useMemo(() => nearbyActive && coordinates
     ? selectNearby(filtered, coordinates.latitude, coordinates.longitude)
