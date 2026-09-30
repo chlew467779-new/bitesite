@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { isListingBasicsPatch, parseListingAction, parseReviewDecision, parseCapacity, mapReviewRpcError } from '../lib/merchant-review-core.mjs';
+import { isListingBasicsPatch, parseListingAction, parseReviewDecision, parseCapacity, mapReviewRpcError, intakeNotice } from '../lib/merchant-review-core.mjs';
 const id = '11111111-1111-4111-8111-111111111111';
 for (const action of ['submit', 'withdraw', 'publish', 'hide']) assert.equal(parseListingAction({ requestId: id, action }).ok, true);
 for (const body of [null, [], {}, { requestId: id, action: 'approve' }, { requestId: id, action: 'publish', actor: 'admin' }]) assert.equal(parseListingAction(body).ok, false);
@@ -9,8 +9,14 @@ for (const patches of [[], [null], [{ path: 'profile.name' }, { path: 'features.
 assert.equal(parseReviewDecision({ requestId: id, submissionId: id, decision: 'approve' }).ok, true);
 for (const note of ['', '  ', 12, 'a'.repeat(1001)]) assert.equal(parseReviewDecision({ requestId: id, submissionId: id, decision: 'reject', note }).ok, false);
 assert.equal(parseReviewDecision({ requestId: id, submissionId: id, decision: 'reject', note: ' Fix address ' }).note, 'Fix address');
-for (const capacity of [0, 20, 1000]) assert.equal(parseCapacity({ capacity }).ok, true);
-for (const capacity of [-1, 1001, 1.2, '20', null]) assert.equal(parseCapacity({ capacity }).ok, false);
+for (const capacity of [1, 20, 1000]) assert.equal(parseCapacity({ capacity }).ok, true);
+for (const capacity of [0, -1, 1001, 1.2, '20', null]) assert.equal(parseCapacity({ capacity }).ok, false, 'pausing is a mode, never a 0 limit');
+assert.equal(parseCapacity({ capacity: 20, pilotCapacity: 0 }).ok, false);
+for (const intakeMode of ['open', 'limited', 'paused']) assert.deepEqual(parseCapacity({ capacity: 20, pilotCapacity: 50, intakeMode }), { ok: true, capacity: 20, pilotCapacity: 50, intakeMode });
+assert.equal(parseCapacity({ capacity: 20, intakeMode: 'closed' }).ok, false);
+assert.equal(mapReviewRpcError({ code: 'P0001', message: 'INTAKE_PAUSED' }).status, 409);
+assert.equal(intakeNotice('open'), null);
+for (const reason of ['paused', 'full', 'busy']) assert.match(intakeNotice(reason), /prepare your page/);
 assert.equal(parseCapacity({ capacity: 20, pilot: 50 }).ok, false);
 assert.equal(mapReviewRpcError({ code: 'P0001', message: 'LISTING_INCOMPLETE', details: 'address,dish' }).status, 422);
 assert.equal(mapReviewRpcError({ code: 'P0001', message: 'REVIEW_CAPACITY_FULL' }).status, 409);

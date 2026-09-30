@@ -59,7 +59,7 @@ export async function PUT(request: NextRequest) {
   catch (error) { return errorResponse(error instanceof RequestBodyTooLargeError ? 413 : 400, 'VALIDATION_FAILED', 'Invalid request.'); }
   const parsed = parseCapacity(body);
   if (!parsed.ok) return errorResponse(parsed.status, parsed.code, parsed.message);
-  const { data, error } = await supabase.rpc('merchant_review_capacity_set', { p_actor_type: 'admin', p_actor_id: ADMIN_PRINCIPAL, p_capacity: parsed.capacity, p_pilot_capacity: parsed.pilotCapacity ?? null });
+  const { data, error } = await supabase.rpc('merchant_review_capacity_set', { p_actor_type: 'admin', p_actor_id: ADMIN_PRINCIPAL, p_capacity: parsed.capacity, p_pilot_capacity: parsed.pilotCapacity ?? null, p_intake_mode: parsed.intakeMode ?? null });
   if (error) { const mapped = mapReviewRpcError(error); return errorResponse(mapped.status, mapped.code, mapped.message); }
   return NextResponse.json({ data });
 }

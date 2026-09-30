@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { CHECK_LABELS, type ListingAction, type ListingCheck, type ListingState } from '@/lib/merchant-review-core.mjs';
+import { CHECK_LABELS, intakeNotice, type ListingAction, type ListingCheck, type ListingState } from '@/lib/merchant-review-core.mjs';
+import { supabase } from '@/lib/supabase';
 import type { SectionHandle } from '@/app/components/section-save/use-section-save';
 
 const titles: Record<ListingAction, string> = { submit: 'Submit for review', withdraw: 'Withdraw', publish: 'Publish', hide: 'Hide', discard: 'Discard draft' };
@@ -24,6 +25,15 @@ export function ListingPanel({ merchantId, state, getHeaders, refresh, onState, 
   const [unknown, setUnknown] = useState<Pending | null>(null);
   const [message, setMessage] = useState('');
   const [confirm, setConfirm] = useState<ListingAction | null>(null);
+  // Before Submit: say so plainly when BiteSite is not taking new restaurants (#34).
+  const canSubmit = state.allowedActions.includes('submit');
+  const [intake, setIntake] = useState<string | null>(null);
+  useEffect(() => {
+    if (!canSubmit) return;
+    let live = true;
+    supabase.rpc('pilot_intake_status').then(({ data }) => { if (live) setIntake(intakeNotice((data as { reason?: string } | null)?.reason)); }, () => {});
+    return () => { live = false; };
+  }, [canSubmit]);
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => { if (confirm) dialog.current?.showModal(); else dialog.current?.close(); }, [confirm]);
   useEffect(() => { onBusy(busy || !!unknown); return () => onBusy(false); }, [busy, unknown, onBusy]);
@@ -66,6 +76,7 @@ export function ListingPanel({ merchantId, state, getHeaders, refresh, onState, 
     {state.reviewStatus === 'approved' && !state.public && <p className="mt-2 text-sm">BiteSite has approved your restaurant. Choose Publish when you are ready.</p>}
     {state.public && <a href={`/store/${state.slug}`} target="_blank" rel="noopener noreferrer" className="mt-2 block min-h-11 break-all py-2 underline">/store/{state.slug}</a>}
     {state.reviewStatus !== 'approved' && <ul className="my-4 space-y-1">{(Object.keys(CHECK_LABELS) as ListingCheck[]).map((key) => <li key={key}><a className="block min-h-11 py-2 text-sm underline-offset-4 hover:underline" href={`#${key === 'contact' ? 'contact' : key === 'dish' ? 'menu' : 'basics'}`}><span aria-label={state.checks[key] ? 'Complete' : 'Missing'}>{state.checks[key] ? '✓' : '○'}</span> {CHECK_LABELS[key]}</a></li>)}</ul>}
+    {canSubmit && intake && <p role="status" className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">{intake}</p>}
     <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
       {state.allowedActions.map((action) => <button type="button" key={action} disabled={busy || !!unknown} className={`${btn} ${action === 'submit' || action === 'publish' ? 'bg-[#2C3E2D] text-white' : ''}`} onClick={() => act(action)}>{titles[action]}</button>)}
       {unknown && <button type="button" className={btn} disabled={busy} onClick={() => void send(unknown)}>Retry {titles[unknown.action].toLowerCase()}</button>}

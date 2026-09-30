@@ -52,10 +52,10 @@ export async function GET(request: NextRequest) {
     .filter((row) => row.issues.length > 0)
     .sort(compareIssueRows);
 
-  const q = (queue.data ?? {}) as { capacity?: number; pilotCapacity?: number; pilotUsed?: number; pending?: number };
+  const q = (queue.data ?? {}) as { intakeMode?: string; capacity?: number; pilotCapacity?: number; pilotUsed?: number; pending?: number };
   return NextResponse.json({
     data: {
-      capacity: { pending: q.pending ?? 0, pendingCapacity: q.capacity ?? 0, pilotUsed: q.pilotUsed ?? 0, pilotCapacity: q.pilotCapacity ?? 0 },
+      capacity: { intakeMode: q.intakeMode ?? 'limited', pending: q.pending ?? 0, pendingCapacity: q.capacity ?? 0, pilotUsed: q.pilotUsed ?? 0, pilotCapacity: q.pilotCapacity ?? 0 },
       incomplete: rows,
     },
   }, { headers: { 'Cache-Control': 'no-store' } });
