@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './auth-context';
 import ImageUpload from './image-upload';
+import MenuImport from './menu-import';
 import { shouldShowPrice } from '@/lib/menu-display.mjs';
 import {
   Plus,
@@ -113,9 +114,10 @@ export default function MenuEditor({ merchantId, merchantName }: MenuEditorProps
 
   const [showPreview, setShowPreview] = useState(false);
 
-  const fetchAll = useCallback(async () => {
+  // quiet: refresh in place (after an import) instead of replacing the editor with a spinner.
+  const fetchAll = useCallback(async (quiet = false) => {
     if (!token) return;
-    setLoading(true);
+    if (!quiet) setLoading(true);
     setError('');
     try {
       const [catRes, prodRes] = await Promise.all([
@@ -405,7 +407,7 @@ export default function MenuEditor({ merchantId, merchantName }: MenuEditorProps
     return (
       <div className="text-center py-16">
         <p className="text-red-400 text-sm">{error}</p>
-        <button onClick={fetchAll} className="mt-4 text-amber-400 hover:text-amber-300 text-sm font-medium">
+        <button onClick={() => void fetchAll()} className="mt-4 text-amber-400 hover:text-amber-300 text-sm font-medium">
           Retry
         </button>
       </div>
@@ -425,6 +427,8 @@ export default function MenuEditor({ merchantId, merchantName }: MenuEditorProps
           {actionError}
         </div>
       )}
+
+      <MenuImport merchantId={merchantId} merchantName={merchantName} categories={categories} products={products} onImported={() => void fetchAll(true)} />
 
       {/* Add category */}
       <div className="flex flex-col sm:flex-row gap-2">
@@ -869,7 +873,7 @@ function ProductEditPanel({
             />
           </label>
           <label className="flex items-center justify-between">
-            <span className="text-sm text-slate-300">Featured (shown in seasonal/highlight section)</span>
+            <span className="text-sm text-slate-300">Featured (shown in the &quot;Featured Dishes&quot; block on the page)</span>
             <input
               type="checkbox"
               checked={draft.is_featured}

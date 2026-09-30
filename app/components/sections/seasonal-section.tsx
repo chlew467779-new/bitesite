@@ -28,8 +28,8 @@ interface SeasonalSectionProps {
 
 export function SeasonalSection({
   items,
-  title = "Seasonal Specials",
-  subtitle = "Limited time offerings you don't want to miss",
+  title = "Featured Dishes",
+  subtitle = "Favourites picked from our menu",
   variant = "classic",
   id,
 }: SeasonalSectionProps) {
@@ -44,7 +44,7 @@ export function SeasonalSection({
           <div className="text-center mb-12">
             <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold mb-4 shadow-lg ${theme.badge}`}>
               <Sparkles size={16} className="animate-pulse" />
-              LIMITED TIME ONLY
+              OUR PICKS
             </div>
             <h2 className={`text-3xl sm:text-4xl font-bold mb-3 ${theme.text}`}>
               {title}
