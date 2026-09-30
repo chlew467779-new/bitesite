@@ -208,3 +208,4 @@ assert.match(formSource, /event\.key === 'Escape'/);
 assert.match(formSource, /button:not\(:disabled\)/, 'keyboard focus stays in the dialog');
 assert.doesNotMatch(formSource, /method: 'PUT'|force[Ss]ave/);
 console.log('Admin navigation behaviour and wiring checks passed');
+import './test-admin-nav-groups.mjs';
