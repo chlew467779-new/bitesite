@@ -73,9 +73,9 @@ const WRITABLE_FEATURES = [
   { key: 'about', label: 'About', desc: 'Brand story text' },
   { key: 'contact', label: 'Contact', desc: 'Contact info (the phone/WhatsApp/email values are not changed)' },
   { key: 'gallery', label: 'Gallery', desc: 'Photo gallery' },
-  { key: 'events', label: 'Events', desc: 'Events/promotions carousel' },
+  // Events: hidden until CH decides whether restaurants get an events editor (09-30); nobody can add events yet.
   { key: 'appointment', label: 'Book a Table', desc: 'Shown only when the restaurant has a valid WhatsApp number' },
-  { key: 'seasonal_popup', label: 'Seasonal popup', desc: 'Seasonal items popup' },
+  { key: 'seasonal_popup', label: 'Featured dishes', desc: 'A "Featured Dishes" block with the dishes marked Featured in the menu' },
 ];
 const TAG_GROUPS = [
   { path: 'tags.cuisine', label: 'Cuisine', options: CUISINE_TAGS, max: 3 },
