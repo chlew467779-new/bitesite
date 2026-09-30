@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import './test-area-requests.mjs';
 import { findArea, matchAreas } from "../lib/areas-core.mjs";
 
 const areas = [

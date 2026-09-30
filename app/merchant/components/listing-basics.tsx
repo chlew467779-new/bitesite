@@ -11,7 +11,7 @@ import { AreaField } from './area-field';
 
 const paths = [...LISTING_BASICS_PATHS];
 const labels = [{ path: 'profile.name', label: 'Restaurant name' }, { path: 'location', label: 'Location' }, { path: 'tags.cuisine', label: 'Cuisine' }];
-export function ListingBasics(props: SectionProps) {
+export function ListingBasics(props: SectionProps & { merchantId?: string; getHeaders?: () => Promise<Record<string, string> | null>; areaRequests?: import('@/lib/area-requests.mjs').AreaRequests }) {
   const section = useSectionSave(paths, props.fields, props.send, props.onConfirmed);
   const { register } = props;
   useEffect(() => { register('basics', section.handle); return () => register('basics', null); }, [register, section.handle]);
@@ -28,7 +28,7 @@ export function ListingBasics(props: SectionProps) {
     {props.readOnly && <p className="text-sm text-[#6B6560]">BiteSite checks changes to your restaurant name, address or cuisine before they appear on your page.</p>}
     <TextField name="name" label="Restaurant name" autoComplete="organization" placeholder="e.g. Kedai Kopi Seri Pagi" maxLength={160} showCount value={text(draft['profile.name'])} onChange={(v) => section.edit('profile.name', v)} readOnly={props.readOnly} error={section.state.error?.fieldErrors?.['profile.name']} />
     <TextField name="address" label="Address" autoComplete="street-address" placeholder="e.g. 12 Jalan Tasik Utama 3, Sungai Besi, 57000 Kuala Lumpur" multiline maxLength={500} showCount value={text(location.address)} onChange={(v) => section.edit('location', { ...location, address: v.trim() ? v : null })} readOnly={props.readOnly} error={section.state.error?.fieldErrors?.location} />
-    <AreaField name="area" label="Area (optional)" value={text(location.area)} onChange={(v) => section.edit('location', { ...location, area: v.trim() ? v : null })} readOnly={props.readOnly} />
+    <AreaField name="area" label="Area (optional)" value={text(location.area)} onChange={(v) => section.edit('location', { ...location, area: v.trim() ? v : null })} readOnly={props.readOnly} merchantId={props.merchantId} address={text(location.address)} getHeaders={props.getHeaders} areaRequests={props.areaRequests} />
     <fieldset disabled={props.readOnly}>
       <legend className="text-sm font-medium">Cuisine — choose up to 3</legend>
       <div className="mt-2 flex flex-wrap gap-2">{[...new Set([...CUISINE_TAGS, ...cuisine])].map((tag) => <button key={tag} type="button" aria-pressed={cuisine.includes(tag)} disabled={props.readOnly || (!cuisine.includes(tag) && cuisine.length >= 3)} onClick={() => section.edit('tags.cuisine', cuisine.includes(tag) ? cuisine.filter((v) => v !== tag) : [...cuisine, tag])} className={`min-h-11 rounded-full border px-4 text-sm disabled:opacity-50 ${cuisine.includes(tag) ? 'border-[#2C3E2D] bg-[#2C3E2D] text-white' : 'border-[#C9D6C7]'}`}>{tag}</button>)}</div>
