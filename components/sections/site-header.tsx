@@ -21,7 +21,8 @@ export function SiteHeader() {
   const pathname = usePathname();
 
   // 商家页不显示导航栏
-  if (pathname?.startsWith("/store/")) return null;
+  // Admin has its own shell and header.
+  if (pathname?.startsWith("/store/") || pathname?.startsWith("/admin")) return null;
 
   return (
     <header className="sticky top-0 z-50 border-b border-[#DDE5DC] bg-[#FAFBF7]/95 backdrop-blur-sm">

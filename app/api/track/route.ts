@@ -5,6 +5,7 @@ import { isPublicArticleSlug, isPublicMerchantSlug } from '@/lib/supabase';
 import { detectDevice } from '@/lib/device-detect';
 import { classifyReferrer, EventTypes } from '@/lib/analytics';
 import { allowAnalyticsRequest, getClientIp, isDuplicateAnalyticsEvent } from '@/lib/analytics-rate-limit';
+import { parseResultCount, visitorHash } from '@/lib/visitor-hash.mjs';
 
 const ALLOWED_EVENT_TYPES = new Set<string>(Object.values(EventTypes));
 const ALLOWED_PAGE_TYPES = new Set([
@@ -76,6 +77,8 @@ export async function POST(request: NextRequest) {
     const pageType = optionalString(body.pageType, 64) || 'other';
     const eventDetail = optionalString(body.eventDetail, 500);
     const referrer = optionalString(body.referrer, 2048) || '';
+    // Search events carry how many restaurants the visitor saw, so Admin can list searches that found nothing.
+    const resultCount = eventType === EventTypes.SEARCH ? parseResultCount(body.resultCount) : null;
 
     if (!ALLOWED_EVENT_TYPES.has(eventType)) {
       return NextResponse.json({ error: 'Unsupported event type' }, { status: 400 });
@@ -124,8 +127,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 获取 IP 和地理位置（Vercel headers）
-    const ip = requestIp;
+    // Only a keyed hash of the IP is stored (#31): enough to count distinct visitors, never the address.
+    const ip = visitorHash(requestIp, process.env.VISITOR_HASH_SECRET || process.env.REPORT_HASH_SECRET || process.env.ADMIN_SESSION_SECRET);
     const rawCountry = request.headers.get('x-vercel-ip-country') || 'Unknown';
     const rawCity = request.headers.get('x-vercel-ip-city') || 'Unknown';
     
@@ -150,9 +153,9 @@ export async function POST(request: NextRequest) {
       device_type: device,
       os,
       browser,
-      user_agent: userAgent,
       referrer: referrer || null,
       referrer_type: referrerType,
+      ...(resultCount !== null ? { metadata: { results: resultCount } } : {}),
     });
 
     if (error) {

@@ -76,7 +76,7 @@ export function isAnalyticsSuppressed(): boolean {
 
 export async function trackEvent(
   eventType: EventType,
-  data: { slug?: string; path?: string; pageType?: string; detail?: string }
+  data: { slug?: string; path?: string; pageType?: string; detail?: string; results?: number }
 ) {
   if (isAnalyticsSuppressed()) return;
 
@@ -86,6 +86,7 @@ export async function trackEvent(
     path: data.path || (typeof window !== 'undefined' ? window.location.pathname : ''),
     pageType: data.pageType,
     eventDetail: data.detail,
+    resultCount: data.results,
     referrer: typeof document !== 'undefined' ? document.referrer : '',
   };
   

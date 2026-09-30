@@ -55,6 +55,6 @@ on conflict (key) do nothing;
 
 -- rows that only the server may ever touch (anon must get "permission denied"):
 insert into public.page_views (slug, path, page_type, event_type, ip, country, city, device_type)
-values ('zz-sec-test-published', '/store/zz-sec-test-published', 'merchant', 'page_view', '203.0.113.7', 'MY', 'Kuala Lumpur', 'mobile');
+values ('zz-sec-test-published', '/store/zz-sec-test-published', 'merchant', 'page_view', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', 'MY', 'Kuala Lumpur', 'mobile');
 insert into public.login_attempts (ip, attempt_count) values ('203.0.113.8', 1)
 on conflict (ip) do nothing;
