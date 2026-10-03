@@ -69,8 +69,8 @@ r = await req("POST", "/api/story-view", { body: { slug: SSLUG } });
 expect("/api/story-view", r.status === 200, `status ${r.status}`);
 
 console.log("6) admin analytics still read (service-role reads)");
-r = await req("GET", "/api/admin/overview?range=7d", { token });
-expect("overview", r.status === 200, `status ${r.status}`);
+r = await req("GET", "/api/admin/performance?days=7", { token });
+expect("performance", r.status === 200, `status ${r.status}`);
 r = await req("GET", "/api/admin/realtime", { token });
 expect("realtime", r.status === 200, `status ${r.status}`);
 
