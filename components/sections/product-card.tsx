@@ -36,7 +36,7 @@ export function ProductCard({ product, merchantName, style }: ProductCardProps) 
           </span>
         </div>
         {product.description && (
-          <p className="text-sm leading-relaxed" style={{ color: style.text2 }}>
+          <p className="text-sm leading-relaxed whitespace-pre-line break-words" style={{ color: style.text2 }}>
             {product.description}
           </p>
         )}

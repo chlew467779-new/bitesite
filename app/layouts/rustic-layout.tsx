@@ -97,7 +97,7 @@ export function RusticLayout({
                                   </span>
                                 )}
                               </div>
-                              {product.description && <p className="text-xs text-orange-800/60 mt-1 line-clamp-2">{product.description}</p>}
+                              {product.description && <p className="text-xs text-orange-800/60 mt-1 line-clamp-2 whitespace-pre-line break-words">{product.description}</p>}
                               {!product.is_available && <span className="inline-block mt-1 text-xs text-red-500">Unavailable</span>}
                             </div>
                           </div>

@@ -159,7 +159,7 @@ export function ClassicLayout({
                                 )}
                               </div>
                               {product.description && (
-                                <p className="text-sm text-amber-800/60 mt-1 line-clamp-2">
+                                <p className="text-sm text-amber-800/60 mt-1 line-clamp-2 whitespace-pre-line break-words">
                                   {product.description}
                                 </p>
                               )}

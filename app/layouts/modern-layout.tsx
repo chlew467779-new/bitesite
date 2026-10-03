@@ -92,7 +92,7 @@ export function ModernLayout({
                                 </span>
                               )}
                             </div>
-                            {product.description && <p className="text-sm text-slate-500 mt-1">{product.description}</p>}
+                            {product.description && <p className="text-sm text-slate-500 mt-1 whitespace-pre-line break-words">{product.description}</p>}
                             {!product.is_available && <span className="text-xs text-red-500 mt-1 block">Currently Unavailable</span>}
                           </div>
                         ))}

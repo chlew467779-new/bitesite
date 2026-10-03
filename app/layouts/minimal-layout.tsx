@@ -75,7 +75,7 @@ export function MinimalLayout({
                           <div key={product.id} className="flex justify-between items-baseline gap-4 py-2">
                             <div className="flex-1">
                               <span className="text-stone-800">{product.name}</span>
-                              {product.description && <p className="text-xs text-stone-500 mt-0.5">{product.description}</p>}
+                              {product.description && <p className="text-xs text-stone-500 mt-0.5 whitespace-pre-line break-words">{product.description}</p>}
                               {!product.is_available && <span className="text-xs text-red-500 mt-0.5 block">Unavailable</span>}
                             </div>
                             {hasDisplayablePrice(product) && (
