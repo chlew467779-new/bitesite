@@ -401,6 +401,7 @@ export default function MerchantDashboardPage() {
 
   const goToNewRestaurant = () => {
     leaving.current = true;
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- preserve the guarded full-page transition to a fresh merchant draft
     window.location.assign('/merchant/new');
   };
 

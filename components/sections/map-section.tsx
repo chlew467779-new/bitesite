@@ -212,6 +212,7 @@ export function MapSection({ merchants, selectedMerchant, onSelect }: MapSection
 
             {selectedMerchant.cover_image && (
               <div className="mb-3 h-28 w-full overflow-hidden rounded-xl">
+                {/* eslint-disable-next-line @next/next/no-img-element -- merchant cover URLs may use any host */}
                 <img
                   src={selectedMerchant.cover_image}
                   alt={selectedMerchant.name}

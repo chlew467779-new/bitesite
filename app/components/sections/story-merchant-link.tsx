@@ -79,6 +79,7 @@ export function StoryContent({ content }: StoryContentProps) {
               ),
               img: ({ src, alt }) => (
                 <div className="my-6 overflow-hidden rounded-xl">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- Story body images use authored URLs from any host */}
                   <img
                     src={src}
                     alt={alt || ""}

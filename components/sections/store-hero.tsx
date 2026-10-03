@@ -12,6 +12,7 @@ export function StoreHero({ merchant, style }: StoreHeroProps) {
   return (
     <section className="relative h-[60vh] min-h-[400px] overflow-hidden">
       {merchant.cover_image ? (
+        // eslint-disable-next-line @next/next/no-img-element -- merchant cover URLs may use any host
         <img
           src={merchant.cover_image}
           alt={`${merchant.name} cover`}

@@ -369,6 +369,7 @@ export default function MerchantManager({ onOpenChangeRequests, openMerchantId =
               {/* Cover Image */}
               <div className="relative h-32 bg-slate-800 overflow-hidden">
                 {merchant.cover_image ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- merchant cover and logo URLs may use any host
                   <img
                     src={merchant.cover_image}
                     alt={merchant.name}
@@ -415,6 +416,7 @@ export default function MerchantManager({ onOpenChangeRequests, openMerchantId =
               <div className="p-4">
                 <div className="flex items-start gap-3">
                   {merchant.logo_image ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- merchant cover and logo URLs may use any host
                     <img
                       src={merchant.logo_image}
                       alt=""

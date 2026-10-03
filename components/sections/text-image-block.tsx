@@ -31,6 +31,7 @@ export function TextImageBlock({
         >
           <div className="md:w-1/2">
             <div className="relative aspect-[4/3] overflow-hidden rounded-xl">
+              {/* eslint-disable-next-line @next/next/no-img-element -- content images use supplied URLs from any host */}
               <img
                 src={imageUrl}
                 alt={imageAlt}

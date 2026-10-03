@@ -15,6 +15,7 @@ export function ProductCard({ product, merchantName, style }: ProductCardProps) 
     <div className="group overflow-hidden rounded-lg border transition-shadow duration-300 hover:shadow-md" style={{ backgroundColor: style.bg, borderColor: style.border }}>
       <div className="relative aspect-[4/3] overflow-hidden">
         {product.image_url ? (
+          // eslint-disable-next-line @next/next/no-img-element -- merchant dish image URLs may use any host
           <img
             src={product.image_url}
             alt={`${product.name} at ${merchantName}`}

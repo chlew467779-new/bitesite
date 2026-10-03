@@ -226,7 +226,8 @@ export function MenuManager({ merchantId, getHeaders, readOnly, register, onChan
             <ul className="divide-y divide-[#EEF2EC]">
               {products.map((product, pi) => (
                 <li key={product.id} className="flex items-center gap-2 p-3">
-                  {product.imageUrl && <img src={product.imageUrl} alt="" className="h-11 w-11 shrink-0 rounded-lg object-cover" />}
+                  {product.imageUrl && // eslint-disable-next-line @next/next/no-img-element -- merchant menu previews use uploaded image URLs
+                  <img src={product.imageUrl} alt="" className="h-11 w-11 shrink-0 rounded-lg object-cover" />}
                   <button type="button" disabled={locked} onClick={() => openDish(category.id, product)} className="min-w-0 flex-1 text-left disabled:opacity-60">
                     <span className="block truncate text-sm font-medium text-[#2C3E2D]">{product.name}{product.isFeatured ? ' ★' : ''}</span>
                     <span className="block text-xs text-[#6B6560]">{product.showPrices ? priceLabel(product) : 'Price hidden'}</span>
