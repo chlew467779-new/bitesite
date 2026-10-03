@@ -15,6 +15,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { verifyAdminToken } from '@/lib/admin-auth';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
+import { menuPhotoQueue } from '@/app/api/_lib/menu-photos';
 
 export async function GET(request: NextRequest) {
   const token = request.headers.get('x-admin-token');
@@ -51,6 +52,8 @@ export async function GET(request: NextRequest) {
   const site = siteFailed
     ? { problems: 0, ideas: 0, oldest: undefined }
     : { problems: siteProblems.count ?? 0, ideas: siteIdeas.count ?? 0, oldest: firstDate(siteIdeaOldest.data) };
+  // Restaurants that sent menu photos (0 before the menu-photos bucket exists).
+  const menuPhotos = await menuPhotoQueue();
   const ideaDates = [firstDate(merchantIdeaOldest.data), site.oldest].filter((d): d is string => Boolean(d)).sort();
 
   return NextResponse.json({
@@ -60,6 +63,7 @@ export async function GET(request: NextRequest) {
       reports: reports.count ?? 0,
       feedback: (merchantProblems.count ?? 0) + site.problems,
       'story-submissions': stories.count ?? 0,
+      'menu-photos': menuPhotos.ok ? menuPhotos.value.length : 0,
       notifications: { pending: notifyPending.count ?? 0, failed: notifyFailed.count ?? 0 },
       ideas: { count: (merchantIdeas.count ?? 0) + site.ideas, oldestAt: ideaDates[0] ?? null },
     },
