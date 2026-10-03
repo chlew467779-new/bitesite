@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState, useEffect, useId, useRef } from "react";
 import { Clock, MapPin, Banknote, CreditCard, Smartphone, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -53,12 +53,18 @@ export function CategoryFilter({
   onNearbyChange,
 }: CategoryFilterProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const panelId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+  const expandRef = useRef<HTMLButtonElement>(null);
+  const collapseRef = useRef<HTMLButtonElement>(null);
 
   // Auto-collapse when scrolling down past 120px
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 120 && !collapsed) {
+        const restoreFocus = panelRef.current?.contains(document.activeElement);
         setCollapsed(true);
+        if (restoreFocus) requestAnimationFrame(() => expandRef.current?.focus());
       }
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -66,8 +72,9 @@ export function CategoryFilter({
   }, [collapsed]);
 
   const toggleCollapsed = useCallback(() => {
-    setCollapsed((prev) => !prev);
-  }, []);
+    setCollapsed(!collapsed);
+    requestAnimationFrame(() => (collapsed ? collapseRef : expandRef).current?.focus());
+  }, [collapsed]);
 
   const toggleCuisine = useCallback(
     (tag: string) => {
@@ -125,10 +132,16 @@ export function CategoryFilter({
             "grid transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]",
             collapsed ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
           )}
+          inert={!collapsed}
+          aria-hidden={!collapsed}
           style={{ pointerEvents: collapsed ? "auto" : "none" }}
         >
           <div className="flex items-center gap-2 overflow-hidden">
             <button
+              type="button"
+              ref={expandRef}
+              aria-expanded={!collapsed}
+              aria-controls={panelId}
               onClick={toggleCollapsed}
               className="flex items-center gap-1 rounded-full bg-[#5A8F6E]/10 px-3 py-1.5 text-xs font-medium text-[#5A8F6E] hover:bg-[#5A8F6E]/20 transition-all active:scale-95 shrink-0"
               style={{ WebkitTapHighlightColor: "transparent" }}
@@ -172,6 +185,10 @@ export function CategoryFilter({
             "grid transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]",
             collapsed ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100"
           )}
+          id={panelId}
+          ref={panelRef}
+          inert={collapsed}
+          aria-hidden={collapsed}
           style={{ pointerEvents: collapsed ? "none" : "auto" }}
         >
           <div className="space-y-3 overflow-hidden">
@@ -213,6 +230,10 @@ export function CategoryFilter({
               <button
                 onClick={toggleCollapsed}
                 className="ml-auto flex items-center gap-1 text-[#8A968B] hover:text-[#5A8F6E] transition-all duration-300 p-1 active:scale-90"
+                ref={collapseRef}
+                aria-label="Collapse filters"
+                aria-expanded={!collapsed}
+                aria-controls={panelId}
                 title="Collapse filters"
                 style={{ WebkitTapHighlightColor: "transparent" }}
               >
