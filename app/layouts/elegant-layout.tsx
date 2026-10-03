@@ -4,6 +4,7 @@
 
 import { DishDescription } from "@/components/sections/dish-description";
 import { MenuCategoryNav, menuCategoryId } from "@/components/sections/menu-category-nav";
+import { ListingTags } from "@/components/sections/listing-tags";
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
 import { TierSections } from "@/app/components/sections/tier-sections";
@@ -254,6 +255,8 @@ export function ElegantLayout({
                   </div>
                 </div>
               )}
+
+              <ListingTags amenities={merchant.amenities} occasion={merchant.occasion} wrapperClass="mt-8 pt-6 border-t border-slate-800" labelClass="text-xs font-medium uppercase tracking-wider text-slate-400 mb-3" chipClass="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700" />
 
               {/* Share */}
               <div className="mt-8 pt-6 border-t border-slate-800">

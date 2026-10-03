@@ -238,3 +238,9 @@ A new feature idea must not silently become a decision. Add it here only after C
 - Dashboard Menu section: "Prefer not to type your menu?"  the Owner sends up to 12 photos (resized on the phone, JPEG, text kept readable). They go to the private `menu-photos` bucket (migration 20261003130000) through server-chosen paths and signed upload URLs; the server checks size and real image type before a photo counts. The Owner can see and delete their own photos until BiteSite uses them.
 - Admin : Restaurants : Menu Photos (badge + Today "Menus to add"): view the photos with one-hour signed links, add the menu with the existing "Import a menu from photos" (Gemini, SYNC menu import), then "Done" deletes the photos and offers the one-tap WhatsApp "Your menu is on BiteSite".
 - Photos are never public and are deleted after use. No table: the bucket listing is the queue. Before the migration runs, the dashboard hides the panel and Admin shows that the feature is off.
+
+## SYNC-068  Owners choose facilities and occasions (issue #4, DECIDED by CH 2026-09-29; built 2026-10-03)
+
+- Dashboard : About: "Facilities" (up to 5 of AMENITY_TAGS) and "Good for" (up to 3 of OCCASION_TAGS), saved like payment methods: no review, shown at once. Older values outside today's lists stay visible and are kept.
+- Public page: "Good to know" / "Great for" chips under payment methods in all 7 layouts (shared `ListingTags`, each layout passes its own chip classes).
+- Migration 20261003140000 only flips the two registry rows to Owner-writable. Deploy order: SQL first, then the app.
