@@ -3,6 +3,7 @@
 "use client";
 
 import { DishDescription } from "@/components/sections/dish-description";
+import { MenuCategoryNav, menuCategoryId } from "@/components/sections/menu-category-nav";
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
 import { ShareButtons } from "@/components/sections/share-buttons";
@@ -36,9 +37,9 @@ export function ClassicLayout({
   const todayHours = formatOperatingHours(hours?.[today]) || "Closed";
 
   return (
-    <div className="min-h-screen bg-amber-50">
+    <div data-restaurant-layout className="min-h-screen bg-amber-50">
       {/* Sticky Back Nav */}
-      <div className="sticky top-0 z-40 bg-amber-50/80 backdrop-blur-md border-b border-amber-200/50">
+      <div data-menu-sticky className="sticky top-0 z-40 bg-amber-50/80 backdrop-blur-md border-b border-amber-200/50">
         <div className="max-w-4xl mx-auto px-4 py-3">
           <Link
             href="/"
@@ -118,12 +119,13 @@ export function ClassicLayout({
             <div className="max-w-4xl mx-auto">
               <h2 className="text-2xl font-bold text-amber-900 mb-6">Menu</h2>
               <div className="space-y-8">
+                <MenuCategoryNav categories={categories} products={products} variant="classic" />
                 {categories.map((cat) => {
                   const catProducts = products.filter((p) => p.category_id === cat.id);
                   if (catProducts.length === 0) return null;
                   return (
-                    <div key={cat.id}>
-                      <h3 className="text-lg font-semibold text-amber-800 mb-4 pb-2 border-b border-amber-200">
+                    <div key={cat.id} id={menuCategoryId(cat.id)} className="scroll-mt-32">
+                      <h3 tabIndex={-1} className="text-lg font-semibold text-amber-800 mb-4 pb-2 border-b border-amber-200">
                         {cat.name}
                       </h3>
                       <div className="space-y-4">

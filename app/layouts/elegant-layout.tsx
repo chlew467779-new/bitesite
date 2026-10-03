@@ -3,6 +3,7 @@
 "use client";
 
 import { DishDescription } from "@/components/sections/dish-description";
+import { MenuCategoryNav, menuCategoryId } from "@/components/sections/menu-category-nav";
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
 import { TierSections } from "@/app/components/sections/tier-sections";
@@ -47,9 +48,9 @@ export function ElegantLayout({
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200">
+    <div data-restaurant-layout className="min-h-screen bg-slate-950 text-slate-200">
       {/* Back Nav */}
-      <div className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md border-b border-slate-800">
+      <div data-menu-sticky className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md border-b border-slate-800">
         <div className="max-w-4xl mx-auto px-4 py-3">
           <Link href="/" className="inline-flex items-center gap-2 text-slate-400 text-sm font-medium active:scale-95 transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}>
             <ArrowLeft size={18} /> Back to BiteSite
@@ -59,7 +60,7 @@ export function ElegantLayout({
 
       {/* Scroll Nav */}
       {navItems.length > 0 && (
-        <div className="sticky top-[53px] z-30 bg-slate-950/90 backdrop-blur border-b border-slate-800">
+        <div data-menu-sticky className="sticky top-[53px] z-30 bg-slate-950/90 backdrop-blur border-b border-slate-800">
           <div className="max-w-4xl mx-auto px-4 flex gap-1 overflow-x-auto no-scrollbar">
             {navItems.map((item) => (
               <button
@@ -106,12 +107,13 @@ export function ElegantLayout({
           <MenuViewTracker slug={merchant.slug} />
           <section id="menu-section" className="py-10 px-4 sm:px-6">
             <div className="max-w-4xl mx-auto space-y-10">
+              <MenuCategoryNav categories={categories} products={products} variant="elegant" />
               {categories.map((cat) => {
                 const catProducts = products.filter((p) => p.category_id === cat.id);
                 if (catProducts.length === 0) return null;
                 return (
-                  <div key={cat.id}>
-                    <h3 className="text-lg font-semibold text-amber-100 mb-4 pb-2 border-b border-slate-800">{cat.name}</h3>
+                  <div key={cat.id} id={menuCategoryId(cat.id)} className="scroll-mt-32">
+                    <h3 tabIndex={-1} className="text-lg font-semibold text-amber-100 mb-4 pb-2 border-b border-slate-800">{cat.name}</h3>
                     <div className="space-y-4">
                       {catProducts.map((product) => (
                         <div key={product.id} className="flex gap-4 p-4 bg-slate-900 rounded-xl border border-slate-800">

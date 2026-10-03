@@ -16,12 +16,14 @@ export const IMAGE_STATES = ["with", "without"] as const;
 /** "all" also switches on the reviews, appointment and events sections, which are off by default. */
 export const SECTION_STATES = ["default", "all"] as const;
 /** "long" swaps in a long mixed Chinese/Malay name and description, to check wrapping at 320px. */
+export const MENU_STATES = ["default", "long"] as const;
 export const NAME_STATES = ["default", "long"] as const;
 
 export type PriceState = (typeof PRICE_STATES)[number];
 export type DishState = (typeof DISH_STATES)[number];
 export type ImageState = (typeof IMAGE_STATES)[number];
 export type SectionState = (typeof SECTION_STATES)[number];
+export type MenuState = (typeof MENU_STATES)[number];
 export type NameState = (typeof NAME_STATES)[number];
 
 export function pick<T extends string>(value: string | string[] | undefined, allowed: readonly T[], fallback: T): T {
@@ -42,7 +44,14 @@ export const FIXTURE_CATEGORIES: Category[] = [
   { id: "cat-drinks", merchant_id: "fixture-merchant", name: "Drinks", sort_order: 2, created_at: "2026-01-01T00:00:00Z" },
 ];
 
-export function buildProducts(price: PriceState, dish: DishState, image: ImageState, name: NameState = "default"): Product[] {
+export const LONG_MENU_CATEGORIES: Category[] = [...FIXTURE_CATEGORIES,
+  { id: "cat-desserts", merchant_id: "fixture-merchant", name: "Desserts", sort_order: 3, created_at: "2026-01-01T00:00:00Z" },
+  { id: "cat-specials", merchant_id: "fixture-merchant", name: "Specials 招牌推荐 Hidangan Istimewa", sort_order: 4, created_at: "2026-01-01T00:00:00Z" },
+  { id: "cat-sides", merchant_id: "fixture-merchant", name: "Side dishes", sort_order: 5, created_at: "2026-01-01T00:00:00Z" },
+  { id: "cat-empty", merchant_id: "fixture-merchant", name: "Empty category", sort_order: 6, created_at: "2026-01-01T00:00:00Z" },
+];
+
+export function buildProducts(price: PriceState, dish: DishState, image: ImageState, name: NameState = "default", menu: MenuState = "default"): Product[] {
   const imageUrl = image === "with" ? FIXTURE_IMAGE : null;
   const base = {
     merchant_id: "fixture-merchant",
@@ -54,7 +63,7 @@ export function buildProducts(price: PriceState, dish: DishState, image: ImageSt
     show_prices: price !== "hidden",
   };
 
-  return [
+  const result: Product[] = [
     {
       ...base,
       id: "dish-1",
@@ -103,6 +112,12 @@ export function buildProducts(price: PriceState, dish: DishState, image: ImageSt
       sort_order: 3,
     },
   ];
+  if (menu === "long") {
+    result.push(...["cat-desserts", "cat-specials", "cat-sides"].map((category_id, index) => ({
+      ...result[2], id: `dish-extra-${index}`, category_id, name: `Fixture dish ${index + 1}`, is_featured: false,
+    })));
+  }
+  return result;
 }
 
 export const FIXTURE_REVIEWS: Review[] = [

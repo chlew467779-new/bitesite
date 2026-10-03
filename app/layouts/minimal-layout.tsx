@@ -3,6 +3,7 @@
 "use client";
 
 import { DishDescription } from "@/components/sections/dish-description";
+import { MenuCategoryNav, menuCategoryId } from "@/components/sections/menu-category-nav";
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
 import { TierSections } from "@/app/components/sections/tier-sections";
@@ -28,8 +29,8 @@ export function MinimalLayout({
   const hasHours = Boolean(hours && Object.values(hours).some((value) => value?.trim()));
 
   return (
-    <div className="min-h-screen bg-stone-50 text-stone-800">
-      <div className="sticky top-0 z-40 bg-stone-50/80 backdrop-blur-md border-b border-stone-200">
+    <div data-restaurant-layout className="min-h-screen bg-stone-50 text-stone-800">
+      <div data-menu-sticky className="sticky top-0 z-40 bg-stone-50/80 backdrop-blur-md border-b border-stone-200">
         <div className="max-w-3xl mx-auto px-4 py-3">
           <Link href="/" className="inline-flex items-center gap-2 text-stone-600 text-sm active:scale-95 transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}>
             <ArrowLeft size={18} /> Back
@@ -65,12 +66,13 @@ export function MinimalLayout({
             <div className="max-w-3xl mx-auto">
               <h2 className="text-sm font-medium tracking-widest uppercase text-stone-500 mb-6">Menu</h2>
               <div className="space-y-8">
+                <MenuCategoryNav categories={categories} products={products} variant="minimal" />
                 {categories.map((cat) => {
                   const catProducts = products.filter((p) => p.category_id === cat.id);
                   if (catProducts.length === 0) return null;
                   return (
-                    <div key={cat.id}>
-                      <h3 className="text-sm font-semibold text-stone-800 mb-4 border-b border-stone-200 pb-2">{cat.name}</h3>
+                    <div key={cat.id} id={menuCategoryId(cat.id)} className="scroll-mt-32">
+                      <h3 tabIndex={-1} className="text-sm font-semibold text-stone-800 mb-4 border-b border-stone-200 pb-2">{cat.name}</h3>
                       <div className="space-y-4">
                         {catProducts.map((product) => (
                           <div key={product.id} className="flex justify-between items-baseline gap-4 py-2">

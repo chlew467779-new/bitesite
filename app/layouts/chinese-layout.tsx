@@ -4,6 +4,7 @@
 
 import type { ReactNode } from "react";
 import { DishDescription } from "@/components/sections/dish-description";
+import { MenuCategoryNav, menuCategoryId } from "@/components/sections/menu-category-nav";
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
 import { TierSections } from "@/app/components/sections/tier-sections";
@@ -55,8 +56,8 @@ export function ChineseLayout({
   const seal = (Array.from(merchant.name.trim())[0] ?? "").toUpperCase();
 
   return (
-    <div className="min-h-screen bg-[#FDF6EC] text-stone-900">
-      <div className="sticky top-0 z-40 bg-[#FDF6EC]/90 backdrop-blur-md border-b border-amber-400/60">
+    <div data-restaurant-layout className="min-h-screen bg-[#FDF6EC] text-stone-900">
+      <div data-menu-sticky className="sticky top-0 z-40 bg-[#FDF6EC]/90 backdrop-blur-md border-b border-amber-400/60">
         <div className="max-w-4xl mx-auto px-4 py-3">
           <Link href="/" className={`inline-flex items-center gap-2 text-red-900 text-sm font-medium active:scale-95 transition-transform ${focusRing}`} style={{ WebkitTapHighlightColor: "transparent" }}>
             <ArrowLeft size={18} /> Back to BiteSite
@@ -115,12 +116,13 @@ export function ChineseLayout({
               <SectionHeading>Menu</SectionHeading>
               <div className="bg-white rounded-lg border-2 border-amber-400/70 p-1.5 shadow-sm">
                 <div className="rounded border border-amber-300/70 px-4 py-6 sm:px-8 space-y-8">
-                  {categories.map((cat) => {
+                  <MenuCategoryNav categories={categories} products={products} variant="chinese" />
+                {categories.map((cat) => {
                     const catProducts = products.filter((p) => p.category_id === cat.id);
                     if (catProducts.length === 0) return null;
                     return (
-                      <div key={cat.id}>
-                        <h3 className="text-lg font-bold text-red-800 text-center tracking-wide pb-2 mb-2 border-b border-dashed border-amber-400 break-words">
+                      <div key={cat.id} id={menuCategoryId(cat.id)} className="scroll-mt-32">
+                        <h3 tabIndex={-1} className="text-lg font-bold text-red-800 text-center tracking-wide pb-2 mb-2 border-b border-dashed border-amber-400 break-words">
                           {cat.name}
                         </h3>
                         <ul className="divide-y divide-amber-100">

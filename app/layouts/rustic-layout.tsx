@@ -3,6 +3,7 @@
 "use client";
 
 import { DishDescription } from "@/components/sections/dish-description";
+import { MenuCategoryNav, menuCategoryId } from "@/components/sections/menu-category-nav";
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
 import { TierSections } from "@/app/components/sections/tier-sections";
@@ -28,8 +29,8 @@ export function RusticLayout({
   const hasHours = Boolean(hours && Object.values(hours).some((value) => value?.trim()));
 
   return (
-    <div className="min-h-screen bg-orange-50 text-orange-950">
-      <div className="sticky top-0 z-40 bg-orange-50/80 backdrop-blur-md border-b border-orange-200/50">
+    <div data-restaurant-layout className="min-h-screen bg-orange-50 text-orange-950">
+      <div data-menu-sticky className="sticky top-0 z-40 bg-orange-50/80 backdrop-blur-md border-b border-orange-200/50">
         <div className="max-w-4xl mx-auto px-4 py-3">
           <Link href="/" className="inline-flex items-center gap-2 text-orange-800 text-sm font-medium active:scale-95 transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}>
             <ArrowLeft size={18} /> Back to BiteSite
@@ -73,12 +74,13 @@ export function RusticLayout({
             <div className="max-w-4xl mx-auto">
               <h2 className="text-2xl font-bold text-orange-900 mb-6 text-center">Our Menu</h2>
               <div className="space-y-8">
+                <MenuCategoryNav categories={categories} products={products} variant="rustic" />
                 {categories.map((cat) => {
                   const catProducts = products.filter((p) => p.category_id === cat.id);
                   if (catProducts.length === 0) return null;
                   return (
-                    <div key={cat.id} className="bg-white rounded-2xl p-6 border border-orange-100">
-                      <h3 className="text-lg font-bold text-orange-800 mb-4 text-center">{cat.name}</h3>
+                    <div key={cat.id} id={menuCategoryId(cat.id)} className="scroll-mt-32 bg-white rounded-2xl p-6 border border-orange-100">
+                      <h3 tabIndex={-1} className="text-lg font-bold text-orange-800 mb-4 text-center">{cat.name}</h3>
                       <div className="grid sm:grid-cols-2 gap-4">
                         {catProducts.map((product) => (
                           <div key={product.id} className="flex gap-3 p-3 rounded-xl hover:bg-orange-50/50 transition-colors">

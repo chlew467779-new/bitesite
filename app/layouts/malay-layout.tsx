@@ -4,6 +4,7 @@
 
 import type { ReactNode } from "react";
 import { DishDescription } from "@/components/sections/dish-description";
+import { MenuCategoryNav, menuCategoryId } from "@/components/sections/menu-category-nav";
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
 import { TierSections } from "@/app/components/sections/tier-sections";
@@ -65,8 +66,8 @@ export function MalayLayout({
   const showAbout = resolvedFeatures.about && Boolean(merchant.description);
 
   return (
-    <div className="min-h-screen bg-[#F8F6EF] text-stone-900">
-      <div className="sticky top-0 z-40 bg-[#F8F6EF]/90 backdrop-blur-md border-b border-emerald-200">
+    <div data-restaurant-layout className="min-h-screen bg-[#F8F6EF] text-stone-900">
+      <div data-menu-sticky className="sticky top-0 z-40 bg-[#F8F6EF]/90 backdrop-blur-md border-b border-emerald-200">
         <div className="max-w-4xl mx-auto px-4 py-3">
           <Link href="/" className={`inline-flex items-center gap-2 text-emerald-900 text-sm font-medium active:scale-95 transition-transform ${focusRing}`} style={{ WebkitTapHighlightColor: "transparent" }}>
             <ArrowLeft size={18} /> Back to BiteSite
@@ -117,12 +118,13 @@ export function MalayLayout({
             <div className="max-w-4xl mx-auto">
               <SectionHeading>Menu</SectionHeading>
               <div className="grid gap-6 md:grid-cols-2 items-start">
+                <MenuCategoryNav categories={categories} products={products} variant="malay" />
                 {categories.map((cat) => {
                   const catProducts = products.filter((p) => p.category_id === cat.id);
                   if (catProducts.length === 0) return null;
                   return (
-                    <div key={cat.id} className="bg-white rounded-2xl border border-emerald-100 overflow-hidden shadow-sm">
-                      <h3 className="bg-emerald-800 px-5 py-3 text-lg font-bold text-amber-50 break-words">{cat.name}</h3>
+                    <div key={cat.id} id={menuCategoryId(cat.id)} className="scroll-mt-32 bg-white rounded-2xl border border-emerald-100 overflow-hidden shadow-sm">
+                      <h3 tabIndex={-1} className="bg-emerald-800 px-5 py-3 text-lg font-bold text-amber-50 break-words">{cat.name}</h3>
                       <SongketBand className="h-1.5" />
                       <ul className="divide-y divide-emerald-50 px-5">
                         {catProducts.map((product) => (

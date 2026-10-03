@@ -11,6 +11,8 @@ import {
   PRICE_STATES,
   SECTION_STATES,
   NAME_STATES,
+  MENU_STATES,
+  LONG_MENU_CATEGORIES,
   FIXTURE_CATEGORIES,
   buildEvents,
   buildMerchant,
@@ -61,14 +63,15 @@ export default async function LayoutFixturesPage({ searchParams }: PageProps) {
   const image = pick(params.image, IMAGE_STATES, "with");
   const sections = pick(params.sections, SECTION_STATES, "default");
   const name = pick(params.name, NAME_STATES, "default");
+  const menu = pick(params.menu, MENU_STATES, "default");
 
   const LayoutComponent = layouts[layoutKey];
   const merchant = buildMerchant(layoutKey, image, sections, name);
-  const products = buildProducts(price, dish, image, name);
+  const products = buildProducts(price, dish, image, name, menu);
   const events = buildEvents(sections, image);
 
   const href = (next: Record<string, string>) => {
-    const query = new URLSearchParams({ layout: layoutKey, price, state: dish, image, sections, name, ...next });
+    const query = new URLSearchParams({ layout: layoutKey, price, state: dish, image, sections, name, menu, ...next });
     return `/dev/layout-fixtures?${query.toString()}`;
   };
 
@@ -78,9 +81,10 @@ export default async function LayoutFixturesPage({ searchParams }: PageProps) {
     { label: "Dish state", options: DISH_STATES.map((value) => ({ value, param: "state" })) },
     { label: "Image", options: IMAGE_STATES.map((value) => ({ value, param: "image" })) },
     { label: "Sections", options: SECTION_STATES.map((value) => ({ value, param: "sections" })) },
+    { label: "Menu", options: MENU_STATES.map((value) => ({ value, param: "menu" })) },
     { label: "Name", options: NAME_STATES.map((value) => ({ value, param: "name" })) },
   ];
-  const current: Record<string, string> = { layout: layoutKey, price, state: dish, image, sections, name };
+  const current: Record<string, string> = { layout: layoutKey, price, state: dish, image, sections, name, menu };
 
   return (
     <div className="min-h-screen bg-slate-950">
@@ -118,7 +122,7 @@ export default async function LayoutFixturesPage({ searchParams }: PageProps) {
       <div {...analyticsSuppressedProps}>
         <LayoutComponent
           merchant={merchant}
-          categories={FIXTURE_CATEGORIES}
+          categories={menu === "long" ? LONG_MENU_CATEGORIES : FIXTURE_CATEGORIES}
           products={products}
           features={merchant.features}
           events={events}

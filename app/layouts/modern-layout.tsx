@@ -3,6 +3,7 @@
 "use client";
 
 import { DishDescription } from "@/components/sections/dish-description";
+import { MenuCategoryNav, menuCategoryId } from "@/components/sections/menu-category-nav";
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
 import { TierSections } from "@/app/components/sections/tier-sections";
@@ -28,8 +29,8 @@ export function ModernLayout({
   const hasHours = Boolean(hours && Object.values(hours).some((value) => value?.trim()));
 
   return (
-    <div className="min-h-screen bg-white text-slate-800">
-      <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-100">
+    <div data-restaurant-layout className="min-h-screen bg-white text-slate-800">
+      <div data-menu-sticky className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-100">
         <div className="max-w-5xl mx-auto px-4 py-3">
           <Link href="/" className="inline-flex items-center gap-2 text-slate-600 text-sm font-medium active:scale-95 transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}>
             <ArrowLeft size={18} /> Back to BiteSite
@@ -74,12 +75,13 @@ export function ModernLayout({
             <div className="max-w-5xl mx-auto">
               <h2 className="text-2xl font-bold text-slate-900 mb-8">Menu</h2>
               <div className="grid md:grid-cols-2 gap-8">
+                <MenuCategoryNav categories={categories} products={products} variant="modern" />
                 {categories.map((cat) => {
                   const catProducts = products.filter((p) => p.category_id === cat.id);
                   if (catProducts.length === 0) return null;
                   return (
-                    <div key={cat.id}>
-                      <h3 className="text-lg font-bold text-slate-800 mb-4 pb-2 border-b-2 border-slate-900">{cat.name}</h3>
+                    <div key={cat.id} id={menuCategoryId(cat.id)} className="scroll-mt-32">
+                      <h3 tabIndex={-1} className="text-lg font-bold text-slate-800 mb-4 pb-2 border-b-2 border-slate-900">{cat.name}</h3>
                       <div className="space-y-4">
                         {catProducts.map((product) => (
                           <div key={product.id} className="group">
