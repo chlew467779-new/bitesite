@@ -9,15 +9,18 @@
 import type { Instrumentation } from 'next';
 
 export async function register() {
-  if (process.env.NEXT_RUNTIME !== 'nodejs') return;
-  const { installConsoleHook } = await import('./app/api/_lib/site-errors');
-  installConsoleHook();
+  // The if-block (not an early return) lets webpack drop the Node-only import from the Edge build.
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    const { installConsoleHook } = await import('./app/api/_lib/site-errors');
+    installConsoleHook();
+  }
 }
 
 export const onRequestError: Instrumentation.onRequestError = async (error, request) => {
-  if (process.env.NEXT_RUNTIME !== 'nodejs') return;
-  try {
-    const { recordRequestError } = await import('./app/api/_lib/site-errors');
-    await recordRequestError(error, request.path);
-  } catch { /* reporting must never add a second failure */ }
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    try {
+      const { recordRequestError } = await import('./app/api/_lib/site-errors');
+      await recordRequestError(error, request.path);
+    } catch { /* reporting must never add a second failure */ }
+  }
 };
