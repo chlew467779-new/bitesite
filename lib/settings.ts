@@ -45,10 +45,3 @@ export async function getSettings(): Promise<SiteSettings> {
     return defaultSettings;
   }
 }
-
-export async function getSetting(
-  key: keyof SiteSettings
-): Promise<string> {
-  const settings = await getSettings();
-  return settings[key];
-}

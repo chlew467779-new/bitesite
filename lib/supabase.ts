@@ -150,18 +150,6 @@ export async function getRelatedMerchants(
   return scored.slice(0, limit).map((s) => s.merchant);
 }
 
-export async function getMerchantsForMap(): Promise<PublicMerchant[]> {
-  const { data, error } = await supabase
-    .from("merchants")
-    .select(PUBLIC_MERCHANT_SELECT)
-    .not("latitude", "is", null)
-    .not("longitude", "is", null)
-    .returns<PublicMerchant[]>();
-
-  if (error) throw error;
-  return data || [];
-}
-
 /**
  * Whether a slug belongs to a merchant the public may see. Server code that uses the service role
  * (analytics ingest) calls this so it applies the same rule as the public pages instead of

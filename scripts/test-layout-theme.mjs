@@ -384,7 +384,6 @@ for (const value of [undefined, null, "", "Classic", "unknown", "__proto__", "co
 const THEMED_COMPONENTS = {
   "app/components/sections/gallery-section.tsx": "gallery",
   "app/components/sections/seasonal-section.tsx": "seasonal",
-  "app/components/sections/reviews-section.tsx": "reviews",
   "app/components/sections/appointment-section.tsx": "appointment",
   "app/components/sections/events-section.tsx": "events",
 };

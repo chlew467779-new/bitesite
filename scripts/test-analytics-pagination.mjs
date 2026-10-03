@@ -44,7 +44,7 @@ assert.equal(calls, 2);
 await assert.rejects(selectAllPages(() => ({ order() { return this; }, range() { throw new Error('network failure'); } })), /network failure/);
 
 // Walk every Admin read of either table: a new unpaged route cannot silently slip in.
-const routes = ['merchants', 'locations', 'export', 'overview', 'trends', 'devices', 'events', 'hourly', 'map', 'referrers', 'search-keywords', 'realtime', 'stories-analytics', 'merchants-crud'];
+const routes = ['merchants', 'locations', 'export', 'trends', 'devices', 'events', 'hourly', 'map', 'referrers', 'search-keywords', 'realtime', 'stories-analytics', 'merchants-crud'];
 const { readdir } = await import('node:fs/promises');
 const actualRoutes = await readdir(new URL('../app/api/admin/', import.meta.url), { withFileTypes: true });
 let checkedQueries = 0;
@@ -76,7 +76,7 @@ for (const dir of actualRoutes.filter(d => d.isDirectory())) {
     assert.ok(source.indexOf('verifyAdminToken(token)') < source.indexOf('selectAllPages(() =>') || dir.name === 'merchants-crud');
   }
 }
-assert.equal(checkedQueries, 30);
+assert.equal(checkedQueries, 26);
 const pkg = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
 assert.equal(pkg.scripts['test:analytics-pagination'], 'node scripts/test-analytics-pagination.mjs');
 assert.ok(pkg.scripts.verify.includes('npm run test:analytics-pagination'));

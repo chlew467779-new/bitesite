@@ -66,39 +66,6 @@ export const OCCASION_TAGS = [
   "Special Occasion",
 ] as const;
 
-export const AREAS = [
-  "Desa ParkCity",
-  "Bangsar",
-  "Mont Kiara",
-  "KLCC",
-  "Damansara",
-  "TTDI",
-  "PJ",
-  "Kepong",
-  "Cheras",
-  "Subang",
-  "Puchong",
-  "Kuchai Lama",
-  "Mid Valley",
-  "Pavilion",
-  "Setapak",
-] as const;
-
-export const TAGS_PRESETS = [
-  "Halal",
-  "Pet Friendly",
-  "WiFi",
-  "Outdoor Seating",
-  "Delivery",
-  "Takeaway",
-  "Parking",
-  "Wheelchair Accessible",
-  "Live Music",
-  "Private Room",
-  "Vegan Options",
-  "Gluten Free",
-] as const;
-
 export const PAYMENT_METHODS = [
   "Cash",
   "Cashless",
