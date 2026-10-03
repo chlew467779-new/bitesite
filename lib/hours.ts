@@ -124,46 +124,6 @@ export interface DayHours {
 }
 
 /**
- * Parse a raw hours string into structured slots for Admin editing
- */
-export function parseOperatingHoursString(raw: string | null | undefined): DayHours {
-  if (!raw || !raw.trim()) {
-    return { slots: [{ start: '', end: '' }], isClosed: false };
-  }
-
-  const lower = raw.trim().toLowerCase();
-  if (lower === 'closed' || lower.includes('closed')) {
-    return { slots: [], isClosed: true };
-  }
-
-  const slotStrs = raw.split(/,|\/|&/).map((s) => s.trim()).filter(Boolean);
-  const slots: TimeSlot[] = [];
-
-  for (const slotStr of slotStrs) {
-    const parts = slotStr.split('-').map((s) => s.trim());
-    if (parts.length === 2) {
-      slots.push({ start: parts[0], end: parts[1] });
-    }
-  }
-
-  if (slots.length === 0) {
-    return { slots: [{ start: '', end: '' }], isClosed: false };
-  }
-
-  return { slots, isClosed: false };
-}
-
-/**
- * Format structured slots back to a string for database storage
- */
-export function formatOperatingHoursToString(dayHours: DayHours): string {
-  if (dayHours.isClosed) return 'Closed';
-  const validSlots = dayHours.slots.filter((s) => s.start.trim() && s.end.trim());
-  if (validSlots.length === 0) return '';
-  return validSlots.map((s) => `${s.start.trim()} - ${s.end.trim()}`).join(', ');
-}
-
-/**
  * Normalize hours string for frontend display
  * - Standardizes AM/PM casing
  * - Deduplicates repeated slots
