@@ -68,7 +68,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     openGraph: {
       title: article.title,
       description,
-      images: ogImage ? [{ url: ogImage }] : [],
+      // A Story without a cover uses the default BiteSite share card.
+      images: ogImage ? [{ url: ogImage }] : ["/opengraph-image"],
       type: "article",
     },
   };
@@ -131,7 +132,7 @@ export default async function StoryPage({ params }: PageProps) {
       name: "BiteSite",
       logo: {
         "@type": "ImageObject",
-        url: `${siteUrl}/logo.png`,
+        url: `${siteUrl}/apple-icon`,
       },
     },
     mainEntityOfPage: {

@@ -17,6 +17,7 @@ import type { SectionHandle } from '@/app/components/section-save/use-section-sa
 import { useEffect, useRef, useState } from 'react';
 import imageCompression from 'browser-image-compression';
 import { supabase } from '@/lib/supabase';
+import { IMMUTABLE_CACHE_SECONDS } from '@/lib/media-cache.mjs';
 import { DISH_RESIZE, MEDIA_RESIZE, type MediaSlot } from '@/lib/merchant-media-core.mjs';
 
 type Props = {
@@ -136,7 +137,7 @@ export function ProfileImageField({ slot, productId, label, value, apiBase, getH
     const ticket = await json(ticketResponse);
     if (!ticketResponse.ok || !ticket?.data) throw new Error(ticket?.error?.message || 'The photo could not be prepared for upload.');
     setStage('uploading');
-    const { error } = await supabase.storage.from(ticket.data.bucket as string).uploadToSignedUrl(ticket.data.path as string, ticket.data.token as string, resized, { contentType: 'image/webp' });
+    const { error } = await supabase.storage.from(ticket.data.bucket as string).uploadToSignedUrl(ticket.data.path as string, ticket.data.token as string, resized, { contentType: 'image/webp', cacheControl: IMMUTABLE_CACHE_SECONDS });
     if (error) throw new Error('The upload did not finish. Check your connection and choose the photo again.');
     await bind({ requestId: crypto.randomUUID(), ...target(), uploadId: ticket.data.uploadId as string, expected: value }, headers);
   });

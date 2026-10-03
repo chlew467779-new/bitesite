@@ -51,6 +51,8 @@ export const metadata: Metadata = {
     description:
     "Join BiteSite for free, share your restaurant's story regularly, and reach more local diners.",
     type: "website",
+    // Setting openGraph here replaces the root one, so the default share card is named again.
+    images: ["/opengraph-image"],
   },
 };
 

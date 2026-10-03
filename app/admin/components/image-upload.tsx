@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import imageCompression from 'browser-image-compression';
 import { supabase } from '@/lib/supabase';
+import { IMMUTABLE_CACHE_SECONDS } from '@/lib/media-cache.mjs';
 import { useAuth } from './auth-context';
 
 type Props = { kind: 'story' | 'menu'; value: string; onChange: (value: string) => void; label: string; help?: string };
@@ -21,7 +22,7 @@ export default function ImageUpload({ kind, value, onChange, label, help }: Prop
       const response = await fetch('/api/admin/media/upload-url', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-token': token }, body: JSON.stringify({ kind, contentType: compressed.type || 'image/webp', size: compressed.size }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Could not prepare upload');
-      const { error: uploadError } = await supabase.storage.from(data.bucket).uploadToSignedUrl(data.path, data.token, compressed);
+      const { error: uploadError } = await supabase.storage.from(data.bucket).uploadToSignedUrl(data.path, data.token, compressed, { cacheControl: IMMUTABLE_CACHE_SECONDS });
       if (uploadError) throw uploadError;
       onChange(supabase.storage.from(data.bucket).getPublicUrl(data.path).data.publicUrl);
     } catch (uploadError) {
