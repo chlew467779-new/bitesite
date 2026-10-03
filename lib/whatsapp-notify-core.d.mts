@@ -1,7 +1,7 @@
 import type { MonthSummary } from './monthly-summary-core.mjs';
 export type NoticeKind =
   | 'review_approved' | 'review_rejected' | 'basics_approved' | 'basics_rejected'
-  | 'link_approved' | 'link_rejected' | 'story_approved' | 'story_rejected' | 'story_changes' | 'story_published' | 'monthly_summary';
+  | 'link_approved' | 'link_rejected' | 'story_approved' | 'story_rejected' | 'story_changes' | 'story_published' | 'monthly_summary' | 'menu_added';
 export declare const NOTICE_KINDS: readonly NoticeKind[];
 export declare function waLink(number: string | null | undefined, text: string): string | null;
 export declare function mailLink(email: string | null | undefined, subject: string, text: string): string | null;

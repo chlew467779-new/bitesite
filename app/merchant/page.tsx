@@ -20,6 +20,7 @@ import { DAY_CODES, HoursSection, type SectionProps } from '@/app/components/sec
 import { FeedbackPanel } from './components/feedback-panel';
 import { StatsPanel } from './components/stats-panel';
 import { MonthlySummaryCard } from './components/monthly-summary-card';
+import { MenuPhotosPanel } from './components/menu-photos-panel';
 import { ClosurePanel } from './components/closure-panel';
 import { TextField } from './components/text-field';
 import { PhoneField } from './components/phone-field';
@@ -717,6 +718,7 @@ export default function MerchantDashboardPage() {
           </SectionCard>
 
           <SectionCard id="menu" title="Menu" description="Add categories and dishes, change prices, and mark dishes sold out. Changes show on your page right away.">
+            <div className="mb-6"><MenuPhotosPanel key={`menu-photos:${profile.id}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={profile.restriction === 'suspended' || profile.restriction === 'archived'} /></div>
             <MenuManager onChanged={refreshListing} key={`menu:${profile.id}:${data.loadId}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={readOnly} />
           </SectionCard>
 
