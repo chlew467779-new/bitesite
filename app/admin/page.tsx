@@ -32,6 +32,7 @@ import PerformancePanel from './components/performance-panel';
 import ContentServiceManager from './components/content-service-manager';
 import MonthlySummaries from './components/monthly-summaries';
 import MenuPhotosQueue from './components/menu-photos-queue';
+import SiteErrorsInbox from './components/site-errors-inbox';
 import AreasManager from './components/areas-manager';
 import AnnouncementsManager from './components/announcements-manager';
 import { Lock, Loader2 } from 'lucide-react';
@@ -345,6 +346,7 @@ export default function AdminPage() {
 
       {activeTab === 'monthly-summaries' && <MonthlySummaries />}
       {activeTab === 'menu-photos' && <MenuPhotosQueue />}
+      {activeTab === 'site-errors' && <SiteErrorsInbox />}
 
       {activeTab === 'areas' && <AreasManager />}
       {activeTab === 'popup' && <AnnouncementsManager />}

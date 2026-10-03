@@ -98,6 +98,9 @@ Only the SECURITY LOCKDOWN work lives here for now (branch `fix/security-lockdow
 | `migrations/20261003150000_owner_page_style.sql` | Registry: `presentation.layout` and six section switches (hero, about, contact, gallery, appointment, seasonal_popup) Owner-writable; snapshot read shows Owners those switches. Events/menu/reviews stay closed | Local; hosted only with approval |
 | `tests/owner_page_style_behavior_tests.sql` | Synthetic Owner reads/writes layout and switches; unknown layout, events and strangers refused; wrap in begin/rollback | Local / staging |
 | `rollback/20261003150000_owner_page_style.rollback.STAGING_ONLY.sql` | Guarded; restores the 20261003140000 registry and the 20260927094400 snapshot read | Staging only |
+| `migrations/20261003160000_site_errors.sql` | Site errors for Admin (SYNC-070): `site_errors` (service role only, one row per kind of error, no IP) and `site_error_record` (repeat counts and reopens; 50 new kinds per hour, then one overflow row; resolved rows older than 30 days deleted) | Local; hosted only with approval |
+| `tests/site_errors_behavior_tests.sql` | Grouping, reopen, cleanup, hourly cap, validation, no anon/authenticated access; wrap in begin/rollback | Local / staging |
+| `rollback/20261003160000_site_errors.rollback.STAGING_ONLY.sql` | Guarded; drops the table and function (the app copes without them) | Staging only |
 | `scripts/test-d2b-cutover-local.mjs` | D2-B write cutover over HTTP: retired Merchant/Admin whole-form saves and hard DELETE refuse (410) and change nothing, no GrabFood write, hidden-draft create accepts only name/slug, profile image upload tickets refused (Story/menu uploads open), B0 Admin paths work | Local only (needs a local Next server) |
 | `rollback/20260926131040_…STAGING_ONLY.sql` | Undoes D1c; every articles column and the old `published`-only rule come back. The D1c code keeps working | Staging; production only as an approved emergency |
 

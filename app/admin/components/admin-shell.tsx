@@ -38,6 +38,7 @@ import {
   ChevronRight,
   PanelLeftClose,
   PanelLeftOpen,
+  TriangleAlert,
 } from 'lucide-react';
 
 const navItems = [
@@ -65,6 +66,7 @@ const navItems = [
   { id: 'merchant-manager', label: 'Merchant Manager', icon: Building2 },
   { id: 'map', label: 'Map Stats', icon: Map },
   { id: 'hourly', label: 'Hourly', icon: Clock },
+  { id: 'site-errors', label: 'Site Errors', icon: TriangleAlert },
 ];
 
 interface AdminShellProps {

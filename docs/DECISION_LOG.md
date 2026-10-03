@@ -250,3 +250,11 @@ A new feature idea must not silently become a decision. Add it here only after C
 - Dashboard › Page style: one of the production layouts (now Classic, Elegant, Minimal, Modern, Rustic; Chinese and Malay join when signed off) and switches for big cover photo, About, Contact & map, Photo gallery, Book a Table and Featured dishes. No review; the page changes at once. Defaults behave as in Admin (back to the default = unset).
 - Events stays hidden (CH 09-30); menu and reviews stay protected.
 - Migration 20261003150000: registry rows Owner-writable + the snapshot read shows Owners only the switches they may write. Deploy order: amenities SQL, then this SQL, then the app.
+
+## SYNC-070 — Site errors reach Admin without any outside service (CH 2026-10-01 plan; built 2026-10-03)
+
+- The server records its own errors in `site_errors` (migration 20261003160000): every server `console.error` (the API routes log there before answering 500), uncaught page/route errors (`instrumentation.ts` `onRequestError`, with the page) and visitor crashes on the error pages (`/api/site-errors`, same-site only; crashes that came from the server are skipped). Nothing for CH to set up.
+- One row per kind of error (ids, numbers and quoted values are grouped); repeats add to the count, and a resolved error that happens again comes back as new. Repeats of one kind within 10 seconds on one server count once.
+- Admin › Site › Site Errors (badge) and a red "Site errors" card on Today: copy the message for the developer, mark resolved (one or all). Before the SQL runs, the page says it is not switched on and nothing is logged.
+- Privacy: no IP or visitor identity; messages are trimmed to 500 characters with emails, phone-like numbers, keys/tokens and URL queries removed; the page is kept without its query. Limits: 50 new kinds per hour (then one overflow row), 30 records per minute per server; resolved rows unseen for 30 days are deleted. Only production records (`SITE_ERRORS_IN_DEV=1` for a local check).
+- Not done: push or email alerts. When email sending is set up later, a new kind of error can also be emailed.
