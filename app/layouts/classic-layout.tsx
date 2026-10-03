@@ -4,6 +4,7 @@
 
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
+import { ShareButtons } from "@/components/sections/share-buttons";
 import { TierSections } from "@/app/components/sections/tier-sections";
 import { MapPin, Phone, Clock, Mail, Instagram, Facebook, Globe, ArrowLeft, MessageSquare, Banknote, Smartphone, CreditCard } from "lucide-react";
 import { formatPhone, phoneLinkDigits } from "@/lib/phone-core.mjs";
@@ -243,7 +244,7 @@ export function ClassicLayout({
                     </a>
                   )}
                   {merchant.website && (
-                    <a href={merchant.website} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent('website_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-3 text-amber-800 active:scale-[0.98] transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}>
+                    <a href={merchant.website} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent('website_click', { slug: merchant.slug, pageType: 'merchant' })} className="min-h-11 flex items-center gap-3 text-amber-800 active:scale-[0.98] transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}>
                       <Globe size={18} /><span className="text-sm">Website</span>
                     </a>
                   )}
@@ -253,7 +254,7 @@ export function ClassicLayout({
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={() => trackEvent('whatsapp_click', { slug: merchant.slug, pageType: 'merchant' })}
-                      className="flex items-center gap-3 text-green-700 active:scale-[0.98] transition-transform"
+                      className="min-h-11 flex items-center gap-3 text-green-700 active:scale-[0.98] transition-transform"
                       style={{ WebkitTapHighlightColor: "transparent" }}
                     >
                       <MessageSquare size={18} />
@@ -276,7 +277,7 @@ export function ClassicLayout({
                       href={merchant.instagram}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-3 text-amber-800 active:scale-[0.98] transition-transform"
+                      className="min-h-11 flex items-center gap-3 text-amber-800 active:scale-[0.98] transition-transform"
                       style={{ WebkitTapHighlightColor: "transparent" }}
                     >
                       <Instagram size={18} />
@@ -288,7 +289,7 @@ export function ClassicLayout({
                       href={merchant.facebook}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-3 text-amber-800 active:scale-[0.98] transition-transform"
+                      className="min-h-11 flex items-center gap-3 text-amber-800 active:scale-[0.98] transition-transform"
                       style={{ WebkitTapHighlightColor: "transparent" }}
                     >
                       <Facebook size={18} />
@@ -301,6 +302,11 @@ export function ClassicLayout({
               {/* Map */}
               <MapEmbed address={merchant.address} latitude={merchant.latitude} longitude={merchant.longitude} borderColor="#FCD34D" />
   
+              <div className="mt-8 pt-6 border-t border-amber-200">
+                <p className="text-xs font-medium uppercase tracking-wider text-amber-800 mb-3">Share</p>
+                <ShareButtons slug={merchant.slug} name={merchant.name} variant="classic" />
+              </div>
+
               {/* Payment Methods */}
               {merchant.payment_methods && merchant.payment_methods.length > 0 && (
                 <div className="mt-8 pt-6 border-t border-amber-200">

@@ -117,16 +117,16 @@ export function ModernLayout({
                 <div className="space-y-4">
                   {merchant.address && <a href={`https://maps.google.com/?q=${encodeURIComponent(merchant.address)}`} onClick={() => trackEvent('directions_click', { slug: merchant.slug, pageType: 'merchant' })} target="_blank" rel="noopener noreferrer" className="flex items-start gap-3 text-slate-600 hover:text-slate-900 transition-colors"><MapPin size={18} className="mt-0.5 flex-shrink-0" /><span className="text-sm">{merchant.address}</span></a>}
                   {merchant.phone && <a href={`tel:+${phoneLinkDigits(merchant.phone)}`} onClick={() => trackEvent('phone_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-3 text-slate-600 hover:text-slate-900 transition-colors"><Phone size={18} /><span className="text-sm">{formatPhone(merchant.phone)}</span></a>}
-                  {merchant.website && <a href={merchant.website} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent('website_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-3 text-slate-600 hover:text-slate-900 transition-colors"><Globe size={18} /><span className="text-sm">Website</span></a>}
-                  {merchant.instagram && <a href={merchant.instagram} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-slate-600 hover:text-slate-900 transition-colors"><Instagram size={18} /><span className="text-sm">Instagram</span></a>}
-                  {merchant.facebook && <a href={merchant.facebook} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-slate-600 hover:text-slate-900 transition-colors"><Facebook size={18} /><span className="text-sm">Facebook</span></a>}
+                  {merchant.website && <a href={merchant.website} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent('website_click', { slug: merchant.slug, pageType: 'merchant' })} className="min-h-11 flex items-center gap-3 text-slate-600 hover:text-slate-900 transition-colors"><Globe size={18} /><span className="text-sm">Website</span></a>}
+                  {merchant.instagram && <a href={merchant.instagram} target="_blank" rel="noopener noreferrer" className="min-h-11 flex items-center gap-3 text-slate-600 hover:text-slate-900 transition-colors"><Instagram size={18} /><span className="text-sm">Instagram</span></a>}
+                  {merchant.facebook && <a href={merchant.facebook} target="_blank" rel="noopener noreferrer" className="min-h-11 flex items-center gap-3 text-slate-600 hover:text-slate-900 transition-colors"><Facebook size={18} /><span className="text-sm">Facebook</span></a>}
                   {merchant.whatsapp && (
                     <a
                       href={`https://wa.me/${phoneLinkDigits(merchant.whatsapp)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={() => trackEvent('whatsapp_click', { slug: merchant.slug, pageType: 'merchant' })}
-                      className="flex items-center gap-3 text-green-600 hover:text-green-700 transition-colors"
+                      className="min-h-11 flex items-center gap-3 text-green-600 hover:text-green-700 transition-colors"
                     >
                       <MessageSquare size={18} /><span className="text-sm font-medium">WhatsApp</span>
                     </a>

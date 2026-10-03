@@ -198,17 +198,17 @@ export function ElegantLayout({
                   </a>
                 )}
                 {merchant.website && (
-                  <a href={merchant.website} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent('website_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-3 text-slate-400 hover:text-slate-200 transition-colors">
+                  <a href={merchant.website} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent('website_click', { slug: merchant.slug, pageType: 'merchant' })} className="min-h-11 flex items-center gap-3 text-slate-400 hover:text-slate-200 transition-colors">
                     <Globe size={18} /><span className="text-sm">Website</span>
                   </a>
                 )}
                 {merchant.instagram && (
-                  <a href={merchant.instagram} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-slate-400 hover:text-slate-200 transition-colors">
+                  <a href={merchant.instagram} target="_blank" rel="noopener noreferrer" className="min-h-11 flex items-center gap-3 text-slate-400 hover:text-slate-200 transition-colors">
                     <Instagram size={18} /><span className="text-sm">Instagram</span>
                   </a>
                 )}
                 {merchant.facebook && (
-                  <a href={merchant.facebook} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-slate-400 hover:text-slate-200 transition-colors">
+                  <a href={merchant.facebook} target="_blank" rel="noopener noreferrer" className="min-h-11 flex items-center gap-3 text-slate-400 hover:text-slate-200 transition-colors">
                     <Facebook size={18} /><span className="text-sm">Facebook</span>
                   </a>
                 )}
@@ -223,7 +223,7 @@ export function ElegantLayout({
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => trackEvent('whatsapp_click', { slug: merchant.slug, pageType: 'merchant' })}
-                    className="flex items-center gap-3 text-green-400 hover:text-green-300 transition-colors"
+                    className="min-h-11 flex items-center gap-3 text-green-400 hover:text-green-300 transition-colors"
                   >
                     <MessageSquare size={18} /><span className="text-sm font-medium">WhatsApp</span>
                   </a>
