@@ -154,7 +154,8 @@ export function ProfileImageField({ slot, productId, label, value, apiBase, getH
       <p className="text-sm font-medium text-[#2C3E2D]">{label}</p>
       <div className={`relative overflow-hidden rounded-xl border border-[#DDE5DC] bg-[#F4F6F1] ${slot === 'cover' ? 'aspect-[16/9] w-full' : slot === 'dish' ? 'aspect-[4/3] w-full max-w-xs' : 'aspect-square w-32'}`}>
         {src
-          ? <img src={src} alt={label} className={`h-full w-full object-cover ${busy ? 'opacity-60' : ''}`} />
+          ? // eslint-disable-next-line @next/next/no-img-element -- upload preview uses blob URLs and short-lived signed URLs
+          <img src={src} alt={label} className={`h-full w-full object-cover ${busy ? 'opacity-60' : ''}`} />
           : <div className="flex h-full items-center justify-center px-2 text-center text-xs text-[#6B6560]">No {label.toLowerCase()}</div>}
         {busy && <div className="absolute inset-x-0 bottom-0 bg-black/60 px-3 py-2 text-xs font-medium text-white" role="status">{STAGE_TEXT[stage]}</div>}
       </div>

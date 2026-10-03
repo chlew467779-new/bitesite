@@ -15,6 +15,7 @@ export default function NewRestaurantPage() {
     event.preventDefault(); setBusy(true); setError('');
     try {
       const { data } = await supabase.auth.getSession();
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- keep the full reload when the authenticated session is missing
       if (!data.session) { window.location.href = '/merchant/login'; return; }
       requestId.current ??= crypto.randomUUID();
       const response = await fetch('/api/merchant/restaurants', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${data.session.access_token}` }, body: JSON.stringify({ name: name.trim(), requestId: requestId.current, termsVersion: MERCHANT_TERMS_VERSION, rightsDeclared }) });

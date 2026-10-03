@@ -691,6 +691,7 @@ function ProductRow({
         </button>
       </div>
       {product.image_url ? (
+        // eslint-disable-next-line @next/next/no-img-element -- merchant menu image URLs may use any host
         <img src={product.image_url} alt={product.name} className="w-10 h-10 rounded-lg object-cover border border-slate-700 shrink-0" />
       ) : (
         <div className="w-10 h-10 rounded-lg bg-slate-800 border border-slate-700 shrink-0" />
@@ -946,6 +947,7 @@ function MenuPreview({
                 {catProducts.map((product) => (
                   <div key={product.id} className="flex gap-4 p-4 bg-white rounded-xl border border-amber-100">
                     {product.image_url && (
+                      // eslint-disable-next-line @next/next/no-img-element -- merchant menu image URLs may use any host
                       <img src={product.image_url} alt="" className="w-20 h-20 rounded-lg object-cover shrink-0" />
                     )}
                     <div className="flex-1 min-w-0">

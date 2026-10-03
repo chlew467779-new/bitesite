@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
+import { selectAllPages } from '@/lib/analytics-pagination.mjs';
 import { verifyAdminToken } from '@/lib/admin-auth';
 
 function getDateRange(range: string) {
@@ -35,23 +36,23 @@ export async function GET(request: NextRequest) {
     const endDateTime = `${end}T23:59:59+08:00`;
 
     // FIX: 从 page_views 原始表实时查询地图页浏览
-    const { data: pageViews } = await supabase
+    const { data: pageViews } = await selectAllPages(() => supabase
       .from('page_views')
       .select('id')
       .eq('page_type', 'our_partner')
       .eq('event_type', 'page_view')
       .gte('created_at', startDateTime)
-      .lte('created_at', endDateTime);
+      .lte('created_at', endDateTime));
 
     const totalViews = pageViews?.length || 0;
 
     // FIX: 从 page_views 原始表实时查询 marker 点击
-    const { data: markerClicks } = await supabase
+    const { data: markerClicks } = await selectAllPages(() => supabase
       .from('page_views')
       .select('id')
       .eq('event_type', 'map_marker_click')
       .gte('created_at', startDateTime)
-      .lte('created_at', endDateTime);
+      .lte('created_at', endDateTime));
 
     const totalMarkers = markerClicks?.length || 0;
 

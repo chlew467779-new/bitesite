@@ -3,6 +3,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
+import { selectAllPages } from '@/lib/analytics-pagination.mjs';
 import { verifyAdminToken } from '@/lib/admin-auth';
 
 export async function GET(request: NextRequest) {
@@ -15,10 +16,10 @@ export async function GET(request: NextRequest) {
     // 最近 5 分钟内独立 IP
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
 
-    const { data, error } = await supabase
+    const { data, error } = await selectAllPages(() => supabase
       .from('page_views')
       .select('ip', { count: 'exact', head: false })
-      .gt('created_at', fiveMinutesAgo);
+      .gt('created_at', fiveMinutesAgo));
 
     if (error) throw error;
 

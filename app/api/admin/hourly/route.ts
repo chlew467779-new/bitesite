@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
+import { selectAllPages } from '@/lib/analytics-pagination.mjs';
 import { verifyAdminToken } from '@/lib/admin-auth';
 
 function getDateRange(range: string) {
@@ -32,12 +33,12 @@ export async function GET(request: NextRequest) {
 
   try {
     // 从原始日志查小时分布（daily_views 没有小时维度）
-    const { data } = await supabase
+    const { data } = await selectAllPages(() => supabase
       .from('page_views')
       .select('created_at')
       .eq('event_type', 'page_view')
       .gte('created_at', `${start}T00:00:00Z`)
-      .lte('created_at', `${end}T23:59:59Z`);
+      .lte('created_at', `${end}T23:59:59Z`));
 
     const hourlyMap = new Map<number, number>();
     for (let i = 0; i < 24; i++) hourlyMap.set(i, 0);

@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
+import { selectAllPages } from '@/lib/analytics-pagination.mjs';
 import { verifyAdminToken } from '@/lib/admin-auth';
 
 function getDateRange(range: string) {
@@ -35,12 +36,12 @@ export async function GET(request: NextRequest) {
     const endDateTime = `${end}T23:59:59+08:00`;
 
     // FIX: 从 page_views 原始表查，null/空 referrer 显示为 direct 而不是 other
-    const { data } = await supabase
+    const { data } = await selectAllPages(() => supabase
       .from('page_views')
       .select('referrer_type')
       .eq('event_type', 'page_view')
       .gte('created_at', startDateTime)
-      .lte('created_at', endDateTime);
+      .lte('created_at', endDateTime));
 
     const referrerMap = new Map<string, number>();
     data?.forEach(row => {

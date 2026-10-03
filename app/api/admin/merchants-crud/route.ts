@@ -14,6 +14,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminToken } from '@/lib/admin-auth';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
+import { selectAllPages } from '@/lib/analytics-pagination.mjs';
 import { InvalidJsonBodyError, readBoundedJson, RequestBodyTooLargeError } from '@/lib/bounded-json';
 
 const MAX_CREATE_BODY_BYTES = 4 * 1024;
@@ -59,11 +60,11 @@ export async function GET(request: NextRequest) {
 
     const { data: products } = await supabase.from('products').select('merchant_id');
     const { data: grabFoodLinks } = await supabase.from('merchant_external_links').select('merchant_id, url').eq('link_type', 'grabfood').eq('is_active', true);
-    const { data: views } = await supabase
+    const { data: views } = await selectAllPages(() => supabase
       .from('page_views')
       .select('slug')
       .eq('page_type', 'merchant')
-      .eq('event_type', 'page_view');
+      .eq('event_type', 'page_view'));
 
     const productCounts: Record<string, number> = {};
     products?.forEach((p) => {

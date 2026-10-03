@@ -56,7 +56,7 @@ export function MapContainer({ merchants, areas }: MapContainerProps) {
     }
 
     return result;
-  }, [merchants, options.mapped, activeTypes, activeArea, searchQuery]);
+  }, [options.mapped, activeTypes, activeArea, searchQuery]);
 
   return (
     <div className="flex flex-col h-full">

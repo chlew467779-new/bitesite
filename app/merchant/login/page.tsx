@@ -27,6 +27,7 @@ export default function MerchantLoginPage() {
         if (!response.ok) throw new Error(data.error || 'Could not sign in.');
         const { error } = await supabase.auth.setSession(data.session);
         if (error) throw new Error('Could not sign in. Please try again.');
+        // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- keep the full reload after authentication to reset client state
         window.location.href = '/merchant';
       } else if (mode === 'register') {
         const input = validateCredentials({ email, password }, true);
@@ -35,6 +36,7 @@ export default function MerchantLoginPage() {
         const { data, error } = await supabase.auth.signUp({ ...input, options: { emailRedirectTo: `${window.location.origin}/merchant` } });
         if (error) throw new Error('Could not register. Please try again or sign in to your existing account.');
         setPassword(''); setConfirm('');
+        // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- keep the full reload after authentication to reset client state
         if (data.session) window.location.href = '/merchant';
         else setMessage('Check your inbox to confirm your email, then sign in to create your restaurant draft. If you already have an account, sign in or reset your password.');
       } else {

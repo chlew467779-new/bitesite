@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
+import { selectAllPages } from '@/lib/analytics-pagination.mjs';
 import { verifyAdminToken } from '@/lib/admin-auth';
 import { getMytDateRange } from '@/lib/myt-date';
 
@@ -17,12 +18,12 @@ export async function GET(request: NextRequest) {
 
   try {
     // 从原始日志查搜索关键词（因为 daily_views 没有 event_detail）
-    const { data } = await supabase
+    const { data } = await selectAllPages(() => supabase
       .from('page_views')
       .select('event_detail')
       .eq('event_type', 'search')
       .gte('created_at', startDateTime)
-      .lte('created_at', endDateTime);
+      .lte('created_at', endDateTime));
 
     const keywordMap = new Map<string, number>();
     data?.forEach(row => {

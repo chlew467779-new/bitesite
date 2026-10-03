@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
+import { selectAllPages } from '@/lib/analytics-pagination.mjs';
 import { verifyAdminToken } from '@/lib/admin-auth';
 
 function getDateRange(range: string) {
@@ -35,12 +36,12 @@ export async function GET(request: NextRequest) {
     const endDateTime = `${end}T23:59:59+08:00`;
 
     // FIX: 直接从 page_views 原始表查，避开聚合表 device_type=null 的污染
-    const { data: rawData } = await supabase
+    const { data: rawData } = await selectAllPages(() => supabase
       .from('page_views')
       .select('device_type, os, browser')
       .eq('event_type', 'page_view')
       .gte('created_at', startDateTime)
-      .lte('created_at', endDateTime);
+      .lte('created_at', endDateTime));
 
     const deviceMap = new Map<string, number>();
     const osMap = new Map<string, number>();

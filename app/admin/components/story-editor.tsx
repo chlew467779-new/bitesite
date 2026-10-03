@@ -596,6 +596,7 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
             />
             {form.cover_image && (
               <div className="mt-2">
+                {/* eslint-disable-next-line @next/next/no-img-element -- editor previews the submitted cover URL without an image proxy */}
                 <img
                   src={form.cover_image}
                   alt="Cover preview"

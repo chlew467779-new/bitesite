@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
+import { selectAllPages } from '@/lib/analytics-pagination.mjs';
 import { verifyAdminToken } from '@/lib/admin-auth';
 import { getMytDateRange, getMytToday } from '@/lib/myt-date';
 
@@ -25,13 +26,13 @@ export async function GET(request: NextRequest) {
       { count: merchantCount },
       { data: todayData },
     ] = await Promise.all([
-      supabase.from('merchant_daily_views').select('count').eq('event_type', 'page_view').gte('view_date', start).lte('view_date', end),
+      selectAllPages(() => supabase.from('merchant_daily_views').select('count').eq('event_type', 'page_view').gte('view_date', start).lte('view_date', end)),
       rawVisitorDataAvailable
-        ? supabase.from('page_views').select('ip').eq('event_type', 'page_view').gte('created_at', startDateTime).lte('created_at', endDateTime)
+        ? selectAllPages(() => supabase.from('page_views').select('ip').eq('event_type', 'page_view').gte('created_at', startDateTime).lte('created_at', endDateTime))
         : Promise.resolve({ data: [] as { ip: string | null }[] }),
-      supabase.from('merchant_daily_views').select('count').neq('event_type', 'page_view').gte('view_date', start).lte('view_date', end),
+      selectAllPages(() => supabase.from('merchant_daily_views').select('count').neq('event_type', 'page_view').gte('view_date', start).lte('view_date', end)),
       supabase.from('merchants').select('*', { count: 'exact', head: true }).eq('is_published', true),
-      supabase.from('merchant_daily_views').select('count').eq('event_type', 'page_view').eq('view_date', getMytToday()),
+      selectAllPages(() => supabase.from('merchant_daily_views').select('count').eq('event_type', 'page_view').eq('view_date', getMytToday())),
     ]);
 
     const totalViews = viewsData?.reduce((sum, r) => sum + (r.count || 0), 0) || 0;

@@ -3,6 +3,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
+import { selectAllPages } from '@/lib/analytics-pagination.mjs';
 import { verifyAdminToken } from '@/lib/admin-auth';
 import { getMytDateRange } from '@/lib/myt-date';
 
@@ -25,12 +26,12 @@ export async function GET(request: NextRequest) {
   const startDate = start;
 
   try {
-    const { data } = await supabase
+    const { data } = await selectAllPages(() => supabase
       .from('merchant_daily_views')
       .select('view_date, count')
       .eq('event_type', 'page_view')
       .gte('view_date', startDate)
-      .lte('view_date', endDate);
+      .lte('view_date', end));
 
     const trendMap = new Map<string, number>();
     dates.forEach(d => trendMap.set(d, 0));

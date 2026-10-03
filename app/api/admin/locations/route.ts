@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
+import { selectAllPages } from '@/lib/analytics-pagination.mjs';
 import { verifyAdminToken } from '@/lib/admin-auth';
 
 const COUNTRY_MAP: Record<string, string> = {
@@ -95,12 +96,12 @@ export async function GET(request: NextRequest) {
 
   try {
     // 国家分布
-    const { data: countryData } = await supabase
+    const { data: countryData } = await selectAllPages(() => supabase
       .from('merchant_daily_views')
       .select('country, count')
       .eq('event_type', 'page_view')
       .gte('view_date', start)
-      .lte('view_date', end);
+      .lte('view_date', end));
 
     const countryMap = new Map<string, number>();
     countryData?.forEach(row => {
@@ -109,12 +110,12 @@ export async function GET(request: NextRequest) {
     });
 
     // 城市分布（Top 20）
-    const { data: cityData } = await supabase
+    const { data: cityData } = await selectAllPages(() => supabase
       .from('merchant_daily_views')
       .select('city, country, count')
       .eq('event_type', 'page_view')
       .gte('view_date', start)
-      .lte('view_date', end);
+      .lte('view_date', end));
 
     const cityMap = new Map<string, { city: string; country: string; value: number }>();
     cityData?.forEach(row => {

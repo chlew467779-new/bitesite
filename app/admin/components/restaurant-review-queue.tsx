@@ -119,7 +119,8 @@ export default function RestaurantReviewQueue() {
       <a href={`/merchant/preview?merchant=${encodeURIComponent(item.merchantId)}&as=admin`} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex min-h-10 items-center rounded-lg border border-[#2C3E2D] px-3 text-sm font-medium">Preview page</a>
       {item.changed && <p className="mt-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">Content changed after submission. Ask the Owner to correct and resubmit; approval is blocked.</p>}
       {item.restriction !== 'none' && <p className="mt-2 text-sm text-red-700">Restaurant is {item.restriction}. Publishing remains blocked.</p>}
-      <div className="mt-3 flex flex-wrap gap-3">{(['logoImage', 'coverImage'] as const).map((key) => imageUrl(item.snapshot[key]) && <img key={key} src={imageUrl(item.snapshot[key])} alt={key === 'logoImage' ? 'Restaurant logo' : 'Restaurant cover'} className="h-24 w-32 rounded-lg object-cover" />)}</div>
+      <div className="mt-3 flex flex-wrap gap-3">{(['logoImage', 'coverImage'] as const).map((key) => imageUrl(item.snapshot[key]) && // eslint-disable-next-line @next/next/no-img-element -- review snapshot previews merchant-uploaded URLs from any host
+      <img key={key} src={imageUrl(item.snapshot[key])} alt={key === 'logoImage' ? 'Restaurant logo' : 'Restaurant cover'} className="h-24 w-32 rounded-lg object-cover" />)}</div>
       <dl className="my-4 space-y-2 break-words text-sm">
         <div><dt className="font-semibold">Address</dt><dd>{item.snapshot.address} {item.snapshot.area}</dd></div>
         <div><dt className="font-semibold">Contact</dt><dd>{[item.snapshot.phone, item.snapshot.whatsapp, item.snapshot.email].filter(Boolean).join(' · ')}</dd></div>

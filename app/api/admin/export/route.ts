@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
+import { selectAllPages } from '@/lib/analytics-pagination.mjs';
 import { verifyAdminToken } from '@/lib/admin-auth';
 
 function getDateRange(range: string) {
@@ -42,13 +43,13 @@ export async function GET(request: NextRequest) {
 
   try {
     // 查询每日商家汇总
-    const { data } = await supabase
+    const { data } = await selectAllPages(() => supabase
       .from('merchant_daily_views')
       .select('slug, page_type, view_date, device_type, country, city, event_type, count, unique_ips')
       .gte('view_date', start)
       .lte('view_date', end)
       .order('view_date', { ascending: false })
-      .order('count', { ascending: false });
+      .order('count', { ascending: false }));
 
     if (format === 'csv') {
       const headers = ['Date', 'Slug', 'Page Type', 'Device', 'Country', 'City', 'Event Type', 'Count', 'Unique IPs'];
