@@ -80,4 +80,10 @@ assert.equal(checkedQueries, 30);
 const pkg = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
 assert.equal(pkg.scripts['test:analytics-pagination'], 'node scripts/test-analytics-pagination.mjs');
 assert.ok(pkg.scripts.verify.includes('npm run test:analytics-pagination'));
+// Each Admin chart reads its own route (Trends once showed a copy of the Stories chart).
+for (const [file, route] of [['trend-chart', 'trends'], ['stories-chart', 'stories-analytics']]) {
+  const chart = await readFile(new URL(`../app/admin/components/${file}.tsx`, import.meta.url), 'utf8');
+  assert.ok(chart.includes(`/api/admin/${route}?range=`), `${file} must request /api/admin/${route}`);
+  assert.equal((chart.match(/\/api\/admin\/[a-z-]+/g) ?? []).filter((r) => r !== `/api/admin/${route}`).length, 0, `${file} requests only its own route`);
+}
 console.log(`analytics pagination checks passed: 0/999/1000/2500 rows, errors, ${routes.length} routes, ${checkedQueries} queries`);
