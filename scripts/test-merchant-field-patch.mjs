@@ -53,7 +53,8 @@ assert.deepEqual(sqlRows, MERCHANT_FIELD_REGISTRY.map((row) => ({ ...row })), "J
 
 for (const row of MERCHANT_FIELD_REGISTRY) {
   if (/^profile\.(website|instagram|facebook|menu_pdf_url)$/.test(row.path)) assert.ok(!row.owner && !row.admin, `${row.path}: links are closed for both`);
-  if (row.kind === "feature") assert.equal(row.owner, false, `${row.path}: Owners do not set features`);
+  // Migration 20261003150000 (issue #11): Owners set six section switches, never events/menu/reviews.
+  if (row.kind === "feature") assert.equal(row.owner, ["hero", "about", "contact", "gallery", "appointment", "seasonal_popup"].includes(row.target), `${row.path}: Owner switch rule`);
 }
 assert.ok(!isWritablePath("features.menu", "admin") && !isWritablePath("features.reviews", "admin"), "menu/reviews features are protected");
 for (const column of ["name", "slug", "address", "layout", "is_published", "platform_status", "review_status", "listing_visibility", "platform_restriction", "business_status", "settings", "reviews"]) {
@@ -96,7 +97,8 @@ ok = parseFieldPatchRequest(req([
 ]), "admin");
 assert.equal(ok.ok, true, JSON.stringify(ok));
 assert.deepEqual(ok.patches.map((x) => x.value), ["New Name", "rustic", ["Cafe", "Bakery"], { address: "2 Jalan", area: null, latitude: 0, longitude: 0 }], "values cleaned; coordinate 0 kept");
-for (const path of ["profile.name", "presentation.layout", "tags.cuisine", "location"]) assert.ok(!isWritablePath(path, "owner"), `${path} is Admin-only`);
+for (const path of ["profile.name", "tags.cuisine", "location"]) assert.ok(!isWritablePath(path, "owner"), `${path} is Admin-only`);
+assert.ok(isWritablePath("presentation.layout", "owner"), "Owners choose their page style (issue #11)");
 let bad = rejects(req([p("presentation.layout", ex("classic"), "chinese")]), "admin", 400, "VALIDATION_FAILED", "layout on hold");
 assert.ok(bad.fieldErrors["presentation.layout"]);
 rejects(req([p("profile.name", ex("Old"), null)]), "admin", 400, "VALIDATION_FAILED", "name cannot be cleared");
@@ -118,7 +120,7 @@ rejects(req([p("profile.tagline", ex(null), "x"), p("profile.tagline", ex(null),
 const link = rejects(req([p("profile.website", ex(null), "https://x.test")]), "owner", 400, "FIELD_NOT_WRITABLE", "Owner link");
 assert.match(link.message, /Links are checked by the BiteSite team/);
 rejects(req([p("profile.facebook", ex(null), "https://x.test")]), "admin", 400, "FIELD_NOT_WRITABLE", "Admin link");
-rejects(req([p("features.gallery", ex(false), true)]), "owner", 400, "FIELD_NOT_WRITABLE", "Owner feature");
+rejects(req([p("features.events", ex(false), true)]), "owner", 400, "FIELD_NOT_WRITABLE", "Owner events switch stays closed");
 rejects(req([p("features.menu", ex(true), false)]), "admin", 400, "FIELD_NOT_WRITABLE", "menu feature");
 rejects(req([p("profile.tagline", ex(null), 5)]), "owner", 400, "VALIDATION_FAILED", "number for text");
 rejects(req([p("profile.tagline", ex(null), "   ")]), "owner", 400, "VALIDATION_FAILED", "blank text");

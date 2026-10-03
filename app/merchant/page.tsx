@@ -26,6 +26,7 @@ import { TextField } from './components/text-field';
 import { PhoneField } from './components/phone-field';
 import { PaymentSection } from './components/payment-section';
 import { AmenitiesSection } from './components/amenities-section';
+import { PageStyleSection } from './components/page-style-section';
 import { createAreaRequests } from '@/lib/area-requests.mjs';
 
 /**
@@ -73,6 +74,7 @@ const SECTIONS = [
   { id: 'about', label: 'About' },
   { id: 'contact', label: 'Contact & links' },
   { id: 'photos', label: 'Photos' },
+  { id: 'style', label: 'Page style' },
   { id: 'menu', label: 'Menu' },
   { id: 'hours', label: 'Opening hours' },
   { id: 'stats', label: 'Visitors' },
@@ -722,6 +724,12 @@ export default function MerchantDashboardPage() {
           <SectionCard id="photos" title="Photos" description="Choose a photo from your phone or take a new one. It is resized before upload and appears on your page after BiteSite checks the file. The public gallery shows up to 8 photos: your cover first, then dish photos in menu order.">
             <ProfileImagesPanel key={`photos:${profile.id}:${data.loadId}`} apiBase={`/api/merchant/restaurants/${encodeURIComponent(profile.id)}/media`} getHeaders={photoHeaders} disabled={readOnly} register={register} onChanged={onPhotoChanged} />
           </SectionCard>
+
+          {'presentation.layout' in sectionProps.fields && (
+            <SectionCard id="style" title="Page style" description="Choose how your page looks and which sections it shows. Changes show on your page right away.">
+              <PageStyleSection key={`style:${sectionKey}`} {...sectionProps} />
+            </SectionCard>
+          )}
 
           <SectionCard id="menu" title="Menu" description="Add categories and dishes, change prices, and mark dishes sold out. Changes show on your page right away.">
             <div className="mb-6"><MenuPhotosPanel key={`menu-photos:${profile.id}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={profile.restriction === 'suspended' || profile.restriction === 'archived'} /></div>

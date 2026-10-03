@@ -18,7 +18,7 @@ end $f$;
 
 select am_test.ok((select owner_writable and admin_writable and max_length = 5 from private.merchant_field_registry() where path = 'tags.amenities'), 'amenities row');
 select am_test.ok((select owner_writable and admin_writable and max_length = 3 from private.merchant_field_registry() where path = 'tags.occasion'), 'occasion row');
-select am_test.ok((select not owner_writable from private.merchant_field_registry() where path = 'presentation.layout'), 'layout stays Admin-only');
+select am_test.ok((select not owner_writable from private.merchant_field_registry() where path = 'features.events'), 'events switch stays closed to Owners');
 select am_test.ok((select owner_writable from private.merchant_field_registry() where path = 'tags.payment'), 'payment kept');
 
 -- A synthetic Owner and restaurant, so the test does not depend on existing data.
