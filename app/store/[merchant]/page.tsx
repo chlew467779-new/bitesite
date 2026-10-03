@@ -202,7 +202,6 @@ export default async function MerchantPage({ params }: PageProps) {
             >
               {settings.footer_text}
             </Link>
-            <Link href="/support-us" className="mt-2 block text-sm text-[#5A8F6E] underline">Support us</Link>
             <Link href="/feedback" className="mt-1 block text-sm text-[#5A8F6E] underline">Send feedback</Link>
           </footer>
         </div>

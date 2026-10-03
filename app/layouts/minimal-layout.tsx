@@ -174,7 +174,6 @@ export function MinimalLayout({
 
       <footer className="py-6 px-4 text-center border-t border-stone-200">
         <Link href="/" className="text-xs text-stone-400 hover:text-stone-600 transition-colors">{footerText || "Discover more on BiteSite"}</Link>
-        <Link href="/support-us" className="mt-2 block text-xs text-stone-500 underline hover:text-stone-700">Support us</Link>
         <Link href="/feedback" className="mt-1 block text-xs text-stone-500 underline hover:text-stone-700">Send feedback</Link>
       </footer>
     </div>

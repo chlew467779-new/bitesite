@@ -243,7 +243,6 @@ export function MalayLayout({
         <SongketBand />
         <div className="py-8 px-4">
           <Link href="/" className={`text-sm text-amber-50 hover:text-white transition-colors ${focusRing} focus-visible:ring-offset-emerald-900`}>{footerText || "Discover more restaurants on BiteSite"}</Link>
-          <Link href="/support-us" className={`mt-2 block text-sm text-amber-50 underline hover:text-white ${focusRing} focus-visible:ring-offset-emerald-900`}>Support us</Link>
           <Link href="/feedback" className={`mt-1 block text-sm text-amber-50 underline hover:text-white ${focusRing} focus-visible:ring-offset-emerald-900`}>Send feedback</Link>
         </div>
       </footer>
