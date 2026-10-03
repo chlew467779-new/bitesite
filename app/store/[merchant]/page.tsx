@@ -73,11 +73,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       ? merchant.description.slice(0, 155) + "..."
       : merchant.description
     : `View the full menu, photos and opening hours for ${merchant.name} on BiteSite.`;
-  const ogImage = merchant.cover_image
-    ? merchant.cover_image.startsWith("http")
-      ? merchant.cover_image
-      : `${siteUrl}${merchant.cover_image}`
-    : null;
+  // The preview image is the generated share card (opengraph-image.tsx, PNG): covers are WebP,
+  // which WhatsApp and other link previews do not always show.
   const canonicalUrl = `${siteUrl}/store/${merchant.slug}`;
   return {
     title: `${merchant.name} | ${merchant.cuisine_type ?? "Restaurant"} Menu | BiteSite`,
@@ -94,7 +91,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     openGraph: {
       title: `${merchant.name} — ${merchant.cuisine_type ?? "Restaurant"}`,
       description: merchant.description || `Menu & opening hours for ${merchant.name}`,
-      images: ogImage ? [{ url: ogImage }] : [],
       type: "website",
       locale: "en_MY",
       url: canonicalUrl,
@@ -103,7 +99,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       card: "summary_large_image",
       title: merchant.name,
       description,
-      images: ogImage ? [ogImage] : [],
     },
   };
 }

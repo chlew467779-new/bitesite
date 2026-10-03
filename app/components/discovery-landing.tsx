@@ -39,7 +39,7 @@ export async function discoveryMetadata(kind: DiscoveryKind, rawSlug: string): P
     title: `${copy.title} | BiteSite`,
     description: copy.description,
     alternates: { canonical: url },
-    openGraph: { title: `${copy.title} | BiteSite`, description: copy.description, url, type: 'website' },
+    openGraph: { title: `${copy.title} | BiteSite`, description: copy.description, url, type: 'website', images: ['/opengraph-image'] },
     robots: landing.indexable ? { index: true, follow: true } : { index: false, follow: true },
   };
 }
