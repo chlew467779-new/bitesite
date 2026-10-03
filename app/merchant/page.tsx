@@ -25,6 +25,7 @@ import { ClosurePanel } from './components/closure-panel';
 import { TextField } from './components/text-field';
 import { PhoneField } from './components/phone-field';
 import { PaymentSection } from './components/payment-section';
+import { AmenitiesSection } from './components/amenities-section';
 import { createAreaRequests } from '@/lib/area-requests.mjs';
 
 /**
@@ -697,6 +698,11 @@ export default function MerchantDashboardPage() {
           </SectionCard>
           <SectionCard id="about" title="About" description="A short line and description help visitors decide to come in.">
             <TextSection key={`about:${sectionKey}`} id="about" config={ABOUT_FIELDS} {...sectionProps} />
+            {'tags.amenities' in sectionProps.fields && 'tags.occasion' in sectionProps.fields && (
+              <div className="mt-6 border-t border-[#EEF2EC] pt-5">
+                <AmenitiesSection key={`amenities:${sectionKey}`} {...sectionProps} />
+              </div>
+            )}
           </SectionCard>
 
           <SectionCard id="contact" title="Contact & links" description="All optional. Leave a field empty to hide it from your page.">
