@@ -9,6 +9,7 @@ import { ADMIN_NAV_GROUPS, groupBadgeCount } from '@/lib/admin-nav-groups.mjs';
 import {
   LayoutDashboard,
   Send,
+  Images,
   ListChecks,
   TrendingUp,
   Store,
@@ -60,6 +61,7 @@ const navItems = [
   { id: 'reports', label: 'Visitor Reports', icon: Flag },
   { id: 'content-service', label: 'Content Service', icon: CalendarClock },
   { id: 'monthly-summaries', label: 'Monthly Summaries', icon: Send },
+  { id: 'menu-photos', label: 'Menu Photos', icon: Images },
   { id: 'merchant-manager', label: 'Merchant Manager', icon: Building2 },
   { id: 'map', label: 'Map Stats', icon: Map },
   { id: 'hourly', label: 'Hourly', icon: Clock },
