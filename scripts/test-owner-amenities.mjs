@@ -11,7 +11,7 @@ const read = async (relPath) => (await readFile(new URL(`../${relPath}`, import.
 
 assert.equal(isWritablePath("tags.amenities", "owner"), true);
 assert.equal(isWritablePath("tags.occasion", "owner"), true);
-assert.equal(isWritablePath("presentation.layout", "owner"), false, "layout stays Admin-only");
+assert.equal(isWritablePath("profile.name", "owner"), false, "the name still needs review");
 const max = (path) => MERCHANT_FIELD_REGISTRY.find((row) => row.path === path).maxLength;
 assert.equal(max("tags.amenities"), 5);
 assert.equal(max("tags.occasion"), 3);
