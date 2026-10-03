@@ -240,6 +240,15 @@ export default function MerchantDashboardPage() {
   const loadSeq = useRef(0);
   const leaving = useRef(false);
 
+  const statusMerchantId = data?.profile.id;
+  const statusLoadId = data?.loadId;
+  const onBusinessStatus = useCallback((businessStatus: string) => {
+    setData((current) => {
+      if (!current || current.profile.id !== statusMerchantId || current.loadId !== statusLoadId || current.profile.business_status === businessStatus) return current;
+      return { ...current, profile: { ...current.profile, business_status: businessStatus } };
+    });
+  }, [statusMerchantId, statusLoadId]);
+
   const register = useCallback((id: string, handle: SectionHandle | null) => {
     if (handle) handles.current.set(id, handle); else handles.current.delete(id);
   }, []);
@@ -715,7 +724,7 @@ export default function MerchantDashboardPage() {
 
           <SectionCard id="hours" title="Opening hours" description="Customers see these on your page. Changes to one day leave the other days as they are.">
             <div className="mb-6 border-b border-[#EEF2EC] pb-6">
-              <ClosurePanel key={`closure:${profile.id}:${data.loadId}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={readOnly} />
+              <ClosurePanel key={`closure:${profile.id}:${data.loadId}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={readOnly} onStatus={onBusinessStatus} />
             </div>
             <HoursSection key={`hours:${sectionKey}`} {...sectionProps} />
           </SectionCard>

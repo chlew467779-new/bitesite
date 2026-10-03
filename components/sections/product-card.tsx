@@ -1,5 +1,6 @@
 /* bitesite/components/sections/product-card.tsx */
 
+import { DishDescription } from "./dish-description";
 import type { Product } from "@/types";
 import type { StyleConfig } from "@/lib/styles";
 
@@ -36,9 +37,9 @@ export function ProductCard({ product, merchantName, style }: ProductCardProps) 
           </span>
         </div>
         {product.description && (
-          <p className="text-sm leading-relaxed" style={{ color: style.text2 }}>
-            {product.description}
-          </p>
+          <div style={{ color: style.text2 }}>
+            <DishDescription description={product.description} clamp={false} className="text-sm leading-relaxed" />
+          </div>
         )}
       </div>
     </div>

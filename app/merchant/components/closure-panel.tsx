@@ -17,7 +17,7 @@ type Pending = { requestId: string; status: 'OPEN' | 'TEMPORARILY_CLOSED'; note:
 const btn = 'inline-flex min-h-11 w-full items-center justify-center rounded-lg px-4 text-sm font-medium disabled:opacity-50 sm:w-auto';
 const input = 'mt-1 block w-full rounded-lg border border-[#C9D6C7] bg-white px-3 py-3 text-base text-[#2C3E2D] focus:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-700/20';
 
-export function ClosurePanel({ merchantId, getHeaders, readOnly }: { merchantId: string; getHeaders: () => Promise<Record<string, string> | null>; readOnly: boolean }) {
+export function ClosurePanel({ merchantId, getHeaders, readOnly, onStatus }: { merchantId: string; getHeaders: () => Promise<Record<string, string> | null>; readOnly: boolean; onStatus?: (businessStatus: string) => void }) {
   const api = `/api/merchant/restaurants/${encodeURIComponent(merchantId)}/business-status`;
   const [status, setStatus] = useState<Status | null>(null);
   const [error, setError] = useState('');
@@ -34,7 +34,8 @@ export function ClosurePanel({ merchantId, getHeaders, readOnly }: { merchantId:
     const body = await response?.json().catch(() => null);
     if (!response?.ok || !body?.data) { setError(body?.error?.message || 'Could not load your opening status.'); return; }
     setStatus(body.data as Status);
-  }, [api, getHeaders]);
+    onStatus?.((body.data as Status).businessStatus);
+  }, [api, getHeaders, onStatus]);
 
   useEffect(() => { void load(); }, [load]);
 

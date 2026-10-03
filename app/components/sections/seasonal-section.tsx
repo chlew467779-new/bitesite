@@ -2,6 +2,7 @@
 
 "use client";
 
+import { DishDescription } from "@/components/sections/dish-description";
 import { useState } from "react";
 import { FadeIn } from "@/app/components/animations";
 import { SafeImage } from "@/app/components/safe-image";
@@ -99,9 +100,7 @@ export function SeasonalSection({
                     </p>
                   )}
                   {item.description && (
-                    <p className={`text-sm opacity-70 leading-relaxed ${theme.text}`}>
-                      {item.description}
-                    </p>
+                    <DishDescription description={item.description} clamp={false} className={`text-sm opacity-70 leading-relaxed ${theme.text}`} />
                   )}
                 </div>
               </div>

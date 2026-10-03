@@ -3,6 +3,8 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { DishDescription } from "@/components/sections/dish-description";
+import { MenuCategoryNav, menuCategoryId } from "@/components/sections/menu-category-nav";
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
 import { TierSections } from "@/app/components/sections/tier-sections";
@@ -54,8 +56,8 @@ export function ChineseLayout({
   const seal = (Array.from(merchant.name.trim())[0] ?? "").toUpperCase();
 
   return (
-    <div className="min-h-screen bg-[#FDF6EC] text-stone-900">
-      <div className="sticky top-0 z-40 bg-[#FDF6EC]/90 backdrop-blur-md border-b border-amber-400/60">
+    <div data-restaurant-layout className="min-h-screen bg-[#FDF6EC] text-stone-900">
+      <div data-menu-sticky className="sticky top-0 z-40 bg-[#FDF6EC]/90 backdrop-blur-md border-b border-amber-400/60">
         <div className="max-w-4xl mx-auto px-4 py-3">
           <Link href="/" className={`inline-flex items-center gap-2 text-red-900 text-sm font-medium active:scale-95 transition-transform ${focusRing}`} style={{ WebkitTapHighlightColor: "transparent" }}>
             <ArrowLeft size={18} /> Back to BiteSite
@@ -114,12 +116,13 @@ export function ChineseLayout({
               <SectionHeading>Menu</SectionHeading>
               <div className="bg-white rounded-lg border-2 border-amber-400/70 p-1.5 shadow-sm">
                 <div className="rounded border border-amber-300/70 px-4 py-6 sm:px-8 space-y-8">
-                  {categories.map((cat) => {
+                  <MenuCategoryNav categories={categories} products={products} variant="chinese" />
+                {categories.map((cat) => {
                     const catProducts = products.filter((p) => p.category_id === cat.id);
                     if (catProducts.length === 0) return null;
                     return (
-                      <div key={cat.id}>
-                        <h3 className="text-lg font-bold text-red-800 text-center tracking-wide pb-2 mb-2 border-b border-dashed border-amber-400 break-words">
+                      <div key={cat.id} id={menuCategoryId(cat.id)} className="scroll-mt-32">
+                        <h3 tabIndex={-1} className="text-lg font-bold text-red-800 text-center tracking-wide pb-2 mb-2 border-b border-dashed border-amber-400 break-words">
                           {cat.name}
                         </h3>
                         <ul className="divide-y divide-amber-100">
@@ -144,7 +147,7 @@ export function ChineseLayout({
                                     </>
                                   )}
                                 </div>
-                                {product.description && <p className="text-sm text-stone-600 mt-1 line-clamp-2 break-words">{product.description}</p>}
+                                {product.description && <DishDescription description={product.description} className="text-sm text-stone-600 mt-1 break-words whitespace-pre-line break-words" />}
                                 {!product.is_available && (
                                   <span className="inline-block mt-1.5 text-xs font-medium text-stone-700 bg-stone-100 border border-stone-300 px-2 py-0.5 rounded">
                                     Currently Unavailable
@@ -175,22 +178,22 @@ export function ChineseLayout({
                 <div className="space-y-4">
                   {merchant.address && <a href={`https://maps.google.com/?q=${encodeURIComponent(merchant.address)}`} onClick={() => trackEvent('directions_click', { slug: merchant.slug, pageType: 'merchant' })} target="_blank" rel="noopener noreferrer" className={`flex items-start gap-3 text-red-900 active:scale-[0.98] transition-transform ${focusRing}`} style={{ WebkitTapHighlightColor: "transparent" }}><MapPin size={18} className="mt-0.5 flex-shrink-0" /><span className="text-sm break-words min-w-0">{merchant.address}</span></a>}
                   {merchant.phone && <a href={`tel:+${phoneLinkDigits(merchant.phone)}`} onClick={() => trackEvent('phone_click', { slug: merchant.slug, pageType: 'merchant' })} className={`flex items-center gap-3 text-red-900 active:scale-[0.98] transition-transform ${focusRing}`} style={{ WebkitTapHighlightColor: "transparent" }}><Phone size={18} /><span className="text-sm">{formatPhone(merchant.phone)}</span></a>}
-                  {merchant.website && <a href={merchant.website} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent('website_click', { slug: merchant.slug, pageType: 'merchant' })} className={`flex items-center gap-3 text-red-900 active:scale-[0.98] transition-transform ${focusRing}`} style={{ WebkitTapHighlightColor: "transparent" }}><Globe size={18} /><span className="text-sm">Website</span></a>}
+                  {merchant.website && <a href={merchant.website} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent('website_click', { slug: merchant.slug, pageType: 'merchant' })} className={`min-h-11 flex items-center gap-3 text-red-900 active:scale-[0.98] transition-transform ${focusRing}`} style={{ WebkitTapHighlightColor: "transparent" }}><Globe size={18} /><span className="text-sm">Website</span></a>}
                   {merchant.whatsapp && (
                     <a
                       href={`https://wa.me/${phoneLinkDigits(merchant.whatsapp)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={() => trackEvent('whatsapp_click', { slug: merchant.slug, pageType: 'merchant' })}
-                      className={`flex items-center gap-3 text-green-800 active:scale-[0.98] transition-transform ${focusRing}`}
+                      className={`min-h-11 flex items-center gap-3 text-green-800 active:scale-[0.98] transition-transform ${focusRing}`}
                       style={{ WebkitTapHighlightColor: "transparent" }}
                     >
                       <MessageSquare size={18} /><span className="text-sm font-medium">WhatsApp</span>
                     </a>
                   )}
                   {merchant.email && <a href={`mailto:${merchant.email}`} onClick={() => trackEvent('email_click', { slug: merchant.slug, pageType: 'merchant' })} className={`flex items-center gap-3 text-red-900 active:scale-[0.98] transition-transform ${focusRing}`} style={{ WebkitTapHighlightColor: "transparent" }}><Mail size={18} /><span className="text-sm break-all">{merchant.email}</span></a>}
-                  {merchant.instagram && <a href={merchant.instagram} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-3 text-red-900 active:scale-[0.98] transition-transform ${focusRing}`} style={{ WebkitTapHighlightColor: "transparent" }}><Instagram size={18} /><span className="text-sm">Instagram</span></a>}
-                  {merchant.facebook && <a href={merchant.facebook} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-3 text-red-900 active:scale-[0.98] transition-transform ${focusRing}`} style={{ WebkitTapHighlightColor: "transparent" }}><Facebook size={18} /><span className="text-sm">Facebook</span></a>}
+                  {merchant.instagram && <a href={merchant.instagram} target="_blank" rel="noopener noreferrer" className={`min-h-11 flex items-center gap-3 text-red-900 active:scale-[0.98] transition-transform ${focusRing}`} style={{ WebkitTapHighlightColor: "transparent" }}><Instagram size={18} /><span className="text-sm">Instagram</span></a>}
+                  {merchant.facebook && <a href={merchant.facebook} target="_blank" rel="noopener noreferrer" className={`min-h-11 flex items-center gap-3 text-red-900 active:scale-[0.98] transition-transform ${focusRing}`} style={{ WebkitTapHighlightColor: "transparent" }}><Facebook size={18} /><span className="text-sm">Facebook</span></a>}
                 </div>
                 <div className="space-y-1.5">
                   {hasHours && DAYS.map((day) => {
@@ -243,7 +246,6 @@ export function ChineseLayout({
         <div aria-hidden="true" className="h-1.5 bg-gradient-to-r from-amber-500 via-amber-300 to-amber-500" />
         <div className="py-8 px-4">
           <Link href="/" className={`text-sm text-amber-100 hover:text-white transition-colors ${focusRing} focus-visible:ring-offset-red-900`}>{footerText || "Discover more restaurants on BiteSite"}</Link>
-          <Link href="/support-us" className={`mt-2 block text-sm text-amber-100 underline hover:text-white ${focusRing} focus-visible:ring-offset-red-900`}>Support us</Link>
           <Link href="/feedback" className={`mt-1 block text-sm text-amber-100 underline hover:text-white ${focusRing} focus-visible:ring-offset-red-900`}>Send feedback</Link>
         </div>
       </footer>

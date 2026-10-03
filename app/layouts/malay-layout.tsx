@@ -3,6 +3,8 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { DishDescription } from "@/components/sections/dish-description";
+import { MenuCategoryNav, menuCategoryId } from "@/components/sections/menu-category-nav";
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
 import { TierSections } from "@/app/components/sections/tier-sections";
@@ -64,8 +66,8 @@ export function MalayLayout({
   const showAbout = resolvedFeatures.about && Boolean(merchant.description);
 
   return (
-    <div className="min-h-screen bg-[#F8F6EF] text-stone-900">
-      <div className="sticky top-0 z-40 bg-[#F8F6EF]/90 backdrop-blur-md border-b border-emerald-200">
+    <div data-restaurant-layout className="min-h-screen bg-[#F8F6EF] text-stone-900">
+      <div data-menu-sticky className="sticky top-0 z-40 bg-[#F8F6EF]/90 backdrop-blur-md border-b border-emerald-200">
         <div className="max-w-4xl mx-auto px-4 py-3">
           <Link href="/" className={`inline-flex items-center gap-2 text-emerald-900 text-sm font-medium active:scale-95 transition-transform ${focusRing}`} style={{ WebkitTapHighlightColor: "transparent" }}>
             <ArrowLeft size={18} /> Back to BiteSite
@@ -116,12 +118,13 @@ export function MalayLayout({
             <div className="max-w-4xl mx-auto">
               <SectionHeading>Menu</SectionHeading>
               <div className="grid gap-6 md:grid-cols-2 items-start">
+                <MenuCategoryNav categories={categories} products={products} variant="malay" />
                 {categories.map((cat) => {
                   const catProducts = products.filter((p) => p.category_id === cat.id);
                   if (catProducts.length === 0) return null;
                   return (
-                    <div key={cat.id} className="bg-white rounded-2xl border border-emerald-100 overflow-hidden shadow-sm">
-                      <h3 className="bg-emerald-800 px-5 py-3 text-lg font-bold text-amber-50 break-words">{cat.name}</h3>
+                    <div key={cat.id} id={menuCategoryId(cat.id)} className="scroll-mt-32 bg-white rounded-2xl border border-emerald-100 overflow-hidden shadow-sm">
+                      <h3 tabIndex={-1} className="bg-emerald-800 px-5 py-3 text-lg font-bold text-amber-50 break-words">{cat.name}</h3>
                       <SongketBand className="h-1.5" />
                       <ul className="divide-y divide-emerald-50 px-5">
                         {catProducts.map((product) => (
@@ -142,7 +145,7 @@ export function MalayLayout({
                                   </span>
                                 )}
                               </div>
-                              {product.description && <p className="text-sm text-stone-600 mt-1 line-clamp-2 break-words">{product.description}</p>}
+                              {product.description && <DishDescription description={product.description} className="text-sm text-stone-600 mt-1 break-words whitespace-pre-line break-words" />}
                               {!product.is_available && (
                                 <span className="inline-block mt-1.5 text-xs font-medium text-stone-700 bg-stone-100 border border-stone-300 px-2 py-0.5 rounded">
                                   Currently Unavailable
@@ -172,22 +175,22 @@ export function MalayLayout({
                 <div className="space-y-4">
                   {merchant.address && <a href={`https://maps.google.com/?q=${encodeURIComponent(merchant.address)}`} onClick={() => trackEvent('directions_click', { slug: merchant.slug, pageType: 'merchant' })} target="_blank" rel="noopener noreferrer" className={`flex items-start gap-3 text-emerald-900 active:scale-[0.98] transition-transform ${focusRing}`} style={{ WebkitTapHighlightColor: "transparent" }}><MapPin size={18} className="mt-0.5 flex-shrink-0" /><span className="text-sm break-words min-w-0">{merchant.address}</span></a>}
                   {merchant.phone && <a href={`tel:+${phoneLinkDigits(merchant.phone)}`} onClick={() => trackEvent('phone_click', { slug: merchant.slug, pageType: 'merchant' })} className={`flex items-center gap-3 text-emerald-900 active:scale-[0.98] transition-transform ${focusRing}`} style={{ WebkitTapHighlightColor: "transparent" }}><Phone size={18} /><span className="text-sm">{formatPhone(merchant.phone)}</span></a>}
-                  {merchant.website && <a href={merchant.website} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent('website_click', { slug: merchant.slug, pageType: 'merchant' })} className={`flex items-center gap-3 text-emerald-900 active:scale-[0.98] transition-transform ${focusRing}`} style={{ WebkitTapHighlightColor: "transparent" }}><Globe size={18} /><span className="text-sm">Website</span></a>}
+                  {merchant.website && <a href={merchant.website} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent('website_click', { slug: merchant.slug, pageType: 'merchant' })} className={`min-h-11 flex items-center gap-3 text-emerald-900 active:scale-[0.98] transition-transform ${focusRing}`} style={{ WebkitTapHighlightColor: "transparent" }}><Globe size={18} /><span className="text-sm">Website</span></a>}
                   {merchant.whatsapp && (
                     <a
                       href={`https://wa.me/${phoneLinkDigits(merchant.whatsapp)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={() => trackEvent('whatsapp_click', { slug: merchant.slug, pageType: 'merchant' })}
-                      className={`flex items-center gap-3 text-green-800 active:scale-[0.98] transition-transform ${focusRing}`}
+                      className={`min-h-11 flex items-center gap-3 text-green-800 active:scale-[0.98] transition-transform ${focusRing}`}
                       style={{ WebkitTapHighlightColor: "transparent" }}
                     >
                       <MessageSquare size={18} /><span className="text-sm font-medium">WhatsApp</span>
                     </a>
                   )}
                   {merchant.email && <a href={`mailto:${merchant.email}`} onClick={() => trackEvent('email_click', { slug: merchant.slug, pageType: 'merchant' })} className={`flex items-center gap-3 text-emerald-900 active:scale-[0.98] transition-transform ${focusRing}`} style={{ WebkitTapHighlightColor: "transparent" }}><Mail size={18} /><span className="text-sm break-all">{merchant.email}</span></a>}
-                  {merchant.instagram && <a href={merchant.instagram} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-3 text-emerald-900 active:scale-[0.98] transition-transform ${focusRing}`} style={{ WebkitTapHighlightColor: "transparent" }}><Instagram size={18} /><span className="text-sm">Instagram</span></a>}
-                  {merchant.facebook && <a href={merchant.facebook} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-3 text-emerald-900 active:scale-[0.98] transition-transform ${focusRing}`} style={{ WebkitTapHighlightColor: "transparent" }}><Facebook size={18} /><span className="text-sm">Facebook</span></a>}
+                  {merchant.instagram && <a href={merchant.instagram} target="_blank" rel="noopener noreferrer" className={`min-h-11 flex items-center gap-3 text-emerald-900 active:scale-[0.98] transition-transform ${focusRing}`} style={{ WebkitTapHighlightColor: "transparent" }}><Instagram size={18} /><span className="text-sm">Instagram</span></a>}
+                  {merchant.facebook && <a href={merchant.facebook} target="_blank" rel="noopener noreferrer" className={`min-h-11 flex items-center gap-3 text-emerald-900 active:scale-[0.98] transition-transform ${focusRing}`} style={{ WebkitTapHighlightColor: "transparent" }}><Facebook size={18} /><span className="text-sm">Facebook</span></a>}
                 </div>
                 <div className="space-y-1.5">
                   {hasHours && DAYS.map((day) => {
@@ -240,7 +243,6 @@ export function MalayLayout({
         <SongketBand />
         <div className="py-8 px-4">
           <Link href="/" className={`text-sm text-amber-50 hover:text-white transition-colors ${focusRing} focus-visible:ring-offset-emerald-900`}>{footerText || "Discover more restaurants on BiteSite"}</Link>
-          <Link href="/support-us" className={`mt-2 block text-sm text-amber-50 underline hover:text-white ${focusRing} focus-visible:ring-offset-emerald-900`}>Support us</Link>
           <Link href="/feedback" className={`mt-1 block text-sm text-amber-50 underline hover:text-white ${focusRing} focus-visible:ring-offset-emerald-900`}>Send feedback</Link>
         </div>
       </footer>

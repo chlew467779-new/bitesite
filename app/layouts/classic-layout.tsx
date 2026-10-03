@@ -2,8 +2,11 @@
 
 "use client";
 
+import { DishDescription } from "@/components/sections/dish-description";
+import { MenuCategoryNav, menuCategoryId } from "@/components/sections/menu-category-nav";
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
+import { ShareButtons } from "@/components/sections/share-buttons";
 import { TierSections } from "@/app/components/sections/tier-sections";
 import { MapPin, Phone, Clock, Mail, Instagram, Facebook, Globe, ArrowLeft, MessageSquare, Banknote, Smartphone, CreditCard } from "lucide-react";
 import { formatPhone, phoneLinkDigits } from "@/lib/phone-core.mjs";
@@ -34,9 +37,9 @@ export function ClassicLayout({
   const todayHours = formatOperatingHours(hours?.[today]) || "Closed";
 
   return (
-    <div className="min-h-screen bg-amber-50">
+    <div data-restaurant-layout className="min-h-screen bg-amber-50">
       {/* Sticky Back Nav */}
-      <div className="sticky top-0 z-40 bg-amber-50/80 backdrop-blur-md border-b border-amber-200/50">
+      <div data-menu-sticky className="sticky top-0 z-40 bg-amber-50/80 backdrop-blur-md border-b border-amber-200/50">
         <div className="max-w-4xl mx-auto px-4 py-3">
           <Link
             href="/"
@@ -116,12 +119,13 @@ export function ClassicLayout({
             <div className="max-w-4xl mx-auto">
               <h2 className="text-2xl font-bold text-amber-900 mb-6">Menu</h2>
               <div className="space-y-8">
+                <MenuCategoryNav categories={categories} products={products} variant="classic" />
                 {categories.map((cat) => {
                   const catProducts = products.filter((p) => p.category_id === cat.id);
                   if (catProducts.length === 0) return null;
                   return (
-                    <div key={cat.id}>
-                      <h3 className="text-lg font-semibold text-amber-800 mb-4 pb-2 border-b border-amber-200">
+                    <div key={cat.id} id={menuCategoryId(cat.id)} className="scroll-mt-32">
+                      <h3 tabIndex={-1} className="text-lg font-semibold text-amber-800 mb-4 pb-2 border-b border-amber-200">
                         {cat.name}
                       </h3>
                       <div className="space-y-4">
@@ -159,9 +163,7 @@ export function ClassicLayout({
                                 )}
                               </div>
                               {product.description && (
-                                <p className="text-sm text-amber-800/60 mt-1 line-clamp-2">
-                                  {product.description}
-                                </p>
+                                <DishDescription description={product.description} className="text-sm text-amber-800/60 mt-1 whitespace-pre-line break-words" />
                               )}
                               {!product.is_available && (
                                 <span className="inline-block mt-1 text-xs font-medium text-red-500 bg-red-50 px-2 py-0.5 rounded">
@@ -243,7 +245,7 @@ export function ClassicLayout({
                     </a>
                   )}
                   {merchant.website && (
-                    <a href={merchant.website} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent('website_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-3 text-amber-800 active:scale-[0.98] transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}>
+                    <a href={merchant.website} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent('website_click', { slug: merchant.slug, pageType: 'merchant' })} className="min-h-11 flex items-center gap-3 text-amber-800 active:scale-[0.98] transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}>
                       <Globe size={18} /><span className="text-sm">Website</span>
                     </a>
                   )}
@@ -253,7 +255,7 @@ export function ClassicLayout({
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={() => trackEvent('whatsapp_click', { slug: merchant.slug, pageType: 'merchant' })}
-                      className="flex items-center gap-3 text-green-700 active:scale-[0.98] transition-transform"
+                      className="min-h-11 flex items-center gap-3 text-green-700 active:scale-[0.98] transition-transform"
                       style={{ WebkitTapHighlightColor: "transparent" }}
                     >
                       <MessageSquare size={18} />
@@ -276,7 +278,7 @@ export function ClassicLayout({
                       href={merchant.instagram}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-3 text-amber-800 active:scale-[0.98] transition-transform"
+                      className="min-h-11 flex items-center gap-3 text-amber-800 active:scale-[0.98] transition-transform"
                       style={{ WebkitTapHighlightColor: "transparent" }}
                     >
                       <Instagram size={18} />
@@ -288,7 +290,7 @@ export function ClassicLayout({
                       href={merchant.facebook}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-3 text-amber-800 active:scale-[0.98] transition-transform"
+                      className="min-h-11 flex items-center gap-3 text-amber-800 active:scale-[0.98] transition-transform"
                       style={{ WebkitTapHighlightColor: "transparent" }}
                     >
                       <Facebook size={18} />
@@ -301,6 +303,11 @@ export function ClassicLayout({
               {/* Map */}
               <MapEmbed address={merchant.address} latitude={merchant.latitude} longitude={merchant.longitude} borderColor="#FCD34D" />
   
+              <div className="mt-8 pt-6 border-t border-amber-200">
+                <p className="text-xs font-medium uppercase tracking-wider text-amber-800 mb-3">Share</p>
+                <ShareButtons slug={merchant.slug} name={merchant.name} variant="classic" />
+              </div>
+
               {/* Payment Methods */}
               {merchant.payment_methods && merchant.payment_methods.length > 0 && (
                 <div className="mt-8 pt-6 border-t border-amber-200">
@@ -332,7 +339,6 @@ export function ClassicLayout({
         >
           {footerText || "Discover more restaurants on BiteSite"}
         </Link>
-        <Link href="/support-us" className="mt-2 block text-sm text-amber-700 underline hover:text-amber-900">Support us</Link>
         <Link href="/feedback" className="mt-1 block text-sm text-amber-700 underline hover:text-amber-900">Send feedback</Link>
       </footer>
     </div>

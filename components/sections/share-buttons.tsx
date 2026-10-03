@@ -52,7 +52,7 @@ export function ShareButtons({ slug, name, variant = "classic" }: ShareButtonsPr
     <div className="flex flex-wrap items-center gap-2">
       <button
         onClick={handleNativeShare}
-        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all active:scale-95 ${buttonStyles}`}
+        className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all active:scale-95 ${buttonStyles}`}
         style={{ WebkitTapHighlightColor: "transparent" }}
       >
         <Share2 className="h-3.5 w-3.5" />
@@ -61,7 +61,7 @@ export function ShareButtons({ slug, name, variant = "classic" }: ShareButtonsPr
 
       <button
         onClick={handleCopy}
-        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all active:scale-95 ${buttonStyles}`}
+        className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all active:scale-95 ${buttonStyles}`}
         style={{ WebkitTapHighlightColor: "transparent" }}
       >
         {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}

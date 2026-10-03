@@ -2,6 +2,8 @@
 
 "use client";
 
+import { DishDescription } from "@/components/sections/dish-description";
+import { MenuCategoryNav, menuCategoryId } from "@/components/sections/menu-category-nav";
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
 import { TierSections } from "@/app/components/sections/tier-sections";
@@ -27,8 +29,8 @@ export function RusticLayout({
   const hasHours = Boolean(hours && Object.values(hours).some((value) => value?.trim()));
 
   return (
-    <div className="min-h-screen bg-orange-50 text-orange-950">
-      <div className="sticky top-0 z-40 bg-orange-50/80 backdrop-blur-md border-b border-orange-200/50">
+    <div data-restaurant-layout className="min-h-screen bg-orange-50 text-orange-950">
+      <div data-menu-sticky className="sticky top-0 z-40 bg-orange-50/80 backdrop-blur-md border-b border-orange-200/50">
         <div className="max-w-4xl mx-auto px-4 py-3">
           <Link href="/" className="inline-flex items-center gap-2 text-orange-800 text-sm font-medium active:scale-95 transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}>
             <ArrowLeft size={18} /> Back to BiteSite
@@ -72,12 +74,13 @@ export function RusticLayout({
             <div className="max-w-4xl mx-auto">
               <h2 className="text-2xl font-bold text-orange-900 mb-6 text-center">Our Menu</h2>
               <div className="space-y-8">
+                <MenuCategoryNav categories={categories} products={products} variant="rustic" />
                 {categories.map((cat) => {
                   const catProducts = products.filter((p) => p.category_id === cat.id);
                   if (catProducts.length === 0) return null;
                   return (
-                    <div key={cat.id} className="bg-white rounded-2xl p-6 border border-orange-100">
-                      <h3 className="text-lg font-bold text-orange-800 mb-4 text-center">{cat.name}</h3>
+                    <div key={cat.id} id={menuCategoryId(cat.id)} className="scroll-mt-32 bg-white rounded-2xl p-6 border border-orange-100">
+                      <h3 tabIndex={-1} className="text-lg font-bold text-orange-800 mb-4 text-center">{cat.name}</h3>
                       <div className="grid sm:grid-cols-2 gap-4">
                         {catProducts.map((product) => (
                           <div key={product.id} className="flex gap-3 p-3 rounded-xl hover:bg-orange-50/50 transition-colors">
@@ -97,7 +100,7 @@ export function RusticLayout({
                                   </span>
                                 )}
                               </div>
-                              {product.description && <p className="text-xs text-orange-800/60 mt-1 line-clamp-2">{product.description}</p>}
+                              {product.description && <DishDescription description={product.description} className="text-xs text-orange-800/60 mt-1 whitespace-pre-line break-words" />}
                               {!product.is_available && <span className="inline-block mt-1 text-xs text-red-500">Unavailable</span>}
                             </div>
                           </div>
@@ -123,16 +126,16 @@ export function RusticLayout({
                 <div className="space-y-4">
                   {merchant.address && <a href={`https://maps.google.com/?q=${encodeURIComponent(merchant.address)}`} onClick={() => trackEvent('directions_click', { slug: merchant.slug, pageType: 'merchant' })} target="_blank" rel="noopener noreferrer" className="flex items-start gap-3 text-orange-800 active:scale-[0.98] transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}><MapPin size={18} className="mt-0.5 flex-shrink-0" /><span className="text-sm">{merchant.address}</span></a>}
                   {merchant.phone && <a href={`tel:+${phoneLinkDigits(merchant.phone)}`} onClick={() => trackEvent('phone_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-3 text-orange-800 active:scale-[0.98] transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}><Phone size={18} /><span className="text-sm">{formatPhone(merchant.phone)}</span></a>}
-                  {merchant.website && <a href={merchant.website} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent('website_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-3 text-orange-800 active:scale-[0.98] transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}><Globe size={18} /><span className="text-sm">Website</span></a>}
-                  {merchant.instagram && <a href={merchant.instagram} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-orange-800 active:scale-[0.98] transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}><Instagram size={18} /><span className="text-sm">Instagram</span></a>}
-                  {merchant.facebook && <a href={merchant.facebook} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-orange-800 active:scale-[0.98] transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}><Facebook size={18} /><span className="text-sm">Facebook</span></a>}
+                  {merchant.website && <a href={merchant.website} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent('website_click', { slug: merchant.slug, pageType: 'merchant' })} className="min-h-11 flex items-center gap-3 text-orange-800 active:scale-[0.98] transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}><Globe size={18} /><span className="text-sm">Website</span></a>}
+                  {merchant.instagram && <a href={merchant.instagram} target="_blank" rel="noopener noreferrer" className="min-h-11 flex items-center gap-3 text-orange-800 active:scale-[0.98] transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}><Instagram size={18} /><span className="text-sm">Instagram</span></a>}
+                  {merchant.facebook && <a href={merchant.facebook} target="_blank" rel="noopener noreferrer" className="min-h-11 flex items-center gap-3 text-orange-800 active:scale-[0.98] transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}><Facebook size={18} /><span className="text-sm">Facebook</span></a>}
                   {merchant.whatsapp && (
                     <a
                       href={`https://wa.me/${phoneLinkDigits(merchant.whatsapp)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={() => trackEvent('whatsapp_click', { slug: merchant.slug, pageType: 'merchant' })}
-                      className="flex items-center gap-3 text-green-700 active:scale-[0.98] transition-transform"
+                      className="min-h-11 flex items-center gap-3 text-green-700 active:scale-[0.98] transition-transform"
                       style={{ WebkitTapHighlightColor: "transparent" }}
                     >
                       <MessageSquare size={18} /><span className="text-sm font-medium">WhatsApp</span>
@@ -189,7 +192,6 @@ export function RusticLayout({
 
       <footer className="py-8 px-4 text-center border-t border-orange-200">
         <Link href="/" className="text-sm text-orange-700 hover:text-orange-900 transition-colors">{footerText || "Discover more restaurants on BiteSite"}</Link>
-        <Link href="/support-us" className="mt-2 block text-sm text-orange-700 underline hover:text-orange-900">Support us</Link>
         <Link href="/feedback" className="mt-1 block text-sm text-orange-700 underline hover:text-orange-900">Send feedback</Link>
       </footer>
     </div>

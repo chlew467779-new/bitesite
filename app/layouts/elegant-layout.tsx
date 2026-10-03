@@ -2,6 +2,8 @@
 
 "use client";
 
+import { DishDescription } from "@/components/sections/dish-description";
+import { MenuCategoryNav, menuCategoryId } from "@/components/sections/menu-category-nav";
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
 import { TierSections } from "@/app/components/sections/tier-sections";
@@ -46,9 +48,9 @@ export function ElegantLayout({
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200">
+    <div data-restaurant-layout className="min-h-screen bg-slate-950 text-slate-200">
       {/* Back Nav */}
-      <div className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md border-b border-slate-800">
+      <div data-menu-sticky className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md border-b border-slate-800">
         <div className="max-w-4xl mx-auto px-4 py-3">
           <Link href="/" className="inline-flex items-center gap-2 text-slate-400 text-sm font-medium active:scale-95 transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}>
             <ArrowLeft size={18} /> Back to BiteSite
@@ -58,7 +60,7 @@ export function ElegantLayout({
 
       {/* Scroll Nav */}
       {navItems.length > 0 && (
-        <div className="sticky top-[53px] z-30 bg-slate-950/90 backdrop-blur border-b border-slate-800">
+        <div data-menu-sticky className="sticky top-[53px] z-30 bg-slate-950/90 backdrop-blur border-b border-slate-800">
           <div className="max-w-4xl mx-auto px-4 flex gap-1 overflow-x-auto no-scrollbar">
             {navItems.map((item) => (
               <button
@@ -105,12 +107,13 @@ export function ElegantLayout({
           <MenuViewTracker slug={merchant.slug} />
           <section id="menu-section" className="py-10 px-4 sm:px-6">
             <div className="max-w-4xl mx-auto space-y-10">
+              <MenuCategoryNav categories={categories} products={products} variant="elegant" />
               {categories.map((cat) => {
                 const catProducts = products.filter((p) => p.category_id === cat.id);
                 if (catProducts.length === 0) return null;
                 return (
-                  <div key={cat.id}>
-                    <h3 className="text-lg font-semibold text-amber-100 mb-4 pb-2 border-b border-slate-800">{cat.name}</h3>
+                  <div key={cat.id} id={menuCategoryId(cat.id)} className="scroll-mt-32">
+                    <h3 tabIndex={-1} className="text-lg font-semibold text-amber-100 mb-4 pb-2 border-b border-slate-800">{cat.name}</h3>
                     <div className="space-y-4">
                       {catProducts.map((product) => (
                         <div key={product.id} className="flex gap-4 p-4 bg-slate-900 rounded-xl border border-slate-800">
@@ -137,7 +140,7 @@ export function ElegantLayout({
                               )}
                             </div>
                             {product.description && (
-                              <p className="text-sm text-slate-500 mt-1 line-clamp-2">{product.description}</p>
+                              <DishDescription description={product.description} className="text-sm text-slate-500 mt-1 whitespace-pre-line break-words" />
                             )}
                             {!product.is_available && (
                               <span className="inline-block mt-1 text-xs font-medium text-red-400 bg-red-950/50 px-2 py-0.5 rounded">Currently Unavailable</span>
@@ -198,17 +201,17 @@ export function ElegantLayout({
                   </a>
                 )}
                 {merchant.website && (
-                  <a href={merchant.website} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent('website_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-3 text-slate-400 hover:text-slate-200 transition-colors">
+                  <a href={merchant.website} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent('website_click', { slug: merchant.slug, pageType: 'merchant' })} className="min-h-11 flex items-center gap-3 text-slate-400 hover:text-slate-200 transition-colors">
                     <Globe size={18} /><span className="text-sm">Website</span>
                   </a>
                 )}
                 {merchant.instagram && (
-                  <a href={merchant.instagram} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-slate-400 hover:text-slate-200 transition-colors">
+                  <a href={merchant.instagram} target="_blank" rel="noopener noreferrer" className="min-h-11 flex items-center gap-3 text-slate-400 hover:text-slate-200 transition-colors">
                     <Instagram size={18} /><span className="text-sm">Instagram</span>
                   </a>
                 )}
                 {merchant.facebook && (
-                  <a href={merchant.facebook} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-slate-400 hover:text-slate-200 transition-colors">
+                  <a href={merchant.facebook} target="_blank" rel="noopener noreferrer" className="min-h-11 flex items-center gap-3 text-slate-400 hover:text-slate-200 transition-colors">
                     <Facebook size={18} /><span className="text-sm">Facebook</span>
                   </a>
                 )}
@@ -223,7 +226,7 @@ export function ElegantLayout({
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => trackEvent('whatsapp_click', { slug: merchant.slug, pageType: 'merchant' })}
-                    className="flex items-center gap-3 text-green-400 hover:text-green-300 transition-colors"
+                    className="min-h-11 flex items-center gap-3 text-green-400 hover:text-green-300 transition-colors"
                   >
                     <MessageSquare size={18} /><span className="text-sm font-medium">WhatsApp</span>
                   </a>
@@ -266,7 +269,6 @@ export function ElegantLayout({
 
       <footer className="py-8 px-4 text-center border-t border-slate-800">
         <Link href="/" className="text-sm text-slate-500 hover:text-slate-300 transition-colors">{footerText || "Discover more restaurants on BiteSite"}</Link>
-        <Link href="/support-us" className="mt-2 block text-sm text-slate-400 underline hover:text-slate-200">Support us</Link>
         <Link href="/feedback" className="mt-1 block text-sm text-slate-400 underline hover:text-slate-200">Send feedback</Link>
       </footer>
     </div>

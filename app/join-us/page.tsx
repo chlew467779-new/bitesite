@@ -1,5 +1,6 @@
 /* bitesite/app/join-us/page.tsx */
 
+import { JOIN_US_FAQS } from "@/lib/join-us-faq";
 import type { Metadata } from "next";
 import { JoinUsHero } from "@/components/sections/join-us-hero";
 import { HowItWorks } from "@/components/sections/how-it-works";
@@ -58,56 +59,11 @@ export default async function JoinUsPage() {
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: [
-      {
-        "@type": "Question",
-        name: "Is it really free?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Yes. There is no setup fee, monthly fee, or commission for the BiteSite partner programme. Partners agree to keep their listing useful by sharing Stories regularly.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "What do partners need to contribute?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Partners should share useful restaurant updates regularly, such as new menus, launches, offers, events, behind-the-scenes moments, or founder stories. Original information and image rights remain important.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "Will BiteSite promote my Stories?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "BiteSite may reshare suitable Stories on our Facebook, Instagram, and other social channels. We will choose content that fits the channel and cannot guarantee that every Story will be reshared.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "Do I need to download an app?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "No. Customers simply open your BiteSite link. Partners can work with us through the web and WhatsApp.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "Can I update my listing?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Yes. Merchants can update approved listing details from the Merchant dashboard. Name, address, slug, and business status changes go through a review request.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "How do I join?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Create a merchant account, confirm your email, then make a private restaurant draft and submit it for review.",
-        },
-      },
-    ],
+    mainEntity: JOIN_US_FAQS.map(({ question, answer }) => ({
+      "@type": "Question",
+      name: question,
+      acceptedAnswer: { "@type": "Answer", text: answer },
+    })),
   };
 
   return (

@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState, useEffect, useLayoutEffect, useId, useRef } from "react";
 import { Clock, MapPin, Banknote, CreditCard, Smartphone, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -53,11 +53,40 @@ export function CategoryFilter({
   onNearbyChange,
 }: CategoryFilterProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const [headerOffset, setHeaderOffset] = useState(0);
+  const panelId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+  const expandRef = useRef<HTMLButtonElement>(null);
+  const collapseRef = useRef<HTMLButtonElement>(null);
+  const focusAfterToggle = useRef(false);
 
-  // Auto-collapse when scrolling down past 120px
+  // Move focus in the same commit as inert changes, before layout scrolling can collapse again.
+  useLayoutEffect(() => {
+    if (!focusAfterToggle.current) return;
+    focusAfterToggle.current = false;
+    (collapsed ? expandRef : collapseRef).current?.focus({ preventScroll: true });
+  }, [collapsed]);
+
+  // Keep the sticky filters below the shared header at mobile and desktop sizes.
+  useEffect(() => {
+    const header = document.querySelector("header");
+    if (!header) return;
+    const measure = () => {
+      const style = getComputedStyle(header);
+      setHeaderOffset(["sticky", "fixed"].includes(style.position)
+        ? Math.ceil(header.getBoundingClientRect().height + (parseFloat(style.top) || 0)) : 0);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(header);
+    return () => observer.disconnect();
+  }, []);
+
+  // Auto-collapse on scrolling, while keeping keyboard users inside an open panel.
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 120 && !collapsed) {
+        if (panelRef.current?.contains(document.activeElement)) return;
         setCollapsed(true);
       }
     };
@@ -66,8 +95,9 @@ export function CategoryFilter({
   }, [collapsed]);
 
   const toggleCollapsed = useCallback(() => {
-    setCollapsed((prev) => !prev);
-  }, []);
+    focusAfterToggle.current = true;
+    setCollapsed(!collapsed);
+  }, [collapsed]);
 
   const toggleCuisine = useCallback(
     (tag: string) => {
@@ -117,7 +147,7 @@ export function CategoryFilter({
   }, [onCuisineChange, onAreaChange, onMoreChange, onOpenNowChange, nearbyActive, onNearbyChange]);
 
   return (
-    <div className="sticky top-0 z-40 border-b border-[#DDE5DC] bg-[#FAFBF7]/95 backdrop-blur-sm px-4 py-3">
+    <div className="sticky top-0 z-40 border-b border-[#DDE5DC] bg-[#FAFBF7]/95 backdrop-blur-sm px-4 py-3" style={{ top: headerOffset }}>
       <div className="mx-auto max-w-6xl">
         {/* ===== COLLAPSED MODE ===== */}
         <div
@@ -125,12 +155,18 @@ export function CategoryFilter({
             "grid transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]",
             collapsed ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
           )}
+          inert={!collapsed}
+          aria-hidden={!collapsed}
           style={{ pointerEvents: collapsed ? "auto" : "none" }}
         >
           <div className="flex items-center gap-2 overflow-hidden">
             <button
+              type="button"
+              ref={expandRef}
+              aria-expanded={!collapsed}
+              aria-controls={panelId}
               onClick={toggleCollapsed}
-              className="flex items-center gap-1 rounded-full bg-[#5A8F6E]/10 px-3 py-1.5 text-xs font-medium text-[#5A8F6E] hover:bg-[#5A8F6E]/20 transition-all active:scale-95 shrink-0"
+              className="min-h-11 flex items-center gap-1 rounded-full bg-[#5A8F6E]/10 px-3 py-1.5 text-xs font-medium text-[#5A8F6E] hover:bg-[#5A8F6E]/20 transition-all active:scale-95 shrink-0"
               style={{ WebkitTapHighlightColor: "transparent" }}
             >
               <ChevronDown className={cn("h-3.5 w-3.5 transition-transform duration-300", collapsed && "rotate-180")} />
@@ -157,7 +193,7 @@ export function CategoryFilter({
             {filterCount > 0 && (
               <button
                 onClick={handleClearAll}
-                className="shrink-0 text-[10px] text-[#8A968B] hover:text-[#5A8F6E] transition-colors underline underline-offset-2"
+                className="min-h-11 shrink-0 text-[10px] text-[#8A968B] hover:text-[#5A8F6E] transition-colors underline underline-offset-2"
                 style={{ WebkitTapHighlightColor: "transparent" }}
               >
                 Clear
@@ -172,6 +208,10 @@ export function CategoryFilter({
             "grid transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]",
             collapsed ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100"
           )}
+          id={panelId}
+          ref={panelRef}
+          inert={collapsed}
+          aria-hidden={collapsed}
           style={{ pointerEvents: collapsed ? "none" : "auto" }}
         >
           <div className="space-y-3 overflow-hidden">
@@ -180,7 +220,7 @@ export function CategoryFilter({
               <button
                 onClick={() => onOpenNowChange(!openNow)}
                 className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-medium transition-all duration-300 active:scale-95 select-none",
+                  "min-h-11 inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-medium transition-all duration-300 active:scale-95 select-none",
                   openNow
                     ? "bg-green-500 text-white shadow-sm"
                     : "border border-[#DDE5DC] bg-white text-[#6B6560] hover:border-green-400 hover:text-green-600"
@@ -196,7 +236,7 @@ export function CategoryFilter({
                   key={tag}
                   onClick={() => toggleCuisine(tag)}
                   className={cn(
-                    "rounded-full px-4 py-2 text-xs font-medium uppercase tracking-wider transition-all duration-300 active:scale-95 select-none",
+                    "min-h-11 rounded-full px-4 py-2 text-xs font-medium uppercase tracking-wider transition-all duration-300 active:scale-95 select-none",
                     isCuisineActive(tag)
                       ? "bg-[#5A8F6E] text-white shadow-sm scale-100"
                       : "border border-[#DDE5DC] bg-white text-[#6B6560] hover:border-[#5A8F6E] hover:text-[#5A8F6E]"
@@ -212,7 +252,11 @@ export function CategoryFilter({
 
               <button
                 onClick={toggleCollapsed}
-                className="ml-auto flex items-center gap-1 text-[#8A968B] hover:text-[#5A8F6E] transition-all duration-300 p-1 active:scale-90"
+                className="min-h-11 min-w-11 justify-center ml-auto flex items-center gap-1 text-[#8A968B] hover:text-[#5A8F6E] transition-all duration-300 p-1 active:scale-90"
+                ref={collapseRef}
+                aria-label="Collapse filters"
+                aria-expanded={!collapsed}
+                aria-controls={panelId}
                 title="Collapse filters"
                 style={{ WebkitTapHighlightColor: "transparent" }}
               >
@@ -232,7 +276,7 @@ export function CategoryFilter({
                 <MapPin className="h-3 w-3" /> Area
               </span>
               <button type="button" disabled={nearbyLoading} aria-pressed={nearbyActive} onClick={() => onNearbyChange(!nearbyActive)}
-                className={cn("rounded-full px-3 py-1.5 text-xs font-medium transition-all disabled:opacity-50", nearbyActive ? "bg-[#2C3E2D] text-white" : "border border-[#DDE5DC] bg-white text-[#6B6560] hover:border-[#2C3E2D] hover:text-[#2C3E2D]") }>
+                className={cn("min-h-11 rounded-full px-3 py-1.5 text-xs font-medium transition-all disabled:opacity-50", nearbyActive ? "bg-[#2C3E2D] text-white" : "border border-[#DDE5DC] bg-white text-[#6B6560] hover:border-[#2C3E2D] hover:text-[#2C3E2D]") }>
                 <MapPin className="mr-1 inline h-3 w-3" />{nearbyLoading ? "Locating…" : "Nearby"}
               </button>
               {availableAreas.map((area, i) => (
@@ -240,7 +284,7 @@ export function CategoryFilter({
                   key={area}
                   onClick={() => onAreaChange(area === "All Areas" ? null : area)}
                   className={cn(
-                    "rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-300 active:scale-95 select-none",
+                    "min-h-11 rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-300 active:scale-95 select-none",
                     (area === "All Areas" && !activeArea) || activeArea === area
                       ? "bg-[#2C3E2D] text-white shadow-sm"
                       : "border border-[#DDE5DC] bg-white text-[#6B6560] hover:border-[#2C3E2D] hover:text-[#2C3E2D]"
@@ -271,7 +315,7 @@ export function CategoryFilter({
                     key={label}
                     onClick={() => toggleMore(label)}
                     className={cn(
-                      "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-300 active:scale-95 select-none",
+                      "min-h-11 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-300 active:scale-95 select-none",
                       isMoreActive(label)
                         ? "bg-[#5A8F6E] text-white shadow-sm"
                         : "border border-[#DDE5DC] bg-white text-[#6B6560] hover:border-[#5A8F6E] hover:text-[#5A8F6E]"
@@ -290,7 +334,7 @@ export function CategoryFilter({
               {filterCount > 0 && (
                 <button
                   onClick={handleClearAll}
-                  className="text-xs text-[#8A968B] underline underline-offset-2 active:text-[#5A8F6E] transition-colors ml-1 hover:text-[#5A8F6E]"
+                  className="min-h-11 text-xs text-[#8A968B] underline underline-offset-2 active:text-[#5A8F6E] transition-colors ml-1 hover:text-[#5A8F6E]"
                   style={{ WebkitTapHighlightColor: "transparent" }}
                 >
                   Clear All

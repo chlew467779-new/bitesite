@@ -41,13 +41,6 @@ export function Footer() {
               Merchant login
             </Link>
             <Link
-              href="/support-us"
-              className="transition-colors duration-200 active:text-[#5A8F6E]"
-              style={{ WebkitTapHighlightColor: "transparent" }}
-            >
-              Support us
-            </Link>
-            <Link
               href="/feedback"
               className="transition-colors duration-200 active:text-[#5A8F6E]"
               style={{ WebkitTapHighlightColor: "transparent" }}

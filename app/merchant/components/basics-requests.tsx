@@ -140,7 +140,7 @@ export function BasicsRequests({ merchantId, getHeaders, readOnly, register, are
             className={`${btn} mt-2 w-full border border-amber-800 sm:w-auto`}>Withdraw request</button>
         </div>
       )}
-      {rejected && <p className="text-sm text-red-700">Your last request was not approved: {rejected.reviewNote}</p>}
+      {rejected && <p className="whitespace-pre-line break-words text-sm text-red-700">Your last request was not approved: {rejected.reviewNote}</p>}
       {approved && !draft && <p className="text-sm text-emerald-800">Your last change was approved and is on your page. Refresh to see it above.</p>}
       {draft ? (
         <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); void submit(); }}>

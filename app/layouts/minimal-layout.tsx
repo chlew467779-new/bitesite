@@ -2,6 +2,8 @@
 
 "use client";
 
+import { DishDescription } from "@/components/sections/dish-description";
+import { MenuCategoryNav, menuCategoryId } from "@/components/sections/menu-category-nav";
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
 import { TierSections } from "@/app/components/sections/tier-sections";
@@ -27,8 +29,8 @@ export function MinimalLayout({
   const hasHours = Boolean(hours && Object.values(hours).some((value) => value?.trim()));
 
   return (
-    <div className="min-h-screen bg-stone-50 text-stone-800">
-      <div className="sticky top-0 z-40 bg-stone-50/80 backdrop-blur-md border-b border-stone-200">
+    <div data-restaurant-layout className="min-h-screen bg-stone-50 text-stone-800">
+      <div data-menu-sticky className="sticky top-0 z-40 bg-stone-50/80 backdrop-blur-md border-b border-stone-200">
         <div className="max-w-3xl mx-auto px-4 py-3">
           <Link href="/" className="inline-flex items-center gap-2 text-stone-600 text-sm active:scale-95 transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}>
             <ArrowLeft size={18} /> Back
@@ -64,18 +66,19 @@ export function MinimalLayout({
             <div className="max-w-3xl mx-auto">
               <h2 className="text-sm font-medium tracking-widest uppercase text-stone-500 mb-6">Menu</h2>
               <div className="space-y-8">
+                <MenuCategoryNav categories={categories} products={products} variant="minimal" />
                 {categories.map((cat) => {
                   const catProducts = products.filter((p) => p.category_id === cat.id);
                   if (catProducts.length === 0) return null;
                   return (
-                    <div key={cat.id}>
-                      <h3 className="text-sm font-semibold text-stone-800 mb-4 border-b border-stone-200 pb-2">{cat.name}</h3>
+                    <div key={cat.id} id={menuCategoryId(cat.id)} className="scroll-mt-32">
+                      <h3 tabIndex={-1} className="text-sm font-semibold text-stone-800 mb-4 border-b border-stone-200 pb-2">{cat.name}</h3>
                       <div className="space-y-4">
                         {catProducts.map((product) => (
                           <div key={product.id} className="flex justify-between items-baseline gap-4 py-2">
                             <div className="flex-1">
                               <span className="text-stone-800">{product.name}</span>
-                              {product.description && <p className="text-xs text-stone-500 mt-0.5">{product.description}</p>}
+                              {product.description && <DishDescription description={product.description} clamp={false} className="text-xs text-stone-500 mt-0.5 whitespace-pre-line break-words" />}
                               {!product.is_available && <span className="text-xs text-red-500 mt-0.5 block">Unavailable</span>}
                             </div>
                             {hasDisplayablePrice(product) && (
@@ -118,9 +121,9 @@ export function MinimalLayout({
               <div className="mt-6 space-y-3 text-sm">
                 {merchant.address && <a href={`https://maps.google.com/?q=${encodeURIComponent(merchant.address)}`} onClick={() => trackEvent('directions_click', { slug: merchant.slug, pageType: 'merchant' })} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-stone-600"><MapPin size={16} />{merchant.address}</a>}
                 {merchant.phone && <a href={`tel:+${phoneLinkDigits(merchant.phone)}`} onClick={() => trackEvent('phone_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-2 text-stone-600"><Phone size={16} />{formatPhone(merchant.phone)}</a>}
-                {merchant.website && <a href={merchant.website} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent('website_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-2 text-stone-600"><Globe size={16} />Website</a>}
-                {merchant.instagram && <a href={merchant.instagram} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-stone-600"><Instagram size={16} />Instagram</a>}
-                {merchant.facebook && <a href={merchant.facebook} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-stone-600"><Facebook size={16} />Facebook</a>}
+                {merchant.website && <a href={merchant.website} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent('website_click', { slug: merchant.slug, pageType: 'merchant' })} className="min-h-11 flex items-center gap-2 text-stone-600"><Globe size={16} />Website</a>}
+                {merchant.instagram && <a href={merchant.instagram} target="_blank" rel="noopener noreferrer" className="min-h-11 flex items-center gap-2 text-stone-600"><Instagram size={16} />Instagram</a>}
+                {merchant.facebook && <a href={merchant.facebook} target="_blank" rel="noopener noreferrer" className="min-h-11 flex items-center gap-2 text-stone-600"><Facebook size={16} />Facebook</a>}
                 {merchant.email && <a href={`mailto:${merchant.email}`} onClick={() => trackEvent('email_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-2 text-stone-600"><Mail size={16} />{merchant.email}</a>}
                 {merchant.whatsapp && (
                   <a
@@ -128,7 +131,7 @@ export function MinimalLayout({
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => trackEvent('whatsapp_click', { slug: merchant.slug, pageType: 'merchant' })}
-                    className="flex items-center gap-2 text-green-600"
+                    className="min-h-11 flex items-center gap-2 text-green-600"
                   >
                     <MessageSquare size={16} />WhatsApp
                   </a>
@@ -171,7 +174,6 @@ export function MinimalLayout({
 
       <footer className="py-6 px-4 text-center border-t border-stone-200">
         <Link href="/" className="text-xs text-stone-400 hover:text-stone-600 transition-colors">{footerText || "Discover more on BiteSite"}</Link>
-        <Link href="/support-us" className="mt-2 block text-xs text-stone-500 underline hover:text-stone-700">Support us</Link>
         <Link href="/feedback" className="mt-1 block text-xs text-stone-500 underline hover:text-stone-700">Send feedback</Link>
       </footer>
     </div>

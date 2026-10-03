@@ -21,4 +21,18 @@ assert.equal(phoneLinkDigits(""), null, "no link without a number");
 assert.equal(formatPhone("+60165660239"), "+60 165660239", "display");
 assert.equal(formatPhone(null), "", "display empty");
 
+assert.equal(joinPhone("60", "60165660239"), "+60165660239", "full MY number without plus");
+assert.equal(joinPhone("60", "+60 16-566 0239"), "+60165660239", "pasted MY number");
+assert.equal(joinPhone("60", "601123456789"), "+601123456789", "long MY mobile");
+assert.equal(joinPhone("65", "6581234567"), "+6581234567", "full SG number without plus");
+assert.equal(joinPhone("65", "+65 8123 4567"), "+6581234567", "pasted SG number");
+assert.equal(joinPhone("65", "06581234567"), "+6581234567", "leading zero with SG code");
+assert.equal(joinPhone("65", "65001234"), "+6565001234", "SG local landline starting with 65 is preserved");
+assert.equal(joinPhone("60", "601234567"), "+60601234567", "local length is not mistaken for a country prefix");
+assert.equal(joinPhone("60", "06-123 4567"), "+6061234567", "MY landline is preserved");
+for (const number of ["+60165660239", "+601123456789", "+6581234567", "+6565001234", "+6061234567"]) {
+  const parts = splitPhone(number);
+  assert.equal(joinPhone(parts.country, parts.local), number, `round trip: ${number}`);
+}
+
 console.log("phone checks passed");
