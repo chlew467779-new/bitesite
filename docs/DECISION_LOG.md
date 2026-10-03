@@ -245,8 +245,8 @@ A new feature idea must not silently become a decision. Add it here only after C
 - Public page: "Good to know" / "Great for" chips under payment methods in all 7 layouts (shared `ListingTags`, each layout passes its own chip classes).
 - Migration 20261003140000 only flips the two registry rows to Owner-writable. Deploy order: SQL first, then the app.
 
-## SYNC-069  Owners choose their page style and sections (issue #11 option C, DECIDED by CH 2026-09-30; built 2026-10-03)
+## SYNC-069 — Owners choose their page style and sections (issue #11 option C, DECIDED by CH 2026-09-30; built 2026-10-03)
 
-- Dashboard : Page style: one of the production layouts (now Classic, Elegant, Minimal, Modern, Rustic; Chinese and Malay join when signed off) and switches for big cover photo, About, Contact & map, Photo gallery, Book a Table and Featured dishes. No review; the page changes at once. Defaults behave as in Admin (back to the default = unset).
+- Dashboard › Page style: one of the production layouts (now Classic, Elegant, Minimal, Modern, Rustic; Chinese and Malay join when signed off) and switches for big cover photo, About, Contact & map, Photo gallery, Book a Table and Featured dishes. No review; the page changes at once. Defaults behave as in Admin (back to the default = unset).
 - Events stays hidden (CH 09-30); menu and reviews stay protected.
 - Migration 20261003150000: registry rows Owner-writable + the snapshot read shows Owners only the switches they may write. Deploy order: amenities SQL, then this SQL, then the app.
