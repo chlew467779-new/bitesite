@@ -109,15 +109,15 @@ export default function BasicsReviewQueue({ searchQuery = '' }: { searchQuery?: 
             {rows(item).map((row) => (
               <div key={row.label}>
                 <dt className="font-medium">{row.label}</dt>
-                <dd className="break-words"><span className="text-[#6B6560]">Now: </span>{row.now}</dd>
-                <dd className="break-words"><span className="text-[#6B6560]">Requested: </span><strong>{row.requested}</strong></dd>
+                <dd className="whitespace-pre-line break-words"><span className="text-[#6B6560]">Now: </span>{row.now}</dd>
+                <dd className="whitespace-pre-line break-words"><span className="text-[#6B6560]">Requested: </span><strong>{row.requested}</strong></dd>
               </div>
             ))}
           </dl>
           {item.changedSinceRequest && <p className="mt-2 text-xs text-amber-800">These details changed after this request was sent, so approving will be refused.</p>}
           <label className="mt-3 block text-sm">Note for the restaurant (needed to reject)
             <textarea rows={2} maxLength={500} value={notes[item.id] ?? ''} onChange={(event) => setNotes((n) => ({ ...n, [item.id]: event.target.value }))}
-              className="mt-1 block w-full rounded-lg border border-[#C9D6C7] px-3 py-2 text-sm" />
+              className="whitespace-pre-line break-words mt-1 block w-full rounded-lg border border-[#C9D6C7] px-3 py-2 text-sm" />
           </label>
           <div className="mt-3 flex flex-wrap gap-2">
             <button type="button" disabled={working !== null} onClick={() => void decide(item, 'approve')} className="inline-flex min-h-10 items-center gap-1 rounded-lg bg-[#2C3E2D] px-4 text-sm font-medium text-white disabled:opacity-50"><Check className="h-4 w-4" /> Approve</button>
