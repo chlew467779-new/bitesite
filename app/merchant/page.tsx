@@ -546,7 +546,8 @@ export default function MerchantDashboardPage() {
     { label: 'Short description', complete: hasText('profile.description'), anchor: 'about' },
     { label: 'A way to contact you', complete: hasText('profile.phone') || hasText('profile.whatsapp') || hasText('profile.email'), anchor: 'contact' },
     { label: 'Cover photo or logo', complete: Boolean(profile.cover_image || profile.logo_image), anchor: 'photos' },
-    { label: 'Menu link', complete: hasText('profile.menu_pdf_url'), anchor: 'menu' },
+    // A dish in the menu editor or a menu link (Contact & links) both give visitors a menu.
+    { label: 'Menu', complete: Boolean(listing?.checks.dish) || hasText('profile.menu_pdf_url'), anchor: 'menu' },
     { label: 'Opening hours', complete: WEEK_DAYS.some((day) => confirmed[`hours.${DAY_CODES[day]}`]?.exists), anchor: 'hours' },
   ];
   const completed = checklist.filter((item) => item.complete).length;
