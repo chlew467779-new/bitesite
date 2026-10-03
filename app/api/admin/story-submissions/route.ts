@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
   if (status && !validEnum(status, statuses)) return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
   if (merchantId !== null && !UUID_PATTERN.test(merchantId)) return NextResponse.json({ error: 'Invalid merchant_id' }, { status: 400 });
 
-  let query = supabase.from('story_submissions').select('*, merchant:merchants(name, slug)').order('created_at', { ascending: false });
+  let query = supabase.from('story_submissions').select('*, merchant:merchants(name, slug), article:articles(slug, published, editorial_status)').order('created_at', { ascending: false });
   if (status) query = query.eq('status', status);
   if (merchantSlug) query = query.eq('merchant_slug', merchantSlug);
   if (merchantId) query = query.eq('merchant_id', merchantId);
