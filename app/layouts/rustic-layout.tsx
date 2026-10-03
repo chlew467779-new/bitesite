@@ -2,6 +2,7 @@
 
 "use client";
 
+import { DishDescription } from "@/components/sections/dish-description";
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
 import { TierSections } from "@/app/components/sections/tier-sections";
@@ -97,7 +98,7 @@ export function RusticLayout({
                                   </span>
                                 )}
                               </div>
-                              {product.description && <p className="text-xs text-orange-800/60 mt-1 line-clamp-2 whitespace-pre-line break-words">{product.description}</p>}
+                              {product.description && <DishDescription description={product.description} className="text-xs text-orange-800/60 mt-1 whitespace-pre-line break-words" />}
                               {!product.is_available && <span className="inline-block mt-1 text-xs text-red-500">Unavailable</span>}
                             </div>
                           </div>

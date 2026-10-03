@@ -2,6 +2,7 @@
 
 "use client";
 
+import { DishDescription } from "@/components/sections/dish-description";
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
 import { TierSections } from "@/app/components/sections/tier-sections";
@@ -137,7 +138,7 @@ export function ElegantLayout({
                               )}
                             </div>
                             {product.description && (
-                              <p className="text-sm text-slate-500 mt-1 line-clamp-2 whitespace-pre-line break-words">{product.description}</p>
+                              <DishDescription description={product.description} className="text-sm text-slate-500 mt-1 whitespace-pre-line break-words" />
                             )}
                             {!product.is_available && (
                               <span className="inline-block mt-1 text-xs font-medium text-red-400 bg-red-950/50 px-2 py-0.5 rounded">Currently Unavailable</span>

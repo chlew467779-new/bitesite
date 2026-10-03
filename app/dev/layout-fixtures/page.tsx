@@ -64,7 +64,7 @@ export default async function LayoutFixturesPage({ searchParams }: PageProps) {
 
   const LayoutComponent = layouts[layoutKey];
   const merchant = buildMerchant(layoutKey, image, sections, name);
-  const products = buildProducts(price, dish, image);
+  const products = buildProducts(price, dish, image, name);
   const events = buildEvents(sections, image);
 
   const href = (next: Record<string, string>) => {

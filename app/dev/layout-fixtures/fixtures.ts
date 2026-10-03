@@ -42,7 +42,7 @@ export const FIXTURE_CATEGORIES: Category[] = [
   { id: "cat-drinks", merchant_id: "fixture-merchant", name: "Drinks", sort_order: 2, created_at: "2026-01-01T00:00:00Z" },
 ];
 
-export function buildProducts(price: PriceState, dish: DishState, image: ImageState): Product[] {
+export function buildProducts(price: PriceState, dish: DishState, image: ImageState, name: NameState = "default"): Product[] {
   const imageUrl = image === "with" ? FIXTURE_IMAGE : null;
   const base = {
     merchant_id: "fixture-merchant",
@@ -60,7 +60,9 @@ export function buildProducts(price: PriceState, dish: DishState, image: ImageSt
       id: "dish-1",
       category_id: "cat-mains",
       name: "Nasi Lemak Ayam Berempah",
-      description: "Coconut rice, spiced fried chicken, sambal, egg, peanuts.",
+      description: name === "long"
+        ? "Coconut rice, spiced fried chicken, sambal, egg, peanuts.\nSecond line: served with cucumber, roasted nuts and our homemade sauce.\n第三行：这是一段较长的示例菜品说明，包含中文和 English，以检查完整展开和换行。\nFinal line: ask the restaurant about ingredients before ordering."
+        : "Coconut rice, spiced fried chicken, sambal, egg, peanuts.",
       price: 12.9,
       discount_price: price === "discount" ? 9.9 : null,
       sort_order: 1,
@@ -164,7 +166,7 @@ export function buildMerchant(
     email: "fixture@example.com",
     website: "https://example.com",
     instagram: "https://example.com",
-    facebook: null,
+    facebook: "https://example.com",
     cover_image: image === "with" ? FIXTURE_IMAGE : null,
     logo_image: null,
     operating_hours: {

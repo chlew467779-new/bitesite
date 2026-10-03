@@ -3,6 +3,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { DishDescription } from "@/components/sections/dish-description";
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
 import { TierSections } from "@/app/components/sections/tier-sections";
@@ -142,7 +143,7 @@ export function MalayLayout({
                                   </span>
                                 )}
                               </div>
-                              {product.description && <p className="text-sm text-stone-600 mt-1 line-clamp-2 break-words whitespace-pre-line break-words">{product.description}</p>}
+                              {product.description && <DishDescription description={product.description} className="text-sm text-stone-600 mt-1 break-words whitespace-pre-line break-words" />}
                               {!product.is_available && (
                                 <span className="inline-block mt-1.5 text-xs font-medium text-stone-700 bg-stone-100 border border-stone-300 px-2 py-0.5 rounded">
                                   Currently Unavailable

@@ -2,6 +2,7 @@
 
 "use client";
 
+import { DishDescription } from "@/components/sections/dish-description";
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
 import { TierSections } from "@/app/components/sections/tier-sections";
@@ -92,7 +93,7 @@ export function ModernLayout({
                                 </span>
                               )}
                             </div>
-                            {product.description && <p className="text-sm text-slate-500 mt-1 whitespace-pre-line break-words">{product.description}</p>}
+                            {product.description && <DishDescription description={product.description} clamp={false} className="text-sm text-slate-500 mt-1 whitespace-pre-line break-words" />}
                             {!product.is_available && <span className="text-xs text-red-500 mt-1 block">Currently Unavailable</span>}
                           </div>
                         ))}
