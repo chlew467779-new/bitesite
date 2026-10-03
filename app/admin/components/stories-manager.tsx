@@ -74,7 +74,7 @@ export default function StoriesManager({ onEdit, onNew }: StoriesManagerProps) {
     if (!confirm('Are you sure? This cannot be undone.')) return;
     setDeleting(slug);
     try {
-      const res = await fetch(`/api/admin/stories?slug=${slug}`, {
+      const res = await fetch(`/api/admin/stories?slug=${encodeURIComponent(slug)}`, {
         method: 'DELETE',
         headers: { 'x-admin-token': token || '' },
       });
