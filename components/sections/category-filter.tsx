@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useCallback, useState, useEffect, useId, useRef } from "react";
+import { useCallback, useState, useEffect, useLayoutEffect, useId, useRef } from "react";
 import { Clock, MapPin, Banknote, CreditCard, Smartphone, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -53,18 +53,41 @@ export function CategoryFilter({
   onNearbyChange,
 }: CategoryFilterProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const [headerOffset, setHeaderOffset] = useState(0);
   const panelId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const expandRef = useRef<HTMLButtonElement>(null);
   const collapseRef = useRef<HTMLButtonElement>(null);
+  const focusAfterToggle = useRef(false);
 
-  // Auto-collapse when scrolling down past 120px
+  // Move focus in the same commit as inert changes, before layout scrolling can collapse again.
+  useLayoutEffect(() => {
+    if (!focusAfterToggle.current) return;
+    focusAfterToggle.current = false;
+    (collapsed ? expandRef : collapseRef).current?.focus({ preventScroll: true });
+  }, [collapsed]);
+
+  // Keep the sticky filters below the shared header at mobile and desktop sizes.
+  useEffect(() => {
+    const header = document.querySelector("header");
+    if (!header) return;
+    const measure = () => {
+      const style = getComputedStyle(header);
+      setHeaderOffset(["sticky", "fixed"].includes(style.position)
+        ? Math.ceil(header.getBoundingClientRect().height + (parseFloat(style.top) || 0)) : 0);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(header);
+    return () => observer.disconnect();
+  }, []);
+
+  // Auto-collapse on scrolling, while keeping keyboard users inside an open panel.
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 120 && !collapsed) {
-        const restoreFocus = panelRef.current?.contains(document.activeElement);
+        if (panelRef.current?.contains(document.activeElement)) return;
         setCollapsed(true);
-        if (restoreFocus) requestAnimationFrame(() => expandRef.current?.focus());
       }
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -72,8 +95,8 @@ export function CategoryFilter({
   }, [collapsed]);
 
   const toggleCollapsed = useCallback(() => {
+    focusAfterToggle.current = true;
     setCollapsed(!collapsed);
-    requestAnimationFrame(() => (collapsed ? collapseRef : expandRef).current?.focus());
   }, [collapsed]);
 
   const toggleCuisine = useCallback(
@@ -124,7 +147,7 @@ export function CategoryFilter({
   }, [onCuisineChange, onAreaChange, onMoreChange, onOpenNowChange, nearbyActive, onNearbyChange]);
 
   return (
-    <div className="sticky top-0 z-40 border-b border-[#DDE5DC] bg-[#FAFBF7]/95 backdrop-blur-sm px-4 py-3">
+    <div className="sticky top-0 z-40 border-b border-[#DDE5DC] bg-[#FAFBF7]/95 backdrop-blur-sm px-4 py-3" style={{ top: headerOffset }}>
       <div className="mx-auto max-w-6xl">
         {/* ===== COLLAPSED MODE ===== */}
         <div
