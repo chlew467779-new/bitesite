@@ -75,6 +75,7 @@ export default function TodayPanel({ onOpenTab, onOpenMerchant }: { onOpenTab: (
   const waiting = QUEUES.map((q) => ({ ...q, count: attention?.[q.key] ?? 0 }));
   const busyQueues = waiting.filter((q) => q.count > 0);
   const failedEmails = attention?.notifications?.failed ?? 0;
+  const siteErrors = attention?.['site-errors'] ?? 0;
   const ideas = attention?.ideas;
   const ideaAge = daysWaiting(ideas?.oldestAt);
   const issueCounts = useMemo(() => {
@@ -102,10 +103,17 @@ export default function TodayPanel({ onOpenTab, onOpenMerchant }: { onOpenTab: (
       {/* Waiting for you */}
       <section aria-labelledby="today-waiting" className="rounded-xl border border-slate-800 bg-slate-900 p-5">
         <h2 id="today-waiting" className="text-base font-semibold text-white">Waiting for you</h2>
-        {attention && busyQueues.length === 0 && failedEmails === 0 ? (
+        {attention && busyQueues.length === 0 && failedEmails === 0 && siteErrors === 0 ? (
           <p className="mt-3 flex items-center gap-2 text-sm text-emerald-300"><CheckCircle2 className="h-5 w-5" /> Nothing is waiting. All clear.</p>
         ) : (
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {siteErrors > 0 && (
+              <button type="button" onClick={() => onOpenTab('site-errors')} className="rounded-lg border border-red-500/30 bg-red-500/5 p-4 text-left transition-colors hover:bg-red-500/10">
+                <p className="text-3xl font-semibold tabular-nums text-red-300">{siteErrors}</p>
+                <p className="mt-1 text-sm font-medium text-white">Site errors</p>
+                <p className="text-xs text-slate-400">Something broke on the website; copy it for the developer</p>
+              </button>
+            )}
             {busyQueues.map((q) => (
               <button key={q.key} type="button" onClick={() => onOpenTab(q.tab)} className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 text-left transition-colors hover:bg-amber-500/10">
                 <p className="text-3xl font-semibold tabular-nums text-amber-300">{q.count}</p>

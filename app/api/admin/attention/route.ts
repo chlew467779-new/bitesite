@@ -4,7 +4,7 @@
  * What needs the Admin team now (sidebar badges and the Today page): restaurants waiting for review,
  * link and name/address/cuisine requests, visitor reports, feedback that reports a problem, Story
  * submissions waiting for review, and notification emails waiting to be sent or given up after
- * five attempts. Counts only.
+ * five attempts, and kinds of site error not yet resolved (SYNC-070). Counts only.
  *
  * Feedback is split (CH 2026-09-29): problems (merchant "problem"/"listing", visitor "problem") are
  * handled as they come in and count toward the Feedback badge; ideas and design comments are
@@ -54,6 +54,9 @@ export async function GET(request: NextRequest) {
     : { problems: siteProblems.count ?? 0, ideas: siteIdeas.count ?? 0, oldest: firstDate(siteIdeaOldest.data) };
   // Restaurants that sent menu photos (0 before the menu-photos bucket exists).
   const menuPhotos = await menuPhotoQueue();
+  // Kinds of site error not yet marked resolved (0 before the site_errors table exists).
+  const siteErrors = await count('site_errors').eq('status', 'new');
+  if (siteErrors.error && siteErrors.error.code !== '42P01' && siteErrors.error.code !== 'PGRST205') console.error('admin attention: site errors count unavailable:', siteErrors.error.message);
   const ideaDates = [firstDate(merchantIdeaOldest.data), site.oldest].filter((d): d is string => Boolean(d)).sort();
 
   return NextResponse.json({
@@ -64,6 +67,7 @@ export async function GET(request: NextRequest) {
       feedback: (merchantProblems.count ?? 0) + site.problems,
       'story-submissions': stories.count ?? 0,
       'menu-photos': menuPhotos.ok ? menuPhotos.value.length : 0,
+      'site-errors': siteErrors.error ? 0 : siteErrors.count ?? 0,
       notifications: { pending: notifyPending.count ?? 0, failed: notifyFailed.count ?? 0 },
       ideas: { count: (merchantIdeas.count ?? 0) + site.ideas, oldestAt: ideaDates[0] ?? null },
     },
