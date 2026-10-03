@@ -1,6 +1,6 @@
 # supabase/
 
-Only the SECURITY LOCKDOWN work lives here for now (branch `fix/security-lockdown`).
+Database migrations, grants/RLS, RPCs, storage definitions and their tests/rollback scripts live here. The staging baseline is a historical pre-lockdown fixture, not the current schema; inspect file headers and the target database before any separately authorized execution.
 
 | Path | What | Where it may run |
 |---|---|---|
@@ -10,19 +10,19 @@ Only the SECURITY LOCKDOWN work lives here for now (branch `fix/security-lockdow
 | `tests/lockdown_assertions.sql` | Read-only catalog checks | Staging **and** production (after the migration) |
 | `tests/lockdown_behavior_tests.sql` | Switches to anon/authenticated/service_role and tries to read/write; rolled back at the end | **Staging only** |
 | `tests/analytics_aggregation_idempotence.sql` | Confirms rerunning the hourly analytics aggregate does not add rows or double-count buckets, including buckets with NULL key columns (fails before 20260926121244) | **Staging only** |
-| `rollback/…STAGING_ONLY.sql` | Re-opens anonymous write access (guarded by a "NO → yes" switch) | Staging; production only as an approved emergency |
+| `rollback/20260919000100_security_lockdown.rollback.STAGING_ONLY.sql` | Re-opens anonymous write access (guarded by a "NO → yes" switch) | Staging; production only as an approved emergency |
 | `migrations/20260926093811_merchant_state_foundation.sql` | D1a: canonical merchant state, shared public predicate, audit log, one active owner, private view counts. One transaction, self-checking; existing rows stay `legacy`. Converting a merchant to `managed` is possible only through `private.convert_merchant_to_managed(merchant_id, expected_revision, review_status, listing_visibility, platform_restriction, business_status, actor_id, reason)`, run as the database owner, one merchant per call, after CH approves that merchant’s mapping | Local → staging → production, each after review/approval |
 | `tests/d1a_state_assertions.sql` | Read-only catalog checks for D1a | Local, staging **and** production (after the migration) |
 | `tests/d1a_state_behavior_tests.sql` | Role-switching tests for D1a (synthetic `zz-d1a-*` rows, rolled back) | Local / staging only |
-| `rollback/20260926093811_…STAGING_ONLY.sql` | Undoes D1a; re-opens AUD-04 and public view counts; refuses while managed merchants exist | Staging; production only as an approved emergency |
+| `rollback/20260926093811_merchant_state_foundation.rollback.STAGING_ONLY.sql` | Undoes D1a; re-opens AUD-04 and public view counts; refuses while managed merchants exist | Staging; production only as an approved emergency |
 | `migrations/20260926101050_merchant_public_projection.sql` | D1b: anon/authenticated may read only the public `merchants` columns; child-table policies use `private.merchant_id_is_public(merchant_id)`. **Deploy the D1b application code first**: after this migration any public `select("*")` or `is_published` filter on merchants fails | Local → staging → production, each after review/approval |
 | `tests/d1b_projection_assertions.sql` | Read-only catalog checks for D1b (exact column list, predicate function, child policies) | Local, staging **and** production (after the migration) |
 | `tests/d1b_projection_behavior_tests.sql` | Role-switching tests for D1b (synthetic `zz-d1b-*` rows, rolled back) | Local / staging only |
-| `rollback/20260926101050_…STAGING_ONLY.sql` | Undoes D1b; every merchants column becomes publicly readable again. The D1b code keeps working | Staging; production only as an approved emergency |
+| `rollback/20260926101050_merchant_public_projection.rollback.STAGING_ONLY.sql` | Undoes D1b; every merchants column becomes publicly readable again. The D1b code keeps working | Staging; production only as an approved emergency |
 | `migrations/20260926121244_analytics_daily_views_nulls_not_distinct.sql` | OQ-AnalyticsNulls: the `merchant_daily_views` bucket key becomes `UNIQUE NULLS NOT DISTINCT`, so the hourly aggregate updates buckets with NULL key columns instead of adding a row each run. Keeps the most recent row per duplicated bucket and moves the older ones to `private.merchant_daily_views_nulls_dedupe_archive`. **Changes stored analytics data**: needs CH approval per environment | Local → staging → production, each after CH approval |
 | `operations/analytics_nulls_impact.READ_ONLY.sql` | One read-only SELECT: duplicated buckets, rows the migration would archive, reported vs corrected counts. Run before the migration | Any environment CH has approved reading |
 | `tests/analytics_nulls_assertions.sql` | Read-only checks for the new bucket key, no duplicate buckets, archive locked down | Local, staging **and** production (after the migration) |
-| `rollback/20260926121244_…STAGING_ONLY.sql` | Restores the old NULLS DISTINCT key (re-opens the double counting); archived rows stay in the archive | Staging; production only as an approved emergency |
+| `rollback/20260926121244_analytics_daily_views_nulls_not_distinct.rollback.STAGING_ONLY.sql` | Restores the old NULLS DISTINCT key (re-opens the double counting); archived rows stay in the archive | Staging; production only as an approved emergency |
 | `migrations/20260926131040_article_public_projection.sql` | D1c: anon/authenticated may read only the public `articles` columns; a Story is public only when `published` and `editorial_status = 'published'` (`private.article_is_public`). Lists, as a NOTICE, any Story this hides. **Deploy the D1c application code first** | Local → staging → production, each after review/approval |
 | `tests/d1c_projection_assertions.sql` | Read-only catalog checks for D1c | Local, staging **and** production (after the migration) |
 | `tests/d1c_projection_behavior_tests.sql` | Role-switching tests for D1c (synthetic `zz-d1c-*` rows, rolled back) | Local / staging only |
@@ -102,8 +102,27 @@ Only the SECURITY LOCKDOWN work lives here for now (branch `fix/security-lockdow
 | `tests/site_errors_behavior_tests.sql` | Grouping, reopen, cleanup, hourly cap, validation, no anon/authenticated access; wrap in begin/rollback | Local / staging |
 | `rollback/20261003160000_site_errors.rollback.STAGING_ONLY.sql` | Guarded; drops the table and function (the app copes without them) | Staging only |
 | `scripts/test-d2b-cutover-local.mjs` | D2-B write cutover over HTTP: retired Merchant/Admin whole-form saves and hard DELETE refuse (410) and change nothing, no GrabFood write, hidden-draft create accepts only name/slug, profile image upload tickets refused (Story/menu uploads open), B0 Admin paths work | Local only (needs a local Next server) |
-| `rollback/20260926131040_…STAGING_ONLY.sql` | Undoes D1c; every articles column and the old `published`-only rule come back. The D1c code keeps working | Staging; production only as an approved emergency |
+| `rollback/20260926131040_article_public_projection.rollback.STAGING_ONLY.sql` | Undoes D1c; every articles column and the old `published`-only rule come back. The D1c code keeps working | Staging; production only as an approved emergency |
 | `tests/homepage_query_indexes_assertions.sql` | Read-only deployment check for the public directory merchant/product indexes; restored from f099623 | Local / staging / hosted (read-only) |
+| `rollback/20260921000100_add_merchant_discovery_tags.rollback.SCHEMA_ONLY.sql` | Drops only the additive cuisine/amenities/occasion columns and indexes; refuses if replacement tag data exists; preserves legacy tags | Local / staging; hosted only as a separately approved schema rollback |
+| `rollback/20260927090355_merchant_password_onboarding.rollback.LOCAL_OR_STAGING.sql` | Removes onboarding/cooldown RPCs, counters and retry records; retains accounts and restaurants; remove application usage first | Local / staging only |
+| `rollback/20260930100000_visitor_privacy_performance.rollback.STAGING_ONLY.sql` | Guarded; drops performance RPC and privacy constraints after application rollback; already-hashed IPs cannot be restored | Staging only |
+| `rollback/20260930120000_pilot_intake_mode.rollback.STAGING_ONLY.sql` | Guarded; restores the two-number pilot model; re-apply the listed listing/review RPC versions and then roll back the app; paused remains closed | Staging only |
+| `rollback/20260930130000_menu_import.rollback.STAGING_ONLY.sql` | Guarded; drops the menu import RPC after application rollback; ordinary imported dishes remain | Staging only |
+| `tests/areas_behavior_tests.sql` | Synthetic checks for canonical area aliases, public visibility and area request validation; wrap the caller in BEGIN / ROLLBACK | Local / staging only |
+| `tests/media_storage_assertions.sql` | Read-only checks that merchant-media/story-media are public with 5 MB JPEG/PNG/WebP limits after 20260920000900 | Local / staging / hosted (read-only) |
+| `tests/menu_import_behavior_tests.sql` | Synthetic Admin menu-import validation, ownership, atomicity and rollback behavior after 20260930130000; transaction rolled back | Local / staging only |
+| `tests/merchant_discovery_tags_assertions.sql` | Read-only discovery-array column, index and RLS/grant checks | Local / staging / hosted (read-only) |
+| `tests/merchant_external_links_assertions.sql` | Read-only external-link schema, RLS and public/service-role grant checks after the M1 migration | Local / staging / hosted (read-only) |
+| `tests/merchant_password_onboarding.sql` | Synthetic password cooldown, confirmed-user onboarding, ownership, replay and forced rollback checks; fixtures rolled back | Local only |
+| `tests/merchant_profile_change_requests_assertions.sql` | Read-only profile-change-request table, RLS, role grants and status checks; retained legacy interface | Local / staging / hosted (read-only) |
+| `tests/page_views_retention_assertions.sql` | Read-only cron/aggregate-before-delete and 90-day retention catalog checks after 20260920001000 | Local / staging / hosted (read-only) |
+| `tests/partner_count_behavior_tests.sql` | Synthetic partner-count visibility checks after its migration; fixtures and setting changes rolled back | Local / staging only |
+| `tests/payment_methods_behavior_tests.sql` | Synthetic payment-field validation, field save and visibility checks after 20260929120000; wrap the caller in BEGIN / ROLLBACK | Local / staging only |
+| `tests/performance_summary_behavior_tests.sql` | Synthetic Performance totals/unique visitors/MYT date and privacy checks after 20260930100000; transaction rolled back | Local / staging only |
+| `tests/site_announcements_behavior_tests.sql` | Synthetic active/scheduled/expired homepage popup and role checks; wrap the caller in BEGIN / ROLLBACK | Local / staging only |
+| `tests/site_feedback_behavior_tests.sql` | Synthetic visitor-feedback validation, privacy, deduplication and Admin handling; wrap the caller in BEGIN / ROLLBACK | Local / staging only |
+| `tests/story_query_indexes_assertions.sql` | Read-only deployment check for public Story created-at and slug indexes | Local / staging / hosted (read-only) |
 
 **Local database (Docker)**: create a throw-away Supabase project outside the repo (`supabase init` in a temp folder), put `create extension pg_cron;`, `staging/00_baseline_schema.sql`, `staging/10_synthetic_seed.sql` and then every file in `migrations/` into its `supabase/migrations/` in that order, run `supabase start`, and pipe each `tests/*.sql` into `docker exec -i supabase_db_<project> psql -U postgres -d postgres -v ON_ERROR_STOP=1`. Nothing in that flow touches staging or production.
 
