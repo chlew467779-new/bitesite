@@ -233,15 +233,15 @@ A new feature idea must not silently become a decision. Add it here only after C
 - Reports only reach the new Admin "Visitor Reports" inbox (badge counts new ones); **nothing changes automatically** — a report is a hint, not a fact. Admin checks, fixes the page with the existing tools (or hides a Story in Stories Editor when the risk is material), and marks it resolved or dismissed with a note, or reopens it.
 - Abuse limits: honeypot field, per-IP request limit, and a per-reporter cap of 20 per 24 hours with duplicates (same reporter, page and reason within 24 hours) dropped. The reporter is an HMAC of the IP with a server secret (`REPORT_HASH_SECRET`, else `ADMIN_SESSION_SECRET`); raw IPs are never stored. The reporter's email is optional and only visible to Admin.
 
-## SYNC-067  Owners can send photos of their menu (DECIDED by CH, 2026-09-30; built 2026-10-03)
+## SYNC-067 — Owners can send photos of their menu (DECIDED by CH, 2026-09-30; built 2026-10-03)
 
-- Dashboard Menu section: "Prefer not to type your menu?"  the Owner sends up to 12 photos (resized on the phone, JPEG, text kept readable). They go to the private `menu-photos` bucket (migration 20261003130000) through server-chosen paths and signed upload URLs; the server checks size and real image type before a photo counts. The Owner can see and delete their own photos until BiteSite uses them.
-- Admin : Restaurants : Menu Photos (badge + Today "Menus to add"): view the photos with one-hour signed links, add the menu with the existing "Import a menu from photos" (Gemini, SYNC menu import), then "Done" deletes the photos and offers the one-tap WhatsApp "Your menu is on BiteSite".
+- Dashboard Menu section: "Prefer not to type your menu?" — the Owner sends up to 12 photos (resized on the phone, JPEG, text kept readable). They go to the private `menu-photos` bucket (migration 20261003130000) through server-chosen paths and signed upload URLs; the server checks size and real image type before a photo counts. The Owner can see and delete their own photos until BiteSite uses them.
+- Admin › Restaurants › Menu Photos (badge + Today "Menus to add"): view the photos with one-hour signed links, add the menu with the existing "Import a menu from photos" (Gemini, SYNC menu import), then "Done" deletes the photos and offers the one-tap WhatsApp "Your menu is on BiteSite".
 - Photos are never public and are deleted after use. No table: the bucket listing is the queue. Before the migration runs, the dashboard hides the panel and Admin shows that the feature is off.
 
-## SYNC-068  Owners choose facilities and occasions (issue #4, DECIDED by CH 2026-09-29; built 2026-10-03)
+## SYNC-068 — Owners choose facilities and occasions (issue #4, DECIDED by CH 2026-09-29; built 2026-10-03)
 
-- Dashboard : About: "Facilities" (up to 5 of AMENITY_TAGS) and "Good for" (up to 3 of OCCASION_TAGS), saved like payment methods: no review, shown at once. Older values outside today's lists stay visible and are kept.
+- Dashboard › About: "Facilities" (up to 5 of AMENITY_TAGS) and "Good for" (up to 3 of OCCASION_TAGS), saved like payment methods: no review, shown at once. Older values outside today's lists stay visible and are kept.
 - Public page: "Good to know" / "Great for" chips under payment methods in all 7 layouts (shared `ListingTags`, each layout passes its own chip classes).
 - Migration 20261003140000 only flips the two registry rows to Owner-writable. Deploy order: SQL first, then the app.
 
