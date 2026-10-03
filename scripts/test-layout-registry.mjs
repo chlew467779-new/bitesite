@@ -19,6 +19,7 @@
  */
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import {
   DEFAULT_LAYOUT_KEY,
   LAYOUT_KEYS,
@@ -359,8 +360,7 @@ assert.match(merchantManagerSource, /renders as Classic/, "…and flags stored v
 
 /* ── no hand-written layout unions left in live code ───────────────────────────────────────── */
 
-// The two files below are dead duplicates (nothing imports them); they are left untouched here
-// and are tracked separately as a cleanup finding.
+// The two dead duplicates have been deleted; guard against accidentally restoring them.
 const DEAD_DUPLICATES = ["components/sections/tier-sections.tsx", "components/sections/appointment-section.tsx"];
 const LIVE_VARIANT_FILES = [
   "app/components/sections/gallery-section.tsx",
@@ -379,8 +379,7 @@ for (const relPath of LIVE_VARIANT_FILES) {
   );
 }
 for (const relPath of DEAD_DUPLICATES) {
-  const source = await read(relPath);
-  assert.match(source, /type LayoutVariant/, `${relPath} is still the known dead duplicate (cleanup tracked separately)`);
+  assert.equal(existsSync(new URL(`../${relPath}`, import.meta.url)), false, `${relPath} is deleted; use the live app/components implementation`);
 }
 
 console.log("layout registry checks passed");

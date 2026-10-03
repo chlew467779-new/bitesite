@@ -77,15 +77,6 @@ assert.match(
   "SeasonalSection still skips the price element entirely when there is no price string",
 );
 
-// components/sections/tier-sections.tsx is a dead duplicate (nothing imports it) and is tracked
-// as OQ-LegacyStyle for a separate cleanup PR, so it is intentionally not updated here.
-const deadDuplicate = await read("components/sections/tier-sections.tsx");
-assert.doesNotMatch(
-  deadDuplicate,
-  /shouldShowPrice/,
-  "the dead duplicate stays untouched; cleaning it up belongs to the legacy cleanup PR",
-);
-
 /* ── admin menu editor ─────────────────────────────────────────────────────────────────────── */
 
 const editorSource = await read("app/admin/components/menu-editor.tsx");
