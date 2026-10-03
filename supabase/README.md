@@ -103,6 +103,7 @@ Only the SECURITY LOCKDOWN work lives here for now (branch `fix/security-lockdow
 | `rollback/20261003160000_site_errors.rollback.STAGING_ONLY.sql` | Guarded; drops the table and function (the app copes without them) | Staging only |
 | `scripts/test-d2b-cutover-local.mjs` | D2-B write cutover over HTTP: retired Merchant/Admin whole-form saves and hard DELETE refuse (410) and change nothing, no GrabFood write, hidden-draft create accepts only name/slug, profile image upload tickets refused (Story/menu uploads open), B0 Admin paths work | Local only (needs a local Next server) |
 | `rollback/20260926131040_…STAGING_ONLY.sql` | Undoes D1c; every articles column and the old `published`-only rule come back. The D1c code keeps working | Staging; production only as an approved emergency |
+| `tests/homepage_query_indexes_assertions.sql` | Read-only deployment check for the public directory merchant/product indexes; restored from f099623 | Local / staging / hosted (read-only) |
 
 **Local database (Docker)**: create a throw-away Supabase project outside the repo (`supabase init` in a temp folder), put `create extension pg_cron;`, `staging/00_baseline_schema.sql`, `staging/10_synthetic_seed.sql` and then every file in `migrations/` into its `supabase/migrations/` in that order, run `supabase start`, and pipe each `tests/*.sql` into `docker exec -i supabase_db_<project> psql -U postgres -d postgres -v ON_ERROR_STOP=1`. Nothing in that flow touches staging or production.
 
