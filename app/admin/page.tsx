@@ -30,6 +30,7 @@ import MerchantManager from './components/merchant-manager';
 import TodayPanel from './components/today-panel';
 import PerformancePanel from './components/performance-panel';
 import ContentServiceManager from './components/content-service-manager';
+import MonthlySummaries from './components/monthly-summaries';
 import AreasManager from './components/areas-manager';
 import AnnouncementsManager from './components/announcements-manager';
 import { Lock, Loader2 } from 'lucide-react';
@@ -340,6 +341,8 @@ export default function AdminPage() {
       {activeTab === 'content-service' && (
         <ContentServiceManager />
       )}
+
+      {activeTab === 'monthly-summaries' && <MonthlySummaries />}
 
       {activeTab === 'areas' && <AreasManager />}
       {activeTab === 'popup' && <AnnouncementsManager />}
