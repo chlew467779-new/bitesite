@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from './auth-context';
 import NotificationStatus from './notification-status';
+import NotifyMerchant, { type Notice } from './notify-merchant';
 import type { IntakeMode, ReviewItem } from '@/lib/merchant-review-core.mjs';
 
 type Queue = { intakeMode: IntakeMode; capacity: number; pending: number; pilotCapacity: number; pilotUsed: number; items: ReviewItem[] };
@@ -30,6 +31,9 @@ export default function RestaurantReviewQueue() {
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
   const [unknown, setUnknown] = useState<Decision | null>(null);
+  // One-tap WhatsApp/email notice for each decision made here (CH 2026-09-30).
+  const [notices, setNotices] = useState<Notice[]>([]);
+  const addNotice = (notice: Notice) => setNotices((list) => [notice, ...list.filter((n) => n.key !== notice.key)]);
   const load = useCallback(async () => {
     if (!token) return;
     try {
@@ -50,6 +54,8 @@ export default function RestaurantReviewQueue() {
       setUnknown(null);
       if (!r.ok) { setError(body.error?.message || 'Decision was not saved.'); return; }
       setNotice(payload.decision === 'approve' ? 'Approved. The restaurant stays hidden until its Owner publishes.' : 'Changes requested. The Owner can see your note.');
+      const decided = queue?.items.find((i) => i.id === payload.submissionId);
+      if (decided) addNotice({ key: payload.submissionId, merchantId: decided.merchantId, kind: payload.decision === 'approve' ? 'review_approved' : 'review_rejected', note: payload.note, label: `${decided.snapshot.name}: ${payload.decision === 'approve' ? 'approved' : 'changes requested'}` });
       await load();
     } catch { setUnknown(payload); setError('Could not confirm the result. Retry the same decision.'); }
     finally { busyRef.current = false; setBusy(false); }
@@ -78,6 +84,7 @@ export default function RestaurantReviewQueue() {
     <NotificationStatus />
     {error && <p role="alert" className="rounded-lg bg-red-950/40 p-3 text-sm text-red-200">{error}</p>}
     {notice && <p role="status" className="text-sm text-emerald-300">{notice}</p>}
+    <NotifyMerchant notices={notices} onDone={(key) => setNotices((list) => list.filter((n) => n.key !== key))} />
     {unknown && <button className={`${btn} text-amber-200`} disabled={busy} onClick={() => void decide(unknown)}>Retry {unknown.decision}</button>}
     <button className={`${btn} text-slate-200`} disabled={busy || !!unknown} onClick={() => { setError(''); void load(); }}>Refresh queue</button>
     {queue && <section className="rounded-xl border border-slate-700 p-4 text-slate-200">

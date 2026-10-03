@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from './auth-context';
+import { isValidStorySlug, storySlugBase, STORY_SLUG_RULE_TEXT } from '@/lib/story-slug-core.mjs';
 import { 
   ArrowLeft, 
   Save, 
@@ -149,7 +150,7 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
 
       if (slug) {
         try {
-          const res = await fetch(`/api/admin/stories?slug=${slug}`, {
+          const res = await fetch(`/api/admin/stories?slug=${encodeURIComponent(slug)}`, {
             headers: { 'x-admin-token': token || '' },
           });
           const data = await res.json();
@@ -220,16 +221,10 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
     setDirty(true);
   };
 
-  // Auto-generate slug (consistent with backend, no toLowerCase)
+  // Suggest a web address from the title (same rule as the server: English letters and numbers only).
   useEffect(() => {
-    if (!slug && form.title && !form.slug) {
-      const base = form.title
-        .trim()
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-')
-        .substring(0, 50)
-        .replace(/^-|-$/g, '');
-      if (base) setForm(prev => ({ ...prev, slug: base }));
+    if (!slug && form.title.trim() && !form.slug) {
+      setForm(prev => ({ ...prev, slug: storySlugBase(form.title) }));
     }
   }, [form.title, slug, form.slug]);
 
@@ -295,8 +290,8 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
     if (!form.content.trim()) return 'Story content is required.';
     if (!form.category.trim()) return 'Category is required.';
     if (!form.slug.trim()) return 'Slug is required.';
-    if (form.slug.length > 100) return 'Slug must be 100 characters or fewer.';
-    if (/[\\/\s]/.test(form.slug)) return 'Slug cannot contain spaces or slashes.';
+    // An existing Story keeps its address (older ones may be Chinese); only new addresses follow the rule.
+    if (!slug && !isValidStorySlug(form.slug)) return `Slug: ${STORY_SLUG_RULE_TEXT}`;
     if (form.cover_image.trim()) {
       try {
         const imageUrl = new URL(form.cover_image.trim());
@@ -563,11 +558,12 @@ export default function StoryEditor({ slug, onBack, onSaved }: StoryEditorProps)
             <input
               type="text"
               value={form.slug}
-              onChange={(e) => updateField('slug', e.target.value)}
+              onChange={(e) => updateField('slug', e.target.value.toLowerCase())}
+              readOnly={!!slug}
               placeholder="url-friendly-name"
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-200 placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors font-mono"
+              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-200 placeholder:text-slate-600 focus:border-amber-500 focus:outline-none transition-colors font-mono read-only:opacity-60"
             />
-            <p className="text-xs text-slate-500 mt-1">Auto-generated from title. Supports Chinese characters.</p>
+            <p className="text-xs text-slate-500 mt-1">{slug ? 'The web address cannot be changed after the Story is created.' : `Suggested from the title. ${STORY_SLUG_RULE_TEXT} A title with no English letters becomes story-<date>.`}</p>
           </div>
 
           {/* Excerpt */}
