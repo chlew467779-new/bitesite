@@ -38,7 +38,7 @@ export function MenuCategoryNav({ categories, products, variant }: { categories:
   };
 
   return (
-    <nav ref={ref} aria-label="Menu categories" className="mb-6 max-w-full overflow-x-auto pb-2">
+    <nav ref={ref} aria-label="Menu categories" className="col-span-full mb-6 max-w-full overflow-x-auto pb-2">
       <div className="flex w-max gap-2">
         {visible.map(category => (
           <a key={category.id} href={`#${menuCategoryId(category.id)}`}
