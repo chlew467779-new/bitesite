@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
+import { selectAllPages } from '@/lib/analytics-pagination.mjs';
 import { verifyAdminToken } from '@/lib/admin-auth';
 
 function getDateRange(range: string) {
@@ -51,19 +52,19 @@ export async function GET(request: NextRequest) {
       { data: articlesWithMerchant },
       { data: merchantVisitorData },
     ] = await Promise.all([
-      supabase.from('merchant_daily_views').select('slug, count, unique_ips').eq('event_type', 'page_view').eq('page_type', 'merchant').gte('view_date', start).lte('view_date', end),
-      supabase.from('merchant_daily_views').select('slug, count').eq('event_type', 'whatsapp_click').gte('view_date', start).lte('view_date', end),
-      supabase.from('merchant_daily_views').select('slug, count').eq('event_type', 'booking_submit').gte('view_date', start).lte('view_date', end),
-      supabase.from('merchant_daily_views').select('slug, count').eq('event_type', 'merchant_order_click').gte('view_date', start).lte('view_date', end),
-      supabase.from('merchant_daily_views').select('slug, count').eq('event_type', 'directions_click').gte('view_date', start).lte('view_date', end),
-      supabase.from('merchant_daily_views').select('slug, count').eq('event_type', 'phone_click').gte('view_date', start).lte('view_date', end),
-      supabase.from('merchant_daily_views').select('slug, count').eq('event_type', 'menu_view').eq('page_type', 'merchant').gte('view_date', start).lte('view_date', end),
-      supabase.from('merchant_daily_views').select('slug, count').eq('event_type', 'website_click').gte('view_date', start).lte('view_date', end),
-      supabase.from('merchant_daily_views').select('slug, count').eq('event_type', 'email_click').gte('view_date', start).lte('view_date', end),
-      supabase.from('merchant_daily_views').select('slug, count').eq('event_type', 'page_view').eq('page_type', 'story').gte('view_date', start).lte('view_date', end),
-      supabase.from('articles').select('slug, merchant_slug').not('merchant_slug', 'is', null),
+      selectAllPages(() => supabase.from('merchant_daily_views').select('slug, count, unique_ips').eq('event_type', 'page_view').eq('page_type', 'merchant').gte('view_date', start).lte('view_date', end)),
+      selectAllPages(() => supabase.from('merchant_daily_views').select('slug, count').eq('event_type', 'whatsapp_click').gte('view_date', start).lte('view_date', end)),
+      selectAllPages(() => supabase.from('merchant_daily_views').select('slug, count').eq('event_type', 'booking_submit').gte('view_date', start).lte('view_date', end)),
+      selectAllPages(() => supabase.from('merchant_daily_views').select('slug, count').eq('event_type', 'merchant_order_click').gte('view_date', start).lte('view_date', end)),
+      selectAllPages(() => supabase.from('merchant_daily_views').select('slug, count').eq('event_type', 'directions_click').gte('view_date', start).lte('view_date', end)),
+      selectAllPages(() => supabase.from('merchant_daily_views').select('slug, count').eq('event_type', 'phone_click').gte('view_date', start).lte('view_date', end)),
+      selectAllPages(() => supabase.from('merchant_daily_views').select('slug, count').eq('event_type', 'menu_view').eq('page_type', 'merchant').gte('view_date', start).lte('view_date', end)),
+      selectAllPages(() => supabase.from('merchant_daily_views').select('slug, count').eq('event_type', 'website_click').gte('view_date', start).lte('view_date', end)),
+      selectAllPages(() => supabase.from('merchant_daily_views').select('slug, count').eq('event_type', 'email_click').gte('view_date', start).lte('view_date', end)),
+      selectAllPages(() => supabase.from('merchant_daily_views').select('slug, count').eq('event_type', 'page_view').eq('page_type', 'story').gte('view_date', start).lte('view_date', end)),
+      selectAllPages(() => supabase.from('articles').select('slug, merchant_slug').not('merchant_slug', 'is', null)),
       rawVisitorDataAvailable
-        ? supabase.from('page_views').select('slug, ip').eq('page_type', 'merchant').eq('event_type', 'page_view').gte('created_at', startDateTime).lte('created_at', endDateTime)
+        ? selectAllPages(() => supabase.from('page_views').select('slug, ip').eq('page_type', 'merchant').eq('event_type', 'page_view').gte('created_at', startDateTime).lte('created_at', endDateTime))
         : Promise.resolve({ data: [] as { slug: string | null; ip: string | null }[] }),
     ]);
 

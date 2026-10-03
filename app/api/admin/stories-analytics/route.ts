@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
+import { selectAllPages } from '@/lib/analytics-pagination.mjs';
 import { verifyAdminToken } from '@/lib/admin-auth';
 import { getMytDateRange } from '@/lib/myt-date';
 
@@ -17,21 +18,21 @@ export async function GET(request: NextRequest) {
 
   try {
     // 1. Get ALL articles from DB — match Stories Editor list
-    const { data: articles } = await supabase
+    const { data: articles } = await selectAllPages(() => supabase
       .from('articles')
-      .select('slug, title, view_count, published');
+      .select('slug, title, view_count, published'));
 
     const articleMap = new Map(articles?.map(a => [a.slug, a]) || []);
     const allSlugs = articles?.map(a => a.slug) || [];
 
     // 2. Get period views from page_views (only for article slugs)
-    const { data: storyViews } = await supabase
+    const { data: storyViews } = await selectAllPages(() => supabase
       .from('page_views')
       .select('slug')
       .in('page_type', ['story', 'story_list'])
       .eq('event_type', 'page_view')
       .gte('created_at', startDateTime)
-      .lte('created_at', endDateTime);
+      .lte('created_at', endDateTime));
 
     const periodViewsMap = new Map<string, number>();
     storyViews?.forEach(row => {
@@ -42,12 +43,12 @@ export async function GET(request: NextRequest) {
     });
 
     // 3. Get conversions (story_to_merchant events)
-    const { data: conversions } = await supabase
+    const { data: conversions } = await selectAllPages(() => supabase
       .from('page_views')
       .select('event_detail, slug')
       .eq('event_type', 'story_to_merchant')
       .gte('created_at', startDateTime)
-      .lte('created_at', endDateTime);
+      .lte('created_at', endDateTime));
 
     const conversionMap = new Map<string, number>();
     conversions?.forEach(row => {
