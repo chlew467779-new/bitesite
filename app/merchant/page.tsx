@@ -19,6 +19,7 @@ import { SectionSaveBar } from '@/app/components/section-save/section-save-bar';
 import { DAY_CODES, HoursSection, type SectionProps } from '@/app/components/section-save/hours-section';
 import { FeedbackPanel } from './components/feedback-panel';
 import { StatsPanel } from './components/stats-panel';
+import { MonthlySummaryCard } from './components/monthly-summary-card';
 import { ClosurePanel } from './components/closure-panel';
 import { TextField } from './components/text-field';
 import { PhoneField } from './components/phone-field';
@@ -679,6 +680,7 @@ export default function MerchantDashboardPage() {
         <div className="min-w-0 space-y-6">
           {listingError && <p role="alert" className="text-sm text-red-700">{listingError}</p>}
           {listing && <ListingPanel key={sectionKey} merchantId={profile.id} state={listing} getHeaders={photoHeaders} refresh={refreshListing} onState={onListingState} onBusy={setListingBusy} register={register} beforeAction={() => { const status = anyStatus(); return !status.dirty && !status.busy; }} />}
+          {(listing?.stateSource === 'legacy' || listing?.public) && <MonthlySummaryCard key={`summary:${profile.id}`} merchantId={profile.id} getHeaders={photoHeaders} />}
           <SectionCard id="basics" title="Listing basics" description="Your restaurant name, location and cuisine.">
             <ListingBasics key={`basics:${sectionKey}`} {...sectionProps} readOnly={readOnly || !listing?.basicsEditable} merchantId={profile.id} getHeaders={photoHeaders} areaRequests={areaRequests} />
             {listing && !listing.basicsEditable && <BasicsRequests key={`basics-requests:${profile.id}:${data.loadId}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={readOnly} register={register} areaRequests={areaRequests} />}

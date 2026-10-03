@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Check, Copy, Mail, MessageCircle, X } from 'lucide-react';
 import { useAuth } from './auth-context';
 import { mailLink, noticeMessage, waLink, type NoticeKind } from '@/lib/whatsapp-notify-core.mjs';
+import type { MonthSummary } from '@/lib/monthly-summary-core.mjs';
 
 /**
  * After an Admin decision (CH 2026-09-30): the message to the restaurant, already written, with
@@ -11,7 +12,7 @@ import { mailLink, noticeMessage, waLink, type NoticeKind } from '@/lib/whatsapp
  * the text first. Several can stack at the top of a queue; each closes with Done.
  */
 
-export type Notice = { key: string; merchantId: string; kind: NoticeKind; note?: string | null; storySlug?: string | null; label: string };
+export type Notice = { key: string; merchantId: string; kind: NoticeKind; note?: string | null; storySlug?: string | null; summary?: MonthSummary | null; label: string };
 type Contact = { name: string; slug: string | null; whatsapp: string | null; phone: string | null; ownerEmail: string | null };
 
 function NoticeCard({ notice, onDone }: { notice: Notice; onDone: () => void }) {
@@ -29,7 +30,7 @@ function NoticeCard({ notice, onDone }: { notice: Notice; onDone: () => void }) 
       .then((r) => r.json().then((b) => (r.ok && b.data ? b.data as Contact : Promise.reject(new Error(b.error?.message || 'Could not load the contact.')))))
       .then((c) => {
         if (!live) return;
-        const message = noticeMessage(notice.kind, { name: c.name, note: notice.note, slug: c.slug, storySlug: notice.storySlug, site: window.location.origin });
+        const message = noticeMessage(notice.kind, { name: c.name, note: notice.note, slug: c.slug, storySlug: notice.storySlug, summary: notice.summary, site: window.location.origin });
         setContact(c); setText(message.text); setSubject(message.subject);
       })
       .catch((e) => { if (live) setError(e instanceof Error ? e.message : 'Could not load the contact.'); });
