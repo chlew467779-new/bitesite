@@ -21,10 +21,8 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
-      <body className={`${inter.className} bg-slate-950 text-slate-100 min-h-screen`}>
-        <ClientLayout>{children}</ClientLayout>
-      </body>
-    </html>
+    <div className={`${inter.className} dark bg-slate-950 text-slate-100 min-h-screen`}>
+      <ClientLayout>{children}</ClientLayout>
+    </div>
   );
 }

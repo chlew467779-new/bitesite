@@ -1,7 +1,5 @@
 /* bitesite/app/admin/admin-globals.css */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* The root globals.css supplies Tailwind v4 once, including responsive utilities. */
 
 @layer base {
   :root {
