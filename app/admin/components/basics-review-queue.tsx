@@ -11,6 +11,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Check, Loader2, X } from 'lucide-react';
 import { useAuth } from './auth-context';
+import NotifyMerchant, { type Notice } from './notify-merchant';
 import type { BasicsQueueItem, BasicsValues } from '@/lib/merchant-basics-core.mjs';
 
 function rows(item: BasicsQueueItem) {
@@ -33,6 +34,9 @@ export default function BasicsReviewQueue({ searchQuery = '' }: { searchQuery?: 
   const [working, setWorking] = useState<string | null>(null);
   const [itemError, setItemError] = useState<Record<string, string>>({});
   const [done, setDone] = useState<Record<string, string>>({});
+  // One-tap WhatsApp/email notice for each decision made here (CH 2026-09-30).
+  const [notices, setNotices] = useState<Notice[]>([]);
+  const addNotice = (notice: Notice) => setNotices((list) => [notice, ...list.filter((n) => n.key !== notice.key)]);
   const unknown = useRef<Record<string, string>>({});
 
   const load = useCallback(async () => {
@@ -77,6 +81,7 @@ export default function BasicsReviewQueue({ searchQuery = '' }: { searchQuery?: 
       delete unknown.current[key];
       if (!response.ok) { setItemError((e) => ({ ...e, [item.id]: data.error?.message || 'Not saved.' })); return; }
       setItems((list) => (list ? list.filter((x) => x.id !== item.id) : list));
+      addNotice({ key: item.id, merchantId: item.merchantId, kind: decision === 'approve' ? 'basics_approved' : 'basics_rejected', note: note || null, label: `${item.merchantName}: change ${decision === 'approve' ? 'approved' : 'rejected'}` });
       if (decision === 'approve' && item.changes.address != null) {
         setDone((d) => ({ ...d, [item.id]: `${item.merchantName}: address changed. Check the map pin in Merchant Manager.` }));
       }
@@ -94,6 +99,7 @@ export default function BasicsReviewQueue({ searchQuery = '' }: { searchQuery?: 
         <h3 className="text-lg font-semibold text-slate-100">Name, address & cuisine</h3>
         <p className="text-sm text-slate-400">Approved restaurants ask to change these here. Nothing changes on their page until you approve. The web address (slug) and map pin stay as they are.</p>
       </div>
+      <NotifyMerchant notices={notices} onDone={(key) => setNotices((list) => list.filter((n) => n.key !== key))} />
       {Object.entries(done).map(([id, text]) => <p key={id} className="rounded-lg bg-amber-950/40 px-4 py-3 text-sm text-amber-200" role="status">{text}</p>)}
       {error && <p className="rounded-lg bg-red-950/40 px-4 py-3 text-sm text-red-300" role="alert">{error} <button type="button" className="ml-2 underline" onClick={() => void load()}>Try again</button></p>}
       {!items && !error && <Loader2 className="h-6 w-6 animate-spin text-amber-500" />}

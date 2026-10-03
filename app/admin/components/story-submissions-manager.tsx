@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { CheckCircle2, ExternalLink, Eye, FilePlus2, Inbox, Loader2, Pencil, Sparkles, X, XCircle } from 'lucide-react';
 import { useAuth } from './auth-context';
+import NotifyMerchant, { type Notice } from './notify-merchant';
 import { publicStoryPath, submissionActions, type LinkedStory, type SubmissionAction } from '@/lib/story-submission-core.mjs';
 
 type Submission = {
@@ -42,6 +43,9 @@ export default function StorySubmissionsManager({ onDraftCreated }: { onDraftCre
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState<string | null>(null);
   const [aiWorking, setAiWorking] = useState<string | null>(null);
+  // One-tap WhatsApp/email notice for each decision made here (CH 2026-09-30).
+  const [notices, setNotices] = useState<Notice[]>([]);
+  const addNotice = (notice: Notice) => setNotices((list) => [notice, ...list.filter((n) => n.key !== notice.key)]);
   const [error, setError] = useState('');
   const [showNew, setShowNew] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -86,6 +90,12 @@ export default function StorySubmissionsManager({ onDraftCreated }: { onDraftCre
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Status update failed');
+      // Relayed Stories have no restaurant account to tell; a draft Story is internal until published.
+      const published = status === 'converted' && publish && data.article?.slug;
+      const kind = published ? 'story_published' : status === 'approved' ? 'story_approved' : status === 'rejected' ? 'story_rejected' : status === 'draft' ? 'story_changes' : null;
+      if (kind && submission.merchant_id) {
+        addNotice({ key: submission.id, merchantId: submission.merchant_id, kind, storySlug: published ? data.article.slug : null, label: `"${submission.title}": ${published ? 'published' : status === 'draft' ? 'changes requested' : status}` });
+      }
       if (status === 'converted' && !publish && data.article?.slug && onDraftCreated) {
         onDraftCreated(data.article.slug);
         return;
@@ -207,6 +217,7 @@ export default function StorySubmissionsManager({ onDraftCreated }: { onDraftCre
           <button type="submit" disabled={saving || !draft.rights_declared} className="px-4 py-2 rounded-lg bg-sky-500 text-slate-950 text-sm font-medium disabled:opacity-50">{saving ? 'Submitting…' : 'Submit for review'}</button>
         </form>
       )}
+      <NotifyMerchant notices={notices} onDone={(key) => setNotices((list) => list.filter((n) => n.key !== key))} />
       {error && <div className="rounded-xl border border-red-800 bg-red-950/50 p-3 text-red-400 text-sm">{error}</div>}
       {submissions.length === 0 ? (
         <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-12 text-center text-slate-500"><Inbox className="w-8 h-8 mx-auto mb-3" />{statusFilter === 'all' ? 'No Story submissions yet.' : `No submissions with status “${labels[statusFilter]}”.`}</div>

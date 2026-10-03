@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Check, ExternalLink, Loader2, X } from 'lucide-react';
 import { useAuth } from './auth-context';
+import NotifyMerchant, { type Notice } from './notify-merchant';
 import { LINK_FIELDS, type LinkQueueItem } from '@/lib/merchant-links-core.mjs';
 
 const LABEL = Object.fromEntries(LINK_FIELDS.map((f) => [f.field, f.label]));
@@ -26,6 +27,9 @@ export default function LinkReviewQueue({ searchQuery = '' }: { searchQuery?: st
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [working, setWorking] = useState<string | null>(null);
   const [itemError, setItemError] = useState<Record<string, string>>({});
+  // One-tap WhatsApp/email notice for each decision made here (CH 2026-09-30).
+  const [notices, setNotices] = useState<Notice[]>([]);
+  const addNotice = (notice: Notice) => setNotices((list) => [notice, ...list.filter((n) => n.key !== notice.key)]);
   const unknown = useRef<Record<string, string>>({});
 
   const load = useCallback(async () => {
@@ -70,6 +74,7 @@ export default function LinkReviewQueue({ searchQuery = '' }: { searchQuery?: st
       delete unknown.current[key];
       if (!response.ok) { setItemError((e) => ({ ...e, [item.id]: data.error?.message || 'Not saved.' })); return; }
       setItems((list) => (list ? list.filter((x) => x.id !== item.id) : list));
+      addNotice({ key: item.id, merchantId: item.merchantId, kind: decision === 'approve' ? 'link_approved' : 'link_rejected', note: note || null, label: `${item.merchantName}: link ${decision === 'approve' ? 'approved' : 'rejected'}` });
     } catch {
       unknown.current[key] = requestId;
       setItemError((e) => ({ ...e, [item.id]: 'Could not reach the server. Click again to retry the same decision.' }));
@@ -84,6 +89,7 @@ export default function LinkReviewQueue({ searchQuery = '' }: { searchQuery?: st
         <h3 className="text-lg font-semibold text-slate-100">Links</h3>
         <p className="text-sm text-slate-400">Restaurants ask for website, social, menu and GrabFood link changes here. Nothing appears on their page until you approve it.</p>
       </div>
+      <NotifyMerchant notices={notices} onDone={(key) => setNotices((list) => list.filter((n) => n.key !== key))} />
       {error && <p className="rounded-lg bg-red-950/40 px-4 py-3 text-sm text-red-300" role="alert">{error} <button type="button" className="ml-2 underline" onClick={() => void load()}>Try again</button></p>}
       {!items && !error && <Loader2 className="h-6 w-6 animate-spin text-amber-500" />}
       {items && items.length === 0 && <p className="text-sm text-slate-400">No link requests are waiting.</p>}
