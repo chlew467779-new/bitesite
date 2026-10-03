@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { StaggerItem } from "@/app/components/animations";
-import Image from "next/image";
+import { JOIN_US_FAQS } from "@/lib/join-us-faq";
 
 interface AccordionItemProps {
   question: string;
@@ -55,39 +55,6 @@ function AccordionItem({
   );
 }
 
-const faqs = [
-  {
-    question: "Is it really free?",
-    answer:
-      "Yes. There is no setup fee, monthly fee, or commission for the BiteSite partner programme. Partners agree to keep their listing useful by sharing Stories regularly.",
-  },
-  {
-    question: "What do partners need to contribute?",
-    answer:
-      "Partners should share useful restaurant updates regularly, such as new menus, launches, offers, events, behind-the-scenes moments, or founder stories. Original information and image rights remain important.",
-  },
-  {
-    question: "Will BiteSite promote my Stories?",
-    answer:
-      "BiteSite may reshare suitable Stories on our Facebook, Instagram, and other social channels. We will choose content that fits the channel and cannot guarantee that every Story will be reshared.",
-  },
-  {
-    question: "Do I need to download an app?",
-    answer:
-      "No. Customers simply open your BiteSite link. Partners can work with us through the web and WhatsApp.",
-  },
-  {
-    question: "Can I update my listing?",
-    answer:
-      "Yes. Merchants can update approved listing details from the Merchant dashboard. Name, address, slug, and business status changes go through a review request.",
-  },
-  {
-    question: "How do I join?",
-    answer:
-      "Send us a WhatsApp message with your restaurant name, area, and best contact email. We will explain the next steps and invite you when ready.",
-  },
-];
-
 export function FaqAccordion() {
   return (
     <section
@@ -99,7 +66,7 @@ export function FaqAccordion() {
           FAQ
         </h2>
         <div>
-          {faqs.map((faq, index) => (
+          {JOIN_US_FAQS.map((faq, index) => (
             <AccordionItem
               key={faq.question}
               question={faq.question}
