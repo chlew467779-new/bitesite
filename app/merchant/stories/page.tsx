@@ -4,6 +4,7 @@ import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import imageCompression from 'browser-image-compression';
 import { supabase } from '@/lib/supabase';
+import { IMMUTABLE_CACHE_SECONDS } from '@/lib/media-cache.mjs';
 import { merchantApiUrl, merchantPageUrl, selectedMerchantIdFromSearch } from '@/lib/merchant-context-url.mjs';
 
 import { merchantSubmissionLabel } from '@/lib/story-submission-core.mjs';
@@ -143,7 +144,7 @@ export default function MerchantStoriesPage() {
       const response = await fetch(merchantApiUrl('/api/merchant/media/upload-url', merchantId), { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ kind: 'story', contentType: compressed.type || 'image/webp', size: compressed.size }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Could not prepare upload');
-      const { error } = await supabase.storage.from(result.bucket).uploadToSignedUrl(result.path, result.token, compressed);
+      const { error } = await supabase.storage.from(result.bucket).uploadToSignedUrl(result.path, result.token, compressed, { cacheControl: IMMUTABLE_CACHE_SECONDS });
       if (error) throw error;
       const url = supabase.storage.from(result.bucket).getPublicUrl(result.path).data.publicUrl;
       setForm(current => ({ ...current, ...(gallery ? { image_urls: current.image_urls ? `${current.image_urls}\n${url}` : url } : { cover_image: url }) }));
