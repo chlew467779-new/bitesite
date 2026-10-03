@@ -4,6 +4,7 @@
 
 import { DishDescription } from "@/components/sections/dish-description";
 import { MenuCategoryNav, menuCategoryId } from "@/components/sections/menu-category-nav";
+import { ListingTags } from "@/components/sections/listing-tags";
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
 import { TierSections } from "@/app/components/sections/tier-sections";
@@ -159,6 +160,8 @@ export function MinimalLayout({
                   </div>
                 </div>
               )}
+
+              <ListingTags amenities={merchant.amenities} occasion={merchant.occasion} wrapperClass="mt-6 pt-6 border-t border-stone-200" labelClass="text-xs font-medium uppercase tracking-widest text-stone-500 mb-3" chipClass="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-stone-100 text-stone-700 border border-stone-200" />
 
               {/* Share */}
               <div className="mt-6 pt-6 border-t border-stone-200">

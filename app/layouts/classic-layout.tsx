@@ -4,6 +4,7 @@
 
 import { DishDescription } from "@/components/sections/dish-description";
 import { MenuCategoryNav, menuCategoryId } from "@/components/sections/menu-category-nav";
+import { ListingTags } from "@/components/sections/listing-tags";
 import { SafeImage } from "@/app/components/safe-image";
 import { FadeIn } from "@/app/components/animations";
 import { ShareButtons } from "@/components/sections/share-buttons";
@@ -326,6 +327,8 @@ export function ClassicLayout({
                   </div>
                 </div>
               )}
+
+              <ListingTags amenities={merchant.amenities} occasion={merchant.occasion} wrapperClass="mt-8 pt-6 border-t border-amber-200" labelClass="text-xs font-medium uppercase tracking-wider text-amber-800 mb-3" chipClass="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-200" />
             </div>
           </section>
         </FadeIn>

@@ -20,10 +20,13 @@ import { DAY_CODES, HoursSection, type SectionProps } from '@/app/components/sec
 import { FeedbackPanel } from './components/feedback-panel';
 import { StatsPanel } from './components/stats-panel';
 import { MonthlySummaryCard } from './components/monthly-summary-card';
+import { MenuPhotosPanel } from './components/menu-photos-panel';
 import { ClosurePanel } from './components/closure-panel';
 import { TextField } from './components/text-field';
 import { PhoneField } from './components/phone-field';
 import { PaymentSection } from './components/payment-section';
+import { AmenitiesSection } from './components/amenities-section';
+import { PageStyleSection } from './components/page-style-section';
 import { createAreaRequests } from '@/lib/area-requests.mjs';
 
 /**
@@ -71,6 +74,7 @@ const SECTIONS = [
   { id: 'about', label: 'About' },
   { id: 'contact', label: 'Contact & links' },
   { id: 'photos', label: 'Photos' },
+  { id: 'style', label: 'Page style' },
   { id: 'menu', label: 'Menu' },
   { id: 'hours', label: 'Opening hours' },
   { id: 'stats', label: 'Visitors' },
@@ -697,6 +701,11 @@ export default function MerchantDashboardPage() {
           </SectionCard>
           <SectionCard id="about" title="About" description="A short line and description help visitors decide to come in.">
             <TextSection key={`about:${sectionKey}`} id="about" config={ABOUT_FIELDS} {...sectionProps} />
+            {'tags.amenities' in sectionProps.fields && 'tags.occasion' in sectionProps.fields && (
+              <div className="mt-6 border-t border-[#EEF2EC] pt-5">
+                <AmenitiesSection key={`amenities:${sectionKey}`} {...sectionProps} />
+              </div>
+            )}
           </SectionCard>
 
           <SectionCard id="contact" title="Contact & links" description="All optional. Leave a field empty to hide it from your page.">
@@ -717,7 +726,14 @@ export default function MerchantDashboardPage() {
             <ProfileImagesPanel key={`photos:${profile.id}:${data.loadId}`} apiBase={`/api/merchant/restaurants/${encodeURIComponent(profile.id)}/media`} getHeaders={photoHeaders} disabled={readOnly} register={register} onChanged={onPhotoChanged} />
           </SectionCard>
 
+          {'presentation.layout' in sectionProps.fields && (
+            <SectionCard id="style" title="Page style" description="Choose how your page looks and which sections it shows. Changes show on your page right away.">
+              <PageStyleSection key={`style:${sectionKey}`} {...sectionProps} />
+            </SectionCard>
+          )}
+
           <SectionCard id="menu" title="Menu" description="Add categories and dishes, change prices, and mark dishes sold out. Changes show on your page right away.">
+            <div className="mb-6"><MenuPhotosPanel key={`menu-photos:${profile.id}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={profile.restriction === 'suspended' || profile.restriction === 'archived'} /></div>
             <MenuManager onChanged={refreshListing} key={`menu:${profile.id}:${data.loadId}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={readOnly} />
           </SectionCard>
 

@@ -89,6 +89,15 @@ Only the SECURITY LOCKDOWN work lives here for now (branch `fix/security-lockdow
 | `migrations/20260928150000_basics_review_notifications.sql` | Adds Owner notification kinds for approved/rejected basics requests and updates the review RPC to enqueue one decision notification | Local; hosted only with approval |
 | `tests/basics_review_notifications_behavior_tests.sql` | Synthetic approve/reject requests; checks one Owner notification per decision; rolled back | Local / staging only |
 | `rollback/20260928150000_basics_review_notifications.rollback.STAGING_ONLY.sql` | Guarded rollback; deletes basics decision notifications, restores four review kinds and the previous review RPC | Staging only |
+| `migrations/20261003130000_menu_photos_bucket.sql` | Private storage bucket `menu-photos` (images, 10 MB) for menu photos Owners send; no storage policies, so only the service role can list, read, upload (signed URLs) or delete | Local; hosted only with approval |
+| `tests/menu_photos_bucket_assertions.sql` | Bucket is private with the right limits; anon and authenticated cannot see its files; rolled back | Local / staging |
+| `rollback/20261003130000_menu_photos_bucket.rollback.STAGING_ONLY.sql` | Guarded; refuses while files remain (empty the bucket in the Dashboard first), then deletes the bucket | Staging only |
+| `migrations/20261003140000_owner_amenities_occasion.sql` | Field registry: `tags.amenities` (5) and `tags.occasion` (3) become Owner-writable, no review | Local; hosted only with approval |
+| `tests/owner_amenities_behavior_tests.sql` | Synthetic Owner writes both tags; limit and stranger checks; wrap in begin/rollback | Local / staging |
+| `rollback/20261003140000_owner_amenities_occasion.rollback.STAGING_ONLY.sql` | Guarded; restores the 20260929120000 registry (values already chosen stay) | Staging only |
+| `migrations/20261003150000_owner_page_style.sql` | Registry: `presentation.layout` and six section switches (hero, about, contact, gallery, appointment, seasonal_popup) Owner-writable; snapshot read shows Owners those switches. Events/menu/reviews stay closed | Local; hosted only with approval |
+| `tests/owner_page_style_behavior_tests.sql` | Synthetic Owner reads/writes layout and switches; unknown layout, events and strangers refused; wrap in begin/rollback | Local / staging |
+| `rollback/20261003150000_owner_page_style.rollback.STAGING_ONLY.sql` | Guarded; restores the 20261003140000 registry and the 20260927094400 snapshot read | Staging only |
 | `scripts/test-d2b-cutover-local.mjs` | D2-B write cutover over HTTP: retired Merchant/Admin whole-form saves and hard DELETE refuse (410) and change nothing, no GrabFood write, hidden-draft create accepts only name/slug, profile image upload tickets refused (Story/menu uploads open), B0 Admin paths work | Local only (needs a local Next server) |
 | `rollback/20260926131040_…STAGING_ONLY.sql` | Undoes D1c; every articles column and the old `published`-only rule come back. The D1c code keeps working | Staging; production only as an approved emergency |
 

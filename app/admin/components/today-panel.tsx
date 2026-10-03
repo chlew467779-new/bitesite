@@ -21,6 +21,7 @@ const QUEUES: { key: string; tab: string; label: string; hint: string }[] = [
   { key: 'reports', tab: 'reports', label: 'Visitor reports', hint: 'Problems visitors flagged on a page' },
   { key: 'feedback', tab: 'feedback', label: 'Problems reported', hint: 'A merchant or visitor says something is wrong' },
   { key: 'story-submissions', tab: 'story-submissions', label: 'Stories to review', hint: 'Stories restaurants sent in' },
+  { key: 'menu-photos', tab: 'menu-photos', label: 'Menus to add', hint: 'Restaurants sent photos of their menu' },
 ];
 const STATUS_STYLE: Record<Row['status'], string> = {
   public: 'bg-emerald-500/15 text-emerald-300',
