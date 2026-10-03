@@ -5,6 +5,7 @@ import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { verifyAdminToken } from '@/lib/admin-auth';
 import { revalidatePublicStoryRoutes } from '@/lib/story-revalidation';
 import { InvalidJsonBodyError, readBoundedJson, RequestBodyTooLargeError } from '@/lib/bounded-json';
+import { isValidStorySlug, makeStorySlug, STORY_SLUG_RULE_TEXT } from '@/lib/story-slug-core.mjs';
 
 const MAX_STORY_BODY_BYTES = 512 * 1024;
 
@@ -24,25 +25,6 @@ function verifyRequest(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
   return null;
-}
-
-function generateSlug(title: string, existingSlugs: string[]): string {
-  let base = title
-    .trim()
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .substring(0, 50)
-    .replace(/^-|-$/g, '');
-
-  if (!base) base = 'story';
-
-  if (!existingSlugs.includes(base)) return base;
-
-  let counter = 1;
-  while (existingSlugs.includes(`${base}-${counter}`)) {
-    counter++;
-  }
-  return `${base}-${counter}`;
 }
 
 type EditorialStatus = 'draft' | 'pending_review' | 'approved' | 'published' | 'rejected' | 'archived';
@@ -128,7 +110,14 @@ export async function POST(request: Request) {
       .select('slug');
 
     const existingSlugs = (existing || []).map((a) => a.slug);
-    const slug = body.slug || generateSlug(body.title, existingSlugs);
+    const requestedSlug = typeof body.slug === 'string' ? body.slug.trim() : '';
+    if (requestedSlug && !isValidStorySlug(requestedSlug)) {
+      return NextResponse.json({ error: `Web address: ${STORY_SLUG_RULE_TEXT}` }, { status: 400 });
+    }
+    if (requestedSlug && existingSlugs.includes(requestedSlug)) {
+      return NextResponse.json({ error: 'Another Story already uses this web address. Choose a different one.' }, { status: 409 });
+    }
+    const slug = requestedSlug || makeStorySlug(body.title, existingSlugs);
 
     const now = new Date().toISOString();
     const published = body.published ?? false;

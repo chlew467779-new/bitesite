@@ -15,6 +15,7 @@ import { PUBLIC_ARTICLE_SELECT } from "@/lib/public-article-projection.mjs";
 import { getSiteUrl } from "@/lib/site-url";
 import { safeJsonLd } from "@/lib/safe-json-ld.mjs";
 import { ReportProblem } from "@/app/components/report-problem";
+import { decodeStorySlugParam } from "@/lib/story-slug-core.mjs";
 
 export const revalidate = 60;
 
@@ -32,7 +33,9 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  // Older Chinese slugs reach the page percent-encoded; the database stores them decoded.
+  const slug = decodeStorySlugParam(rawSlug);
   const { data: article } = await supabase
     .from("articles")
     .select("title, excerpt, cover_image, category, tags")
@@ -91,7 +94,9 @@ const hashtagColors: Record<string, { border: string; text: string }> = {
 
 export default async function StoryPage({ params }: PageProps) {
   const siteUrl = getSiteUrl();
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  // Older Chinese slugs reach the page percent-encoded; the database stores them decoded.
+  const slug = decodeStorySlugParam(rawSlug);
 
   const { data: article } = await supabase
     .from("articles")

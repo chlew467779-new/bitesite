@@ -6,6 +6,7 @@ import { revalidatePublicStoryRoutes } from '@/lib/story-revalidation';
 import { linkedArticleReviewUpdate } from '@/lib/story-review-sync.mjs';
 import { verifyAdminToken } from '@/lib/admin-auth';
 import { InvalidJsonBodyError, readBoundedJson, RequestBodyTooLargeError } from '@/lib/bounded-json';
+import { makeStorySlug } from '@/lib/story-slug-core.mjs';
 
 const MAX_SUBMISSION_BODY_BYTES = 512 * 1024;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -35,15 +36,6 @@ function validHttpUrl(value: unknown) {
   }
 }
 
-function makeSlug(title: string, existing: string[]) {
-  const base = title.trim().toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g, '-').replace(/^-|-$/g, '').slice(0, 50);
-  const safe = base || 'story';
-  if (!existing.includes(safe)) return safe;
-  let i = 1;
-  while (existing.includes(`${safe}-${i}`)) i += 1;
-  return `${safe}-${i}`;
-}
-
 /**
  * Record a Story revision. The article change it describes is already committed, so a failure
  * here must not stop the takedown, the cache refresh or the submission update: it is logged and
@@ -67,7 +59,7 @@ export async function GET(request: NextRequest) {
   if (status && !validEnum(status, statuses)) return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
   if (merchantId !== null && !UUID_PATTERN.test(merchantId)) return NextResponse.json({ error: 'Invalid merchant_id' }, { status: 400 });
 
-  let query = supabase.from('story_submissions').select('*, merchant:merchants(name, slug)').order('created_at', { ascending: false });
+  let query = supabase.from('story_submissions').select('*, merchant:merchants(name, slug), article:articles(slug, published, editorial_status)').order('created_at', { ascending: false });
   if (status) query = query.eq('status', status);
   if (merchantSlug) query = query.eq('merchant_slug', merchantSlug);
   if (merchantId) query = query.eq('merchant_id', merchantId);
@@ -178,7 +170,7 @@ export async function PATCH(request: Request) {
         return NextResponse.json({ submission: published, article, success: true, ...(warning ? { warning } : {}) });
       }
       const { data: existing } = await supabase.from('articles').select('slug');
-      const slug = makeSlug(source.title, (existing || []).map((item) => item.slug));
+      const slug = makeStorySlug(source.title,(existing || []).map((item) => item.slug));
       const gallery = Array.isArray(source.image_urls)
         ? source.image_urls.map((url: string, index: number) => `![${source.title} image ${index + 1}](${url})`).join('\n\n')
         : '';

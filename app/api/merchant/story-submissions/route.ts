@@ -3,6 +3,7 @@ import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { InvalidJsonBodyError, readBoundedJson, RequestBodyTooLargeError } from '@/lib/bounded-json';
 import { requireMerchantAccess } from '@/app/api/merchant/_lib/merchant-access';
 import { mapFieldRpcError } from '@/lib/merchant-field-patch-core.mjs';
+import { publicStoryPath } from '@/lib/story-submission-core.mjs';
 
 const MAX_BODY_BYTES = 512 * 1024;
 
@@ -17,9 +18,11 @@ function validUrl(value: unknown) {
 export async function GET(request: NextRequest) {
   const context = await requireMerchantAccess(request, 'read');
   if ('response' in context) return context.response;
-  const { data, error } = await supabase.from('story_submissions').select('id, title, excerpt, content, story_angle, cover_image, image_urls, rights_declared, rights_note, status, review_notes, submitted_at, created_at, updated_at').eq('merchant_id', context.merchant.id).order('created_at', { ascending: false });
+  const { data, error } = await supabase.from('story_submissions').select('id, title, excerpt, content, story_angle, cover_image, image_urls, rights_declared, rights_note, status, review_notes, submitted_at, created_at, updated_at, article:articles(slug, published, editorial_status)').eq('merchant_id', context.merchant.id).order('created_at', { ascending: false });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ submissions: data || [] });
+  // The owner gets only the public address of a published Story, never a draft's state or slug.
+  const submissions = (data || []).map(({ article, ...item }) => ({ ...item, story_path: item.status === 'converted' ? publicStoryPath(Array.isArray(article) ? article[0] : article) : null }));
+  return NextResponse.json({ submissions });
 }
 
 export async function POST(request: NextRequest) {
