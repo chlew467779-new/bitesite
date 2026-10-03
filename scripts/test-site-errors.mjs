@@ -76,11 +76,12 @@ assert.equal(parseSiteErrorUpdate({ ids: ["x"], status: "new" }).ok, false, "bad
 const instrumentation = await read("instrumentation.ts");
 assert.match(instrumentation, /export async function register\(\)[\s\S]*installConsoleHook\(\)/, "console hook installed at start");
 assert.match(instrumentation, /export const onRequestError[\s\S]*recordRequestError\(error, request\.path\)/, "uncaught errors recorded with their page");
-assert.match(instrumentation, /NEXT_RUNTIME !== 'nodejs'/, "Node.js runtime only");
+assert.equal((instrumentation.match(/if \(process\.env\.NEXT_RUNTIME === 'nodejs'\) \{/g) ?? []).length, 2, "Node.js runtime only, as if-blocks webpack can drop from the Edge build");
 const recorder = await read("app/api/_lib/site-errors.ts");
 assert.match(recorder, /state\.original\(\.\.\.args\);\n\s*if \(state\.depth > 0\) return;/, "prints first and never re-enters");
 assert.match(recorder, /NODE_ENV !== 'production' && process\.env\.SITE_ERRORS_IN_DEV !== '1'/, "production only unless asked");
 assert.doesNotMatch(recorder, /console\.error\(/, "the recorder never logs through the hook");
+assert.doesNotMatch(recorder, /from 'node:/, "no node: imports (webpack dev also compiles instrumentation for Edge)");
 for (const page of ["app/error.tsx", "app/global-error.tsx"]) assert.match(await read(page), /reportBrowserError\(error\)/, `${page} reports the crash`);
 assert.match(await read("app/api/site-errors/route.ts"), /if \(!parsed\.skip\) await recordSiteError\('browser'/, "browser reports recorded unless skipped");
 assert.match(await read("app/api/admin/attention/route.ts"), /'site-errors': siteErrors\.error \? 0 : siteErrors\.count \?\? 0/, "badge count, 0 before the migration");
