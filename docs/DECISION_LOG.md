@@ -266,3 +266,10 @@ A new feature idea must not silently become a decision. Add it here only after C
 - CH decisions: deletion requests handled within 30 days; handled reports and feedback kept 12 months, then deleted. Migration 20261004100000 makes that automatic (nightly pg_cron `privacy_retention_cleanup`), and also deletes site errors 30 days after they are marked resolved.
 - Linked from the footer, the merchant sign-up form and the create-restaurant agreement ("…and have read the Privacy Policy"); in the sitemap. No consent checkbox was added for visitors; the policy is a notice.
 - Recommended, not done: a lawyer's review and a native Bahasa Melayu check. When the text changes, change `PRIVACY_EFFECTIVE_DATE`.
+
+## SYNC-077 — Email notifications through Gmail (C8, 2026-10-04)
+
+- The existing outbox (`merchant_notifications`: review submitted / withdrawn / approved / changes needed, details request decided) can now send through Gmail SMTP: set `SMTP_USER` (bitesite.my@gmail.com) and `SMTP_PASS` (a Google app password, the same kind used for Supabase sign-in emails) in Vercel. Resend still wins if it is set. Nothing set = nothing sent, as before. No SQL, no new package (a small SMTP client in `lib/smtp-core.mjs`).
+- Emails go out right after the event (`after()` in the review, details-review and submit/withdraw routes); Admin's "Send now" still works for anything left over. Owners get review results at their sign-in email; Admin rows and site errors go to `ADMIN_NOTIFY_EMAIL`.
+- Site errors: when email is set up, a new kind of error (or one marked fixed that comes back) is emailed once; repeats are only counted in Admin. At most 10 error emails per hour per server.
+- Privacy Policy: review results are also sent by email; Gmail sends them.
