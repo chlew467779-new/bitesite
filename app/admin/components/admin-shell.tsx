@@ -40,6 +40,7 @@ import {
   PanelLeftOpen,
   TriangleAlert,
   ImageOff,
+  Briefcase,
 } from 'lucide-react';
 
 const navItems = [
@@ -64,6 +65,7 @@ const navItems = [
   { id: 'content-service', label: 'Content Service', icon: CalendarClock },
   { id: 'monthly-summaries', label: 'Monthly Summaries', icon: Send },
   { id: 'menu-photos', label: 'Menu Photos', icon: Images },
+  { id: 'jobs', label: 'Job Posts', icon: Briefcase },
   { id: 'merchant-manager', label: 'Merchant Manager', icon: Building2 },
   { id: 'map', label: 'Map Stats', icon: Map },
   { id: 'hourly', label: 'Hourly', icon: Clock },

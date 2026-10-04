@@ -1,4 +1,4 @@
-export type ReportTargetType = "merchant" | "story";
+export type ReportTargetType = "merchant" | "story" | "job";
 export type ReportStatus = "new" | "resolved" | "dismissed";
 
 export interface ReportItem {
@@ -6,6 +6,8 @@ export interface ReportItem {
   targetType: ReportTargetType;
   merchantId: string | null;
   articleId: string | null;
+  /** Present after migration 20261004120000. */
+  jobId?: string | null;
   slug: string;
   name: string;
   targetGone: boolean;
@@ -23,6 +25,7 @@ type Invalid = { ok: false; status: number; code: string; message: string };
 
 export declare const MAX_REPORT_BODY_BYTES: number;
 export declare const REPORT_STATUSES: readonly ReportStatus[];
+export declare const REPORT_TARGET_TYPES: readonly ReportTargetType[];
 export declare const REPORT_REASONS: Readonly<Record<ReportTargetType, readonly { value: string; label: string }[]>>;
 export declare function reasonLabel(targetType: ReportTargetType | string, reason: string): string;
 export declare function parseReportSubmit(body: unknown):

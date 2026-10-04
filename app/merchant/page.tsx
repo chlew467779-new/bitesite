@@ -9,6 +9,7 @@ import { ListingBasics } from './components/listing-basics';
 import type { ListingState } from '@/lib/merchant-review-core.mjs';
 import { MenuManager } from './components/menu-manager';
 import { LinkRequests } from './components/link-requests';
+import { JobsPanel } from './components/jobs-panel';
 import { CurrencySetting } from './components/currency-setting';
 import { BasicsRequests } from './components/basics-requests';
 import { validateProfileField } from '@/lib/merchant-profile-validation.mjs';
@@ -78,6 +79,7 @@ const SECTIONS = [
   { id: 'style', label: 'Page style' },
   { id: 'menu', label: 'Menu' },
   { id: 'hours', label: 'Opening hours' },
+  { id: 'jobs', label: 'Hiring' },
   { id: 'stats', label: 'Visitors' },
   { id: 'feedback', label: 'Feedback' },
 ] as const;
@@ -232,6 +234,8 @@ export default function MerchantDashboardPage() {
   const [areaRequests] = useState(createAreaRequests);
   const [load, setLoad] = useState<LoadState>({ kind: 'loading' });
   const [data, setData] = useState<Loaded | null>(null);
+  // The Hiring section appears only once the job post database update has run.
+  const [jobsOn, setJobsOn] = useState(false);
   const [currency, setCurrency] = useState<string>('MYR');
   const [confirmed, setConfirmed] = useState<Record<string, Snapshot>>({});
   const [switchPrompt, setSwitchPrompt] = useState<SwitchPrompt>(null);
@@ -681,7 +685,7 @@ export default function MerchantDashboardPage() {
           </div>}
           <nav aria-label="Dashboard sections" className="mt-4">
             <ul className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible">
-              {SECTIONS.map((section) => (
+              {SECTIONS.filter((section) => section.id !== 'jobs' || jobsOn).map((section) => (
                 <li key={section.id} className="shrink-0">
                   <a href={`#${section.id}`} className="flex min-h-11 items-center rounded-lg border border-[#DDE5DC] bg-white px-3 py-2 text-sm text-[#2C3E2D] hover:border-emerald-700 lg:border-transparent lg:bg-transparent lg:hover:bg-white">{section.label}</a>
                 </li>
@@ -746,6 +750,9 @@ export default function MerchantDashboardPage() {
             </div>
             <HoursSection key={`hours:${sectionKey}`} {...sectionProps} />
           </SectionCard>
+
+          <JobsPanel key={`jobs:${profile.id}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={readOnly} register={register} onAvailable={setJobsOn}
+            renderSection={(body) => <SectionCard id="jobs" title="Hiring" description="Looking for staff? Post a job on your page. People apply by WhatsApp or phone; posts stay up for 30 days.">{body}</SectionCard>} />
 
           <SectionCard id="stats" title="Visitors" description="How many people opened your page and what they did.">
             <StatsPanel key={`stats:${profile.id}`} merchantId={profile.id} getHeaders={photoHeaders} />
