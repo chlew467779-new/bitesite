@@ -294,7 +294,7 @@ export default function MerchantManager({ onOpenChangeRequests, openMerchantId =
         </div>
         <button
           onClick={handleNew}
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-medium text-sm rounded-lg transition-colors"
+          className="inline-flex min-h-11 items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-medium text-sm rounded-lg transition-colors"
         >
           <Plus className="w-4 h-4" />
           New Merchant
@@ -336,7 +336,7 @@ export default function MerchantManager({ onOpenChangeRequests, openMerchantId =
             <button
               key={s}
               onClick={() => setStatusFilter(s)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              className={`min-h-11 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                 statusFilter === s
                   ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent'
@@ -477,7 +477,7 @@ export default function MerchantManager({ onOpenChangeRequests, openMerchantId =
                     href={`/store/${merchant.slug}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 transition-colors"
+                    className="inline-flex min-h-11 items-center gap-1 text-xs text-amber-400 hover:text-amber-300 transition-colors"
                     onClick={(e) => e.stopPropagation()}
                   >
                     View <ExternalLink className="w-3 h-3" />

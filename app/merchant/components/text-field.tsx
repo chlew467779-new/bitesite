@@ -25,7 +25,7 @@ type Props = {
 };
 
 const baseClass =
-  'mt-1.5 block w-full min-w-0 rounded-lg border bg-white px-3 py-2.5 text-sm text-[#2C3E2D] placeholder:text-[#9A948E] focus:outline-none focus:ring-2';
+  'mt-1.5 block min-h-11 w-full min-w-0 rounded-lg border bg-white px-3 py-2.5 text-sm text-[#2C3E2D] placeholder:text-[#9A948E] focus:outline-none focus:ring-2';
 
 export function TextField({
   name,

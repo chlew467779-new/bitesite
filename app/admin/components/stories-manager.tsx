@@ -157,7 +157,7 @@ export default function StoriesManager({ onEdit, onNew }: StoriesManagerProps) {
           <button
             type="button"
             onClick={() => setRetryKey((key) => key + 1)}
-            className="inline-flex items-center gap-1.5 rounded-md bg-red-900/40 px-2.5 py-1.5 text-xs text-red-200 hover:bg-red-900/70 transition-colors"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-md bg-red-900/40 px-2.5 py-1.5 text-xs text-red-200 hover:bg-red-900/70 transition-colors"
           >
             <RefreshCw className="w-3.5 h-3.5" /> Retry
           </button>

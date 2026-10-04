@@ -81,7 +81,7 @@ export default function ReportsInbox({ onOpenMerchantManager, onOpenStoryEditor,
       <div className="flex flex-wrap gap-2" role="tablist" aria-label="Report status">
         {FILTERS.map((f) => (
           <button key={f.value} type="button" role="tab" aria-selected={filter === f.value} onClick={() => setFilter(f.value)}
-            className={`min-h-10 rounded-lg px-3 text-sm ${filter === f.value ? 'bg-amber-500 font-medium text-slate-950' : 'bg-slate-800 text-slate-200'}`}>
+            className={`min-h-11 rounded-lg px-3 text-sm ${filter === f.value ? 'bg-amber-500 font-medium text-slate-950' : 'bg-slate-800 text-slate-200'}`}>
             {f.label}{counts && f.value !== 'all' ? ` (${counts[f.value]})` : ''}
           </button>
         ))}
@@ -118,9 +118,9 @@ export default function ReportsInbox({ onOpenMerchantManager, onOpenStoryEditor,
               ) : (
                 <button type="button" onClick={() => onOpenStoryEditor(item.targetGone ? null : item.slug)} className="min-h-11 w-full rounded-lg border border-[#C9D6C7] px-4 text-sm font-medium sm:w-auto">Edit in Stories Editor</button>
               )}
-              {item.status !== 'resolved' && <button type="button" disabled={working !== null} onClick={() => void decide(item, 'resolved')} className="min-h-10 rounded-lg bg-[#2C3E2D] px-4 text-sm font-medium text-white disabled:opacity-50">Resolved</button>}
-              {item.status !== 'dismissed' && <button type="button" disabled={working !== null} onClick={() => void decide(item, 'dismissed')} className="min-h-10 rounded-lg border border-[#C9D6C7] px-4 text-sm font-medium disabled:opacity-50">Dismiss</button>}
-              {item.status !== 'new' && <button type="button" disabled={working !== null} onClick={() => void decide(item, 'new')} className="min-h-10 rounded-lg border border-[#C9D6C7] px-4 text-sm font-medium disabled:opacity-50">Reopen</button>}
+              {item.status !== 'resolved' && <button type="button" disabled={working !== null} onClick={() => void decide(item, 'resolved')} className="min-h-11 rounded-lg bg-[#2C3E2D] px-4 text-sm font-medium text-white disabled:opacity-50">Resolved</button>}
+              {item.status !== 'dismissed' && <button type="button" disabled={working !== null} onClick={() => void decide(item, 'dismissed')} className="min-h-11 rounded-lg border border-[#C9D6C7] px-4 text-sm font-medium disabled:opacity-50">Dismiss</button>}
+              {item.status !== 'new' && <button type="button" disabled={working !== null} onClick={() => void decide(item, 'new')} className="min-h-11 rounded-lg border border-[#C9D6C7] px-4 text-sm font-medium disabled:opacity-50">Reopen</button>}
             </div>
             {itemError[item.id] && <p className="mt-2 text-sm text-red-700" role="alert">{itemError[item.id]}</p>}
           </div>

@@ -106,7 +106,7 @@ export function AreaField({ name, label, value, onChange, readOnly = false, merc
         onFocus={() => setOpen(true)}
         onBlur={onBlur}
         onKeyDown={onKeyDown}
-        className={`mt-1.5 block w-full min-w-0 rounded-lg border bg-white px-3 py-2.5 text-sm text-[#2C3E2D] placeholder:text-[#9A948E] focus:outline-none focus:ring-2 ${unlisted ? 'border-red-600 focus:border-red-600 focus:ring-red-600/20' : 'border-[#C9D6C7] focus:border-emerald-700 focus:ring-emerald-700/20'}${readOnly ? ' bg-[#F4F6F1] text-[#6B6560]' : ''}`}
+        className={`mt-1.5 block min-h-11 w-full min-w-0 rounded-lg border bg-white px-3 py-2.5 text-sm text-[#2C3E2D] placeholder:text-[#9A948E] focus:outline-none focus:ring-2 ${unlisted ? 'border-red-600 focus:border-red-600 focus:ring-red-600/20' : 'border-[#C9D6C7] focus:border-emerald-700 focus:ring-emerald-700/20'}${readOnly ? ' bg-[#F4F6F1] text-[#6B6560]' : ''}`}
       />
       {showList && (
         <ul id={listId} role="listbox" className="absolute z-20 mt-1 max-h-64 w-full overflow-auto rounded-lg border border-[#C9D6C7] bg-white py-1 shadow-lg">

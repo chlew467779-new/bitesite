@@ -175,3 +175,24 @@ For each released step retain: application SHA/deployment URL, exact executed SQ
 - Application: `/api/reports` (public), `/api/admin/reports`, "Report a problem" on store and Story pages, Admin "Visitor Reports" page and badge.
 - Environment: optional `REPORT_HASH_SECRET` (falls back to `ADMIN_SESSION_SECRET`; without either, reporting answers 503).
 - Rollback FIRST: `supabase/rollback/20260928130000_public_reports.rollback.STAGING_ONLY.sql`.
+
+## Released additions, 2026-09-30 to 2026-10-04
+
+This section records the repository sequence and the shared work queue's release reports as of 2026-10-04. It is not a fresh read of hosted migration history or a new authorization to run SQL. Before any further hosted change, compare the actual environment, migration history and SQL body. Keep the application paired with its required schema.
+
+| Date | Feature and application release | Required SQL / release artifact | Recorded state and order |
+|---|---|---|---|
+| 09-30 | Pilot intake Open / Limited / Paused (#73) | `20260930120000_pilot_intake_mode.sql` | Merged; apply SQL before depending on intake mode. |
+| 09-30 | Admin menu import from photos, Events hidden, Featured dishes (#74) | `20260930130000_menu_import.sql` | Merged; imported menu writes depend on the migration. |
+| 10-03 | Owner menu photo requests and Admin Menu Photos (#78; SYNC-067) | `20261003130000_menu_photos_bucket.sql`; `Documents/Codex/2026-10-03/release/release-20261003-menu-photos.sql` | Merged; private bucket before upload controls. |
+| 10-03 | Owner facilities and occasions (#80; SYNC-068) | `20261003140000_owner_amenities_occasion.sql`; `Documents/Codex/2026-10-03/release/release-20261003b-amenities.sql` | Merged; Owner registry permission before editor. |
+| 10-03 | Owner page style and sections (#81; SYNC-069) | `20261003150000_owner_page_style.sql`; `Documents/Codex/2026-10-03/release/release-20261003c-page-style.sql` | Merged after amenities; Chinese/Malay availability remains a separate release gate. |
+| 10-03 | Site Errors in Admin (#84; SYNC-070) | `20261003160000_site_errors.sql`; `Documents/Codex/2026-10-03/release/release-20261003d-site-errors.sql` | Merged; recording requires the table. |
+| 10-04 | Privacy Policy (#88, #95; SYNC-071, SYNC-076) and finalized terms (#90) | `20261004100000_privacy_retention.sql`; `Documents/Codex/2026-10-04/release/release-20261004-privacy-retention.sql` | Application merged. Retention cleanup requires the migration; confirm hosted schedule separately. |
+| 10-04 | Photo Cleanup (#93; SYNC-074) | None | Merged; Storage API cleanup has its own in-use checks. |
+| 10-04 | Gmail notification delivery (#96; SYNC-077) | None beyond the prior notification outbox | Merged; sending requires the SMTP environment settings. The shared queue still lists those settings as CH work. |
+| 10-04 | ShopeeFood / foodpanda links (#91; SYNC-072) | `20261004110000_delivery_links.sql`; `Documents/Codex/2026-10-04/release/release-20261004-delivery-links.sql` | Shared queue records CH ran SQL and app merged. |
+| 10-04 | Job posts, Owner and Admin (#92, #101; SYNC-073) | `20261004120000_merchant_jobs.sql`; `Documents/Codex/2026-10-04/release/release-20261004-jobs.sql` | Shared queue records CH ran SQL and app merged; public pages are a separate G21 batch. |
+| 10-04 | Singapore currency and initial areas (#94, #99, #100; SYNC-075) | `20261004130000_singapore_currency.sql`; `Documents/Codex/2026-10-04/release/release-20261004-singapore-currency.sql` | Shared queue records CH ran SQL and app merged. The 55-area expansion is separate and still awaits CH's H6d SQL and #97 merge. |
+
+The shared queue also lists `release-20261004-layouts-chinese-malay.sql` (H6e, #98) as pending CH execution and a later application switch. Do not treat that layout release as complete. G18 and G21, and the batches stacked on them, remain local review work until independently merged.

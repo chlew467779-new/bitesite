@@ -195,7 +195,7 @@ export default function StorySubmissionsManager({ onDraftCreated }: { onDraftCre
       </div>
       <div className="flex flex-wrap gap-2">
         {(['pending_review', 'draft', 'approved', 'converted', 'rejected', 'archived', 'all'] as const).map(status => (
-          <button key={status} onClick={() => setStatusFilter(status)} className={`px-3 py-1.5 rounded-lg border text-xs ${statusFilter === status ? 'border-amber-500 bg-amber-500/10 text-amber-300' : 'border-slate-700 text-slate-400 hover:text-slate-200'}`}>
+          <button key={status} onClick={() => setStatusFilter(status)} className={`min-h-11 px-3 py-1.5 rounded-lg border text-xs ${statusFilter === status ? 'border-amber-500 bg-amber-500/10 text-amber-300' : 'border-slate-700 text-slate-400 hover:text-slate-200'}`}>
             {status === 'all' ? 'All' : labels[status]}
           </button>
         ))}

@@ -155,7 +155,7 @@ export default function MerchantStatusPanel({ merchantId, merchantName, token }:
           <div className="mt-3 flex flex-wrap gap-2">
             {state.allowedActions.map((action) => (
               <button key={action} type="button" disabled={locked} onClick={() => open(action)}
-                className={`min-h-10 rounded-lg px-4 text-sm font-medium disabled:opacity-50 ${GOVERNANCE_ACTION_INFO[action].danger ? 'border border-red-700 text-red-700' : 'bg-[#2C3E2D] text-white'}`}>
+                className={`min-h-11 rounded-lg px-4 text-sm font-medium disabled:opacity-50 ${GOVERNANCE_ACTION_INFO[action].danger ? 'border border-red-700 text-red-700' : 'bg-[#2C3E2D] text-white'}`}>
                 {GOVERNANCE_ACTION_INFO[action].label}
               </button>
             ))}
@@ -170,12 +170,12 @@ export default function MerchantStatusPanel({ merchantId, merchantName, token }:
               <div className="mt-2 flex flex-col gap-2 sm:flex-row">
                 <label htmlFor="business-status-choice" className="sr-only">New business status</label>
                 <select id="business-status-choice" value={businessChoice} disabled={locked} onChange={(event) => setBusinessChoice(event.target.value as BusinessStatus | '')}
-                  className="min-h-10 rounded-lg border border-[#C9D6C7] bg-white px-3 text-sm">
+                  className="min-h-11 rounded-lg border border-[#C9D6C7] bg-white px-3 text-sm">
                   <option value="">Choose a new status…</option>
                   {BUSINESS_STATUSES.filter((s) => s.value !== state.businessStatus).map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
                 </select>
                 <button type="button" disabled={locked || !businessChoice} onClick={() => businessChoice && open(`business:${businessChoice}`)}
-                  className="min-h-10 rounded-lg border border-[#2C3E2D] px-4 text-sm font-medium disabled:opacity-50">Change status</button>
+                  className="min-h-11 rounded-lg border border-[#2C3E2D] px-4 text-sm font-medium disabled:opacity-50">Change status</button>
               </div>
             )}
           </div>
@@ -184,7 +184,7 @@ export default function MerchantStatusPanel({ merchantId, merchantName, token }:
 
       {message && <p className={`mt-3 text-sm ${message.kind === 'ok' ? 'text-emerald-800' : 'text-red-700'}`} role={message.kind === 'error' ? 'alert' : 'status'}>{message.text}</p>}
       {unknown && (
-        <button type="button" disabled={sending} onClick={() => void send(unknown)} className="mt-2 min-h-10 rounded-lg border border-[#2C3E2D] px-4 text-sm font-medium disabled:opacity-50">
+        <button type="button" disabled={sending} onClick={() => void send(unknown)} className="mt-2 min-h-11 rounded-lg border border-[#2C3E2D] px-4 text-sm font-medium disabled:opacity-50">
           {sending ? 'Retrying…' : 'Retry'}
         </button>
       )}
@@ -199,10 +199,10 @@ export default function MerchantStatusPanel({ merchantId, merchantName, token }:
             <textarea id="governance-reason" rows={3} maxLength={GOVERNANCE_REASON_MAX} value={reason} disabled={sending} onChange={(event) => setReason(event.target.value)}
               className="mt-1 block w-full rounded-lg border border-[#C9D6C7] px-3 py-2 text-sm focus:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-700/20" />
             <div className="mt-5 flex flex-wrap justify-end gap-2">
-              <button type="button" disabled={sending} onClick={close} className="min-h-10 rounded-lg px-4 text-sm font-medium disabled:opacity-50">Cancel</button>
+              <button type="button" disabled={sending} onClick={close} className="min-h-11 rounded-lg px-4 text-sm font-medium disabled:opacity-50">Cancel</button>
               <button type="button" disabled={sending || reasonMissing}
                 onClick={() => void send({ key: dialog, reason, requestId: crypto.randomUUID() })}
-                className={`min-h-10 rounded-lg px-4 text-sm font-medium text-white disabled:opacity-50 ${info.danger ? 'bg-red-700' : 'bg-[#2C3E2D]'}`}>
+                className={`min-h-11 rounded-lg px-4 text-sm font-medium text-white disabled:opacity-50 ${info.danger ? 'bg-red-700' : 'bg-[#2C3E2D]'}`}>
                 {sending ? 'Working…' : info.label}
               </button>
             </div>

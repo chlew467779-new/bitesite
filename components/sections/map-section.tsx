@@ -178,7 +178,7 @@ export function MapSection({ merchants, selectedMerchant, onSelect }: MapSection
 
       <button
         onClick={handleRecenter}
-        className="absolute right-4 top-4 z-[1000] flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#2C3E2D] shadow-lg border border-[#DDE5DC] transition-all hover:bg-[#F0F4EC] active:scale-90"
+        className="absolute right-4 top-4 z-[1000] flex h-11 w-11 items-center justify-center rounded-full bg-white text-[#2C3E2D] shadow-lg border border-[#DDE5DC] transition-all hover:bg-[#F0F4EC] active:scale-90"
         style={{ WebkitTapHighlightColor: "transparent" }}
         title="Go to my location"
       >
@@ -204,7 +204,7 @@ export function MapSection({ merchants, selectedMerchant, onSelect }: MapSection
           <div className="relative rounded-2xl border border-[#DDE5DC] bg-white p-5 shadow-xl">
             <button
               onClick={() => onSelect(null)}
-              className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full text-[#8A968B] transition-colors hover:bg-[#F0F4EC] hover:text-[#2C3E2D]"
+              className="absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-full text-[#8A968B] transition-colors hover:bg-[#F0F4EC] hover:text-[#2C3E2D]"
               style={{ WebkitTapHighlightColor: "transparent" }}
             >
               <X className="h-4 w-4" />
