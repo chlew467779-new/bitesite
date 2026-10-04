@@ -65,7 +65,18 @@ export async function recordSiteError(source: SiteErrorSource, rawMessage: strin
   state.recent.set(fingerprint, now);
   if (state.recent.size > 500) state.recent.delete(state.recent.keys().next().value!);
   try {
+    // Email (C8): only when sending is set up, look first whether this kind of error is new or was fixed.
+    const delivery = process.env.NEXT_RUNTIME === 'edge' ? null : await import('./notification-delivery');
+    let emailAfter: { reopened: boolean } | null = null;
+    if (delivery?.siteErrorEmailEnabled()) {
+      const { data: known, error: readError } = await supabase.from('site_errors').select('status').eq('fingerprint', fingerprint).maybeSingle();
+      if (!readError && (!known || known.status === 'resolved')) emailAfter = { reopened: !!known };
+    }
     const { error } = await supabase.rpc('site_error_record', { p_source: source, p_message: message, p_page_path: pagePathOnly(page), p_fingerprint: fingerprint });
+    if (!error && emailAfter && delivery) {
+      const problem = await delivery.emailSiteError({ source, message, page: pagePathOnly(page), reopened: emailAfter.reopened });
+      if (problem && problem !== 'hourly limit') state.original('site error email not sent:', problem);
+    }
     if (error) {
       // Before the migration (function missing) stay quiet for a while instead of failing every time.
       if (error.code === 'PGRST202' || error.code === '42883') state.offUntil = now + OFF_AFTER_MISSING_MS;

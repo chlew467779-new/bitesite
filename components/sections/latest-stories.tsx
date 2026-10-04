@@ -67,7 +67,7 @@ export function LatestStories() {
             </h2>
             <Link
               href="/stories"
-              className="inline-flex items-center gap-1 text-sm font-medium text-[#5A8F6E] transition-colors hover:text-[#4A7A5E]"
+              className="inline-flex min-h-11 items-center gap-1 text-sm font-medium text-[#5A8F6E] transition-colors hover:text-[#4A7A5E]"
             >
               View All
               <svg
