@@ -28,7 +28,7 @@ export function PhoneField({ name, label, value, onChange, onBlur, error, readOn
   const stateClass = error
     ? 'border-red-600 focus:border-red-600 focus:ring-red-600/20'
     : 'border-[#C9D6C7] focus:border-emerald-700 focus:ring-emerald-700/20';
-  const box = `mt-1.5 rounded-lg border bg-white px-3 py-2.5 text-sm text-[#2C3E2D] focus:outline-none focus:ring-2 ${stateClass}${readOnly ? ' bg-[#F4F6F1] text-[#6B6560]' : ''}`;
+  const box = `mt-1.5 min-h-11 rounded-lg border bg-white px-3 py-2.5 text-sm text-[#2C3E2D] focus:outline-none focus:ring-2 ${stateClass}${readOnly ? ' bg-[#F4F6F1] text-[#6B6560]' : ''}`;
 
   return (
     <div>

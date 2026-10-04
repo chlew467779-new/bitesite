@@ -113,7 +113,7 @@ export default function MerchantTable({ range }: MerchantTableProps) {
             id="merchant-sort"
             value={sortBy}
             onChange={(event) => setSortBy(event.target.value as typeof sortBy)}
-            className="rounded-md border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs text-slate-300 focus:border-amber-500 focus:outline-none"
+            className="min-h-11 rounded-md border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs text-slate-300 focus:border-amber-500 focus:outline-none"
           >
             <option value="views">Views</option>
             <option value="unique_ips" disabled={!rawVisitorDataAvailable}>Unique visitors{!rawVisitorDataAvailable ? ' (90-day limit)' : ''}</option>

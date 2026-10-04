@@ -119,7 +119,7 @@ export default function PerformancePanel({ onOpenTab }: { onOpenTab: (tab: strin
           <div role="group" aria-label="Period" className="flex rounded-lg border border-slate-700 p-0.5">
             {PERFORMANCE_DAYS.map((d) => (
               <button key={d} type="button" aria-pressed={days === d} onClick={() => { setDays(d); setShowAll(false); }}
-                className={`min-h-10 rounded-md px-3 text-sm ${days === d ? 'bg-amber-500 font-medium text-slate-950' : 'text-slate-300 hover:text-white'}`}>
+                className={`min-h-11 rounded-md px-3 text-sm ${days === d ? 'bg-amber-500 font-medium text-slate-950' : 'text-slate-300 hover:text-white'}`}>
                 {d} days
               </button>
             ))}
@@ -187,7 +187,7 @@ export default function PerformancePanel({ onOpenTab }: { onOpenTab: (tab: strin
               <div role="group" aria-label="Sort restaurants" className="flex rounded-lg border border-slate-700 p-0.5">
                 {(['views', 'contacts'] as const).map((key) => (
                   <button key={key} type="button" aria-pressed={sortBy === key} onClick={() => setSortBy(key)}
-                    className={`min-h-10 rounded-md px-3 text-sm ${sortBy === key ? 'bg-slate-700 font-medium text-white' : 'text-slate-400 hover:text-white'}`}>
+                    className={`min-h-11 rounded-md px-3 text-sm ${sortBy === key ? 'bg-slate-700 font-medium text-white' : 'text-slate-400 hover:text-white'}`}>
                     Most {key}
                   </button>
                 ))}

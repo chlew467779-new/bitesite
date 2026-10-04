@@ -92,7 +92,7 @@ export default function MerchantSlugPanel({ merchantId, token, onChanged }: {
         <p className="text-xs text-slate-500">Old addresses that redirect here: {state.redirects.map((r) => `/store/${r.slug}`).join(', ')}</p>
       )}
       <button type="button" onClick={() => void save()} disabled={saving}
-        className="inline-flex min-h-10 items-center rounded-lg bg-[#2C3E2D] px-4 text-sm font-medium text-white disabled:opacity-50">
+        className="inline-flex min-h-11 items-center rounded-lg bg-[#2C3E2D] px-4 text-sm font-medium text-white disabled:opacity-50">
         {saving ? 'Saving…' : unknown.current ? 'Retry' : 'Change web address'}
       </button>
       {message && <p className={`text-sm ${message.kind === 'ok' ? 'text-emerald-800' : 'text-red-700'}`} role={message.kind === 'error' ? 'alert' : 'status'}>{message.text}</p>}

@@ -18,6 +18,15 @@ export default function HourlyChart({ range }: HourlyChartProps) {
   const { token } = useAuth();
   const [data, setData] = useState<HourlyData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mobile, setMobile] = useState(false);
+
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 639px)');
+    const update = () => setMobile(query.matches);
+    update();
+    query.addEventListener('change', update);
+    return () => query.removeEventListener('change', update);
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -60,7 +69,7 @@ export default function HourlyChart({ range }: HourlyChartProps) {
               dataKey="hour"
               stroke="#475569"
               tick={{ fill: '#94a3b8', fontSize: 11 }}
-              interval={2}
+              interval={mobile ? 5 : 2}
             />
             <YAxis
               stroke="#475569"

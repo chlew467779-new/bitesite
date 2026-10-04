@@ -117,7 +117,7 @@ export default function RestaurantReviewQueue() {
     {queue?.items.map((item) => <article key={item.id} className="min-w-0 rounded-xl bg-white p-4 text-[#2C3E2D] sm:p-6">
       <h3 className="break-words text-xl font-semibold">{item.snapshot.name}</h3>
       <p className="mt-1 text-xs text-[#6B6560]">Submitted {new Date(item.createdAt).toLocaleString()}</p>
-      <a href={`/merchant/preview?merchant=${encodeURIComponent(item.merchantId)}&as=admin`} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex min-h-10 items-center rounded-lg border border-[#2C3E2D] px-3 text-sm font-medium">Preview page</a>
+      <a href={`/merchant/preview?merchant=${encodeURIComponent(item.merchantId)}&as=admin`} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex min-h-11 items-center rounded-lg border border-[#2C3E2D] px-3 text-sm font-medium">Preview page</a>
       {item.changed && <p className="mt-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">Content changed after submission. Ask the Owner to correct and resubmit; approval is blocked.</p>}
       {item.restriction !== 'none' && <p className="mt-2 text-sm text-red-700">Restaurant is {item.restriction}. Publishing remains blocked.</p>}
       <div className="mt-3 flex flex-wrap gap-3">{(['logoImage', 'coverImage'] as const).map((key) => imageUrl(item.snapshot[key]) && // eslint-disable-next-line @next/next/no-img-element -- review snapshot previews merchant-uploaded URLs from any host

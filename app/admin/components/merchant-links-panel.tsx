@@ -88,7 +88,7 @@ export default function MerchantLinksPanel({ merchantId, token }: { merchantId: 
             <div className="mt-1 flex flex-col gap-2 sm:flex-row">
               <input id={`admin-link-${field}`} className={input} type="url" placeholder={placeholder} value={value}
                 onChange={(event) => { setDrafts((d) => ({ ...d, [field]: event.target.value })); setStatus((s) => ({ ...s, [field]: undefined })); }} />
-              <button type="button" disabled={!dirty || saving !== null} onClick={() => void save(field)} className="min-h-10 rounded-lg bg-[#2C3E2D] px-4 text-sm font-medium text-white disabled:opacity-50">
+              <button type="button" disabled={!dirty || saving !== null} onClick={() => void save(field)} className="min-h-11 rounded-lg bg-[#2C3E2D] px-4 text-sm font-medium text-white disabled:opacity-50">
                 {saving === field ? 'Saving…' : 'Save'}
               </button>
             </div>

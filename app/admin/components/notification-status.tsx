@@ -51,7 +51,7 @@ export default function NotificationStatus() {
       <div className="flex items-center gap-3">
         {message && <span role="status" className="text-xs text-slate-400">{message}</span>}
         <button type="button" disabled={busy || counts.pending === 0} onClick={() => void sendNow()}
-          className="inline-flex min-h-10 items-center rounded-lg border border-amber-500/40 px-3 font-medium text-amber-300 disabled:opacity-40">
+          className="inline-flex min-h-11 items-center rounded-lg border border-amber-500/40 px-3 font-medium text-amber-300 disabled:opacity-40">
           {busy ? 'Sending…' : 'Send now'}
         </button>
       </div>

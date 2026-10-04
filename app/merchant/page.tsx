@@ -678,7 +678,7 @@ export default function MerchantDashboardPage() {
                 <li key={item.label}>
                   {item.complete
                     ? <span className="text-emerald-800">✓ {item.label}</span>
-                    : <a href={`#${item.anchor}`} className="text-[#2C3E2D] underline underline-offset-2">○ {item.label}</a>}
+                    : <a href={`#${item.anchor}`} className="inline-flex min-h-11 items-center text-[#2C3E2D] underline underline-offset-2">○ {item.label}</a>}
                 </li>
               ))}
             </ul>

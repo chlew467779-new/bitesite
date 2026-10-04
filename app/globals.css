@@ -66,3 +66,15 @@
 @layer utilities {
   .text-balance { text-wrap: balance; }
 }
+
+/* Leaflet's default zoom links are 30px; keep map controls touch sized. */
+/* More specific than Leaflet's own ".leaflet-touch .leaflet-bar a" (30px), which would otherwise win. */
+.leaflet-bar.leaflet-control-zoom a,
+.leaflet-touch .leaflet-bar.leaflet-control-zoom a {
+  display: flex;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}

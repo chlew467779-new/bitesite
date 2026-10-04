@@ -38,7 +38,7 @@ export default function MerchantHistoryPanel({ merchantId, token }: { merchantId
 
   return (
     <details className="rounded-xl bg-white p-5 text-[#2C3E2D]" onToggle={(event) => { if ((event.target as HTMLDetailsElement).open && items === null && !loading) void load(null); }}>
-      <summary className="min-h-10 cursor-pointer text-base font-semibold">Change history</summary>
+      <summary className="flex min-h-11 cursor-pointer items-center text-base font-semibold">Change history</summary>
       <p className="mt-1 text-xs text-[#6B6560]">Every change to this restaurant&apos;s details and status, newest first. Web address, links and photos are listed by name only.</p>
       <div className="mt-3 space-y-3">
         {items?.length === 0 && <p className="text-sm text-[#6B6560]">No changes recorded yet.</p>}
@@ -66,7 +66,7 @@ export default function MerchantHistoryPanel({ merchantId, token }: { merchantId
         {loading && <Loader2 className="h-5 w-5 animate-spin text-[#2C3E2D]" />}
         {error && <p className="text-sm text-red-700" role="alert">{error} <button type="button" className="ml-1 underline" onClick={() => void load(items?.length ? nextBefore : null)}>Try again</button></p>}
         {nextBefore !== null && !loading && (
-          <button type="button" onClick={() => void load(nextBefore)} className="inline-flex min-h-10 items-center rounded-lg border border-[#C9D6C7] px-4 text-sm">Show older changes</button>
+          <button type="button" onClick={() => void load(nextBefore)} className="inline-flex min-h-11 items-center rounded-lg border border-[#C9D6C7] px-4 text-sm">Show older changes</button>
         )}
       </div>
     </details>

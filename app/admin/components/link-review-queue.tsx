@@ -114,8 +114,8 @@ export default function LinkReviewQueue({ searchQuery = '' }: { searchQuery?: st
                 className="mt-1 block w-full rounded-lg border border-[#C9D6C7] px-3 py-2 text-sm" />
             </label>
             <div className="mt-3 flex flex-wrap gap-2">
-              <button type="button" disabled={working !== null} onClick={() => void decide(item, 'approve')} className="inline-flex min-h-10 items-center gap-1 rounded-lg bg-[#2C3E2D] px-4 text-sm font-medium text-white disabled:opacity-50"><Check className="h-4 w-4" /> Approve</button>
-              <button type="button" disabled={working !== null} onClick={() => void decide(item, 'reject')} className="inline-flex min-h-10 items-center gap-1 rounded-lg border border-red-700 px-4 text-sm font-medium text-red-700 disabled:opacity-50"><X className="h-4 w-4" /> Reject</button>
+              <button type="button" disabled={working !== null} onClick={() => void decide(item, 'approve')} className="inline-flex min-h-11 items-center gap-1 rounded-lg bg-[#2C3E2D] px-4 text-sm font-medium text-white disabled:opacity-50"><Check className="h-4 w-4" /> Approve</button>
+              <button type="button" disabled={working !== null} onClick={() => void decide(item, 'reject')} className="inline-flex min-h-11 items-center gap-1 rounded-lg border border-red-700 px-4 text-sm font-medium text-red-700 disabled:opacity-50"><X className="h-4 w-4" /> Reject</button>
             </div>
             {itemError[item.id] && <p className="mt-2 text-sm text-red-700" role="alert">{itemError[item.id]}</p>}
           </div>

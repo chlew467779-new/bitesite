@@ -184,7 +184,7 @@ export default function FeedbackInbox() {
         {source === 'restaurants' && restaurants.map((item) => (
           <li key={item.id} className="rounded-xl bg-white p-4 text-[#2C3E2D]">
             <div className="flex items-start gap-3">
-              <input type="checkbox" aria-label={`Select feedback from ${item.merchantName}`} className="mt-1 h-5 w-5 shrink-0" checked={selected.has(item.id)} onChange={() => toggle(item.id)} />
+              <label className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center"><input type="checkbox" aria-label={`Select feedback from ${item.merchantName}`} className="h-5 w-5" checked={selected.has(item.id)} onChange={() => toggle(item.id)} /></label>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <p className="font-semibold">{item.merchantName} <span className="text-sm font-normal text-[#6B6560]">/{item.slug}</span></p>
@@ -213,7 +213,7 @@ export default function FeedbackInbox() {
         {source === 'visitors' && visitors.map((item) => (
           <li key={item.id} className="rounded-xl bg-white p-4 text-[#2C3E2D]">
             <div className="flex items-start gap-3">
-              <input type="checkbox" aria-label="Select this visitor feedback" className="mt-1 h-5 w-5 shrink-0" checked={selected.has(item.id)} onChange={() => toggle(item.id)} />
+              <label className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center"><input type="checkbox" aria-label="Select this visitor feedback" className="h-5 w-5" checked={selected.has(item.id)} onChange={() => toggle(item.id)} /></label>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <p className="font-semibold">{visitorTopic(item.topic)}</p>

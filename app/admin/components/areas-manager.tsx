@@ -5,8 +5,8 @@ import { useAuth } from './auth-context';
 
 interface Area { id: string; country: string; state: string; name: string; aliases: string[]; is_active: boolean }
 
-const inputClass = 'w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white focus:border-amber-500 focus:outline-none';
-const buttonClass = 'rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-slate-950 disabled:opacity-50';
+const inputClass = 'min-h-11 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white focus:border-amber-500 focus:outline-none';
+const buttonClass = 'min-h-11 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-slate-950 disabled:opacity-50';
 
 export default function AreasManager() {
   const { token } = useAuth();
@@ -95,8 +95,8 @@ export default function AreasManager() {
                   <p className="mt-1 text-sm text-slate-400">Aliases: {area.aliases.length ? area.aliases.join(', ') : 'None'}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <button type="button" className="rounded-lg border border-slate-700 px-3 py-2 text-sm hover:bg-slate-800" onClick={() => { setEditing(area.id); setEditAliases(area.aliases.join(', ')); setConfirmDisable(null); }}>Edit aliases</button>
-                  <button type="button" disabled={busy} className="rounded-lg border border-slate-700 px-3 py-2 text-sm hover:bg-slate-800 disabled:opacity-50" onClick={() => {
+                  <button type="button" className="min-h-11 rounded-lg border border-slate-700 px-3 py-2 text-sm hover:bg-slate-800" onClick={() => { setEditing(area.id); setEditAliases(area.aliases.join(', ')); setConfirmDisable(null); }}>Edit aliases</button>
+                  <button type="button" disabled={busy} className="min-h-11 rounded-lg border border-slate-700 px-3 py-2 text-sm hover:bg-slate-800 disabled:opacity-50" onClick={() => {
                     if (area.is_active) setConfirmDisable(area.id);
                     else void save('PATCH', { id: area.id, is_active: true });
                   }}>{area.is_active ? 'Disable' : 'Enable'}</button>
@@ -108,13 +108,13 @@ export default function AreasManager() {
               }}>
                 <label className="min-w-52 flex-1 space-y-1 text-sm">Aliases, separated by commas<input className={inputClass} value={editAliases} onChange={(event) => setEditAliases(event.target.value)} /></label>
                 <button className={buttonClass} disabled={busy} type="submit">Save</button>
-                <button type="button" className="rounded-lg border border-slate-700 px-4 py-2 text-sm" onClick={() => setEditing(null)}>Cancel</button>
+                <button type="button" className="min-h-11 rounded-lg border border-slate-700 px-4 py-2 text-sm" onClick={() => setEditing(null)}>Cancel</button>
               </form>}
               {confirmDisable === area.id && <div className="mt-4 rounded-lg border border-amber-800 bg-amber-950/30 p-3 text-sm">
                 <p>Existing merchants keep this area, but new saves using it will be rejected. Disable {area.name}?</p>
                 <div className="mt-3 flex gap-2">
                   <button type="button" disabled={busy} className={buttonClass} onClick={async () => { if (await save('PATCH', { id: area.id, is_active: false })) setConfirmDisable(null); }}>Confirm disable</button>
-                  <button type="button" className="rounded-lg border border-slate-700 px-4 py-2" onClick={() => setConfirmDisable(null)}>Cancel</button>
+                  <button type="button" className="min-h-11 rounded-lg border border-slate-700 px-4 py-2" onClick={() => setConfirmDisable(null)}>Cancel</button>
                 </div>
               </div>}
             </div>

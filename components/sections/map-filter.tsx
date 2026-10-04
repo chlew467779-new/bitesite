@@ -49,7 +49,7 @@ export function MapFilter({ activeTypes, onChange, availableTypes, activeArea, o
                 key={type}
                 onClick={() => toggle(type)}
                 className={cn(
-                  "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-4 py-2 text-xs font-medium transition-all duration-200 active:scale-95 select-none",
+                  "inline-flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-4 py-2 text-xs font-medium transition-all duration-200 active:scale-95 select-none",
                   isActive
                     ? "bg-[#5A8F6E] text-white shadow-sm"
                     : "border border-[#DDE5DC] bg-white text-[#6B6560] hover:border-[#5A8F6E] hover:text-[#5A8F6E]"
@@ -73,7 +73,7 @@ export function MapFilter({ activeTypes, onChange, availableTypes, activeArea, o
           <div className="flex w-max min-w-full items-center gap-2">
             <span className="shrink-0 text-xs text-[#8A968B]">Area</span>
             {[null, ...availableAreas].map((area) => <button key={area ?? 'all'} type="button" aria-pressed={activeArea === area} onClick={() => onAreaChange(area)}
-              className={cn("shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-xs font-medium", activeArea === area ? "bg-[#2C3E2D] text-white" : "border border-[#DDE5DC] bg-white text-[#6B6560] hover:border-[#2C3E2D]")}>
+              className={cn("min-h-11 shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-xs font-medium", activeArea === area ? "bg-[#2C3E2D] text-white" : "border border-[#DDE5DC] bg-white text-[#6B6560] hover:border-[#2C3E2D]")}>
               {area ?? 'All areas'}
             </button>)}
           </div>
@@ -94,12 +94,12 @@ export function MapFilter({ activeTypes, onChange, availableTypes, activeArea, o
               placeholder="Search restaurant name, area..."
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="w-full bg-transparent py-2.5 pl-3 pr-10 text-sm text-[#2C3E2D] outline-none placeholder:text-[#8A968B]"
+              className="min-h-11 w-full bg-transparent py-2.5 pl-3 pr-10 text-sm text-[#2C3E2D] outline-none placeholder:text-[#8A968B]"
             />
             {searchQuery && (
               <button
                 onClick={() => onSearchChange("")}
-                className="mr-3 flex h-5 w-5 items-center justify-center rounded-full bg-[#DDE5DC] text-[#6B6560] active:scale-90 transition-transform"
+                className="mr-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#DDE5DC] text-[#6B6560] active:scale-90 transition-transform"
                 style={{ WebkitTapHighlightColor: "transparent" }}
               >
                 <X className="h-3 w-3" />
