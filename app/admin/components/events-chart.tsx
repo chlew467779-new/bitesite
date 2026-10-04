@@ -21,7 +21,7 @@ const EVENT_LABELS: Record<string, string> = {
   search: 'Searches',
   map_marker_click: 'Map Clicks',
   story_to_merchant: 'Story Clicks',
-  merchant_order_click: 'GrabFood / Order Clicks',
+  merchant_order_click: 'Delivery Order Clicks',
   directions_click: 'Directions',
   phone_click: 'Phone',
   menu_view: 'Menu Views',

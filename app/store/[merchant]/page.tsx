@@ -20,7 +20,8 @@ import { describeLayoutValueForLog, resolvePublicLayoutKey } from "@/lib/layout-
 import { RelatedMerchants } from "@/components/sections/related-merchants";
 import { ViewTracker } from "@/components/sections/view-tracker";
 import { PageViewTracker } from "@/app/components/page-view-tracker";
-import { GrabFoodOrderButton } from "@/components/sections/grabfood-order-button";
+import { DeliveryOrderButtons } from "@/components/sections/delivery-order-buttons";
+import { DELIVERY_LINK_TYPES } from "@/lib/merchant-links-core.mjs";
 import { getSiteUrl } from "@/lib/site-url";
 import { safeJsonLd } from "@/lib/safe-json-ld.mjs";
 import { discoveryPath, discoverySlug, merchantArea, merchantCuisines } from "@/lib/discovery-core.mjs";
@@ -210,7 +211,7 @@ export default async function MerchantPage({ params }: PageProps) {
     getVideosByMerchant(merchant.id),
     getRelatedMerchants(merchant.slug, merchant.cuisine_type, merchant.tags, merchant.area, 3),
     getEventsByMerchant(merchant.id),
-    supabase.from("merchant_external_links").select("url").eq("merchant_id", merchant.id).eq("link_type", "grabfood").eq("is_active", true).maybeSingle(),
+    supabase.from("merchant_external_links").select("link_type, url").eq("merchant_id", merchant.id).in("link_type", [...DELIVERY_LINK_TYPES]).eq("is_active", true),
   ]);
 
   // Unknown, blank or not-yet-public-ready layout values render Classic instead of 404ing
@@ -279,7 +280,7 @@ export default async function MerchantPage({ params }: PageProps) {
     <>
       <PageViewTracker pageType="merchant" slug={merchant.slug} />
       <ViewTracker slug={merchant.slug} />
-      {externalLinksRes.data?.url && <GrabFoodOrderButton url={externalLinksRes.data.url} slug={merchant.slug} />}
+      <DeliveryOrderButtons links={externalLinksRes.data ?? []} slug={merchant.slug} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(schemaData) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbSchema) }} />
       <LayoutComponent

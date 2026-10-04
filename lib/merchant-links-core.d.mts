@@ -1,5 +1,6 @@
-export type LinkField = "website" | "instagram" | "facebook" | "menu_pdf_url" | "grabfood";
-export type LinkProblem = "too_long" | "https_only" | "credentials" | "host" | "host_instagram" | "host_facebook" | "host_grabfood";
+export type LinkField = "website" | "instagram" | "facebook" | "menu_pdf_url" | "grabfood" | "shopeefood" | "foodpanda";
+export type DeliveryLinkType = "grabfood" | "shopeefood" | "foodpanda";
+export type LinkProblem = "too_long" | "https_only" | "credentials" | "host" | "host_instagram" | "host_facebook" | "host_grabfood" | "host_shopeefood" | "host_foodpanda";
 
 export interface LinkRequestItem {
   id: string;
@@ -25,6 +26,8 @@ export interface LinkQueueItem {
 type Invalid = { ok: false; status: number; code: string; message: string };
 
 export declare const LINK_FIELDS: readonly { field: LinkField; label: string; placeholder: string }[];
+export declare const DELIVERY_LINK_TYPES: readonly DeliveryLinkType[];
+export declare function availableLinkFields(links: unknown): readonly { field: LinkField; label: string; placeholder: string }[];
 export declare const MAX_LINK_BODY_BYTES: number;
 export declare const LINK_PROBLEM_TEXT: Readonly<Record<LinkProblem, string>>;
 export declare function linkProblem(field: LinkField | string, url: unknown): LinkProblem | null;
