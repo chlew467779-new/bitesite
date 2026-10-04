@@ -266,3 +266,10 @@ A new feature idea must not silently become a decision. Add it here only after C
 - CH decisions: deletion requests handled within 30 days; handled reports and feedback kept 12 months, then deleted. Migration 20261004100000 makes that automatic (nightly pg_cron `privacy_retention_cleanup`), and also deletes site errors 30 days after they are marked resolved.
 - Linked from the footer, the merchant sign-up form and the create-restaurant agreement ("…and have read the Privacy Policy"); in the sitemap. No consent checkbox was added for visitors; the policy is a notice.
 - Recommended, not done: a lawyer's review and a native Bahasa Melayu check. When the text changes, change `PRIVACY_EFFECTIVE_DATE`.
+
+## SYNC-074 — Admin Photo Cleanup (C6, 2026-10-04)
+
+- Admin › Site › Photo Cleanup: "Check" lists photos in the public buckets (merchant-media, story-media) that nothing uses, with thumbnails and size; "Delete" removes them through the Storage API (SQL cannot delete storage objects). No SQL.
+- In use = the file path appears anywhere in merchants, products, articles, Story submissions, events, pop-ups, merchant videos, pending profile/basics requests or review snapshots. Audit history (change log, article revisions) does not keep a file alive.
+- Only files older than 30 days; at most 500 per click; the server checks again at the moment of deleting and skips anything now in use. If any table cannot be read, nothing is offered or deleted.
+- The private menu-photos bucket is never touched (those photos are deleted after use already).

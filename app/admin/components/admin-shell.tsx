@@ -39,6 +39,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   TriangleAlert,
+  ImageOff,
 } from 'lucide-react';
 
 const navItems = [
@@ -67,6 +68,7 @@ const navItems = [
   { id: 'map', label: 'Map Stats', icon: Map },
   { id: 'hourly', label: 'Hourly', icon: Clock },
   { id: 'site-errors', label: 'Site Errors', icon: TriangleAlert },
+  { id: 'photo-cleanup', label: 'Photo Cleanup', icon: ImageOff },
 ];
 
 interface AdminShellProps {
