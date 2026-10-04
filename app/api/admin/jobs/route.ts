@@ -1,7 +1,8 @@
 /* bitesite/app/api/admin/jobs/route.ts */
 
 /**
- * Admin job posts (#23): GET `?filter=visible|hidden|all` (newest 300, with open report counts);
+ * Admin job posts (#23): GET `?filter=visible|hidden|all` (newest 300, with open report counts), or
+ * GET `?merchantId=` for one restaurant's posts (same shape as the Owner read, for its editor tab);
  * PATCH `{ jobId, hide, note? }` hides a post (note required, the Owner sees it) or shows it again;
  * POST `{ merchantId, action, jobId, ... }` posts, edits, closes, renews or deletes for a restaurant
  * (same body as the Owner route plus merchantId). 503 FEATURE_OFF until the release SQL runs.
@@ -44,6 +45,13 @@ async function readBody(request: NextRequest): Promise<{ body: unknown } | { res
 export async function GET(request: NextRequest) {
   const denied = adminDenied(request);
   if (denied) return denied;
+  const merchantId = request.nextUrl.searchParams.get('merchantId');
+  if (merchantId !== null) {
+    if (!isMerchantId(merchantId)) return errorResponse(400, 'VALIDATION_FAILED', 'A valid merchantId is required.');
+    const { data, error } = await supabase.rpc('merchant_jobs_read', { p_actor_type: 'admin', p_actor_id: ADMIN_PRINCIPAL, p_merchant_id: merchantId });
+    if (error) return rpcFailure(error, 'merchant_jobs_read');
+    return NextResponse.json({ data }, { headers: { 'Cache-Control': 'no-store' } });
+  }
   const filter = request.nextUrl.searchParams.get('filter') ?? 'visible';
   if (!FILTERS.includes(filter)) return errorResponse(400, 'VALIDATION_FAILED', 'Unknown filter.');
   const { data, error } = await supabase.rpc('merchant_job_admin_list', { p_actor_type: 'admin', p_actor_id: ADMIN_PRINCIPAL, p_filter: filter });

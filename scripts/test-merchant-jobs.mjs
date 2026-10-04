@@ -77,6 +77,11 @@ const admin = await read("app/api/admin/jobs/route.ts");
 assert.match(admin, /verifyAdminToken\(token\)/);
 for (const fn of ["merchant_job_admin_list", "merchant_job_admin_hide", "merchant_job_save", "merchant_job_action"]) assert.match(admin, new RegExp(`rpc\\('${fn}'`));
 assert.match(await read("app/merchant/page.tsx"), /<JobsPanel /);
+// Admin posts for a restaurant from its editor tab (same panel, Admin endpoints).
+assert.match(admin, /searchParams\.get\('merchantId'\)[\s\S]*rpc\('merchant_jobs_read', \{ p_actor_type: 'admin'/);
+const adminForm = await read("app/admin/components/merchant-form.tsx");
+assert.match(adminForm, /<JobsPanel [\s\S]*?endpoint=\{\{ read: `\/api\/admin\/jobs\?merchantId=/);
+assert.match(await read("app/merchant/components/jobs-panel.tsx"), /body: JSON\.stringify\(\{ \.\.\.extraBody, \.\.\.payload \}\)/);
 assert.match(await read("app/admin/page.tsx"), /activeTab === 'jobs' && <JobsAdmin \/>/);
 const publicLib = await read("lib/jobs-public.ts");
 assert.match(publicLib, /from '@\/lib\/supabase'/, "public reads use the anon client");

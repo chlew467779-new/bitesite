@@ -5,6 +5,7 @@ import { useAuth } from './auth-context';
 import NotificationStatus from './notification-status';
 import NotifyMerchant, { type Notice } from './notify-merchant';
 import type { IntakeMode, ReviewItem } from '@/lib/merchant-review-core.mjs';
+import { formatPrice } from '@/lib/price-format.mjs';
 
 type Queue = { intakeMode: IntakeMode; capacity: number; pending: number; pilotCapacity: number; pilotUsed: number; items: ReviewItem[] };
 const MODES: { value: IntakeMode; label: string; hint: string }[] = [
@@ -128,7 +129,7 @@ export default function RestaurantReviewQueue() {
         <div><dt className="font-semibold">About</dt><dd className="whitespace-pre-wrap">{item.snapshot.tagline}<br />{item.snapshot.description}</dd></div>
       </dl>
       <h4 className="font-semibold">Submitted menu</h4>
-      {item.snapshot.menu.categories.map((category) => <div key={category.id} className="mt-2 rounded-lg border p-3"><p className="font-medium">{category.name}</p><ul className="mt-1 space-y-2 text-sm">{item.snapshot.menu.products.filter((p) => p.categoryId === category.id).map((p) => <li key={p.id} className="break-words"><p>{p.name} — {p.price == null ? 'No price' : `RM ${p.price.toFixed(2)}`}{p.discountPrice != null ? ` (offer RM ${p.discountPrice.toFixed(2)})` : ''}{p.isAvailable ? '' : ' · Sold out'}{p.showPrices ? '' : ' · Price hidden'}</p>{p.description && <p className="text-[#6B6560]">{p.description}</p>}</li>)}</ul></div>)}
+      {item.snapshot.menu.categories.map((category) => <div key={category.id} className="mt-2 rounded-lg border p-3"><p className="font-medium">{category.name}</p><ul className="mt-1 space-y-2 text-sm">{item.snapshot.menu.products.filter((p) => p.categoryId === category.id).map((p) => <li key={p.id} className="break-words"><p>{p.name} — {p.price == null ? 'No price' : formatPrice(p.price, item.currency)}{p.discountPrice != null ? ` (offer ${formatPrice(p.discountPrice, item.currency)})` : ''}{p.isAvailable ? '' : ' · Sold out'}{p.showPrices ? '' : ' · Price hidden'}</p>{p.description && <p className="text-[#6B6560]">{p.description}</p>}</li>)}</ul></div>)}
       <label className="mt-4 block text-sm font-medium">Note for {item.snapshot.name} (required to reject)<textarea maxLength={1000} rows={3} value={notes[item.id] || ''} disabled={busy || !!unknown} onChange={(e) => setNotes((v) => ({ ...v, [item.id]: e.target.value }))} className="mt-1 w-full rounded-lg border border-[#C9D6C7] p-3 text-base font-normal" /></label>
       <div className="mt-3 flex flex-col gap-2 sm:flex-row"><button className={`${btn} bg-[#2C3E2D] text-white`} disabled={busy || !!unknown || item.changed || item.restriction === 'archived'} onClick={() => submitDecision(item, 'approve')}>Approve</button><button className={`${btn} border-red-700 text-red-700`} disabled={busy || !!unknown} onClick={() => submitDecision(item, 'reject')}>Reject with note</button></div>
     </article>)}
