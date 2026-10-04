@@ -273,3 +273,10 @@ A new feature idea must not silently become a decision. Add it here only after C
 - In use = the file path appears anywhere in merchants, products, articles, Story submissions, events, pop-ups, merchant videos, pending profile/basics requests or review snapshots. Audit history (change log, article revisions) does not keep a file alive.
 - Only files older than 30 days; at most 500 per click; the server checks again at the moment of deleting and skips anything now in use. If any table cannot be read, nothing is offered or deleted.
 - The private menu-photos bucket is never touched (those photos are deleted after use already).
+
+## SYNC-077 — Email notifications through Gmail (C8, 2026-10-04)
+
+- The existing outbox (`merchant_notifications`: review submitted / withdrawn / approved / changes needed, details request decided) can now send through Gmail SMTP: set `SMTP_USER` (bitesite.my@gmail.com) and `SMTP_PASS` (a Google app password, the same kind used for Supabase sign-in emails) in Vercel. Resend still wins if it is set. Nothing set = nothing sent, as before. No SQL, no new package (a small SMTP client in `lib/smtp-core.mjs`).
+- Emails go out right after the event (`after()` in the review, details-review and submit/withdraw routes); Admin's "Send now" still works for anything left over. Owners get review results at their sign-in email; Admin rows and site errors go to `ADMIN_NOTIFY_EMAIL`.
+- Site errors: when email is set up, a new kind of error (or one marked fixed that comes back) is emailed once; repeats are only counted in Admin. At most 10 error emails per hour per server.
+- Privacy Policy: review results are also sent by email; Gmail sends them.

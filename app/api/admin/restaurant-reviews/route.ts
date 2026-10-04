@@ -5,6 +5,7 @@ import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { InvalidJsonBodyError, readBoundedJson, RequestBodyTooLargeError } from '@/lib/bounded-json';
 import { ADMIN_PRINCIPAL } from '@/app/api/_lib/merchant-field-patch';
 import { MAX_REVIEW_BODY_BYTES, mapReviewRpcError, parseReviewDecision, parseCapacity } from '@/lib/merchant-review-core.mjs';
+import { deliverSoon } from '@/app/api/_lib/notification-delivery';
 
 function errorResponse(status: number, code: string, message: string, extra: Record<string, unknown> = {}) {
   return NextResponse.json({ error: { code, message, ...extra } }, { status });
@@ -48,6 +49,7 @@ export async function POST(request: NextRequest) {
     if (mapped.status === 500) console.error('merchant_review_decide failed:', error.message);
     return errorResponse(mapped.status, mapped.code, mapped.message, { requestId: parsed.requestId });
   }
+  deliverSoon();
   return NextResponse.json({ data, requestId: parsed.requestId });
 }
 
