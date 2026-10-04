@@ -244,7 +244,7 @@ export default function AdminShell({ activeTab, onTabChange, children }: AdminSh
           <button
             onClick={() => handleTabChange('settings')}
             className={`
-              w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all
+              min-h-11 w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all
               ${activeTab === 'settings'
                 ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
@@ -264,7 +264,7 @@ export default function AdminShell({ activeTab, onTabChange, children }: AdminSh
           <button
             onClick={() => handleTabChange('export')}
             className={`
-              w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all
+              min-h-11 w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all
               ${activeTab === 'export'
                 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                 : 'text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10'
@@ -289,7 +289,7 @@ export default function AdminShell({ activeTab, onTabChange, children }: AdminSh
               });
             }}
             className={`
-              w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all
+              min-h-11 w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all
               ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}
             `}
             title={sidebarCollapsed ? 'Sign Out' : undefined}

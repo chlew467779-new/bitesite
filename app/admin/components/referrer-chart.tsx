@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from './auth-context';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 
 const COLORS = ['#f59e0b', '#3b82f6', '#10b981', '#ec4899', '#8b5cf6', '#ef4444', '#64748b'];
 
@@ -54,7 +54,7 @@ export default function ReferrerChart({ range }: ReferrerChartProps) {
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
       <h3 className="text-sm font-medium text-slate-300 mb-4">Traffic Sources</h3>
-      <div className="h-64">
+      <div className="h-64 max-sm:[&_.recharts-pie-labels]:hidden">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -83,6 +83,14 @@ export default function ReferrerChart({ range }: ReferrerChartProps) {
           </PieChart>
         </ResponsiveContainer>
       </div>
+      <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-2 text-xs text-slate-300 sm:hidden">
+        {data.map((source, index) => (
+          <li key={`${source.name}-${index}`} className="flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+            <span>{source.name}: {source.value.toLocaleString()}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

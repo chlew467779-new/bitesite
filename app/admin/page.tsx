@@ -105,7 +105,7 @@ export default function AdminPage() {
             <button
               type="submit"
               disabled={loggingIn || !password.trim()}
-              className="w-full rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-medium py-2.5 text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="min-h-11 w-full rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-medium py-2.5 text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loggingIn ? (
                 <span className="flex items-center justify-center gap-2">

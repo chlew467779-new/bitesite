@@ -41,7 +41,7 @@ function ToggleButton({ active, onClick, children }: { active: boolean; onClick:
       role="radio"
       aria-checked={active}
       onClick={onClick}
-      className={`min-w-[4.5rem] rounded-md px-3 py-1.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-1 ${
+      className={`min-h-11 min-w-[4.5rem] rounded-md px-3 py-1.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-1 ${
         active ? 'bg-[#2C3E2D] text-white shadow-sm' : 'text-[#6B6560] hover:text-[#2C3E2D]'
       }`}
     >
@@ -160,7 +160,7 @@ export function HoursEditor({ week, errors, onChange, onCopyMondayToAll }: Props
           type="button"
           onClick={onCopyMondayToAll}
           disabled={!mondaySet}
-          className="rounded-lg border border-[#DDE5DC] px-3 py-1.5 text-xs font-medium text-[#2C3E2D] hover:border-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="min-h-11 rounded-lg border border-[#DDE5DC] px-3 py-1.5 text-xs font-medium text-[#2C3E2D] hover:border-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Copy Monday to every day
         </button>

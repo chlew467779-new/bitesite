@@ -371,7 +371,7 @@ export default function HomePage() {
           Are you a restaurant owner?{" "}
           <a
              href="/join-us"
-             className="font-semibold underline underline-offset-2 transition-colors hover:text-[#5A8F6E]"
+             className="inline-flex min-h-11 items-center font-semibold underline underline-offset-2 transition-colors hover:text-[#5A8F6E]"
           >
             Join BiteSite
           </a>
