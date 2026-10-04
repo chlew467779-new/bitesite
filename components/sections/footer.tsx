@@ -14,42 +14,42 @@ export function Footer() {
           <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-[#6B6560]">
             <Link
               href="/"
-              className="transition-colors duration-200 active:text-[#5A8F6E]"
+              className="inline-flex min-h-11 items-center transition-colors duration-200 active:text-[#5A8F6E]"
               style={{ WebkitTapHighlightColor: "transparent" }}
             >
               Home
             </Link>
             <Link
               href="/stories"
-              className="transition-colors duration-200 active:text-[#5A8F6E]"
+              className="inline-flex min-h-11 items-center transition-colors duration-200 active:text-[#5A8F6E]"
               style={{ WebkitTapHighlightColor: "transparent" }}
             >
               Stories
             </Link>
             <Link
               href="/join-us"
-              className="transition-colors duration-200 active:text-[#5A8F6E]"
+              className="inline-flex min-h-11 items-center transition-colors duration-200 active:text-[#5A8F6E]"
               style={{ WebkitTapHighlightColor: "transparent" }}
             >
               Join Us
             </Link>
             <Link
               href="/merchant/login"
-              className="transition-colors duration-200 active:text-[#5A8F6E]"
+              className="inline-flex min-h-11 items-center transition-colors duration-200 active:text-[#5A8F6E]"
               style={{ WebkitTapHighlightColor: "transparent" }}
             >
               Merchant login
             </Link>
             <Link
               href="/feedback"
-              className="transition-colors duration-200 active:text-[#5A8F6E]"
+              className="inline-flex min-h-11 items-center transition-colors duration-200 active:text-[#5A8F6E]"
               style={{ WebkitTapHighlightColor: "transparent" }}
             >
               Feedback
             </Link>
             <Link
               href="/privacy"
-              className="transition-colors duration-200 active:text-[#5A8F6E]"
+              className="inline-flex min-h-11 items-center transition-colors duration-200 active:text-[#5A8F6E]"
               style={{ WebkitTapHighlightColor: "transparent" }}
             >
               Privacy

@@ -28,7 +28,15 @@ for (const lang of ["en", "ms"]) {
 /* Both languages say the same number of things in the same order. */
 const shape = (policy) => policy.sections.map((s) => s.blocks.map((b) => (typeof b === "string" ? "p" : "list" in b ? `l${b.list.length}` : `i${b.items.length}`)).join(","));
 assert.deepEqual(shape(PRIVACY_POLICY.ms), shape(PRIVACY_POLICY.en), "Malay mirrors English section by section");
-assert.equal(PRIVACY_POLICY.en.sections.length, 11);
+assert.equal(PRIVACY_POLICY.en.sections.length, 12);
+/* Singapore (#24): a PDPA section in both languages with a data protection contact. */
+for (const lang of ["en", "ms"]) {
+  const sg = PRIVACY_POLICY[lang].sections[9];
+  assert.match(sg.title, /^10\. (People in Singapore|Orang di Singapura)$/, `${lang}: Singapore section`);
+  assert.match(JSON.stringify(sg), /Personal Data Protection Act 2012 \(PDPA\)|Akta Perlindungan Data Peribadi 2012 Singapura \(PDPA\)/, `${lang}: PDPA named`);
+  assert.ok(JSON.stringify(sg).includes(PRIVACY_CONTACT_EMAIL), `${lang}: DPO contact`);
+  assert.match(PRIVACY_POLICY[lang].sections[0].blocks[0], /Singap/, `${lang}: Singapore in the opening line`);
+}
 
 /* Retention promises are carried out by the nightly job. */
 const migration = await read("supabase/migrations/20261004100000_privacy_retention.sql");

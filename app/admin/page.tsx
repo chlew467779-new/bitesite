@@ -33,6 +33,7 @@ import ContentServiceManager from './components/content-service-manager';
 import MonthlySummaries from './components/monthly-summaries';
 import MenuPhotosQueue from './components/menu-photos-queue';
 import SiteErrorsInbox from './components/site-errors-inbox';
+import PhotoCleanup from './components/photo-cleanup';
 import JobsAdmin from './components/jobs-admin';
 import AreasManager from './components/areas-manager';
 import AnnouncementsManager from './components/announcements-manager';
@@ -105,7 +106,7 @@ export default function AdminPage() {
             <button
               type="submit"
               disabled={loggingIn || !password.trim()}
-              className="w-full rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-medium py-2.5 text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="min-h-11 w-full rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-medium py-2.5 text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loggingIn ? (
                 <span className="flex items-center justify-center gap-2">
@@ -348,6 +349,7 @@ export default function AdminPage() {
       {activeTab === 'monthly-summaries' && <MonthlySummaries />}
       {activeTab === 'menu-photos' && <MenuPhotosQueue />}
       {activeTab === 'site-errors' && <SiteErrorsInbox />}
+      {activeTab === 'photo-cleanup' && <PhotoCleanup />}
       {activeTab === 'jobs' && <JobsAdmin />}
 
       {activeTab === 'areas' && <AreasManager />}
