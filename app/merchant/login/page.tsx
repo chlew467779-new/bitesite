@@ -60,5 +60,6 @@ export default function MerchantLoginPage() {
       <button disabled={loading} className="min-h-11 w-full rounded-lg bg-[#2C3E2D] px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50">{loading ? 'Please wait…' : { login: 'Sign in', register: 'Register', forgot: 'Send password reset link' }[mode]}</button>
     </form>
     <nav aria-label="Account options" className="mt-5 flex flex-wrap gap-x-4 gap-y-3 text-sm text-emerald-800">{(['login', 'register', 'forgot'] as Mode[]).filter(option => option !== mode).map(option => <button key={option} disabled={loading} type="button" onClick={() => changeMode(option)} className="min-h-11 w-full text-left underline underline-offset-2 disabled:opacity-50 sm:w-auto">{{ login: 'Sign in', register: 'Create an account', forgot: 'Forgot password?' }[option]}</button>)}</nav>
+    {mode === 'register' && <p className="mt-3 text-xs text-[#6B6560]">How we use your information: <a href="/privacy" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center text-emerald-800 underline">Privacy Policy</a></p>}
   </div></main>;
 }

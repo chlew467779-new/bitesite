@@ -258,3 +258,11 @@ A new feature idea must not silently become a decision. Add it here only after C
 - Admin › Site › Site Errors (badge) and a red "Site errors" card on Today: copy the message for the developer, mark resolved (one or all). Before the SQL runs, the page says it is not switched on and nothing is logged.
 - Privacy: no IP or visitor identity; messages are trimmed to 500 characters with emails, phone-like numbers, keys/tokens and URL queries removed; the page is kept without its query. Limits: 50 new kinds per hour (then one overflow row), 30 records per minute per server; resolved rows unseen for 30 days are deleted. Only production records (`SITE_ERRORS_IN_DEV=1` for a local check).
 - Not done: push or email alerts. When email sending is set up later, a new kind of error can also be emailed.
+
+## SYNC-071 — Privacy Policy published (PDPA notice; CH decisions 2026-10-04)
+
+- `/privacy`, English and Bahasa Melayu on one page (text in `lib/privacy-policy.mjs`, both languages kept parallel by `test:privacy-policy`). Operator "BiteSite (Malaysia)", contact `bitesite.my@gmail.com`, effective on the day it goes live.
+- Facts from the code (2026-09-30 facts list) plus what changed since: sign-up and password emails are sent through Gmail (`bitesite.my@gmail.com`), site error records (SYNC-070), Book a Table goes from the visitor's WhatsApp straight to the restaurant, optional Gemini help for Story drafts.
+- CH decisions: deletion requests handled within 30 days; handled reports and feedback kept 12 months, then deleted. Migration 20261004100000 makes that automatic (nightly pg_cron `privacy_retention_cleanup`), and also deletes site errors 30 days after they are marked resolved.
+- Linked from the footer, the merchant sign-up form and the create-restaurant agreement ("…and have read the Privacy Policy"); in the sitemap. No consent checkbox was added for visitors; the policy is a notice.
+- Recommended, not done: a lawyer's review and a native Bahasa Melayu check. When the text changes, change `PRIVACY_EFFECTIVE_DATE`.
