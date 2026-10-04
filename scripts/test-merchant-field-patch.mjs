@@ -99,7 +99,9 @@ assert.equal(ok.ok, true, JSON.stringify(ok));
 assert.deepEqual(ok.patches.map((x) => x.value), ["New Name", "rustic", ["Cafe", "Bakery"], { address: "2 Jalan", area: null, latitude: 0, longitude: 0 }], "values cleaned; coordinate 0 kept");
 for (const path of ["profile.name", "tags.cuisine", "location"]) assert.ok(!isWritablePath(path, "owner"), `${path} is Admin-only`);
 assert.ok(isWritablePath("presentation.layout", "owner"), "Owners choose their page style (issue #11)");
-let bad = rejects(req([p("presentation.layout", ex("classic"), "chinese")]), "admin", 400, "VALIDATION_FAILED", "layout on hold");
+// C3: the Chinese and Malay layouts are public now; an unregistered layout is still refused.
+for (const layout of ["chinese", "malay"]) assert.equal(parseFieldPatchRequest(req([p("presentation.layout", ex("classic"), layout)]), "admin").ok, true, `${layout} accepted`);
+let bad = rejects(req([p("presentation.layout", ex("classic"), "thai")]), "admin", 400, "VALIDATION_FAILED", "unknown layout");
 assert.ok(bad.fieldErrors["presentation.layout"]);
 rejects(req([p("profile.name", ex("Old"), null)]), "admin", 400, "VALIDATION_FAILED", "name cannot be cleared");
 bad = rejects(req([p("tags.cuisine", ex([]), ["Cafe", "Cafe"])]), "admin", 400, "VALIDATION_FAILED", "duplicate tags");
