@@ -16,6 +16,8 @@ export interface PublicJobRestaurant {
   slug: string;
   name: string;
   area: string | null;
+  address: string | null;
+  currency: "MYR" | "SGD";
   whatsapp: string | null;
   phone: string | null;
 }
@@ -32,7 +34,7 @@ export interface PublicJob {
   restaurant: PublicJobRestaurant;
 }
 
-const JOB_SELECT = 'id, title, job_type, salary, hours, description, expires_at, created_at, merchants!inner(id, slug, name, area, whatsapp, phone)';
+const JOB_SELECT = 'id, title, job_type, salary, hours, description, expires_at, created_at, merchants!inner(id, slug, name, area, address, currency, whatsapp, phone)';
 
 type JobRow = {
   id: string;

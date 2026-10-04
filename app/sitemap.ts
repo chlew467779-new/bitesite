@@ -44,6 +44,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   return [
+    { url: `${siteUrl}/jobs`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.6 },
     { url: `${siteUrl}/terms`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.3 },
     { url: `${siteUrl}/privacy`, lastModified: new Date(`${PRIVACY_EFFECTIVE_DATE.iso}T00:00:00+08:00`), changeFrequency: 'yearly', priority: 0.3 },
     { url: `${siteUrl}/feedback`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.2 },

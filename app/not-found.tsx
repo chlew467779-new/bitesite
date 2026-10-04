@@ -9,7 +9,7 @@ export default function NotFound() {
           This page isn&apos;t on the menu
         </h1>
         <p className="mx-auto mt-4 max-w-md leading-7 text-[#6B6560]">
-          The link may be outdated, or this story is no longer available.
+          The link may be outdated, or this page is no longer available.
           Let&apos;s get you back to discovering something delicious.
         </p>
         <Link

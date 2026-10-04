@@ -26,6 +26,7 @@ export function Footer() {
             >
               Stories
             </Link>
+            <Link href="/jobs" className="inline-flex min-h-11 items-center transition-colors duration-200 active:text-[#5A8F6E]">Jobs</Link>
             <Link
               href="/join-us"
               className="inline-flex min-h-11 items-center transition-colors duration-200 active:text-[#5A8F6E]"
