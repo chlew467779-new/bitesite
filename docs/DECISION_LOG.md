@@ -333,3 +333,10 @@ A new feature idea must not silently become a decision. Add it here only after C
 - 21 common Singapore areas (country SG, state "Singapore"); Admin can add more in Areas, and ChatGPT G20 prepares the full list. Singapore's Chinatown is "Chinatown Singapore" because area names are unique. The homepage state filter shows "Singapore" by itself once a Singapore restaurant with a Singapore area is public. +65 phone numbers were already accepted.
 - `merchants.currency` is a new public column (one more `grant select (...)` line); the projection test now adds later per-column grants to the D1b list. Deploy order: SQL first, then the app.
 - Not in this change: the Privacy Policy Singapore (PDPA) section (separate PR).
+
+## SYNC-078 — Singapore part 2: full area list (#24, ChatGPT G20)
+
+- ChatGPT G20 listed the 55 URA Master Plan planning areas. 20261004140000 adds the 34 that were not listed yet and where restaurants can be; the 21 neighbourhood names from SYNC-075 (Bugis, Tanjong Pagar, Tiong Bahru, Holland Village, ...) stay, so merchants can pick either the place people know or the planning area. 55 Singapore areas in total.
+- Left out (no restaurants): Central and Western Water Catchment, Changi Bay, Marina East, Straits View, Simpang, Lim Chu Kang, North-Eastern Islands, Western Islands (Jurong Island). Admin can add any of them in Areas.
+- Every name and alias must find exactly one area, so G20 aliases that are already listed names are dropped (e.g. "Chinatown" stays Kuala Lumpur's; Singapore's is "Chinatown Singapore"). Sentosa → Southern Islands, Raffles Place / City Hall → Downtown Core, CCK → Choa Chu Kang, Aljunied → Geylang.
+- Names were checked against the known URA list of 55; ChatGPT could not download the URA GeoJSON, so boundaries were not compared (aliases are search help, not address checks).
