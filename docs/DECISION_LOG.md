@@ -266,3 +266,12 @@ A new feature idea must not silently become a decision. Add it here only after C
 - CH decisions: deletion requests handled within 30 days; handled reports and feedback kept 12 months, then deleted. Migration 20261004100000 makes that automatic (nightly pg_cron `privacy_retention_cleanup`), and also deletes site errors 30 days after they are marked resolved.
 - Linked from the footer, the merchant sign-up form and the create-restaurant agreement ("…and have read the Privacy Policy"); in the sitemap. No consent checkbox was added for visitors; the policy is a notice.
 - Recommended, not done: a lawyer's review and a native Bahasa Melayu check. When the text changes, change `PRIVACY_EFFECTIVE_DATE`.
+
+## SYNC-073 — Job posts (#23, CH 2026-10-04)
+
+- Only a public restaurant's Owner (and Admin) can post. Posts go live at once (no pre-review) for 30 days; the Owner can edit, renew (30 more days), close, reopen or delete. At most 10 open posts per restaurant. Migration 20261004120000.
+- Fields: job title (2–80), type (full-time / part-time / temporary), pay (optional, 80), working hours (120), description (1000). Applicants use the restaurant's own WhatsApp / phone; BiteSite stores nothing about them. The Privacy Policy says so in both languages.
+- Admin › Restaurants › Job Posts: every post with its state and open visitor reports; hide with a note the Owner sees, or show again. Visitors report a post with the existing report form (target `job`, reasons scam / misleading / discriminatory / filled / other); reports land in Visitor Reports.
+- A new post's id is chosen by the browser, so a retry after a lost answer never posts twice.
+- Before the SQL runs, the dashboard's Hiring section and its menu link are hidden, Admin shows "not switched on", and `lib/jobs-public.ts` returns no jobs.
+- Public pages (/jobs, "We're hiring" on store pages) are ChatGPT G21, reading through `lib/jobs-public.ts`.
