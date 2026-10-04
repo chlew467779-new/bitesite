@@ -86,14 +86,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       "menu",
       "restaurant",
       "cafe",
-      "Malaysia restaurants",
+      merchant.currency === "SGD" ? "Singapore restaurants" : "Malaysia restaurants",
     ],
     alternates: { canonical: canonicalUrl },
     openGraph: {
       title: `${merchant.name} — ${merchant.cuisine_type ?? "Restaurant"}`,
       description: merchant.description || `Menu & opening hours for ${merchant.name}`,
       type: "website",
-      locale: "en_MY",
+      locale: merchant.currency === "SGD" ? "en_SG" : "en_MY",
       url: canonicalUrl,
     },
     twitter: {
@@ -250,7 +250,8 @@ export default async function MerchantPage({ params }: PageProps) {
       "@type": "PostalAddress",
       streetAddress: merchant.address,
       ...(merchant.area ? { addressLocality: merchant.area } : {}),
-      addressCountry: "MY",
+      // Singapore restaurants price in S$ (#24); the price currency stands for the country here.
+      addressCountry: merchant.currency === "SGD" ? "SG" : "MY",
     };
   }
   if (merchant.phone) schemaData.telephone = merchant.phone;

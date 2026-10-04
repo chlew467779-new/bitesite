@@ -24,6 +24,14 @@ export async function GET(request: NextRequest) {
     console.error('merchant_review_queue failed:', error.message);
     return errorResponse(500, 'INTERNAL_ERROR', 'Could not load the restaurant submissions.');
   }
+  // The snapshot has no currency: add each restaurant's (RM or S$) so Admin sees prices as shown.
+  const items = (data as { items?: { merchantId?: string }[] } | null)?.items ?? [];
+  const ids = [...new Set(items.map((i) => i.merchantId).filter((id): id is string => typeof id === 'string'))];
+  if (ids.length > 0) {
+    const { data: rows } = await supabase.from('merchants').select('id, currency').in('id', ids);
+    const currencyById = new Map((rows ?? []).map((r: { id: string; currency: string }) => [r.id, r.currency]));
+    for (const item of items as { merchantId?: string; currency?: string }[]) item.currency = currencyById.get(item.merchantId ?? '') ?? 'MYR';
+  }
   return NextResponse.json({ data }, { headers: { 'Cache-Control': 'no-store' } });
 }
 
