@@ -5,6 +5,7 @@ import { InvalidJsonBodyError, readBoundedJson, RequestBodyTooLargeError } from 
 import { requireMerchantUser } from '@/app/api/merchant/_lib/merchant-access';
 import { isMerchantId } from '@/app/api/_lib/merchant-field-patch';
 import { MAX_REVIEW_BODY_BYTES, mapReviewRpcError, parseListingAction } from '@/lib/merchant-review-core.mjs';
+import { deliverSoon } from '@/app/api/_lib/notification-delivery';
 
 type Context = { params: Promise<{ merchantId: string }> };
 
@@ -55,5 +56,6 @@ export async function POST(request: NextRequest, { params }: Context) {
     revalidatePath('/');
     revalidatePath('/sitemap.xml');
   }
+  if (parsed.action === 'submit' || parsed.action === 'withdraw') deliverSoon();
   return NextResponse.json({ data, requestId: parsed.requestId });
 }

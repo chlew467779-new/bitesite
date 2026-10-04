@@ -14,6 +14,7 @@ import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { InvalidJsonBodyError, readBoundedJson, RequestBodyTooLargeError } from '@/lib/bounded-json';
 import { ADMIN_PRINCIPAL } from '@/app/api/_lib/merchant-field-patch';
 import { MAX_BASICS_BODY_BYTES, mapBasicsRpcError, parseBasicsReview } from '@/lib/merchant-basics-core.mjs';
+import { deliverSoon } from '@/app/api/_lib/notification-delivery';
 
 function errorResponse(status: number, code: string, message: string, extra: Record<string, unknown> = {}) {
   return NextResponse.json({ error: { code, message, ...extra } }, { status });
@@ -62,5 +63,6 @@ export async function POST(request: NextRequest) {
     revalidatePath(`/store/${result.slug}`);
     revalidatePath('/');
   }
+  deliverSoon();
   return NextResponse.json({ data: result, requestId: parsed.requestId });
 }

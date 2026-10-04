@@ -73,7 +73,7 @@ export function Hero({ searchQuery, onSearch }: HeroProps) {
                   type="button"
                   aria-label="Clear restaurant search"
                   onClick={handleClear}
-                  className="mr-3 flex h-6 w-6 items-center justify-center rounded-full bg-[#DDE5DC] text-[#6B6560] active:scale-90 transition-transform duration-150"
+                  className="mr-3 flex h-6 w-6 min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full bg-[#DDE5DC] text-[#6B6560] active:scale-90 transition-transform duration-150"
                   style={{ WebkitTapHighlightColor: "transparent" }}
                 >
                   <X className="h-3 w-3" />

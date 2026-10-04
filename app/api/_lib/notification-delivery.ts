@@ -11,9 +11,11 @@
  */
 
 import 'server-only';
+import { after } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { getSiteUrl } from '@/lib/site-url';
-import { notificationEmail, notificationProvider, type ClaimedNotification, type NotificationProvider } from '@/lib/notification-content.mjs';
+import { notificationEmail, notificationProvider, siteErrorEmail, type ClaimedNotification, type NotificationProvider } from '@/lib/notification-content.mjs';
+import { smtpSend } from '@/app/api/_lib/smtp-send';
 
 export type DeliveryReport = { configured: boolean; claimed: number; sent: number; failed: number };
 
@@ -30,6 +32,7 @@ async function send(provider: NotificationProvider, to: string, subject: string,
     console.info('[notify:log]', JSON.stringify({ to, subject }));
     return null;
   }
+  if (provider.kind === 'smtp') return smtpSend(provider, to, subject, text);
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
@@ -38,6 +41,42 @@ async function send(provider: NotificationProvider, to: string, subject: string,
   if (!response) return 'provider unreachable';
   if (!response.ok) return `provider HTTP ${response.status}`;
   return null;
+}
+
+const ERROR_EMAILS_PER_HOUR = 10;
+const errorEmails = globalThis as typeof globalThis & { __bitesiteErrorEmails?: number[] };
+
+/** True when a provider and ADMIN_NOTIFY_EMAIL are set, so site errors can be emailed. */
+export function siteErrorEmailEnabled() {
+  return notificationProvider(process.env) !== null && !!process.env.ADMIN_NOTIFY_EMAIL?.trim();
+}
+
+/** Email the site owner about a new (or returning) kind of error; at most 10 per hour per server. */
+export async function emailSiteError(input: { source: string; message: string; page: string | null; reopened: boolean }): Promise<string | null> {
+  const provider = notificationProvider(process.env);
+  const to = process.env.ADMIN_NOTIFY_EMAIL?.trim();
+  if (!provider || !to) return 'not configured';
+  const now = Date.now();
+  const sent = (errorEmails.__bitesiteErrorEmails ??= []).filter((t) => now - t < 3_600_000);
+  errorEmails.__bitesiteErrorEmails = sent;
+  if (sent.length >= ERROR_EMAILS_PER_HOUR) return 'hourly limit';
+  sent.push(now);
+  const email = siteErrorEmail(input, getSiteUrl());
+  return send(provider, to, email.subject, email.text);
+}
+
+/**
+ * Send the outbox right after the response (review submitted / decided, details request decided),
+ * so emails go out without a scheduler. Does nothing when no provider is configured.
+ */
+export function deliverSoon() {
+  after(async () => {
+    try {
+      await deliverNotifications();
+    } catch (error) {
+      console.error('notification delivery after response failed:', error instanceof Error ? error.message : error);
+    }
+  });
 }
 
 export async function deliverNotifications(limit = 20): Promise<DeliveryReport> {

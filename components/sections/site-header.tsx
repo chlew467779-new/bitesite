@@ -28,7 +28,7 @@ export function SiteHeader() {
     <header className="sticky top-0 z-50 border-b border-[#DDE5DC] bg-[#FAFBF7]/95 backdrop-blur-sm">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         {/* Logo */}
-        <Link href="/">
+        <Link href="/" className="inline-flex min-h-11 items-center">
           <BiteSiteLogo showTagline={false} size="small" />
         </Link>
 
@@ -55,7 +55,7 @@ export function SiteHeader() {
         {/* Mobile Hamburger */}
         <button
           onClick={() => setMenuOpen(!menuOpen)}
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-[#2C3E2D] transition-colors hover:bg-[#5A8F6E]/10 md:hidden"
+          className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-[#2C3E2D] transition-colors hover:bg-[#5A8F6E]/10 md:hidden"
           style={{ WebkitTapHighlightColor: "transparent" }}
           aria-label="Toggle menu"
         >

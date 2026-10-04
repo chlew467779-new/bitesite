@@ -33,7 +33,7 @@ export function SafeImage({
   if (!src || error) {
     return (
       <div
-        className={`bg-gray-100 flex flex-col items-center justify-center ${className}`}
+        className={`bg-gray-100 flex flex-col items-center justify-center ${fill ? "absolute inset-0" : ""} ${className}`}
         style={!fill ? { width, height } : undefined}
       >
         <svg
