@@ -21,7 +21,7 @@ import {
   GripVertical,
   EyeOff,
 } from 'lucide-react';
-import { formatPrice } from '@/lib/price-format.mjs';
+import { currencySymbol, formatPrice } from '@/lib/price-format.mjs';
 
 interface Category {
   id: string;
@@ -75,6 +75,8 @@ const EMPTY_DRAFT = (categoryId: string | null): ProductDraft => ({
 interface MenuEditorProps {
   merchantId: string;
   merchantName: string;
+  /** The restaurant's price currency (MYR shows RM, SGD shows S$). */
+  currency?: string;
 }
 
 /**
@@ -92,7 +94,7 @@ interface MenuEditorProps {
  * - This does not touch production menu data on its own: it only writes when an operator
  *   explicitly saves a category or product through this UI.
  */
-export default function MenuEditor({ merchantId, merchantName }: MenuEditorProps) {
+export default function MenuEditor({ merchantId, merchantName, currency }: MenuEditorProps) {
   const { token } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -428,7 +430,7 @@ export default function MenuEditor({ merchantId, merchantName }: MenuEditorProps
         </div>
       )}
 
-      <MenuImport merchantId={merchantId} merchantName={merchantName} categories={categories} products={products} onImported={() => void fetchAll(true)} />
+      <MenuImport merchantId={merchantId} merchantName={merchantName} currency={currency} categories={categories} products={products} onImported={() => void fetchAll(true)} />
 
       {/* Add category */}
       <div className="flex flex-col sm:flex-row gap-2">
@@ -532,7 +534,7 @@ export default function MenuEditor({ merchantId, merchantName }: MenuEditorProps
             <div className="p-4 space-y-2">
               {catProducts.length === 0 && <p className="text-sm text-slate-600 italic">No dishes in this category yet.</p>}
               {catProducts.map((product, prodIndex) => (
-                <ProductRow
+                <ProductRow currency={currency}
                   key={product.id}
                   product={product}
                   index={prodIndex}
@@ -565,7 +567,7 @@ export default function MenuEditor({ merchantId, merchantName }: MenuEditorProps
           </div>
           <div className="p-4 space-y-2">
             {uncategorized.map((product, prodIndex) => (
-              <ProductRow
+              <ProductRow currency={currency}
                 key={product.id}
                 product={product}
                 index={prodIndex}
@@ -597,13 +599,13 @@ export default function MenuEditor({ merchantId, merchantName }: MenuEditorProps
           {showPreview ? 'Hide' : 'Show'} public menu preview
         </button>
         {showPreview && (
-          <MenuPreview merchantName={merchantName} categories={categories} products={products} />
+          <MenuPreview currency={currency} merchantName={merchantName} categories={categories} products={products} />
         )}
       </div>
 
       {/* Product edit panel */}
       {editingDraft && (
-        <ProductEditPanel
+        <ProductEditPanel currency={currency}
           draft={editingDraft}
           categories={categories}
           saving={savingDraft}
@@ -658,7 +660,9 @@ function ProductRow({
   onDelete,
   onMove,
   onToggleAvailable,
+  currency,
 }: {
+  currency?: string;
   product: Product;
   index: number;
   count: number;
@@ -711,11 +715,11 @@ function ProductRow({
           <span>
             {product.discount_price ? (
               <>
-                <span className="line-through mr-1">{formatPrice(product.price)}</span>
-                {formatPrice(product.discount_price)}
+                <span className="line-through mr-1">{formatPrice(product.price, currency)}</span>
+                {formatPrice(product.discount_price, currency)}
               </>
             ) : product.price !== null ? (
-              formatPrice(product.price)
+              formatPrice(product.price, currency)
             ) : (
               'No price set'
             )}
@@ -764,7 +768,9 @@ function ProductEditPanel({
   onChange,
   onCancel,
   onSave,
+  currency,
 }: {
+  currency?: string;
   draft: ProductDraft;
   categories: Category[];
   saving: boolean;
@@ -816,7 +822,7 @@ function ProductEditPanel({
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5">Price (RM)</label>
+            <label className="block text-sm font-medium text-slate-300 mb-1.5">Price ({currencySymbol(currency)})</label>
             <input
               type="text"
               inputMode="decimal"
@@ -827,7 +833,7 @@ function ProductEditPanel({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5">Discount price (RM)</label>
+            <label className="block text-sm font-medium text-slate-300 mb-1.5">Discount price ({currencySymbol(currency)})</label>
             <input
               type="text"
               inputMode="decimal"
@@ -927,10 +933,12 @@ function MenuPreview({
   merchantName,
   categories,
   products,
+  currency,
 }: {
   merchantName: string;
   categories: Category[];
   products: Product[];
+  currency?: string;
 }) {
   return (
     <div className="mt-4 p-6 bg-amber-50 rounded-xl border border-amber-200">
@@ -959,11 +967,11 @@ function MenuPreview({
                           <span className="font-bold text-amber-700 whitespace-nowrap">
                             {product.discount_price ? (
                               <>
-                                <span className="line-through opacity-50 text-sm mr-1">{formatPrice(product.price)}</span>
-                                {formatPrice(product.discount_price)}
+                                <span className="line-through opacity-50 text-sm mr-1">{formatPrice(product.price, currency)}</span>
+                                {formatPrice(product.discount_price, currency)}
                               </>
                             ) : product.price !== null ? (
-                              formatPrice(product.price)
+                              formatPrice(product.price, currency)
                             ) : (
                               ''
                             )}

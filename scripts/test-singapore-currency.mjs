@@ -43,6 +43,10 @@ for (const file of files) {
 const ownerMenu = await read("app/merchant/components/menu-manager.tsx");
 assert.doesNotMatch(ownerMenu, /`RM |\(RM\)/, "owner menu editor has no hard-coded RM");
 assert.match(ownerMenu, /priceLabel\(product, currency\)/);
+const adminMenu = await read("app/admin/components/menu-editor.tsx");
+assert.doesNotMatch(adminMenu, /\(RM\)/, "Admin menu editor has no hard-coded RM");
+for (const m of adminMenu.matchAll(/formatPrice\(([^()]*)\)/g)) assert.match(m[1], /, currency$/, "Admin menu prices pass the currency");
+assert.match(await read("app/admin/components/merchant-form.tsx"), /<MenuEditor [^>]*currency=\{current\.currency\}/);
 
 /* Create: country choice -> currency; Owner can change it later. */
 assert.equal(validateRestaurantDraft({ name: "A", requestId: "00000000-0000-4000-8000-000000000001", termsVersion: "2026-09-pilot", rightsDeclared: true, currency: "SGD" })?.currency, "SGD");
@@ -53,5 +57,12 @@ const route = await read("app/api/merchant/restaurants/[merchantId]/currency/rou
 assert.match(route, /rpc\('merchant_currency_set', \{ p_actor_type: 'owner', p_actor_id: auth\.user\.id/);
 assert.match(route, /owned\.merchants\.some/, "GET only for the restaurant's Owner");
 assert.match(await read("app/merchant/page.tsx"), /<CurrencySetting /);
+
+/* Singapore restaurants are not described as Malaysian (search engines, share previews). */
+const store = await read("app/store/[merchant]/page.tsx");
+assert.match(store, /addressCountry: merchant\.currency === "SGD" \? "SG" : "MY"/);
+assert.match(store, /locale: merchant\.currency === "SGD" \? "en_SG" : "en_MY"/);
+assert.doesNotMatch(await read("app/admin/components/restaurant-review-queue.tsx"), /RM \$\{/, "review queue uses the restaurant's currency");
+assert.match(await read("app/api/admin/restaurant-reviews/route.ts"), /select\('id, currency'\)/);
 
 console.log("singapore currency checks passed");

@@ -20,7 +20,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, FileText, Globe, Image as ImageIcon, Loader2, MapPin, Phone, UtensilsCrossed } from 'lucide-react';
+import { ArrowLeft, Briefcase, FileText, Globe, Image as ImageIcon, Loader2, MapPin, Phone, UtensilsCrossed } from 'lucide-react';
 import { useAuth } from './auth-context';
 import { registerLeaveCheck } from '@/lib/unsaved-guard';
 import MenuEditor from './menu-editor';
@@ -29,6 +29,7 @@ import MerchantLinksPanel from './merchant-links-panel';
 import MerchantSlugPanel from './merchant-slug-panel';
 import MerchantHistoryPanel from './merchant-history-panel';
 import { ProfileImagesPanel } from '@/app/components/media/profile-images-panel';
+import { JobsPanel } from '@/app/merchant/components/jobs-panel';
 import { AMENITY_TAGS, CUISINE_TAGS, OCCASION_TAGS } from '@/lib/presets';
 import { getPersistableLayouts } from '@/lib/layout-registry.mjs';
 import { defaultFeatures } from '@/types';
@@ -50,6 +51,8 @@ interface MerchantFormProps {
     instagram?: string;
     facebook?: string;
     grabfood_url?: string;
+    /** MYR (RM) by default; SGD shows S$ (#24). */
+    currency?: string;
     menu_pdf_url?: string;
     logo_image?: string;
     cover_image?: string;
@@ -64,7 +67,7 @@ interface MerchantFormProps {
   loadWarning?: string;
 }
 
-type Current = { id: string; name: string; slug: string };
+type Current = { id: string; name: string; slug: string; currency?: string };
 
 const LAYOUTS = getPersistableLayouts();
 const LAYOUT_KEYS: readonly string[] = LAYOUTS.map((layout) => layout.key);
@@ -344,11 +347,12 @@ const tabs = [
   { label: 'Settings', icon: Globe },
   { label: 'Images', icon: ImageIcon },
   { label: 'Menu', icon: UtensilsCrossed },
+  { label: 'Jobs', icon: Briefcase },
 ];
 
 export default function MerchantForm({ merchant, onBack, onSaved, loadWarning }: MerchantFormProps) {
   const { token } = useAuth();
-  const [current, setCurrent] = useState<Current | null>(merchant ? { id: merchant.id, name: merchant.name, slug: merchant.slug } : null);
+  const [current, setCurrent] = useState<Current | null>(merchant ? { id: merchant.id, name: merchant.name, slug: merchant.slug, currency: merchant.currency } : null);
   const [activeTab, setActiveTab] = useState(0);
   const [fields, setFields] = useState<Record<string, Snapshot> | null>(null);
   const [loadError, setLoadError] = useState('');
@@ -659,7 +663,13 @@ export default function MerchantForm({ merchant, onBack, onSaved, loadWarning }:
               <ProfileImagesPanel key={`media:${current.id}`} apiBase={`/api/admin/merchants/${encodeURIComponent(current.id)}/media`} getHeaders={mediaHeaders} />
             </div>
             <div hidden={activeTab !== 5}>
-              <MenuEditor merchantId={current.id} merchantName={current.name} />
+              <MenuEditor merchantId={current.id} merchantName={current.name} currency={current.currency} />
+            </div>
+            <div hidden={activeTab !== 6} className={panel}>
+              <PanelTitle title="Jobs" note="Post, edit, renew or close job posts for this restaurant. Admin can post even before the page is public; visitors only see posts of public restaurants." />
+              <JobsPanel key={`jobs:${current.id}`} merchantId={current.id} getHeaders={mediaHeaders} readOnly={false}
+                endpoint={{ read: `/api/admin/jobs?merchantId=${encodeURIComponent(current.id)}`, write: '/api/admin/jobs', body: { merchantId: current.id } }}
+                renderSection={(body) => body} />
             </div>
           </>
         )}
