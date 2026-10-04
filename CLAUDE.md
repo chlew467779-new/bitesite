@@ -1,5 +1,13 @@
 # BiteSite — Claude Project Instructions
 
+## Every session starts here (automatic — CH does not need to ask)
+
+1. Read `C:\Users\User\Documents\Codex\AI_EFFICIENCY_RULES.md` (work rules + self-improvement log; mind the 5 newest log entries).
+2. Read `C:\Users\User\Documents\Codex\HANDOFF_LATEST.md`, then `C:\Users\User\Documents\Codex\BITESITE_WORK_QUEUE.md`, and continue the queue without waiting for CH.
+3. Before stopping (or at ~20% quota): add 1–3 lessons to the log in `AI_EFFICIENCY_RULES.md` and update `HANDOFF_LATEST.md`.
+
+These files live outside the repository (shared with ChatGPT and CH). If they are missing, say so and continue with the rules below.
+
 This repository follows the shared AI rules in `AGENTS.md`.
 
 Read these before substantial work:

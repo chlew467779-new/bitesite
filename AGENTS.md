@@ -1,5 +1,7 @@
 # BiteSite — Shared AI Engineering Instructions
 
+**Every session starts here (automatic):** read `C:\Users\User\Documents\Codex\AI_EFFICIENCY_RULES.md` (work rules + self-improvement log), then `C:\Users\User\Documents\Codex\HANDOFF_LATEST.md` and `C:\Users\User\Documents\Codex\BITESITE_WORK_QUEUE.md`. Before stopping, add 1–3 lessons to that log and update the handoff. These files are outside the repository; if missing, say so and continue.
+
 **Document role:** Repository-wide AI/agent working rules.
 
 This file is intentionally short enough to remain useful. Product requirements belong in the Master Product Specification, not in this file.
