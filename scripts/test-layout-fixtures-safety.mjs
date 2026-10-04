@@ -90,10 +90,15 @@ assert.doesNotMatch(
 
 /* ── the fixture covers the states the visual QA needs ─────────────────────────────────────── */
 
-for (const state of ["normal", "discount", "hidden", "soldout-hidden", "featured-hidden", "with", "without", "all", "long"]) {
+for (const state of ["normal", "discount", "hidden", "soldout-hidden", "featured-hidden", "with", "without", "all", "long", "empty", "MYR", "SGD"]) {
   assert.ok(both.includes(`"${state}"`), `the fixtures offer the ${state} state`);
 }
 assert.match(fixtures, /category_id: null/, "an uncategorized dish is present, to show it never renders publicly");
+assert.match(source, /const currency = pick\(params\.currency, CURRENCY_STATES, "MYR"\);/, "currency is selected from fixed states");
+assert.match(source, /const disabledFeature = pick\(params\.disabled, DISABLED_FEATURE_STATES, "none"\);/, "feature switch is selected from fixed states");
+for (const feature of ["hero", "about", "contact", "gallery", "appointment", "seasonal_popup"]) {
+  assert.ok(fixtures.includes(`"${feature}"`), `${feature} can be disabled for visual QA`);
+}
 
 // sections=all adds the reviews, appointment and events sections so every themed section can be
 // reviewed on every layout. Their data is in-memory too, and the switch is a fixed state.

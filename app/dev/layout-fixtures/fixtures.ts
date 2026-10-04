@@ -16,8 +16,10 @@ export const IMAGE_STATES = ["with", "without"] as const;
 /** "all" also switches on the reviews, appointment and events sections, which are off by default. */
 export const SECTION_STATES = ["default", "all"] as const;
 /** "long" swaps in a long mixed Chinese/Malay name and description, to check wrapping at 320px. */
-export const MENU_STATES = ["default", "long"] as const;
+export const MENU_STATES = ["default", "long", "empty"] as const;
 export const NAME_STATES = ["default", "long"] as const;
+export const CURRENCY_STATES = ["MYR", "SGD"] as const;
+export const DISABLED_FEATURE_STATES = ["none", "hero", "about", "contact", "gallery", "appointment", "seasonal_popup"] as const;
 
 export type PriceState = (typeof PRICE_STATES)[number];
 export type DishState = (typeof DISH_STATES)[number];
@@ -25,6 +27,8 @@ export type ImageState = (typeof IMAGE_STATES)[number];
 export type SectionState = (typeof SECTION_STATES)[number];
 export type MenuState = (typeof MENU_STATES)[number];
 export type NameState = (typeof NAME_STATES)[number];
+export type CurrencyState = (typeof CURRENCY_STATES)[number];
+export type DisabledFeatureState = (typeof DISABLED_FEATURE_STATES)[number];
 
 export function pick<T extends string>(value: string | string[] | undefined, allowed: readonly T[], fallback: T): T {
   return typeof value === "string" && (allowed as readonly string[]).includes(value) ? (value as T) : fallback;
@@ -52,6 +56,7 @@ export const LONG_MENU_CATEGORIES: Category[] = [...FIXTURE_CATEGORIES,
 ];
 
 export function buildProducts(price: PriceState, dish: DishState, image: ImageState, name: NameState = "default", menu: MenuState = "default"): Product[] {
+  if (menu === "empty") return [];
   const imageUrl = image === "with" ? FIXTURE_IMAGE : null;
   const base = {
     merchant_id: "fixture-merchant",
@@ -164,6 +169,8 @@ export function buildMerchant(
   image: ImageState,
   sections: SectionState = "default",
   name: NameState = "default",
+  currency: CurrencyState = "MYR",
+  disabledFeature: DisabledFeatureState = "none",
 ): Merchant {
   const allSections = sections === "all";
   const longName = name === "long";
@@ -214,6 +221,7 @@ export function buildMerchant(
       appointment: allSections,
       seasonal_popup: true,
       events: allSections,
+      ...(disabledFeature === "none" ? {} : { [disabledFeature]: false }),
     },
     settings: {},
     status: "active",
@@ -225,7 +233,7 @@ export function buildMerchant(
     occasion: [],
     tags: [],
     payment_methods: ["Cash", "Cashless"],
-    currency: "MYR",
+    currency,
     latitude: null,
     longitude: null,
     reviews: allSections ? FIXTURE_REVIEWS : null,

@@ -23,8 +23,7 @@ import { MapEmbed } from "@/app/components/map-embed";
 import { formatPrice } from "@/lib/price-format.mjs";
 
 /**
- * Chinese layout — red and gold on warm cream, with a seal mark, gold rules and a menu-board
- * list with dotted leaders.
+ * Chinese layout — a simple warm canvas with a small red seal accent.
  *
  * Registered with productionReady: false (lib/layout-registry.mjs), so it only renders on
  * internal surfaces such as /dev/layout-fixtures until it is visually signed off. Shared sections
@@ -36,12 +35,9 @@ const focusRing =
 
 function SectionHeading({ children }: { children: ReactNode }) {
   return (
-    <div className="flex items-center justify-center gap-3 mb-8">
-      <span aria-hidden="true" className="h-px w-6 sm:w-14 bg-amber-500" />
-      <span aria-hidden="true" className="h-2 w-2 rotate-45 bg-amber-500 flex-shrink-0" />
-      <h2 className="text-2xl font-bold text-red-900 text-center break-words min-w-0">{children}</h2>
-      <span aria-hidden="true" className="h-2 w-2 rotate-45 bg-amber-500 flex-shrink-0" />
-      <span aria-hidden="true" className="h-px w-6 sm:w-14 bg-amber-500" />
+    <div className="mb-8 text-center">
+      <h2 className="text-2xl font-bold text-stone-900 break-words">{children}</h2>
+      <span aria-hidden="true" className="mt-3 inline-block h-0.5 w-10 bg-red-800" />
     </div>
   );
 }
@@ -57,8 +53,8 @@ export function ChineseLayout({
   const seal = (Array.from(merchant.name.trim())[0] ?? "").toUpperCase();
 
   return (
-    <div data-restaurant-layout className="min-h-screen bg-[#FDF6EC] text-stone-900">
-      <div data-menu-sticky className="sticky top-0 z-40 bg-[#FDF6EC]/90 backdrop-blur-md border-b border-amber-400/60">
+    <div data-restaurant-layout className="min-h-screen bg-[#FAF8F5] text-stone-900">
+      <div data-menu-sticky className="sticky top-0 z-40 bg-[#FAF8F5]/90 backdrop-blur-md border-b border-stone-200">
         <div className="max-w-4xl mx-auto px-4 py-3">
           <Link href="/" className={`min-h-11 inline-flex items-center gap-2 text-red-900 text-sm font-medium active:scale-95 transition-transform ${focusRing}`} style={{ WebkitTapHighlightColor: "transparent" }}>
             <ArrowLeft size={18} /> Back to BiteSite
@@ -68,34 +64,33 @@ export function ChineseLayout({
 
       {resolvedFeatures.hero && (
         <FadeIn>
-          <div className="relative min-h-72 sm:min-h-96 flex items-end bg-red-800">
+          <div className={`relative min-h-64 sm:min-h-80 flex items-end ${merchant.cover_image ? "bg-stone-800" : "bg-stone-100"}`}>
             {merchant.cover_image ? (
               <div className="absolute inset-0">
                 <SafeImage src={merchant.cover_image} alt={merchant.name} fill className="object-cover" priority />
-                <div className="absolute inset-0 bg-gradient-to-t from-red-950/90 via-red-950/40 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-stone-950/75 via-stone-900/20 to-transparent" />
               </div>
             ) : (
-              <div aria-hidden="true" className="absolute inset-3 sm:inset-5 border border-amber-300/50 rounded-sm" />
+              <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-br from-stone-100 to-stone-200" />
             )}
             <div className="relative w-full max-w-4xl mx-auto px-6 sm:px-8 pt-16 pb-8 sm:pb-10">
               <div className="flex items-start gap-3 sm:gap-4">
                 <span
                   aria-hidden="true"
-                  className="flex h-11 w-11 sm:h-16 sm:w-16 flex-shrink-0 items-center justify-center rounded-md border-2 border-amber-300 bg-red-800 text-xl sm:text-3xl font-bold text-amber-100 shadow-lg"
+                  className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded bg-red-800 text-xl font-bold text-white"
                 >
                   {seal}
                 </span>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-2 flex-wrap">
-                    {merchant.cuisine_type && <span className="inline-block px-3 py-1 rounded-full bg-amber-300 text-red-950 text-xs font-semibold">{merchant.cuisine_type}</span>}
+                    {merchant.cuisine_type && <span className={`text-xs font-semibold ${merchant.cover_image ? "text-white" : "text-stone-600"}`}>{merchant.cuisine_type}</span>}
                   </div>
-                  <h1 className="text-[1.625rem] leading-tight sm:text-4xl lg:text-5xl font-bold text-white break-words">{merchant.name}</h1>
-                  {hasHours && <p className="mt-2 text-sm sm:text-base text-amber-100 flex items-center gap-2"><Clock size={16} /> Today: {formatOperatingHours(hours?.[today]) || "Closed"}</p>}
+                  <h1 className={`text-[1.625rem] leading-tight sm:text-4xl font-bold break-words ${merchant.cover_image ? "text-white" : "text-stone-900"}`}>{merchant.name}</h1>
+                  {hasHours && <p className={`mt-2 text-sm sm:text-base flex items-center gap-2 ${merchant.cover_image ? "text-stone-100" : "text-stone-700"}`}><Clock size={16} /> Today: {formatOperatingHours(hours?.[today]) || "Closed"}</p>}
                 </div>
               </div>
             </div>
           </div>
-          <div aria-hidden="true" className="h-1.5 bg-gradient-to-r from-amber-500 via-amber-300 to-amber-500" />
         </FadeIn>
       )}
 
@@ -115,37 +110,33 @@ export function ChineseLayout({
           <section id="menu-section" className="py-10 px-4 sm:px-6">
             <div className="max-w-3xl mx-auto">
               <SectionHeading>Menu</SectionHeading>
-              <div className="bg-white rounded-lg border-2 border-amber-400/70 p-1.5 shadow-sm">
-                <div className="rounded border border-amber-300/70 px-4 py-6 sm:px-8 space-y-8">
-                  <MenuCategoryNav categories={categories} products={products} variant="chinese" />
+              <div className="bg-white rounded-lg border border-stone-200 px-4 py-6 sm:px-8 space-y-8">
+                <MenuCategoryNav categories={categories} products={products} variant="chinese" />
                 {categories.map((cat) => {
-                    const catProducts = products.filter((p) => p.category_id === cat.id);
-                    if (catProducts.length === 0) return null;
-                    return (
+                  const catProducts = products.filter((p) => p.category_id === cat.id);
+                  if (catProducts.length === 0) return null;
+                  return (
                       <div key={cat.id} id={menuCategoryId(cat.id)} className="scroll-mt-32">
-                        <h3 tabIndex={-1} className="text-lg font-bold text-red-800 text-center tracking-wide pb-2 mb-2 border-b border-dashed border-amber-400 break-words">
+                        <h3 tabIndex={-1} className="text-lg font-bold text-stone-900 pb-2 mb-2 border-b border-stone-200 break-words">
                           {cat.name}
                         </h3>
-                        <ul className="divide-y divide-amber-100">
+                        <ul className="divide-y divide-stone-100">
                           {catProducts.map((product) => (
                             <li key={product.id} className="flex gap-3 py-3">
                               {product.image_url && (
-                                <div className="relative w-16 h-16 flex-shrink-0 rounded-md overflow-hidden ring-1 ring-amber-300">
+                                <div className="relative w-16 h-16 flex-shrink-0 rounded-md overflow-hidden">
                                   <SafeImage src={product.image_url} alt={product.name} fill className="object-cover" />
                                 </div>
                               )}
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-baseline gap-2">
+                                <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
                                   <h4 className="font-semibold text-stone-900 break-words min-w-0">{product.name}</h4>
                                   {hasDisplayablePrice(product) && (
-                                    <>
-                                      <span aria-hidden="true" className="flex-1 min-w-4 border-b border-dotted border-amber-500" />
-                                      <span className="font-bold text-red-800 whitespace-nowrap">
+                                    <span className="font-semibold text-stone-800 whitespace-nowrap">
                                       {product.discount_price != null ? (
-                                          <><span className="line-through text-stone-500 text-sm font-normal mr-1">{formatPrice(product.price, merchant.currency)}</span>{formatPrice(product.discount_price, merchant.currency)}</>
-                                        ) : formatPrice(product.price, merchant.currency)}
-                                      </span>
-                                    </>
+                                        <><span className="line-through text-stone-500 text-sm font-normal mr-1">{formatPrice(product.price, merchant.currency)}</span>{formatPrice(product.discount_price, merchant.currency)}</>
+                                      ) : formatPrice(product.price, merchant.currency)}
+                                    </span>
                                   )}
                                 </div>
                                 {product.description && <DishDescription description={product.description} className="text-sm text-stone-600 mt-1 break-words whitespace-pre-line break-words" />}
@@ -161,7 +152,6 @@ export function ChineseLayout({
                       </div>
                     );
                   })}
-                </div>
               </div>
             </div>
           </section>
@@ -172,7 +162,7 @@ export function ChineseLayout({
 
       {resolvedFeatures.contact && (
         <FadeIn>
-          <section className="py-10 px-4 sm:px-6 bg-[#F8EBD9]">
+          <section className="py-10 px-4 sm:px-6 bg-white">
             <div className="max-w-4xl mx-auto">
               <SectionHeading>Visit Us</SectionHeading>
               <div className="grid sm:grid-cols-2 gap-8">
@@ -201,7 +191,7 @@ export function ChineseLayout({
                     const time = hours?.[day];
                     if (!time) return null;
                     return (
-                      <div key={day} className={`flex justify-between gap-3 py-2 px-3 rounded-md text-sm ${day === today ? "bg-red-800 text-amber-50 font-medium" : "text-stone-700"}`}>
+                      <div key={day} className={`flex justify-between gap-3 py-2 px-3 rounded-md text-sm ${day === today ? "bg-stone-100 text-stone-900 font-medium" : "text-stone-700"}`}>
                         <span className="capitalize">{day}</span><span>{formatOperatingHours(time)}</span>
                       </div>
                     );
@@ -210,17 +200,17 @@ export function ChineseLayout({
               </div>
 
               {/* Map */}
-              <MapEmbed address={merchant.address} latitude={merchant.latitude} longitude={merchant.longitude} borderColor="#FBBF24" />
+              <MapEmbed address={merchant.address} latitude={merchant.latitude} longitude={merchant.longitude} borderColor="#E7E5E4" />
 
               {/* Payment Methods */}
               {merchant.payment_methods && merchant.payment_methods.length > 0 && (
-                <div className="mt-8 pt-6 border-t border-amber-400/60">
+                <div className="mt-8 pt-6 border-t border-stone-200">
                   <p className="text-xs font-medium uppercase tracking-wider text-red-900 mb-3">
                     Payment Methods
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {merchant.payment_methods.map((method) => (
-                      <span key={method} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-white text-red-900 border border-amber-300">
+                      <span key={method} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-stone-50 text-stone-800 border border-stone-200">
                         {method === "Cash" && <Banknote className="h-3 w-3" />}
                         {method === "Cashless" && <Smartphone className="h-3 w-3" />}
                         {method === "Cards" && <CreditCard className="h-3 w-3" />}
@@ -231,10 +221,10 @@ export function ChineseLayout({
                 </div>
               )}
 
-              <ListingTags amenities={merchant.amenities} occasion={merchant.occasion} wrapperClass="mt-8 pt-6 border-t border-amber-400/60" labelClass="text-xs font-medium uppercase tracking-wider text-red-900 mb-3" chipClass="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-white text-red-900 border border-amber-300" />
+              <ListingTags amenities={merchant.amenities} occasion={merchant.occasion} wrapperClass="mt-8 pt-6 border-t border-stone-200" labelClass="text-xs font-medium uppercase tracking-wider text-stone-700 mb-3" chipClass="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-stone-50 text-stone-800 border border-stone-200" />
 
               {/* Share */}
-              <div className="mt-8 pt-6 border-t border-amber-400/60">
+              <div className="mt-8 pt-6 border-t border-stone-200">
                 <p className="text-xs font-medium uppercase tracking-wider text-red-900 mb-3">
                   Share
                 </p>
@@ -245,11 +235,10 @@ export function ChineseLayout({
         </FadeIn>
       )}
 
-      <footer className="bg-red-900 text-center">
-        <div aria-hidden="true" className="h-1.5 bg-gradient-to-r from-amber-500 via-amber-300 to-amber-500" />
+      <footer className="bg-stone-900 text-center">
         <div className="py-8 px-4">
-          <Link href="/" className={`text-sm text-amber-100 hover:text-white transition-colors ${focusRing} focus-visible:ring-offset-red-900`}>{footerText || "Discover more restaurants on BiteSite"}</Link>
-          <Link href="/feedback" className={`min-h-11 mt-1 flex items-center justify-center text-sm text-amber-100 underline hover:text-white ${focusRing} focus-visible:ring-offset-red-900`}>Send feedback</Link>
+          <Link href="/" className={`text-sm text-stone-100 hover:text-white transition-colors ${focusRing} focus-visible:ring-offset-stone-900`}>{footerText || "Discover more restaurants on BiteSite"}</Link>
+          <Link href="/feedback" className={`min-h-11 mt-1 flex items-center justify-center text-sm text-stone-100 underline hover:text-white ${focusRing} focus-visible:ring-offset-stone-900`}>Send feedback</Link>
         </div>
       </footer>
     </div>
