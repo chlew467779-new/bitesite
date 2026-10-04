@@ -20,7 +20,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, FileText, Globe, Image as ImageIcon, Loader2, MapPin, Phone, UtensilsCrossed } from 'lucide-react';
+import { ArrowLeft, Briefcase, FileText, Globe, Image as ImageIcon, Loader2, MapPin, Phone, UtensilsCrossed } from 'lucide-react';
 import { useAuth } from './auth-context';
 import { registerLeaveCheck } from '@/lib/unsaved-guard';
 import MenuEditor from './menu-editor';
@@ -29,6 +29,7 @@ import MerchantLinksPanel from './merchant-links-panel';
 import MerchantSlugPanel from './merchant-slug-panel';
 import MerchantHistoryPanel from './merchant-history-panel';
 import { ProfileImagesPanel } from '@/app/components/media/profile-images-panel';
+import { JobsPanel } from '@/app/merchant/components/jobs-panel';
 import { AMENITY_TAGS, CUISINE_TAGS, OCCASION_TAGS } from '@/lib/presets';
 import { getPersistableLayouts } from '@/lib/layout-registry.mjs';
 import { defaultFeatures } from '@/types';
@@ -346,6 +347,7 @@ const tabs = [
   { label: 'Settings', icon: Globe },
   { label: 'Images', icon: ImageIcon },
   { label: 'Menu', icon: UtensilsCrossed },
+  { label: 'Jobs', icon: Briefcase },
 ];
 
 export default function MerchantForm({ merchant, onBack, onSaved, loadWarning }: MerchantFormProps) {
@@ -662,6 +664,12 @@ export default function MerchantForm({ merchant, onBack, onSaved, loadWarning }:
             </div>
             <div hidden={activeTab !== 5}>
               <MenuEditor merchantId={current.id} merchantName={current.name} currency={current.currency} />
+            </div>
+            <div hidden={activeTab !== 6} className={panel}>
+              <PanelTitle title="Jobs" note="Post, edit, renew or close job posts for this restaurant. Admin can post even before the page is public; visitors only see posts of public restaurants." />
+              <JobsPanel key={`jobs:${current.id}`} merchantId={current.id} getHeaders={mediaHeaders} readOnly={false}
+                endpoint={{ read: `/api/admin/jobs?merchantId=${encodeURIComponent(current.id)}`, write: '/api/admin/jobs', body: { merchantId: current.id } }}
+                renderSection={(body) => body} />
             </div>
           </>
         )}
