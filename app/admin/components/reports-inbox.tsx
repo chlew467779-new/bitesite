@@ -19,9 +19,11 @@ const FILTERS: { value: Filter; label: string }[] = [
   { value: 'dismissed', label: 'Dismissed' },
   { value: 'all', label: 'All' },
 ];
+const TARGET_LABEL: Record<string, string> = { merchant: 'Restaurant', story: 'Story', job: 'Job post' };
 
-export default function ReportsInbox({ onOpenMerchantManager, onOpenStoryEditor }: {
+export default function ReportsInbox({ onOpenMerchantManager, onOpenStoryEditor, onOpenJobs }: {
   onOpenMerchantManager: () => void;
+  onOpenJobs: () => void;
   onOpenStoryEditor: (slug: string | null) => void;
 }) {
   const { token } = useAuth();
@@ -88,12 +90,12 @@ export default function ReportsInbox({ onOpenMerchantManager, onOpenStoryEditor 
       {!items && !error && <Loader2 className="h-6 w-6 animate-spin text-amber-500" />}
       {items && items.length === 0 && <p className="text-sm text-slate-400">No reports here.</p>}
       {items?.map((item) => {
-        const href = item.targetType === 'merchant' ? `/store/${encodeURIComponent(item.slug)}` : `/stories/${encodeURIComponent(item.slug)}`;
+        const href = item.targetType === 'story' ? `/stories/${encodeURIComponent(item.slug)}` : `/store/${encodeURIComponent(item.slug)}`;
         return (
           <div key={item.id} className="rounded-xl bg-white p-4 text-[#2C3E2D]">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <p className="font-semibold">
-                <span className="mr-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-700">{item.targetType === 'merchant' ? 'Restaurant' : 'Story'}</span>
+                <span className="mr-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-700">{TARGET_LABEL[item.targetType] ?? item.targetType}</span>
                 {item.targetGone ? <>{item.name} <span className="text-xs font-normal text-[#6B6560]">(no longer exists)</span></>
                   : <a href={href} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 underline">{item.name} <ExternalLink className="h-3 w-3" /></a>}
               </p>
@@ -109,7 +111,9 @@ export default function ReportsInbox({ onOpenMerchantManager, onOpenStoryEditor 
                 className="mt-1 block w-full rounded-lg border border-[#C9D6C7] px-3 py-2 text-sm" />
             </label>
             <div className="mt-3 flex flex-wrap gap-2">
-              {item.targetType === 'merchant' ? (
+              {item.targetType === 'job' ? (
+                <button type="button" onClick={onOpenJobs} className="min-h-11 w-full rounded-lg border border-[#C9D6C7] px-4 text-sm font-medium sm:w-auto">Hide or check in Job Posts</button>
+              ) : item.targetType === 'merchant' ? (
                 <button type="button" onClick={onOpenMerchantManager} className="min-h-11 w-full rounded-lg border border-[#C9D6C7] px-4 text-sm font-medium sm:w-auto">Edit in Merchant Manager</button>
               ) : (
                 <button type="button" onClick={() => onOpenStoryEditor(item.targetGone ? null : item.slug)} className="min-h-11 w-full rounded-lg border border-[#C9D6C7] px-4 text-sm font-medium sm:w-auto">Edit in Stories Editor</button>
