@@ -266,3 +266,11 @@ A new feature idea must not silently become a decision. Add it here only after C
 - CH decisions: deletion requests handled within 30 days; handled reports and feedback kept 12 months, then deleted. Migration 20261004100000 makes that automatic (nightly pg_cron `privacy_retention_cleanup`), and also deletes site errors 30 days after they are marked resolved.
 - Linked from the footer, the merchant sign-up form and the create-restaurant agreement ("…and have read the Privacy Policy"); in the sitemap. No consent checkbox was added for visitors; the policy is a notice.
 - Recommended, not done: a lawyer's review and a native Bahasa Melayu check. When the text changes, change `PRIVACY_EFFECTIVE_DATE`.
+
+## SYNC-072 — ShopeeFood and foodpanda links (#13, CH 2026-10-04)
+
+- Same flow as GrabFood: the Owner asks in the dashboard, Admin approves (or edits directly in the restaurant's Links panel), then the store page shows the button. Migration 20261004110000.
+- Allowed hosts (Admin still checks each link): ShopeeFood `shopee.com.my`, `shopeefood.my` (or a subdomain) and the Shopee short link `shp.ee`; foodpanda `foodpanda.my`, `foodpanda.sg` (or a subdomain). ShopeeFood is not offered in Singapore, so there is no `.sg` ShopeeFood host.
+- Store page: one link keeps the old "Order on GrabFood" style; two or three links show one brand-coloured button each in the same fixed bar. Clicks are still `merchant_order_click`, detail = the app; Admin shows them as "Delivery".
+- Until the SQL runs, the two fields are hidden (the links read has no such keys) and the page shows only GrabFood, as before.
+- The review content adds the two links only when set, so restaurants approved before this do not show "changed since approval".

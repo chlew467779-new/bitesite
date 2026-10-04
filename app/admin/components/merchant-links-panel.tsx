@@ -9,9 +9,9 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { LINK_FIELDS, LINK_PROBLEM_TEXT, linkProblem, type LinkField, type LinkRequestItem } from '@/lib/merchant-links-core.mjs';
+import { availableLinkFields, LINK_PROBLEM_TEXT, linkProblem, type LinkField, type LinkRequestItem } from '@/lib/merchant-links-core.mjs';
 
-type Links = Record<LinkField, string | null>;
+type Links = Partial<Record<LinkField, string | null>>;
 const input = 'mt-1 block w-full min-w-0 rounded-lg border border-[#C9D6C7] bg-white px-3 py-2 text-sm text-[#2C3E2D] focus:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-700/20';
 
 export default function MerchantLinksPanel({ merchantId, token }: { merchantId: string; token: string | null }) {
@@ -45,7 +45,7 @@ export default function MerchantLinksPanel({ merchantId, token }: { merchantId: 
     const value = (drafts[field] ?? links[field] ?? '').trim();
     const problem = linkProblem(field, value);
     if (problem) { setStatus((s) => ({ ...s, [field]: { kind: 'error', text: LINK_PROBLEM_TEXT[problem] } })); return; }
-    const pending = unknown.current[field] ?? { requestId: crypto.randomUUID(), url: value || null, expected: links[field] };
+    const pending = unknown.current[field] ?? { requestId: crypto.randomUUID(), url: value || null, expected: links[field] ?? null };
     setSaving(field);
     try {
       const response = await fetch(api, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-admin-token': token || '' }, body: JSON.stringify({ field, ...pending }) });
@@ -78,7 +78,7 @@ export default function MerchantLinksPanel({ merchantId, token }: { merchantId: 
 
   return (
     <div className="space-y-4">
-      {LINK_FIELDS.map(({ field, label, placeholder }) => {
+      {availableLinkFields(links).map(({ field, label, placeholder }) => {
         const value = drafts[field] ?? links[field] ?? '';
         const dirty = drafts[field] !== undefined && drafts[field] !== (links[field] ?? '');
         const pending = requests.find((r) => r.field === field && r.status === 'pending');
