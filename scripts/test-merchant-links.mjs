@@ -5,13 +5,18 @@
 
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { LINK_FIELDS, linkProblem, mapLinkRpcError, parseAdminLinkSet, parseLinkReview, parseOwnerLinkRequest } from "../lib/merchant-links-core.mjs";
+import { availableLinkFields, DELIVERY_LINK_TYPES, LINK_FIELDS, linkProblem, mapLinkRpcError, parseAdminLinkSet, parseLinkReview, parseOwnerLinkRequest } from "../lib/merchant-links-core.mjs";
 
 const read = async (relPath) => (await readFile(new URL(`../${relPath}`, import.meta.url), "utf8")).replace(/\r\n/g, "\n");
 const REQ = "7d1c3a52-5b1e-4c8e-9a51-0e2c55d2f1a1";
 const ID = "11111111-1111-4111-8111-111111111111";
 
-assert.deepEqual(LINK_FIELDS.map((f) => f.field), ["website", "instagram", "facebook", "menu_pdf_url", "grabfood"]);
+assert.deepEqual(LINK_FIELDS.map((f) => f.field), ["website", "instagram", "facebook", "menu_pdf_url", "grabfood", "shopeefood", "foodpanda"]);
+assert.deepEqual(DELIVERY_LINK_TYPES, ["grabfood", "shopeefood", "foodpanda"]);
+// Before migration 20261004110000 the read has no ShopeeFood/foodpanda keys: those fields stay hidden.
+assert.deepEqual(availableLinkFields({ website: null, instagram: null, facebook: null, menu_pdf_url: null, grabfood: null }).map((f) => f.field), ["website", "instagram", "facebook", "menu_pdf_url", "grabfood"]);
+assert.equal(availableLinkFields({ website: null, instagram: null, facebook: null, menu_pdf_url: null, grabfood: null, shopeefood: null, foodpanda: null }).length, 7);
+assert.equal(availableLinkFields(null).length, 0);
 for (const [field, url, expected] of [
   ["website", "https://shop.example.com/a?b=1", null],
   ["website", "", null],
@@ -28,6 +33,13 @@ for (const [field, url, expected] of [
   ["facebook", "https://facebook.co/zz", "host_facebook"],
   ["grabfood", "https://food.grab.com/my/en/restaurant/x", null],
   ["grabfood", "https://notgrab.com/x", "host_grabfood"],
+  ["shopeefood", "https://shopee.com.my/universal-link/now-food/shop/1", null],
+  ["shopeefood", "https://shp.ee/abc123", null],
+  ["shopeefood", "https://food.shopeefood.my/x", null],
+  ["shopeefood", "https://shopee.com.my.evil.io/x", "host_shopeefood"],
+  ["foodpanda", "https://www.foodpanda.my/restaurant/s7tg/zz", null],
+  ["foodpanda", "https://www.foodpanda.sg/restaurant/x/zz", null],
+  ["foodpanda", "https://notfoodpanda.my/x", "host_foodpanda"],
 ]) assert.equal(linkProblem(field, url), expected, `${field} ${url.slice(0, 40)}`);
 
 assert.deepEqual(parseOwnerLinkRequest({ requestId: REQ, action: "request", field: "website", url: " https://a.example.com " }),
