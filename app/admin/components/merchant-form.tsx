@@ -50,6 +50,8 @@ interface MerchantFormProps {
     instagram?: string;
     facebook?: string;
     grabfood_url?: string;
+    /** MYR (RM) by default; SGD shows S$ (#24). */
+    currency?: string;
     menu_pdf_url?: string;
     logo_image?: string;
     cover_image?: string;
@@ -64,7 +66,7 @@ interface MerchantFormProps {
   loadWarning?: string;
 }
 
-type Current = { id: string; name: string; slug: string };
+type Current = { id: string; name: string; slug: string; currency?: string };
 
 const LAYOUTS = getPersistableLayouts();
 const LAYOUT_KEYS: readonly string[] = LAYOUTS.map((layout) => layout.key);
@@ -348,7 +350,7 @@ const tabs = [
 
 export default function MerchantForm({ merchant, onBack, onSaved, loadWarning }: MerchantFormProps) {
   const { token } = useAuth();
-  const [current, setCurrent] = useState<Current | null>(merchant ? { id: merchant.id, name: merchant.name, slug: merchant.slug } : null);
+  const [current, setCurrent] = useState<Current | null>(merchant ? { id: merchant.id, name: merchant.name, slug: merchant.slug, currency: merchant.currency } : null);
   const [activeTab, setActiveTab] = useState(0);
   const [fields, setFields] = useState<Record<string, Snapshot> | null>(null);
   const [loadError, setLoadError] = useState('');
@@ -659,7 +661,7 @@ export default function MerchantForm({ merchant, onBack, onSaved, loadWarning }:
               <ProfileImagesPanel key={`media:${current.id}`} apiBase={`/api/admin/merchants/${encodeURIComponent(current.id)}/media`} getHeaders={mediaHeaders} />
             </div>
             <div hidden={activeTab !== 5}>
-              <MenuEditor merchantId={current.id} merchantName={current.name} />
+              <MenuEditor merchantId={current.id} merchantName={current.name} currency={current.currency} />
             </div>
           </>
         )}

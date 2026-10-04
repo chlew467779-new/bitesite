@@ -17,9 +17,10 @@ type Props = {
   categories: { id: string; name: string }[];
   products: { category_id: string | null; name: string }[];
   onImported: () => void;
+  currency?: string;
 };
 
-export default function MenuImport({ merchantId, merchantName, categories, products, onImported }: Props) {
+export default function MenuImport({ merchantId, merchantName, categories, products, onImported, currency }: Props) {
   const { token } = useAuth();
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
@@ -147,7 +148,7 @@ export default function MenuImport({ merchantId, merchantName, categories, produ
                           </span>
                           {dish.unclear && !dish.exists && <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-xs text-amber-300">Check</span>}
                           {dish.exists && <span className="text-xs">already on the menu</span>}
-                          <span className="tabular-nums">{dish.price === null ? 'No price' : formatPrice(dish.price)}</span>
+                          <span className="tabular-nums">{dish.price === null ? 'No price' : formatPrice(dish.price, currency)}</span>
                         </li>
                       ))}
                     </ul>

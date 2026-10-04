@@ -114,7 +114,7 @@ assert.match(
   formSource,
   // D2-B: the editor renders tabs only after `if (!current) return <create form>`, so the menu
   // editor always has a saved restaurant id.
-  /if \(!current\) \{[\s\S]*?\n  \}[\s\S]*<MenuEditor merchantId=\{current\.id\} merchantName=\{current\.name\} \/>/,
+  /if \(!current\) \{[\s\S]*?\n  \}[\s\S]*<MenuEditor merchantId=\{current\.id\} merchantName=\{current\.name\} currency=\{current\.currency\} \/>/,
   "merchant-form.tsx must only render MenuEditor once an existing merchant (with an id) is being edited",
 );
 
