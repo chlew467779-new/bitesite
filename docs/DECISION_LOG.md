@@ -333,3 +333,8 @@ A new feature idea must not silently become a decision. Add it here only after C
 - 21 common Singapore areas (country SG, state "Singapore"); Admin can add more in Areas, and ChatGPT G20 prepares the full list. Singapore's Chinatown is "Chinatown Singapore" because area names are unique. The homepage state filter shows "Singapore" by itself once a Singapore restaurant with a Singapore area is public. +65 phone numbers were already accepted.
 - `merchants.currency` is a new public column (one more `grant select (...)` line); the projection test now adds later per-column grants to the D1b list. Deploy order: SQL first, then the app.
 - Not in this change: the Privacy Policy Singapore (PDPA) section (separate PR).
+
+## SYNC-079 — Chinese and Malay layouts: database part first (C3, CH 2026-10-04)
+
+- CH: open the Chinese and Malay page styles, with a simpler Chinese one. Migration 20261004150000 lets the database store both now; the app still offers only the five public styles.
+- When ChatGPT G18 (simpler Chinese layout, Malay check) is merged and reviewed, Claude sets `productionReady: true` for both in `lib/layout-registry.mjs` (and updates its tests). No more SQL is needed then.
