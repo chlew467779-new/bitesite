@@ -90,7 +90,7 @@ export function FeedbackForm() {
       <div>
         <label htmlFor="feedback-email" className="text-sm font-semibold">Email <span className="font-normal text-[#8A968B]">(optional)</span></label>
         <input id="feedback-email" type="email" inputMode="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)}
-          className="mt-1.5 block w-full rounded-lg border border-[#C9D6C7] px-3 py-2.5 text-sm focus:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-700/20" />
+          className="mt-1.5 block min-h-11 w-full rounded-lg border border-[#C9D6C7] px-3 py-2.5 text-sm focus:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-700/20" />
         <p className="mt-1 text-xs text-[#6B6560]">Only if you would like us to reply. We use it for nothing else.</p>
       </div>
 

@@ -98,7 +98,7 @@ export function StoryHero({ article, theme = 'default' }: StoryHeroProps) {
         {/* Back button */}
         <Link
           href="/stories"
-          className="mb-4 inline-flex items-center gap-1.5 text-sm transition-colors hover:opacity-80"
+          className="mb-4 inline-flex min-h-11 items-center gap-1.5 text-sm transition-colors hover:opacity-80"
           style={{ color: colors.bodyLight }}
         >
           <ArrowLeft className="h-4 w-4" />

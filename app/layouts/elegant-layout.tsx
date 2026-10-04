@@ -53,7 +53,7 @@ export function ElegantLayout({
       {/* Back Nav */}
       <div data-menu-sticky className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md border-b border-slate-800">
         <div className="max-w-4xl mx-auto px-4 py-3">
-          <Link href="/" className="inline-flex items-center gap-2 text-slate-400 text-sm font-medium active:scale-95 transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}>
+          <Link href="/" className="min-h-11 inline-flex items-center gap-2 text-slate-400 text-sm font-medium active:scale-95 transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}>
             <ArrowLeft size={18} /> Back to BiteSite
           </Link>
         </div>
@@ -191,13 +191,13 @@ export function ElegantLayout({
               </div>
               <div className="mt-8 space-y-4">
                 {merchant.address && (
-                  <a href={`https://maps.google.com/?q=${encodeURIComponent(merchant.address)}`} onClick={() => trackEvent('directions_click', { slug: merchant.slug, pageType: 'merchant' })} target="_blank" rel="noopener noreferrer" className="flex items-start gap-3 text-slate-400 hover:text-slate-200 transition-colors">
+                  <a href={`https://maps.google.com/?q=${encodeURIComponent(merchant.address)}`} onClick={() => trackEvent('directions_click', { slug: merchant.slug, pageType: 'merchant' })} target="_blank" rel="noopener noreferrer" className="min-h-11 flex items-start gap-3 text-slate-400 hover:text-slate-200 transition-colors">
                     <MapPin size={18} className="mt-0.5 flex-shrink-0" />
                     <span className="text-sm">{merchant.address}</span>
                   </a>
                 )}
                 {merchant.phone && (
-                  <a href={`tel:+${phoneLinkDigits(merchant.phone)}`} onClick={() => trackEvent('phone_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-3 text-slate-400 hover:text-slate-200 transition-colors">
+                  <a href={`tel:+${phoneLinkDigits(merchant.phone)}`} onClick={() => trackEvent('phone_click', { slug: merchant.slug, pageType: 'merchant' })} className="min-h-11 flex items-center gap-3 text-slate-400 hover:text-slate-200 transition-colors">
                     <Phone size={18} /><span className="text-sm">{formatPhone(merchant.phone)}</span>
                   </a>
                 )}
@@ -217,7 +217,7 @@ export function ElegantLayout({
                   </a>
                 )}
                 {merchant.email && (
-                  <a href={`mailto:${merchant.email}`} onClick={() => trackEvent('email_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-3 text-slate-400 hover:text-slate-200 transition-colors">
+                  <a href={`mailto:${merchant.email}`} onClick={() => trackEvent('email_click', { slug: merchant.slug, pageType: 'merchant' })} className="min-h-11 flex items-center gap-3 text-slate-400 hover:text-slate-200 transition-colors">
                     <Mail size={18} /><span className="text-sm">{merchant.email}</span>
                   </a>
                 )}
@@ -272,7 +272,7 @@ export function ElegantLayout({
 
       <footer className="py-8 px-4 text-center border-t border-slate-800">
         <Link href="/" className="text-sm text-slate-500 hover:text-slate-300 transition-colors">{footerText || "Discover more restaurants on BiteSite"}</Link>
-        <Link href="/feedback" className="mt-1 block text-sm text-slate-400 underline hover:text-slate-200">Send feedback</Link>
+        <Link href="/feedback" className="min-h-11 mt-1 flex items-center justify-center text-sm text-slate-400 underline hover:text-slate-200">Send feedback</Link>
       </footer>
     </div>
   );

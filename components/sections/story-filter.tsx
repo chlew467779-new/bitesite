@@ -20,7 +20,7 @@ export function StoryFilter({
       <button
         onClick={() => onCategoryChange(null)}
         className={cn(
-          "rounded-full px-4 py-2 text-xs font-medium uppercase tracking-wider transition-all duration-200 active:scale-95 select-none",
+          "min-h-11 rounded-full px-4 py-2 text-xs font-medium uppercase tracking-wider transition-all duration-200 active:scale-95 select-none",
           !activeCategory
             ? "bg-[#5A8F6E] text-white shadow-sm"
             : "border border-[#DDE5DC] bg-white text-[#6B6560] hover:border-[#5A8F6E] hover:text-[#5A8F6E]"
@@ -34,7 +34,7 @@ export function StoryFilter({
           key={cat}
           onClick={() => onCategoryChange(cat)}
           className={cn(
-            "rounded-full px-4 py-2 text-xs font-medium uppercase tracking-wider transition-all duration-200 active:scale-95 select-none",
+            "min-h-11 rounded-full px-4 py-2 text-xs font-medium uppercase tracking-wider transition-all duration-200 active:scale-95 select-none",
             activeCategory === cat
               ? "bg-[#5A8F6E] text-white shadow-sm"
               : "border border-[#DDE5DC] bg-white text-[#6B6560] hover:border-[#5A8F6E] hover:text-[#5A8F6E]"
