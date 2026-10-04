@@ -354,3 +354,7 @@ A new feature idea must not silently become a decision. Add it here only after C
 
 - CH: open the Chinese and Malay page styles, with a simpler Chinese one. Migration 20261004150000 lets the database store both now; the app still offers only the five public styles.
 - When ChatGPT G18 (simpler Chinese layout, Malay check) is merged and reviewed, Claude sets `productionReady: true` for both in `lib/layout-registry.mjs` (and updates its tests). No more SQL is needed then.
+
+## SYNC-080 — Chinese and Malay layouts are public (C3 done, 2026-10-04)
+
+- After ChatGPT G18 (#102, simpler designs) and the database part (#98, SQL run by CH), `productionReady` is true for both. Owners and Admin can pick them in Page style; the descriptions now match the simpler designs ("Simple and clean, with a red seal accent" / "Simple and warm, with an emerald accent").

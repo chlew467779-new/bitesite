@@ -25,8 +25,7 @@ import { formatPrice } from "@/lib/price-format.mjs";
 /**
  * Chinese layout — a simple warm canvas with a small red seal accent.
  *
- * Registered with productionReady: false (lib/layout-registry.mjs), so it only renders on
- * internal surfaces such as /dev/layout-fixtures until it is visually signed off. Shared sections
+ * Public since C3 (productionReady: true in lib/layout-registry.mjs). Shared sections
  * take their colours from the `chinese` theme in lib/layout-theme.mjs.
  */
 

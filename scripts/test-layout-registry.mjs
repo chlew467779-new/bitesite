@@ -68,8 +68,8 @@ const NON_KEYS = [
 
 // Layouts customers can see, and registered layouts still waiting for visual sign-off. A new
 // layout lands in UNFINISHED (productionReady: false) and moves across in its own small PR.
-const PRODUCTION_READY = ["classic", "elegant", "minimal", "modern", "rustic"];
-const UNFINISHED = ["chinese", "malay"];
+const PRODUCTION_READY = ["classic", "elegant", "minimal", "modern", "rustic", "chinese", "malay"];
+const UNFINISHED = [];
 
 assert.deepEqual(
   [...LAYOUT_KEYS],
