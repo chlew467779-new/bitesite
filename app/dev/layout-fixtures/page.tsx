@@ -12,6 +12,8 @@ import {
   SECTION_STATES,
   NAME_STATES,
   MENU_STATES,
+  CURRENCY_STATES,
+  DISABLED_FEATURE_STATES,
   LONG_MENU_CATEGORIES,
   FIXTURE_CATEGORIES,
   buildEvents,
@@ -64,14 +66,16 @@ export default async function LayoutFixturesPage({ searchParams }: PageProps) {
   const sections = pick(params.sections, SECTION_STATES, "default");
   const name = pick(params.name, NAME_STATES, "default");
   const menu = pick(params.menu, MENU_STATES, "default");
+  const currency = pick(params.currency, CURRENCY_STATES, "MYR");
+  const disabledFeature = pick(params.disabled, DISABLED_FEATURE_STATES, "none");
 
   const LayoutComponent = layouts[layoutKey];
-  const merchant = buildMerchant(layoutKey, image, sections, name);
+  const merchant = buildMerchant(layoutKey, image, sections, name, currency, disabledFeature);
   const products = buildProducts(price, dish, image, name, menu);
   const events = buildEvents(sections, image);
 
   const href = (next: Record<string, string>) => {
-    const query = new URLSearchParams({ layout: layoutKey, price, state: dish, image, sections, name, menu, ...next });
+    const query = new URLSearchParams({ layout: layoutKey, price, state: dish, image, sections, name, menu, currency, disabled: disabledFeature, ...next });
     return `/dev/layout-fixtures?${query.toString()}`;
   };
 
@@ -83,8 +87,10 @@ export default async function LayoutFixturesPage({ searchParams }: PageProps) {
     { label: "Sections", options: SECTION_STATES.map((value) => ({ value, param: "sections" })) },
     { label: "Menu", options: MENU_STATES.map((value) => ({ value, param: "menu" })) },
     { label: "Name", options: NAME_STATES.map((value) => ({ value, param: "name" })) },
+    { label: "Currency", options: CURRENCY_STATES.map((value) => ({ value, param: "currency" })) },
+    { label: "Feature off", options: DISABLED_FEATURE_STATES.map((value) => ({ value, param: "disabled" })) },
   ];
-  const current: Record<string, string> = { layout: layoutKey, price, state: dish, image, sections, name, menu };
+  const current: Record<string, string> = { layout: layoutKey, price, state: dish, image, sections, name, menu, currency, disabled: disabledFeature };
 
   return (
     <div className="min-h-screen bg-slate-950">
@@ -93,8 +99,8 @@ export default async function LayoutFixturesPage({ searchParams }: PageProps) {
           Development fixtures — fictional data, no database, no analytics. Not reachable in production.
         </p>
         <p>
-          Rendering <strong>{getLayoutMeta(layoutKey).displayName}</strong>. Resize the browser for mobile (375px) and
-          desktop (1440px) checks. Uncategorized dishes are not shown on the public menu, so dish-4 is expected to be
+          Rendering <strong>{getLayoutMeta(layoutKey).displayName}</strong>. Resize the browser for mobile (390px) and
+          desktop (1280px) checks. Uncategorized dishes are not shown on the public menu, so dish-4 is expected to be
           absent below. Use Sections → all to also show reviews, booking and events; the booking form&apos;s
           submit button opens WhatsApp, so do not submit it.
         </p>

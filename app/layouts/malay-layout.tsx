@@ -23,8 +23,7 @@ import { MapEmbed } from "@/app/components/map-embed";
 import { formatPrice } from "@/lib/price-format.mjs";
 
 /**
- * Malay layout — emerald and songket gold on off-white, with a woven lattice band, an overlapping
- * name card and category cards with emerald headers.
+ * Malay layout — a restrained emerald accent on a warm, readable canvas.
  *
  * Registered with productionReady: false (lib/layout-registry.mjs), so it only renders on
  * internal surfaces such as /dev/layout-fixtures until it is visually signed off. Shared sections
@@ -34,25 +33,11 @@ import { formatPrice } from "@/lib/price-format.mjs";
 const focusRing =
   "rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2";
 
-// Gold lattice drawn with gradients only: no image request, nothing for a CSP to block.
-const songketPattern = {
-  backgroundImage:
-    "repeating-linear-gradient(45deg, rgba(245, 158, 11, 0.85) 0 2px, transparent 2px 10px), repeating-linear-gradient(-45deg, rgba(245, 158, 11, 0.85) 0 2px, transparent 2px 10px)",
-};
-
-function SongketBand({ className = "h-3" }: { className?: string }) {
-  return <div aria-hidden="true" className={`bg-emerald-800 ${className}`} style={songketPattern} />;
-}
-
 function SectionHeading({ children }: { children: ReactNode }) {
   return (
     <div className="text-center mb-8">
       <h2 className="text-2xl font-bold text-emerald-900 break-words">{children}</h2>
-      <div aria-hidden="true" className="mt-3 flex items-center justify-center gap-1.5">
-        <span className="h-1.5 w-1.5 rotate-45 bg-amber-500" />
-        <span className="h-2.5 w-2.5 rotate-45 bg-emerald-800" />
-        <span className="h-1.5 w-1.5 rotate-45 bg-amber-500" />
-      </div>
+      <span aria-hidden="true" className="mt-3 inline-block h-0.5 w-10 bg-emerald-800" />
     </div>
   );
 }
@@ -79,19 +64,16 @@ export function MalayLayout({
       {resolvedFeatures.hero && (
         <FadeIn>
           <div className="relative">
-            <div className="relative h-56 sm:h-80 bg-emerald-800">
+            <div className={`relative ${merchant.cover_image ? "h-56 sm:h-80 bg-emerald-800" : "h-24 sm:h-32 bg-emerald-50"}`}>
               {merchant.cover_image ? (
                 <div className="absolute inset-0">
                   <SafeImage src={merchant.cover_image} alt={merchant.name} fill className="object-cover" priority />
                   <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/70 to-transparent" />
                 </div>
-              ) : (
-                <div aria-hidden="true" className="absolute inset-0 opacity-25" style={songketPattern} />
-              )}
+              ) : null}
             </div>
-            <SongketBand />
             <div className="max-w-4xl mx-auto px-4 -mt-16 sm:-mt-20 relative z-10">
-              <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-lg border border-emerald-100 border-t-4 border-t-amber-500">
+              <div className="bg-white rounded-xl p-6 sm:p-8 shadow-sm border border-stone-200">
                 {merchant.cuisine_type && <span className="inline-block mb-3 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold">{merchant.cuisine_type}</span>}
                 <h1 className="text-3xl sm:text-4xl font-bold text-emerald-950 break-words">{merchant.name}</h1>
                 {showAbout && <p className="mt-3 text-stone-700 leading-relaxed break-words">{merchant.description}</p>}
@@ -124,19 +106,18 @@ export function MalayLayout({
                   const catProducts = products.filter((p) => p.category_id === cat.id);
                   if (catProducts.length === 0) return null;
                   return (
-                    <div key={cat.id} id={menuCategoryId(cat.id)} className="scroll-mt-32 bg-white rounded-2xl border border-emerald-100 overflow-hidden shadow-sm">
-                      <h3 tabIndex={-1} className="bg-emerald-800 px-5 py-3 text-lg font-bold text-amber-50 break-words">{cat.name}</h3>
-                      <SongketBand className="h-1.5" />
+                    <div key={cat.id} id={menuCategoryId(cat.id)} className="scroll-mt-32 bg-white rounded-xl border border-stone-200 overflow-hidden">
+                      <h3 tabIndex={-1} className="px-5 py-3 text-lg font-bold text-emerald-900 border-b border-stone-200 break-words">{cat.name}</h3>
                       <ul className="divide-y divide-emerald-50 px-5">
                         {catProducts.map((product) => (
                           <li key={product.id} className="flex gap-3 py-4">
                             {product.image_url && (
-                              <div className="relative w-16 h-16 flex-shrink-0 rounded-full overflow-hidden ring-2 ring-amber-400/60">
+                              <div className="relative w-16 h-16 flex-shrink-0 rounded-md overflow-hidden">
                                 <SafeImage src={product.image_url} alt={product.name} fill className="object-cover" />
                               </div>
                             )}
                             <div className="flex-1 min-w-0">
-                              <div className="flex justify-between items-start gap-2">
+                              <div className="flex flex-col items-start gap-1">
                                 <h4 className="font-semibold text-stone-900 break-words min-w-0">{product.name}</h4>
                                 {hasDisplayablePrice(product) && (
                                   <span className="font-bold text-emerald-800 whitespace-nowrap">
@@ -243,7 +224,6 @@ export function MalayLayout({
       )}
 
       <footer className="bg-emerald-900 text-center">
-        <SongketBand />
         <div className="py-8 px-4">
           <Link href="/" className={`text-sm text-amber-50 hover:text-white transition-colors ${focusRing} focus-visible:ring-offset-emerald-900`}>{footerText || "Discover more restaurants on BiteSite"}</Link>
           <Link href="/feedback" className={`min-h-11 mt-1 flex items-center justify-center text-sm text-amber-50 underline hover:text-white ${focusRing} focus-visible:ring-offset-emerald-900`}>Send feedback</Link>
