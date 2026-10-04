@@ -21,6 +21,8 @@ import { RelatedMerchants } from "@/components/sections/related-merchants";
 import { ViewTracker } from "@/components/sections/view-tracker";
 import { PageViewTracker } from "@/app/components/page-view-tracker";
 import { DeliveryOrderButtons } from "@/components/sections/delivery-order-buttons";
+import { HiringSection } from "@/components/sections/hiring-section";
+import { getRestaurantJobs } from "@/lib/jobs-public";
 import { DELIVERY_LINK_TYPES } from "@/lib/merchant-links-core.mjs";
 import { getSiteUrl } from "@/lib/site-url";
 import { safeJsonLd } from "@/lib/safe-json-ld.mjs";
@@ -205,13 +207,14 @@ export default async function MerchantPage({ params }: PageProps) {
     );
   }
 
-  const [categories, products, videos, relatedMerchants, events, externalLinksRes] = await Promise.all([
+  const [categories, products, videos, relatedMerchants, events, externalLinksRes, jobs] = await Promise.all([
     getCategoriesByMerchant(merchant.id),
     getProductsByMerchant(merchant.id),
     getVideosByMerchant(merchant.id),
     getRelatedMerchants(merchant.slug, merchant.cuisine_type, merchant.tags, merchant.area, 3),
     getEventsByMerchant(merchant.id),
     supabase.from("merchant_external_links").select("link_type, url").eq("merchant_id", merchant.id).in("link_type", [...DELIVERY_LINK_TYPES]).eq("is_active", true),
+    getRestaurantJobs(merchant.id),
   ]);
 
   // Unknown, blank or not-yet-public-ready layout values render Classic instead of 404ing
@@ -293,6 +296,7 @@ export default async function MerchantPage({ params }: PageProps) {
         events={events}
         footerText={settings.footer_text}
       />
+      <HiringSection jobs={jobs} />
       <RelatedMerchants merchants={publicRelatedMerchants} variant={layoutKey} />
       <DiscoveryLinks area={merchantArea(merchant)} cuisines={merchantCuisines(merchant)} />
       <ReportProblem targetType="merchant" slug={merchant.slug} />
