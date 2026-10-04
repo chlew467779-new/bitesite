@@ -68,7 +68,9 @@
 }
 
 /* Leaflet's default zoom links are 30px; keep map controls touch sized. */
-.leaflet-control-zoom a {
+/* More specific than Leaflet's own ".leaflet-touch .leaflet-bar a" (30px), which would otherwise win. */
+.leaflet-bar.leaflet-control-zoom a,
+.leaflet-touch .leaflet-bar.leaflet-control-zoom a {
   display: flex;
   width: 44px;
   height: 44px;
