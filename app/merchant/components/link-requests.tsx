@@ -2,7 +2,7 @@
 'use client';
 
 /**
- * Owner links (website, Instagram, Facebook, menu PDF, GrabFood). A change is a request that the
+ * Owner links (website, Instagram, Facebook, menu PDF, GrabFood, ShopeeFood, foodpanda). A change is a request that the
  * BiteSite team reviews before it appears on the page; one request per link can wait at a time
  * (a new one replaces it), and a waiting request can be withdrawn. Mobile first: one card per
  * link, full-width buttons, URL keyboard. Checks mirror the server (lib/merchant-links-core.mjs).
@@ -11,9 +11,9 @@
 import type { SectionHandle } from '@/app/components/section-save/use-section-save';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { LINK_FIELDS, LINK_PROBLEM_TEXT, linkProblem, type LinkField, type LinkRequestItem } from '@/lib/merchant-links-core.mjs';
+import { availableLinkFields, LINK_PROBLEM_TEXT, linkProblem, type LinkField, type LinkRequestItem } from '@/lib/merchant-links-core.mjs';
 
-type Links = Record<LinkField, string | null>;
+type Links = Partial<Record<LinkField, string | null>>;
 type Pending = { requestId: string; body: Record<string, unknown>; success: string };
 
 const btn = 'inline-flex min-h-11 items-center justify-center rounded-lg px-4 text-sm font-medium disabled:opacity-50';
@@ -117,8 +117,8 @@ export function LinkRequests({ merchantId, getHeaders, readOnly, register }: {
   return (
     <div className="space-y-3">
       <p className="text-xs text-[#6B6560]">Links are checked by the BiteSite team before they appear on your page. Your current links stay until a change is approved.</p>
-      {LINK_FIELDS.map(({ field, label, placeholder }) => {
-        const current = links[field];
+      {availableLinkFields(links).map(({ field, label, placeholder }) => {
+        const current = links[field] ?? null;
         const pending = requests.find((r) => r.field === field && r.status === 'pending');
         const rejected = requests.find((r) => r.field === field && r.status === 'rejected' && !pending);
         const href = safeHref(current);

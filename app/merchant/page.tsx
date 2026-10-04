@@ -38,7 +38,7 @@ import { createAreaRequests } from '@/lib/area-requests.mjs';
  * value, so a change made meanwhile elsewhere is reported as a conflict instead of being
  * overwritten. The cover photo and logo upload through the checked photo flow (M6b); the menu
  * (categories and dishes) is edited in MenuManager (M3a). Link changes (website, social, menu
- * link, GrabFood) are requests that the BiteSite team reviews first (LinkRequests). Managed drafts can edit listing basics until approval; pending review freezes editing. Approved profile and menu edits appear immediately.
+ * link, delivery apps) are requests that the BiteSite team reviews first (LinkRequests). Managed drafts can edit listing basics until approval; pending review freezes editing. Approved profile and menu edits appear immediately.
  *
  * The restaurant is the one in the URL (`?merchant=<id>`) or the account's only one. Switching
  * restaurants asks first when anything is unsaved, never switches while a save is in flight or

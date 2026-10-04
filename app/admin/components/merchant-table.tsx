@@ -119,7 +119,7 @@ export default function MerchantTable({ range }: MerchantTableProps) {
             <option value="unique_ips" disabled={!rawVisitorDataAvailable}>Unique visitors{!rawVisitorDataAvailable ? ' (90-day limit)' : ''}</option>
             <option value="menuViews">Menu views</option>
             <option value="storyViews">Story views</option>
-            <option value="grabfoodClicks">GrabFood</option>
+            <option value="grabfoodClicks">Delivery orders</option>
             <option value="directionsClicks">Directions</option>
             <option value="phoneClicks">Phone</option>
             <option value="websiteClicks">Website</option>
@@ -143,7 +143,7 @@ export default function MerchantTable({ range }: MerchantTableProps) {
               </th>
               <th className="text-right px-6 py-3 text-slate-500 font-medium">Menu Views</th>
               <th className="text-right px-6 py-3 text-slate-500 font-medium">Story Views</th>
-              <th className="text-right px-6 py-3 text-slate-500 font-medium">GrabFood</th>
+              <th className="text-right px-6 py-3 text-slate-500 font-medium">Delivery</th>
               <th className="text-right px-6 py-3 text-slate-500 font-medium">Directions</th>
               <th className="text-right px-6 py-3 text-slate-500 font-medium">Phone</th>
               <th className="text-right px-6 py-3 text-slate-500 font-medium">Website</th>
