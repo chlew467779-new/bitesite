@@ -251,6 +251,7 @@ A new feature idea must not silently become a decision. Add it here only after C
 - Events stays hidden (CH 09-30); menu and reviews stay protected.
 - Migration 20261003150000: registry rows Owner-writable + the snapshot read shows Owners only the switches they may write. Deploy order: amenities SQL, then this SQL, then the app.
 
+
 ## SYNC-070 — Site errors reach Admin without any outside service (CH 2026-10-01 plan; built 2026-10-03)
 
 - The server records its own errors in `site_errors` (migration 20261003160000): every server `console.error` (the API routes log there before answering 500), uncaught page/route errors (`instrumentation.ts` `onRequestError`, with the page) and visitor crashes on the error pages (`/api/site-errors`, same-site only; crashes that came from the server are skipped). Nothing for CH to set up.
@@ -258,6 +259,7 @@ A new feature idea must not silently become a decision. Add it here only after C
 - Admin › Site › Site Errors (badge) and a red "Site errors" card on Today: copy the message for the developer, mark resolved (one or all). Before the SQL runs, the page says it is not switched on and nothing is logged.
 - Privacy: no IP or visitor identity; messages are trimmed to 500 characters with emails, phone-like numbers, keys/tokens and URL queries removed; the page is kept without its query. Limits: 50 new kinds per hour (then one overflow row), 30 records per minute per server; resolved rows unseen for 30 days are deleted. Only production records (`SITE_ERRORS_IN_DEV=1` for a local check).
 - Not done: push or email alerts. When email sending is set up later, a new kind of error can also be emailed.
+
 
 ## SYNC-071 — Privacy Policy published (PDPA notice; CH decisions 2026-10-04)
 
@@ -267,6 +269,7 @@ A new feature idea must not silently become a decision. Add it here only after C
 - Linked from the footer, the merchant sign-up form and the create-restaurant agreement ("…and have read the Privacy Policy"); in the sitemap. No consent checkbox was added for visitors; the policy is a notice.
 - Recommended, not done: a lawyer's review and a native Bahasa Melayu check. When the text changes, change `PRIVACY_EFFECTIVE_DATE`.
 
+
 ## SYNC-074 — Admin Photo Cleanup (C6, 2026-10-04)
 
 - Admin › Site › Photo Cleanup: "Check" lists photos in the public buckets (merchant-media, story-media) that nothing uses, with thumbnails and size; "Delete" removes them through the Storage API (SQL cannot delete storage objects). No SQL.
@@ -274,9 +277,16 @@ A new feature idea must not silently become a decision. Add it here only after C
 - Only files older than 30 days; at most 500 per click; the server checks again at the moment of deleting and skips anything now in use. If any table cannot be read, nothing is offered or deleted.
 - The private menu-photos bucket is never touched (those photos are deleted after use already).
 
+
 ## SYNC-077 — Email notifications through Gmail (C8, 2026-10-04)
 
 - The existing outbox (`merchant_notifications`: review submitted / withdrawn / approved / changes needed, details request decided) can now send through Gmail SMTP: set `SMTP_USER` (bitesite.my@gmail.com) and `SMTP_PASS` (a Google app password, the same kind used for Supabase sign-in emails) in Vercel. Resend still wins if it is set. Nothing set = nothing sent, as before. No SQL, no new package (a small SMTP client in `lib/smtp-core.mjs`).
 - Emails go out right after the event (`after()` in the review, details-review and submit/withdraw routes); Admin's "Send now" still works for anything left over. Owners get review results at their sign-in email; Admin rows and site errors go to `ADMIN_NOTIFY_EMAIL`.
 - Site errors: when email is set up, a new kind of error (or one marked fixed that comes back) is emailed once; repeats are only counted in Admin. At most 10 error emails per hour per server.
 - Privacy Policy: review results are also sent by email; Gmail sends them.
+
+## SYNC-076 — Privacy Policy: Singapore (PDPA) section (#24 part 3, 2026-10-04)
+
+- New section 10 "People in Singapore" / "Orang di Singapura": BiteSite also follows Singapore's PDPA 2012 for people in Singapore; consent can be withdrawn by email; access/correction within 30 days; notifiable data breaches go to the PDPC and the people affected; data protection officer contact = bitesite.my@gmail.com. The opening line now says Malaysia and Singapore. Children and Changes become sections 11 and 12.
+- Effective date unchanged (4 October 2026, same day). If this merges on a later day, change PRIVACY_EFFECTIVE_DATE to that day.
+- Recommended, not done: a Singapore lawyer's review.
