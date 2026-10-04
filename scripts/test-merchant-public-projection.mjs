@@ -46,10 +46,15 @@ assert.deepEqual(sorted(quotedNames(dts.match(/PUBLIC_MERCHANT_COLUMNS: readonly
 const migrations = (await readdir(new URL("../supabase/migrations/", import.meta.url))).filter((f) => f.endsWith("_merchant_public_projection.sql"));
 assert.equal(migrations.length, 1, "exactly one D1b migration");
 const migration = await read(`supabase/migrations/${migrations[0]}`);
-assert.deepEqual(sorted(bareNames(migration.match(/grant select \(([\s\S]*?)\) on table public\.merchants to anon, authenticated;/)[1])), expected,
-  "the migration grants exactly the public list");
-assert.deepEqual(sorted(quotedNames(migration.match(/expected text\[\] := array\[([\s\S]*?)\];/)[1])), expected,
-  "the migration self-check uses the same list");
+const d1bGrant = sorted(bareNames(migration.match(/grant select \(([\s\S]*?)\) on table public\.merchants to anon, authenticated;/)[1]));
+assert.deepEqual(sorted(quotedNames(migration.match(/expected text\[\] := array\[([\s\S]*?)\];/)[1])), d1bGrant,
+  "the D1b self-check uses the D1b list");
+// Columns made public later each have their own "grant select (...)" line in a later migration.
+const laterGrants = [];
+for (const file of (await readdir(new URL("../supabase/migrations/", import.meta.url))).filter((f) => f.endsWith(".sql") && f > migrations[0]).sort()) {
+  for (const m of (await read(`supabase/migrations/${file}`)).matchAll(/grant select \(([^)]*)\) on table public\.merchants to anon, authenticated;/g)) laterGrants.push(...bareNames(m[1]));
+}
+assert.deepEqual(sorted([...d1bGrant, ...laterGrants]), expected, "the migrations grant exactly the public list");
 assert.match(migration, /revoke select on table public\.merchants from anon, authenticated;/, "table-wide SELECT is revoked");
 assert.match(migration, /create or replace function private\.merchant_id_is_public\(p_merchant_id uuid\)[\s\S]*?security definer\s+set search_path = ''/,
   "the child-table predicate is a fixed-search_path function outside the exposed schema");

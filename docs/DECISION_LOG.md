@@ -266,3 +266,11 @@ A new feature idea must not silently become a decision. Add it here only after C
 - CH decisions: deletion requests handled within 30 days; handled reports and feedback kept 12 months, then deleted. Migration 20261004100000 makes that automatic (nightly pg_cron `privacy_retention_cleanup`), and also deletes site errors 30 days after they are marked resolved.
 - Linked from the footer, the merchant sign-up form and the create-restaurant agreement ("…and have read the Privacy Policy"); in the sitemap. No consent checkbox was added for visitors; the policy is a notice.
 - Recommended, not done: a lawyer's review and a native Bahasa Melayu check. When the text changes, change `PRIVACY_EFFECTIVE_DATE`.
+
+## SYNC-075 — Singapore part 1: price currency and areas (#24, CH 2026-10-04)
+
+- Same website. Each restaurant has a price currency: MYR (shown "RM", default) or SGD (shown "S$"). Chosen on "Create your restaurant" (Where is it? Malaysia / Singapore) and changeable any time in the dashboard's Menu section ("Prices shown in"), without review; audited in the change log. Migration 20261004130000.
+- All public prices go through `formatPrice(value, merchant.currency)`: the 7 layouts, Featured dishes, the Owner menu editor and the private preview. Share cards show no prices. Admin's own menu editor still shows RM (Admin tool only).
+- 21 common Singapore areas (country SG, state "Singapore"); Admin can add more in Areas, and ChatGPT G20 prepares the full list. Singapore's Chinatown is "Chinatown Singapore" because area names are unique. The homepage state filter shows "Singapore" by itself once a Singapore restaurant with a Singapore area is public. +65 phone numbers were already accepted.
+- `merchants.currency` is a new public column (one more `grant select (...)` line); the projection test now adds later per-column grants to the D1b list. Deploy order: SQL first, then the app.
+- Not in this change: the Privacy Policy Singapore (PDPA) section (separate PR).

@@ -13,7 +13,7 @@ declare
     'address', 'latitude', 'longitude',
     'phone', 'whatsapp', 'email', 'website', 'instagram', 'facebook',
     'cover_image', 'logo_image', 'operating_hours', 'dress_code', 'menu_pdf_url',
-    'video_url', 'video_type', 'video_caption', 'payment_methods',
+    'video_url', 'video_type', 'video_caption', 'payment_methods', 'currency',
     'layout', 'features', 'status', 'business_status',
     'created_at', 'updated_at'
   ];

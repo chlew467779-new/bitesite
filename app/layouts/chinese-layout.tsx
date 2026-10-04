@@ -142,8 +142,8 @@ export function ChineseLayout({
                                       <span aria-hidden="true" className="flex-1 min-w-4 border-b border-dotted border-amber-500" />
                                       <span className="font-bold text-red-800 whitespace-nowrap">
                                       {product.discount_price != null ? (
-                                          <><span className="line-through text-stone-500 text-sm font-normal mr-1">{formatPrice(product.price)}</span>{formatPrice(product.discount_price)}</>
-                                        ) : formatPrice(product.price)}
+                                          <><span className="line-through text-stone-500 text-sm font-normal mr-1">{formatPrice(product.price, merchant.currency)}</span>{formatPrice(product.discount_price, merchant.currency)}</>
+                                        ) : formatPrice(product.price, merchant.currency)}
                                       </span>
                                     </>
                                   )}

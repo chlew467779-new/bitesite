@@ -31,6 +31,7 @@ export declare const PUBLIC_MERCHANT_COLUMNS: readonly [
   "video_type",
   "video_caption",
   "payment_methods",
+  "currency",
   "layout",
   "features",
   "status",

@@ -225,6 +225,7 @@ export function buildMerchant(
     occasion: [],
     tags: [],
     payment_methods: ["Cash", "Cashless"],
+    currency: "MYR",
     latitude: null,
     longitude: null,
     reviews: allSections ? FIXTURE_REVIEWS : null,

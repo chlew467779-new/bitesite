@@ -20,5 +20,10 @@ export async function POST(request: NextRequest) {
   if (data?.code === 'DRAFT_LIMIT') return merchantErrorResponse(409, 'DRAFT_LIMIT', 'You already have three restaurants in progress. Submit one for review (or finish it) before creating another.');
   if (data?.code === 'TERMS_OUTDATED') return merchantErrorResponse(409, 'TERMS_OUTDATED', 'The terms were updated. Reload the page and accept the current version.');
   if (data?.code) return merchantErrorResponse(data.code === 'AUTH_REQUIRED' ? 403 : 409, data.code, 'This request could not be completed. Try again with a new restaurant name.');
+  // Singapore restaurants: set S$ right away. A failure only leaves RM, which the Owner can change in the dashboard.
+  if (input.currency === 'SGD' && typeof data?.id === 'string') {
+    const { error: currencyError } = await supabaseAdmin.rpc('merchant_currency_set', { p_actor_type: 'owner', p_actor_id: auth.user.id, p_merchant_id: data.id, p_currency: 'SGD' });
+    if (currencyError) console.error('merchant_currency_set after create failed:', currencyError.message);
+  }
   return NextResponse.json({ merchant: data }, { status: 201, headers: { 'Cache-Control': 'no-store' } });
 }

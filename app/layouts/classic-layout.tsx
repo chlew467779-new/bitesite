@@ -153,12 +153,12 @@ export function ClassicLayout({
                                     {product.discount_price != null ? (
                                       <>
                                         <span className="line-through opacity-50 text-sm mr-1">
-                                          {formatPrice(product.price)}
+                                          {formatPrice(product.price, merchant.currency)}
                                         </span>
-                                        {formatPrice(product.discount_price)}
+                                        {formatPrice(product.discount_price, merchant.currency)}
                                       </>
                                     ) : (
-                                      formatPrice(product.price)
+                                      formatPrice(product.price, merchant.currency)
                                     )}
                                   </span>
                                 )}

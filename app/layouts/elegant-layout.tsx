@@ -133,9 +133,9 @@ export function ElegantLayout({
                               {hasDisplayablePrice(product) && (
                                 <span className="font-bold text-amber-400 whitespace-nowrap">
                                   {product.discount_price != null ? (
-                                    <><span className="line-through opacity-50 text-sm mr-1">{formatPrice(product.price)}</span>{formatPrice(product.discount_price)}</>
+                                    <><span className="line-through opacity-50 text-sm mr-1">{formatPrice(product.price, merchant.currency)}</span>{formatPrice(product.discount_price, merchant.currency)}</>
                                   ) : (
-                                    formatPrice(product.price)
+                                    formatPrice(product.price, merchant.currency)
                                   )}
                                 </span>
                               )}

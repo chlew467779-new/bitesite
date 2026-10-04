@@ -82,6 +82,8 @@ export interface Merchant {
   occasion: string[];
   tags: string[];
   payment_methods: string[];
+  /** Menu price currency (#24): MYR shows RM, SGD shows S$. */
+  currency: "MYR" | "SGD";
   latitude: number | null;
   longitude: number | null;
   reviews?: Review[] | null;

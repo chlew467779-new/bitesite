@@ -56,9 +56,9 @@ export function TierSections({
       price: !hasDisplayablePrice(p)
         ? undefined
         : p.discount_price != null
-        ? formatPrice(p.discount_price)
+        ? formatPrice(p.discount_price, merchant.currency)
         : p.price != null
-        ? formatPrice(p.price)
+        ? formatPrice(p.price, merchant.currency)
         : undefined,
     }));
 
