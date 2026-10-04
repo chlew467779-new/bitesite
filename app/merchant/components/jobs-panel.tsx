@@ -29,8 +29,10 @@ function stateText(job: JobItem) {
 
 const emptyDraft = (): Draft => ({ jobId: crypto.randomUUID(), isNew: true, title: '', jobType: '', salary: '', hours: '', description: '' });
 
-export function JobsPanel({ merchantId, getHeaders, readOnly, register, onAvailable, renderSection }: {
+export function JobsPanel({ merchantId, getHeaders, readOnly, register, onAvailable, renderSection, endpoint }: {
   merchantId: string;
+  /** Admin: read/write addresses and extra body fields; the Owner routes when left out. */
+  endpoint?: { read: string; write: string; body?: Record<string, unknown> };
   getHeaders: () => Promise<Record<string, string> | null>;
   readOnly: boolean;
   register?: (id: string, handle: SectionHandle | null) => void;
@@ -38,7 +40,10 @@ export function JobsPanel({ merchantId, getHeaders, readOnly, register, onAvaila
   onAvailable?: (available: boolean) => void;
   renderSection: (body: ReactNode) => ReactNode;
 }) {
-  const api = `/api/merchant/restaurants/${encodeURIComponent(merchantId)}/jobs`;
+  const ownerApi = `/api/merchant/restaurants/${encodeURIComponent(merchantId)}/jobs`;
+  const readApi = endpoint?.read ?? ownerApi;
+  const writeApi = endpoint?.write ?? ownerApi;
+  const extraBody = endpoint?.body;
   const [data, setData] = useState<JobsRead | null>(null);
   const [off, setOff] = useState(false);
   const [loadError, setLoadError] = useState('');
@@ -58,7 +63,7 @@ export function JobsPanel({ merchantId, getHeaders, readOnly, register, onAvaila
     try {
       const headers = await getHeaders();
       if (!headers) { setLoadError('Your session has ended. Sign in again.'); return; }
-      const response = await fetch(api, { headers, cache: 'no-store' });
+      const response = await fetch(readApi, { headers, cache: 'no-store' });
       const body = await response.json().catch(() => null);
       if (response.status === 503 && body?.error?.code === 'FEATURE_OFF') { setOff(true); onAvailable?.(false); return; }
       if (!response.ok || !body?.data) { setLoadError(body?.error?.message || 'Could not load your job posts.'); return; }
@@ -68,7 +73,7 @@ export function JobsPanel({ merchantId, getHeaders, readOnly, register, onAvaila
     } catch {
       setLoadError('Could not reach BiteSite. Check your connection.');
     }
-  }, [api, getHeaders, onAvailable]);
+  }, [readApi, getHeaders, onAvailable]);
   useEffect(() => { void load(); }, [load]);
 
   const send = async (payload: Record<string, unknown>, success: string) => {
@@ -79,7 +84,7 @@ export function JobsPanel({ merchantId, getHeaders, readOnly, register, onAvaila
     try {
       const headers = await getHeaders();
       if (!headers) { setMessage({ kind: 'error', text: 'Your session has ended. Sign in again, then retry.' }); return false; }
-      const response = await fetch(api, { method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const response = await fetch(writeApi, { method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify({ ...extraBody, ...payload }) });
       const body = await response.json().catch(() => null);
       if (!response.ok) { setMessage({ kind: 'error', text: body?.error?.message || 'Not saved. Try again.' }); return false; }
       setMessage({ kind: 'ok', text: success });
