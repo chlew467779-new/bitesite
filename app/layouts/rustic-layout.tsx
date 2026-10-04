@@ -96,8 +96,8 @@ export function RusticLayout({
                                 {hasDisplayablePrice(product) && (
                                   <span className="font-bold text-orange-700 text-sm whitespace-nowrap">
                                     {product.discount_price != null ? (
-                                      <><span className="line-through opacity-50 text-xs mr-1">{formatPrice(product.price)}</span>{formatPrice(product.discount_price)}</>
-                                    ) : formatPrice(product.price)}
+                                      <><span className="line-through opacity-50 text-xs mr-1">{formatPrice(product.price, merchant.currency)}</span>{formatPrice(product.discount_price, merchant.currency)}</>
+                                    ) : formatPrice(product.price, merchant.currency)}
                                   </span>
                                 )}
                               </div>

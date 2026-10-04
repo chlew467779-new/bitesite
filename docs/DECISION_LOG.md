@@ -254,6 +254,7 @@ A new feature idea must not silently become a decision. Add it here only after C
 
 
 
+
 ## SYNC-070 — Site errors reach Admin without any outside service (CH 2026-10-01 plan; built 2026-10-03)
 
 - The server records its own errors in `site_errors` (migration 20261003160000): every server `console.error` (the API routes log there before answering 500), uncaught page/route errors (`instrumentation.ts` `onRequestError`, with the page) and visitor crashes on the error pages (`/api/site-errors`, same-site only; crashes that came from the server are skipped). Nothing for CH to set up.
@@ -261,6 +262,7 @@ A new feature idea must not silently become a decision. Add it here only after C
 - Admin › Site › Site Errors (badge) and a red "Site errors" card on Today: copy the message for the developer, mark resolved (one or all). Before the SQL runs, the page says it is not switched on and nothing is logged.
 - Privacy: no IP or visitor identity; messages are trimmed to 500 characters with emails, phone-like numbers, keys/tokens and URL queries removed; the page is kept without its query. Limits: 50 new kinds per hour (then one overflow row), 30 records per minute per server; resolved rows unseen for 30 days are deleted. Only production records (`SITE_ERRORS_IN_DEV=1` for a local check).
 - Not done: push or email alerts. When email sending is set up later, a new kind of error can also be emailed.
+
 
 
 
@@ -276,12 +278,14 @@ A new feature idea must not silently become a decision. Add it here only after C
 
 
 
+
 ## SYNC-074 — Admin Photo Cleanup (C6, 2026-10-04)
 
 - Admin › Site › Photo Cleanup: "Check" lists photos in the public buckets (merchant-media, story-media) that nothing uses, with thumbnails and size; "Delete" removes them through the Storage API (SQL cannot delete storage objects). No SQL.
 - In use = the file path appears anywhere in merchants, products, articles, Story submissions, events, pop-ups, merchant videos, pending profile/basics requests or review snapshots. Audit history (change log, article revisions) does not keep a file alive.
 - Only files older than 30 days; at most 500 per click; the server checks again at the moment of deleting and skips anything now in use. If any table cannot be read, nothing is offered or deleted.
 - The private menu-photos bucket is never touched (those photos are deleted after use already).
+
 
 
 
@@ -295,11 +299,13 @@ A new feature idea must not silently become a decision. Add it here only after C
 
 
 
+
 ## SYNC-076 — Privacy Policy: Singapore (PDPA) section (#24 part 3, 2026-10-04)
 
 - New section 10 "People in Singapore" / "Orang di Singapura": BiteSite also follows Singapore's PDPA 2012 for people in Singapore; consent can be withdrawn by email; access/correction within 30 days; notifiable data breaches go to the PDPC and the people affected; data protection officer contact = bitesite.my@gmail.com. The opening line now says Malaysia and Singapore. Children and Changes become sections 11 and 12.
 - Effective date unchanged (4 October 2026, same day). If this merges on a later day, change PRIVACY_EFFECTIVE_DATE to that day.
 - Recommended, not done: a Singapore lawyer's review.
+
 
 
 ## SYNC-072 — ShopeeFood and foodpanda links (#13, CH 2026-10-04)
@@ -310,6 +316,7 @@ A new feature idea must not silently become a decision. Add it here only after C
 - Until the SQL runs, the two fields are hidden (the links read has no such keys) and the page shows only GrabFood, as before.
 - The review content adds the two links only when set, so restaurants approved before this do not show "changed since approval".
 
+
 ## SYNC-073 — Job posts (#23, CH 2026-10-04)
 
 - Only a public restaurant's Owner (and Admin) can post. Posts go live at once (no pre-review) for 30 days; the Owner can edit, renew (30 more days), close, reopen or delete. At most 10 open posts per restaurant. Migration 20261004120000.
@@ -318,3 +325,11 @@ A new feature idea must not silently become a decision. Add it here only after C
 - A new post's id is chosen by the browser, so a retry after a lost answer never posts twice.
 - Before the SQL runs, the dashboard's Hiring section and its menu link are hidden, Admin shows "not switched on", and `lib/jobs-public.ts` returns no jobs.
 - Public pages (/jobs, "We're hiring" on store pages) are ChatGPT G21, reading through `lib/jobs-public.ts`.
+
+## SYNC-075 — Singapore part 1: price currency and areas (#24, CH 2026-10-04)
+
+- Same website. Each restaurant has a price currency: MYR (shown "RM", default) or SGD (shown "S$"). Chosen on "Create your restaurant" (Where is it? Malaysia / Singapore) and changeable any time in the dashboard's Menu section ("Prices shown in"), without review; audited in the change log. Migration 20261004130000.
+- All public prices go through `formatPrice(value, merchant.currency)`: the 7 layouts, Featured dishes, the Owner menu editor and the private preview. Share cards show no prices. Admin's own menu editor still shows RM (Admin tool only).
+- 21 common Singapore areas (country SG, state "Singapore"); Admin can add more in Areas, and ChatGPT G20 prepares the full list. Singapore's Chinatown is "Chinatown Singapore" because area names are unique. The homepage state filter shows "Singapore" by itself once a Singapore restaurant with a Singapore area is public. +65 phone numbers were already accepted.
+- `merchants.currency` is a new public column (one more `grant select (...)` line); the projection test now adds later per-column grants to the D1b list. Deploy order: SQL first, then the app.
+- Not in this change: the Privacy Policy Singapore (PDPA) section (separate PR).

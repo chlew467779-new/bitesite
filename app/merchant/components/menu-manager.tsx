@@ -16,6 +16,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowDown, ArrowUp, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
 import { findDuplicateDishName, MENU_LIMITS, parsePriceInput, type MenuCategory, type MenuProduct, type MenuSnapshot } from '@/lib/merchant-menu-core.mjs';
 import { ProfileImageField } from '@/app/components/media/profile-image-field';
+import { currencySymbol, formatPrice } from '@/lib/price-format.mjs';
 
 type Op = { type: string } & Record<string, unknown>;
 type Pending = { requestId: string; op: Op };
@@ -37,10 +38,10 @@ const iconBtn = 'inline-flex h-11 w-11 items-center justify-center rounded-lg bo
 const input = 'mt-1 block w-full rounded-lg border border-[#C9D6C7] bg-white px-3 py-3 text-base text-[#2C3E2D] focus:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-700/20';
 
 const priceText = (value: number | null) => (value === null ? '' : value.toFixed(2));
-const priceLabel = (product: MenuProduct) => {
+const priceLabel = (product: MenuProduct, currency?: string) => {
   if (product.price === null) return 'No price';
-  if (product.discountPrice !== null) return `RM ${product.discountPrice.toFixed(2)} (was ${product.price.toFixed(2)})`;
-  return `RM ${product.price.toFixed(2)}`;
+  if (product.discountPrice !== null) return `${formatPrice(product.discountPrice, currency)} (was ${product.price.toFixed(2)})`;
+  return formatPrice(product.price, currency);
 };
 const byOrder = <T extends { sortOrder: number | null }>(list: T[]) => [...list].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
 const moved = (ids: string[], index: number, delta: number) => {
@@ -51,8 +52,10 @@ const moved = (ids: string[], index: number, delta: number) => {
   return next;
 };
 
-export function MenuManager({ merchantId, getHeaders, readOnly, register, onChanged }: {
+export function MenuManager({ merchantId, getHeaders, readOnly, register, onChanged, currency }: {
   merchantId: string;
+  /** MYR shows RM, SGD shows S$; RM when unknown. */
+  currency?: string;
   getHeaders: () => Promise<Record<string, string> | null>;
   readOnly: boolean;
   register?: (id: string, handle: SectionHandle | null) => void;
@@ -230,7 +233,7 @@ export function MenuManager({ merchantId, getHeaders, readOnly, register, onChan
                   <img src={product.imageUrl} alt="" className="h-11 w-11 shrink-0 rounded-lg object-cover" />}
                   <button type="button" disabled={locked} onClick={() => openDish(category.id, product)} className="min-w-0 flex-1 text-left disabled:opacity-60">
                     <span className="block truncate text-sm font-medium text-[#2C3E2D]">{product.name}{product.isFeatured ? ' ★' : ''}</span>
-                    <span className="block text-xs text-[#6B6560]">{product.showPrices ? priceLabel(product) : 'Price hidden'}</span>
+                    <span className="block text-xs text-[#6B6560]">{product.showPrices ? priceLabel(product, currency) : 'Price hidden'}</span>
                   </button>
                   <div className="flex flex-col gap-1 sm:flex-row">
                     <button type="button" aria-label={`Move ${product.name} up`} disabled={locked || pi === 0} onClick={() => reorderDish(category.id, pi, -1)} className={`${iconBtn} h-8 sm:h-11`}><ArrowUp className="h-4 w-4" /></button>
@@ -292,10 +295,10 @@ export function MenuManager({ merchantId, getHeaders, readOnly, register, onChan
               <textarea className={input} rows={3} maxLength={MENU_LIMITS.description} placeholder="e.g. Coconut rice with sambal, egg, cucumber and spiced chicken." value={dish.description} onChange={(event) => setDish({ ...dish, description: event.target.value })} />
             </label>
             <div className="mt-3 grid grid-cols-2 gap-3">
-              <label className="block text-sm font-medium">Price (RM)
+              <label className="block text-sm font-medium">Price ({currencySymbol(currency)})
                 <input className={input} inputMode="decimal" placeholder="e.g. 18.00" value={dish.price} onChange={(event) => setDish({ ...dish, price: event.target.value })} />
               </label>
-              <label className="block text-sm font-medium">Discount (RM)
+              <label className="block text-sm font-medium">Discount ({currencySymbol(currency)})
                 <input className={input} inputMode="decimal" placeholder="e.g. 15.00" value={dish.discountPrice} onChange={(event) => setDish({ ...dish, discountPrice: event.target.value })} />
               </label>
             </div>

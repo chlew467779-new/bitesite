@@ -91,8 +91,8 @@ export function ModernLayout({
                               {hasDisplayablePrice(product) && (
                                 <span className="font-bold text-slate-900 whitespace-nowrap">
                                   {product.discount_price != null ? (
-                                    <><span className="line-through opacity-40 text-sm mr-1">{formatPrice(product.price)}</span>{formatPrice(product.discount_price)}</>
-                                  ) : formatPrice(product.price)}
+                                    <><span className="line-through opacity-40 text-sm mr-1">{formatPrice(product.price, merchant.currency)}</span>{formatPrice(product.discount_price, merchant.currency)}</>
+                                  ) : formatPrice(product.price, merchant.currency)}
                                 </span>
                               )}
                             </div>

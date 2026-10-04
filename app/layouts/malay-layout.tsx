@@ -141,8 +141,8 @@ export function MalayLayout({
                                 {hasDisplayablePrice(product) && (
                                   <span className="font-bold text-emerald-800 whitespace-nowrap">
                                   {product.discount_price != null ? (
-                                      <><span className="line-through text-stone-500 text-sm font-normal mr-1">{formatPrice(product.price)}</span>{formatPrice(product.discount_price)}</>
-                                    ) : formatPrice(product.price)}
+                                      <><span className="line-through text-stone-500 text-sm font-normal mr-1">{formatPrice(product.price, merchant.currency)}</span>{formatPrice(product.discount_price, merchant.currency)}</>
+                                    ) : formatPrice(product.price, merchant.currency)}
                                   </span>
                                 )}
                               </div>

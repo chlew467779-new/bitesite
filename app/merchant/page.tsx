@@ -10,6 +10,7 @@ import type { ListingState } from '@/lib/merchant-review-core.mjs';
 import { MenuManager } from './components/menu-manager';
 import { LinkRequests } from './components/link-requests';
 import { JobsPanel } from './components/jobs-panel';
+import { CurrencySetting } from './components/currency-setting';
 import { BasicsRequests } from './components/basics-requests';
 import { validateProfileField } from '@/lib/merchant-profile-validation.mjs';
 import { WEEK_DAYS, type WeekDay } from '@/lib/merchant-hours.mjs';
@@ -235,6 +236,7 @@ export default function MerchantDashboardPage() {
   const [data, setData] = useState<Loaded | null>(null);
   // The Hiring section appears only once the job post database update has run.
   const [jobsOn, setJobsOn] = useState(false);
+  const [currency, setCurrency] = useState<string>('MYR');
   const [confirmed, setConfirmed] = useState<Record<string, Snapshot>>({});
   const [switchPrompt, setSwitchPrompt] = useState<SwitchPrompt>(null);
   const [leavePrompt, setLeavePrompt] = useState<LeavePrompt>(null);
@@ -737,8 +739,9 @@ export default function MerchantDashboardPage() {
           )}
 
           <SectionCard id="menu" title="Menu" description="Add categories and dishes, change prices, and mark dishes sold out. Changes show on your page right away.">
+            <div className="mb-6"><CurrencySetting key={`currency:${profile.id}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={profile.restriction === 'suspended' || profile.restriction === 'archived'} onCurrency={setCurrency} /></div>
             <div className="mb-6"><MenuPhotosPanel key={`menu-photos:${profile.id}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={profile.restriction === 'suspended' || profile.restriction === 'archived'} /></div>
-            <MenuManager onChanged={refreshListing} key={`menu:${profile.id}:${data.loadId}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={readOnly} />
+            <MenuManager onChanged={refreshListing} key={`menu:${profile.id}:${data.loadId}`} merchantId={profile.id} currency={currency} getHeaders={photoHeaders} readOnly={readOnly} />
           </SectionCard>
 
           <SectionCard id="hours" title="Opening hours" description="Customers see these on your page. Changes to one day leave the other days as they are.">

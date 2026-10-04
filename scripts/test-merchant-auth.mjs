@@ -8,6 +8,9 @@ assert.equal(validateCredentials({ email: 'a@b.com', password: '1234567' }, true
 assert.ok(validateCredentials({ email: 'a@b.com', password: '12345678' }, true));
 const draft = { name: ' My restaurant ', requestId: '00000000-0000-4000-8000-000000000001', termsVersion: MERCHANT_TERMS_VERSION, rightsDeclared: true };
 assert.equal(validateRestaurantDraft(draft).name, 'My restaurant');
+assert.equal(validateRestaurantDraft(draft).currency, 'MYR', 'Malaysia by default');
+assert.equal(validateRestaurantDraft({ ...draft, currency: 'SGD' }).currency, 'SGD');
+assert.equal(validateRestaurantDraft({ ...draft, currency: 'USD' }), null);
 assert.equal(validateRestaurantDraft({ name: draft.name, requestId: draft.requestId }), null);
 assert.equal(validateRestaurantDraft({ ...draft, termsVersion: 'old-version' }), null);
 assert.equal(validateRestaurantDraft({ ...draft, rightsDeclared: false }), null);
