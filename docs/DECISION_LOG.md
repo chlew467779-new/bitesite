@@ -266,3 +266,9 @@ A new feature idea must not silently become a decision. Add it here only after C
 - CH decisions: deletion requests handled within 30 days; handled reports and feedback kept 12 months, then deleted. Migration 20261004100000 makes that automatic (nightly pg_cron `privacy_retention_cleanup`), and also deletes site errors 30 days after they are marked resolved.
 - Linked from the footer, the merchant sign-up form and the create-restaurant agreement ("…and have read the Privacy Policy"); in the sitemap. No consent checkbox was added for visitors; the policy is a notice.
 - Recommended, not done: a lawyer's review and a native Bahasa Melayu check. When the text changes, change `PRIVACY_EFFECTIVE_DATE`.
+
+## SYNC-076 — Privacy Policy: Singapore (PDPA) section (#24 part 3, 2026-10-04)
+
+- New section 10 "People in Singapore" / "Orang di Singapura": BiteSite also follows Singapore's PDPA 2012 for people in Singapore; consent can be withdrawn by email; access/correction within 30 days; notifiable data breaches go to the PDPC and the people affected; data protection officer contact = bitesite.my@gmail.com. The opening line now says Malaysia and Singapore. Children and Changes become sections 11 and 12.
+- Effective date unchanged (4 October 2026, same day). If this merges on a later day, change PRIVACY_EFFECTIVE_DATE to that day.
+- Recommended, not done: a Singapore lawyer's review.
