@@ -58,4 +58,11 @@ assert.match(route, /rpc\('merchant_currency_set', \{ p_actor_type: 'owner', p_a
 assert.match(route, /owned\.merchants\.some/, "GET only for the restaurant's Owner");
 assert.match(await read("app/merchant/page.tsx"), /<CurrencySetting /);
 
+/* Singapore restaurants are not described as Malaysian (search engines, share previews). */
+const store = await read("app/store/[merchant]/page.tsx");
+assert.match(store, /addressCountry: merchant\.currency === "SGD" \? "SG" : "MY"/);
+assert.match(store, /locale: merchant\.currency === "SGD" \? "en_SG" : "en_MY"/);
+assert.doesNotMatch(await read("app/admin/components/restaurant-review-queue.tsx"), /RM \$\{/, "review queue uses the restaurant's currency");
+assert.match(await read("app/api/admin/restaurant-reviews/route.ts"), /select\('id, currency'\)/);
+
 console.log("singapore currency checks passed");
