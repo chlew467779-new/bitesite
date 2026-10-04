@@ -44,7 +44,7 @@ export function ClassicLayout({
         <div className="max-w-4xl mx-auto px-4 py-3">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-amber-800 text-sm font-medium active:scale-95 transition-transform"
+            className="min-h-11 inline-flex items-center gap-2 text-amber-800 text-sm font-medium active:scale-95 transition-transform"
             style={{ WebkitTapHighlightColor: "transparent" }}
           >
             <ArrowLeft size={18} />
@@ -227,7 +227,7 @@ export function ClassicLayout({
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={() => trackEvent('directions_click', { slug: merchant.slug, pageType: 'merchant' })}
-                      className="flex items-start gap-3 text-amber-800 active:scale-[0.98] transition-transform"
+                      className="min-h-11 flex items-start gap-3 text-amber-800 active:scale-[0.98] transition-transform"
                       style={{ WebkitTapHighlightColor: "transparent" }}
                     >
                       <MapPin size={18} className="mt-0.5 flex-shrink-0" />
@@ -238,7 +238,7 @@ export function ClassicLayout({
                     <a
                       href={`tel:+${phoneLinkDigits(merchant.phone)}`}
                       onClick={() => trackEvent('phone_click', { slug: merchant.slug, pageType: 'merchant' })}
-                      className="flex items-center gap-3 text-amber-800 active:scale-[0.98] transition-transform"
+                      className="min-h-11 flex items-center gap-3 text-amber-800 active:scale-[0.98] transition-transform"
                       style={{ WebkitTapHighlightColor: "transparent" }}
                     >
                       <Phone size={18} />
@@ -267,7 +267,7 @@ export function ClassicLayout({
                     <a
                       href={`mailto:${merchant.email}`}
                       onClick={() => trackEvent('email_click', { slug: merchant.slug, pageType: 'merchant' })}
-                      className="flex items-center gap-3 text-amber-800 active:scale-[0.98] transition-transform"
+                      className="min-h-11 flex items-center gap-3 text-amber-800 active:scale-[0.98] transition-transform"
                       style={{ WebkitTapHighlightColor: "transparent" }}
                     >
                       <Mail size={18} />
@@ -342,7 +342,7 @@ export function ClassicLayout({
         >
           {footerText || "Discover more restaurants on BiteSite"}
         </Link>
-        <Link href="/feedback" className="mt-1 block text-sm text-amber-700 underline hover:text-amber-900">Send feedback</Link>
+        <Link href="/feedback" className="min-h-11 mt-1 flex items-center justify-center text-sm text-amber-700 underline hover:text-amber-900">Send feedback</Link>
       </footer>
     </div>
   );

@@ -82,7 +82,7 @@ export function SectionSaveBar({ state, labels, canSave, dirty, readOnly, savedM
         {unknown ? (
           <button type="button" onClick={onRetry} className="rounded-lg bg-[#2C3E2D] px-4 py-2 text-sm font-medium text-white">Retry</button>
         ) : (
-          <button type="button" onClick={onSave} disabled={!canSave || readOnly} className="rounded-lg bg-[#2C3E2D] px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50">
+          <button type="button" onClick={onSave} disabled={!canSave || readOnly} className="min-h-11 rounded-lg bg-[#2C3E2D] px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50">
             {state.pending ? 'Saving…' : 'Save this section'}
           </button>
         )}

@@ -599,14 +599,14 @@ export default function MerchantDashboardPage() {
             )}
           </div>
           <nav aria-label="Merchant links" className="flex flex-wrap items-center gap-2 text-sm">
-            <a href="/merchant/new" onClick={(event) => { event.preventDefault(); requestNewRestaurant(); }} className="rounded-lg border border-[#DDE5DC] px-3 py-2 font-medium text-[#2C3E2D] hover:border-emerald-700">Create another restaurant</a>
-            {(listing?.stateSource === 'legacy' || listing?.public) && <a href={`/store/${profile.slug}`} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-[#DDE5DC] px-3 py-2 font-medium text-[#2C3E2D] hover:border-emerald-700">View public page</a>}
+            <a href="/merchant/new" onClick={(event) => { event.preventDefault(); requestNewRestaurant(); }} className="inline-flex min-h-11 items-center rounded-lg border border-[#DDE5DC] px-3 py-2 font-medium text-[#2C3E2D] hover:border-emerald-700">Create another restaurant</a>
+            {(listing?.stateSource === 'legacy' || listing?.public) && <a href={`/store/${profile.slug}`} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center rounded-lg border border-[#DDE5DC] px-3 py-2 font-medium text-[#2C3E2D] hover:border-emerald-700">View public page</a>}
             <div className="max-w-xs">
-              <a href={merchantPageUrl('/merchant/preview', profile.id)} target="_blank" rel="noopener noreferrer" className="inline-flex rounded-lg border border-[#DDE5DC] px-3 py-2 font-medium text-[#2C3E2D] hover:border-emerald-700">Preview page</a>
+              <a href={merchantPageUrl('/merchant/preview', profile.id)} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center rounded-lg border border-[#DDE5DC] px-3 py-2 font-medium text-[#2C3E2D] hover:border-emerald-700">Preview page</a>
               <p className="mt-1 text-xs leading-5 text-[#6B6560]">Changes waiting for BiteSite review (links, name, address, cuisine) are not shown here until approved.</p>
             </div>
-            <Link href={merchantPageUrl('/merchant/stories', profile.id)} onClick={(event) => { event.preventDefault(); requestStories(); }} className="rounded-lg border border-[#DDE5DC] px-3 py-2 font-medium text-[#2C3E2D] hover:border-emerald-700">Stories</Link>
-            <button type="button" onClick={requestSignOut} className="rounded-lg px-3 py-2 font-medium text-[#6B6560] hover:text-[#2C3E2D]">Sign out</button>
+            <Link href={merchantPageUrl('/merchant/stories', profile.id)} onClick={(event) => { event.preventDefault(); requestStories(); }} className="inline-flex min-h-11 items-center rounded-lg border border-[#DDE5DC] px-3 py-2 font-medium text-[#2C3E2D] hover:border-emerald-700">Stories</Link>
+            <button type="button" onClick={requestSignOut} className="min-h-11 rounded-lg px-3 py-2 font-medium text-[#6B6560] hover:text-[#2C3E2D]">Sign out</button>
           </nav>
         </div>
       </header>
@@ -683,7 +683,7 @@ export default function MerchantDashboardPage() {
             <ul className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible">
               {SECTIONS.map((section) => (
                 <li key={section.id} className="shrink-0">
-                  <a href={`#${section.id}`} className="block rounded-lg border border-[#DDE5DC] bg-white px-3 py-2 text-sm text-[#2C3E2D] hover:border-emerald-700 lg:border-transparent lg:bg-transparent lg:hover:bg-white">{section.label}</a>
+                  <a href={`#${section.id}`} className="flex min-h-11 items-center rounded-lg border border-[#DDE5DC] bg-white px-3 py-2 text-sm text-[#2C3E2D] hover:border-emerald-700 lg:border-transparent lg:bg-transparent lg:hover:bg-white">{section.label}</a>
                 </li>
               ))}
             </ul>

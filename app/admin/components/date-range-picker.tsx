@@ -25,7 +25,7 @@ export default function DateRangePicker({ value, onChange }: DateRangePickerProp
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 transition-colors"
+        className="flex min-h-11 items-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 transition-colors"
       >
         <Calendar className="w-4 h-4 text-slate-400" />
         <span>{selected?.label || 'Last 7 Days'}</span>
@@ -43,7 +43,7 @@ export default function DateRangePicker({ value, onChange }: DateRangePickerProp
                   onChange(range.value);
                   setOpen(false);
                 }}
-                className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
+                className={`min-h-11 w-full text-left px-4 py-2.5 text-sm transition-colors ${
                   value === range.value
                     ? 'bg-amber-500/10 text-amber-400'
                     : 'text-slate-300 hover:bg-slate-700'

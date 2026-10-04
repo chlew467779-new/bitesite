@@ -33,7 +33,7 @@ export function ModernLayout({
     <div data-restaurant-layout className="min-h-screen bg-white text-slate-800">
       <div data-menu-sticky className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-100">
         <div className="max-w-5xl mx-auto px-4 py-3">
-          <Link href="/" className="inline-flex items-center gap-2 text-slate-600 text-sm font-medium active:scale-95 transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}>
+          <Link href="/" className="min-h-11 inline-flex items-center gap-2 text-slate-600 text-sm font-medium active:scale-95 transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}>
             <ArrowLeft size={18} /> Back to BiteSite
           </Link>
         </div>
@@ -119,8 +119,8 @@ export function ModernLayout({
               <h2 className="text-2xl font-bold text-slate-900 mb-6">Visit Us</h2>
               <div className="grid sm:grid-cols-2 gap-8">
                 <div className="space-y-4">
-                  {merchant.address && <a href={`https://maps.google.com/?q=${encodeURIComponent(merchant.address)}`} onClick={() => trackEvent('directions_click', { slug: merchant.slug, pageType: 'merchant' })} target="_blank" rel="noopener noreferrer" className="flex items-start gap-3 text-slate-600 hover:text-slate-900 transition-colors"><MapPin size={18} className="mt-0.5 flex-shrink-0" /><span className="text-sm">{merchant.address}</span></a>}
-                  {merchant.phone && <a href={`tel:+${phoneLinkDigits(merchant.phone)}`} onClick={() => trackEvent('phone_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-3 text-slate-600 hover:text-slate-900 transition-colors"><Phone size={18} /><span className="text-sm">{formatPhone(merchant.phone)}</span></a>}
+                  {merchant.address && <a href={`https://maps.google.com/?q=${encodeURIComponent(merchant.address)}`} onClick={() => trackEvent('directions_click', { slug: merchant.slug, pageType: 'merchant' })} target="_blank" rel="noopener noreferrer" className="min-h-11 flex items-start gap-3 text-slate-600 hover:text-slate-900 transition-colors"><MapPin size={18} className="mt-0.5 flex-shrink-0" /><span className="text-sm">{merchant.address}</span></a>}
+                  {merchant.phone && <a href={`tel:+${phoneLinkDigits(merchant.phone)}`} onClick={() => trackEvent('phone_click', { slug: merchant.slug, pageType: 'merchant' })} className="min-h-11 flex items-center gap-3 text-slate-600 hover:text-slate-900 transition-colors"><Phone size={18} /><span className="text-sm">{formatPhone(merchant.phone)}</span></a>}
                   {merchant.website && <a href={merchant.website} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent('website_click', { slug: merchant.slug, pageType: 'merchant' })} className="min-h-11 flex items-center gap-3 text-slate-600 hover:text-slate-900 transition-colors"><Globe size={18} /><span className="text-sm">Website</span></a>}
                   {merchant.instagram && <a href={merchant.instagram} target="_blank" rel="noopener noreferrer" className="min-h-11 flex items-center gap-3 text-slate-600 hover:text-slate-900 transition-colors"><Instagram size={18} /><span className="text-sm">Instagram</span></a>}
                   {merchant.facebook && <a href={merchant.facebook} target="_blank" rel="noopener noreferrer" className="min-h-11 flex items-center gap-3 text-slate-600 hover:text-slate-900 transition-colors"><Facebook size={18} /><span className="text-sm">Facebook</span></a>}
@@ -135,7 +135,7 @@ export function ModernLayout({
                       <MessageSquare size={18} /><span className="text-sm font-medium">WhatsApp</span>
                     </a>
                   )}
-                  {merchant.email && <a href={`mailto:${merchant.email}`} onClick={() => trackEvent('email_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-3 text-slate-600 hover:text-slate-900 transition-colors"><Mail size={18} /><span className="text-sm">{merchant.email}</span></a>}
+                  {merchant.email && <a href={`mailto:${merchant.email}`} onClick={() => trackEvent('email_click', { slug: merchant.slug, pageType: 'merchant' })} className="min-h-11 flex items-center gap-3 text-slate-600 hover:text-slate-900 transition-colors"><Mail size={18} /><span className="text-sm">{merchant.email}</span></a>}
                 </div>
                 <div className="space-y-2">
                   {hasHours && DAYS.map((day) => {
@@ -185,7 +185,7 @@ export function ModernLayout({
 
       <footer className="py-8 px-4 text-center border-t border-slate-100">
         <Link href="/" className="text-sm text-slate-400 hover:text-slate-600 transition-colors">{footerText || "Discover more restaurants on BiteSite"}</Link>
-        <Link href="/feedback" className="mt-1 block text-sm text-slate-500 underline hover:text-slate-700">Send feedback</Link>
+        <Link href="/feedback" className="min-h-11 mt-1 flex items-center justify-center text-sm text-slate-500 underline hover:text-slate-700">Send feedback</Link>
       </footer>
     </div>
   );

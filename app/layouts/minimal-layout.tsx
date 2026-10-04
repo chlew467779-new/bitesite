@@ -33,7 +33,7 @@ export function MinimalLayout({
     <div data-restaurant-layout className="min-h-screen bg-stone-50 text-stone-800">
       <div data-menu-sticky className="sticky top-0 z-40 bg-stone-50/80 backdrop-blur-md border-b border-stone-200">
         <div className="max-w-3xl mx-auto px-4 py-3">
-          <Link href="/" className="inline-flex items-center gap-2 text-stone-600 text-sm active:scale-95 transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}>
+          <Link href="/" className="min-h-11 inline-flex items-center gap-2 text-stone-600 text-sm active:scale-95 transition-transform" style={{ WebkitTapHighlightColor: "transparent" }}>
             <ArrowLeft size={18} /> Back
           </Link>
         </div>
@@ -120,12 +120,12 @@ export function MinimalLayout({
                 })}
               </div>
               <div className="mt-6 space-y-3 text-sm">
-                {merchant.address && <a href={`https://maps.google.com/?q=${encodeURIComponent(merchant.address)}`} onClick={() => trackEvent('directions_click', { slug: merchant.slug, pageType: 'merchant' })} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-stone-600"><MapPin size={16} />{merchant.address}</a>}
-                {merchant.phone && <a href={`tel:+${phoneLinkDigits(merchant.phone)}`} onClick={() => trackEvent('phone_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-2 text-stone-600"><Phone size={16} />{formatPhone(merchant.phone)}</a>}
+                {merchant.address && <a href={`https://maps.google.com/?q=${encodeURIComponent(merchant.address)}`} onClick={() => trackEvent('directions_click', { slug: merchant.slug, pageType: 'merchant' })} target="_blank" rel="noopener noreferrer" className="min-h-11 flex items-center gap-2 text-stone-600"><MapPin size={16} />{merchant.address}</a>}
+                {merchant.phone && <a href={`tel:+${phoneLinkDigits(merchant.phone)}`} onClick={() => trackEvent('phone_click', { slug: merchant.slug, pageType: 'merchant' })} className="min-h-11 flex items-center gap-2 text-stone-600"><Phone size={16} />{formatPhone(merchant.phone)}</a>}
                 {merchant.website && <a href={merchant.website} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent('website_click', { slug: merchant.slug, pageType: 'merchant' })} className="min-h-11 flex items-center gap-2 text-stone-600"><Globe size={16} />Website</a>}
                 {merchant.instagram && <a href={merchant.instagram} target="_blank" rel="noopener noreferrer" className="min-h-11 flex items-center gap-2 text-stone-600"><Instagram size={16} />Instagram</a>}
                 {merchant.facebook && <a href={merchant.facebook} target="_blank" rel="noopener noreferrer" className="min-h-11 flex items-center gap-2 text-stone-600"><Facebook size={16} />Facebook</a>}
-                {merchant.email && <a href={`mailto:${merchant.email}`} onClick={() => trackEvent('email_click', { slug: merchant.slug, pageType: 'merchant' })} className="flex items-center gap-2 text-stone-600"><Mail size={16} />{merchant.email}</a>}
+                {merchant.email && <a href={`mailto:${merchant.email}`} onClick={() => trackEvent('email_click', { slug: merchant.slug, pageType: 'merchant' })} className="min-h-11 flex items-center gap-2 text-stone-600"><Mail size={16} />{merchant.email}</a>}
                 {merchant.whatsapp && (
                   <a
                     href={`https://wa.me/${phoneLinkDigits(merchant.whatsapp)}`}
@@ -177,7 +177,7 @@ export function MinimalLayout({
 
       <footer className="py-6 px-4 text-center border-t border-stone-200">
         <Link href="/" className="text-xs text-stone-400 hover:text-stone-600 transition-colors">{footerText || "Discover more on BiteSite"}</Link>
-        <Link href="/feedback" className="mt-1 block text-xs text-stone-500 underline hover:text-stone-700">Send feedback</Link>
+        <Link href="/feedback" className="min-h-11 mt-1 flex items-center justify-center text-xs text-stone-500 underline hover:text-stone-700">Send feedback</Link>
       </footer>
     </div>
   );
