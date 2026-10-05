@@ -18,7 +18,7 @@ import { CUISINE_TYPES } from "@/lib/presets";
 import type { PublicMerchant } from "@/types";
 import { PUBLIC_MERCHANT_SELECT } from "@/lib/public-merchant-projection.mjs";
 import { discoveryGroups, discoveryPath } from "@/lib/discovery-core.mjs";
-import { selectNearby } from "@/lib/nearby-core.mjs";
+import { DEFAULT_NEARBY_RADIUS_KM, NEARBY_RADII_KM, selectNearby } from "@/lib/nearby-core.mjs";
 
 const STATE_KEY = "bitesite.home.state";
 
@@ -64,6 +64,7 @@ export default function HomePage() {
   const searchResultsRef = useRef<number | null>(null);
   const [nearbyActive, setNearbyActive] = useState(false);
   const [nearbyLoading, setNearbyLoading] = useState(false);
+  const [nearbyRadiusKm, setNearbyRadiusKm] = useState<number>(DEFAULT_NEARBY_RADIUS_KM);
   const [coordinates, setCoordinates] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locationError, setLocationError] = useState("");
   const locationRequestRef = useRef(0);
@@ -259,8 +260,8 @@ export default function HomePage() {
   }, [loading, filtered]);
 
   const nearbySelection = useMemo(() => nearbyActive && coordinates
-    ? selectNearby(filtered, coordinates.latitude, coordinates.longitude)
-    : null, [nearbyActive, coordinates, filtered]);
+    ? selectNearby(filtered, coordinates.latitude, coordinates.longitude, nearbyRadiusKm)
+    : null, [nearbyActive, coordinates, filtered, nearbyRadiusKm]);
   const visibleMerchants = nearbySelection?.results.map((item) => item.merchant) ?? filtered;
   const distanceById = new Map(nearbySelection?.results.map((item) => [item.merchant.id, item.distanceKm]) ?? []);
 
@@ -285,9 +286,7 @@ export default function HomePage() {
       setCoordinates({ latitude: position.coords.latitude, longitude: position.coords.longitude });
       setNearbyActive(true);
       setNearbyLoading(false);
-      setActiveState(null);
-      setActiveArea(null);
-      saveState(null);
+      // G19: Nearby works together with cuisine, state, area and Open now, so they stay as chosen.
     }, () => {
       if (locationRequestRef.current !== requestId) return;
       setCoordinates(null);
@@ -311,21 +310,19 @@ export default function HomePage() {
   }, []);
 
   const handleStateChange = useCallback((state: string | null) => {
-    if (nearbyActive) handleNearbyChange(false);
     setIsSearching(true);
     setActiveState(state);
     saveState(state);
     // An area from another state would hide every restaurant, so it is cleared.
     setActiveArea((area) => (area && state && areaStates.get(area) !== state ? null : area));
     setTimeout(() => setIsSearching(false), 300);
-  }, [areaStates, nearbyActive, handleNearbyChange]);
+  }, [areaStates]);
 
   const handleAreaChange = useCallback((area: string | null) => {
-    if (nearbyActive) handleNearbyChange(false);
     setIsSearching(true);
     setActiveArea(area);
     setTimeout(() => setIsSearching(false), 300);
-  }, [nearbyActive, handleNearbyChange]);
+  }, []);
 
   const handleMoreChange = useCallback((more: string[]) => {
     setIsSearching(true);
@@ -411,7 +408,19 @@ export default function HomePage() {
       />
 
       {locationError && <p role="status" className="mx-auto max-w-6xl px-4 pt-4 text-sm text-[#6B6560]">{locationError}</p>}
-      {nearbySelection && <p role="status" className="mx-auto max-w-6xl px-4 pt-4 text-sm text-[#6B6560]">Showing restaurants within {nearbySelection.radiusKm} km of your location.</p>}
+      {nearbySelection && (
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-2 px-4 pt-4 text-sm text-[#6B6560]">
+          <p role="status">Within {nearbySelection.radiusKm} km of you:</p>
+          <div role="group" aria-label="Distance" className="flex gap-2">
+            {NEARBY_RADII_KM.map((km) => (
+              <button key={km} type="button" aria-pressed={nearbyRadiusKm === km} onClick={() => setNearbyRadiusKm(km)}
+                className={`min-h-11 min-w-11 rounded-full px-3 text-xs font-medium transition-colors ${nearbyRadiusKm === km ? "bg-[#2C3E2D] text-white" : "border border-[#DDE5DC] bg-white text-[#2C3E2D] hover:border-[#2C3E2D]"}`}>
+                {km} km
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <section className="px-4 pb-16">
         <div className="mx-auto max-w-6xl">
@@ -456,7 +465,9 @@ export default function HomePage() {
                   No restaurants found
                 </p>
                 <p className="mt-2 text-sm text-[#8A968B]">
-                  {nearbySelection ? "No restaurants found nearby. Try another area or turn off Nearby." : "Try adjusting your filters or search."}
+                  {nearbySelection
+                    ? nearbySelection.radiusKm < 10 ? `Nothing within ${nearbySelection.radiusKm} km. Choose a larger distance above, or clear other filters.` : "Nothing within 10 km. Clear other filters or turn off Nearby."
+                    : "Try adjusting your filters or search."}
                 </p>
                 {activeFilterCount > 0 && (
                   <button

@@ -358,3 +358,9 @@ A new feature idea must not silently become a decision. Add it here only after C
 ## SYNC-080 — Chinese and Malay layouts are public (C3 done, 2026-10-04)
 
 - After ChatGPT G18 (#102, simpler designs) and the database part (#98, SQL run by CH), `productionReady` is true for both. Owners and Admin can pick them in Page style; the descriptions now match the simpler designs ("Simple and clean, with a red seal accent" / "Simple and warm, with an emerald accent").
+
+## SYNC-083 — Nearby: chosen distance, and nearby restaurants on the restaurant page (G19 / #22, 2026-10-05)
+
+- Homepage Nearby: visitors choose 1, 3, 5 or 10 km (5 km to start); cards show the distance. The range no longer widens by itself (it used to jump from 10 to 25 km); when nothing is in range the page says to choose a larger distance or clear other filters. Nearby now works together with cuisine, state (incl. Singapore), area and Open now: turning it on no longer clears the state, and choosing a state no longer turns it off.
+- Restaurant page: "Nearby restaurants" lists up to 4 other public restaurants within 5 km of that restaurant's own coordinates (name, cuisine, distance); hidden when the restaurant has no coordinates or nothing is near. Read through the public projection and RLS only.
+- The visitor's location stays in the browser (unchanged): the homepage computes distances client-side; the restaurant page uses the restaurant's coordinates, never the visitor's.
