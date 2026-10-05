@@ -40,7 +40,17 @@ for (const [field, url, expected] of [
   ["foodpanda", "https://www.foodpanda.my/restaurant/s7tg/zz", null],
   ["foodpanda", "https://www.foodpanda.sg/restaurant/x/zz", null],
   ["foodpanda", "https://notfoodpanda.my/x", "host_foodpanda"],
-]) assert.equal(linkProblem(field, url), expected, `${field} ${url.slice(0, 40)}`);
+  // T2: home pages are not the restaurant's page.
+  ["grabfood", "https://www.grab.com/my/", "grab_main_site"],
+  ["grabfood", "https://grab.com/my/food/", "grab_main_site"],
+  ["grabfood", "https://food.grab.com/my/en/", "delivery_home"],
+  ["grabfood", "https://food.grab.com/?x=1", "delivery_home"],
+  ["grabfood", "https://r.grab.com/g/6-abc", null],
+  ["shopeefood", "https://shopee.com.my/", "delivery_home"],
+  ["foodpanda", "https://www.foodpanda.my", "delivery_home"],
+  ["foodpanda", "https://www.foodpanda.sg/en/#top", "delivery_home"],
+  ["website", "https://a.example.com/", null],
+])assert.equal(linkProblem(field, url), expected, `${field} ${url.slice(0, 40)}`);
 
 assert.deepEqual(parseOwnerLinkRequest({ requestId: REQ, action: "request", field: "website", url: " https://a.example.com " }),
   { ok: true, action: "request", requestId: REQ, field: "website", url: "https://a.example.com" });

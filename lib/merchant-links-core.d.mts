@@ -1,6 +1,6 @@
 export type LinkField = "website" | "instagram" | "facebook" | "menu_pdf_url" | "grabfood" | "shopeefood" | "foodpanda";
 export type DeliveryLinkType = "grabfood" | "shopeefood" | "foodpanda";
-export type LinkProblem = "too_long" | "https_only" | "credentials" | "host" | "host_instagram" | "host_facebook" | "host_grabfood" | "host_shopeefood" | "host_foodpanda";
+export type LinkProblem = "too_long" | "https_only" | "credentials" | "host" | "host_instagram" | "host_facebook" | "host_grabfood" | "host_shopeefood" | "host_foodpanda" | "grab_main_site" | "delivery_home";
 
 export interface LinkRequestItem {
   id: string;
