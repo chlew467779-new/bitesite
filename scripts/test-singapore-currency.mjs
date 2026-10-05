@@ -32,7 +32,7 @@ const files = [
   ...(await readdir(new URL("../app/layouts/", import.meta.url))).filter((f) => f.endsWith("-layout.tsx")).map((f) => `app/layouts/${f}`),
   "app/components/sections/tier-sections.tsx",
 ];
-assert.equal(files.length, 8, "7 layouts + featured dishes");
+assert.equal(files.length, 2, "the shared page structure (T7) + featured dishes");
 for (const file of files) {
   const source = await read(file);
   const calls = [...source.matchAll(/formatPrice\(([^()]*)\)/g)].map((m) => m[1]);

@@ -27,10 +27,8 @@ assert.match(section, /chosen\.filter\(\(t\) => !group\.options\.includes\(t\)\)
 const dashboard = await read("app/merchant/page.tsx");
 assert.match(dashboard, /<AmenitiesSection key=\{`amenities:\$\{sectionKey\}`\} \{\.\.\.sectionProps\} \/>/);
 
-for (const name of ["chinese", "classic", "elegant", "malay", "minimal", "modern", "rustic"]) {
-  const layout = await read(`app/layouts/${name}-layout.tsx`);
-  assert.match(layout, /<ListingTags amenities=\{merchant\.amenities\} occasion=\{merchant\.occasion\}/, `${name} shows facilities and occasions`);
-}
+// T7: every style renders app/layouts/store-layout.tsx.
+assert.match(await read("app/layouts/store-layout.tsx"), /<ListingTags amenities=\{merchant\.amenities\} occasion=\{merchant\.occasion\}/, "the page shows facilities and occasions");
 const projection = await read("lib/public-merchant-projection.mjs");
 assert.match(projection, /"amenities",\n\s+"occasion",/, "both are public columns");
 

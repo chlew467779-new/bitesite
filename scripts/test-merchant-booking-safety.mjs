@@ -103,18 +103,12 @@ assert.match(
 assert.match(tier, /\{canBook && \(\s*\n\s*<AppointmentSection/, "the section renders only when bookable");
 assert.doesNotMatch(tier, /phone=\{/, "no phone is handed to the booking form");
 
-const elegant = await read("app/layouts/elegant-layout.tsx");
-assert.doesNotMatch(elegant, /reviews-section/, "Elegant no longer links to a review section that is not rendered");
-assert.match(
-  elegant,
-  /id: "reserve-section", show: resolvedFeatures\.appointment && normalizeBookingWhatsApp\(merchant\.whatsapp\) !== null/,
-  "Elegant's Reserve link follows the same booking rule",
-);
-
-for (const layout of ["classic", "elegant", "minimal", "modern", "rustic", "chinese", "malay"]) {
-  const source = await read(`app/layouts/${layout}-layout.tsx`);
-  assert.doesNotMatch(source, /ReviewsSection|merchant\.reviews/, `${layout} does not render legacy reviews itself`);
-  assert.doesNotMatch(source, /60165660239/, `${layout} has no hard-coded booking number`);
+// T7: one page structure for every style; no section tabs (so no Reserve link to keep in step).
+{
+  const source = await read("app/layouts/store-layout.tsx");
+  assert.doesNotMatch(source, /reviews-section|reserve-section/, "no section tabs");
+  assert.doesNotMatch(source, /ReviewsSection|merchant\.reviews/, "the page does not render legacy reviews itself");
+  assert.doesNotMatch(source, /60165660239/, "no hard-coded booking number");
 }
 
 /* ── wiring: server → public renderer boundary ─────────────────────────────────────────────── */

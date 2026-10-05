@@ -68,8 +68,10 @@ const NON_KEYS = [
 
 // Layouts customers can see, and registered layouts still waiting for visual sign-off. A new
 // layout lands in UNFINISHED (productionReady: false) and moves across in its own small PR.
-const PRODUCTION_READY = ["classic", "elegant", "minimal", "modern", "rustic", "chinese", "malay"];
-const UNFINISHED = [];
+// T7/T8 (CH 2026-10-05): one structure for every style, Modern listed first; Chinese and Malay
+// are retired from the picker (still registered, the database accepts the values).
+const PRODUCTION_READY = ["modern", "classic", "minimal", "rustic", "elegant"];
+const UNFINISHED = ["chinese", "malay"];
 
 assert.deepEqual(
   [...LAYOUT_KEYS],
@@ -380,6 +382,16 @@ for (const relPath of LIVE_VARIANT_FILES) {
 }
 for (const relPath of DEAD_DUPLICATES) {
   assert.equal(existsSync(new URL(`../${relPath}`, import.meta.url)), false, `${relPath} is deleted; use the live app/components implementation`);
+}
+
+/* ── T7: one page structure, styles differ only in colour ───────────────────────────────────── */
+{
+  const store = await read("app/layouts/store-layout.tsx");
+  const index = await read("app/layouts/index.ts");
+  assert.doesNotMatch(store, /MenuCategoryNav|menuCategoryId|role="tablist"|section-nav/, "no category chips and no section tabs");
+  assert.match(store, /\{product\.image_url && \(/, "a dish shows its photo when it has one");
+  for (const key of LAYOUT_KEYS) assert.match(index, new RegExp(`\\b${key}: styled\\("`), `${key} uses the shared structure`);
+  assert.ok(!existsSync(new URL("../components/sections/menu-category-nav.tsx", import.meta.url)), "category chips removed");
 }
 
 console.log("layout registry checks passed");

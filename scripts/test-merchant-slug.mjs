@@ -41,9 +41,7 @@ const page = await read("app/store/[merchant]/page.tsx");
 assert.match(page, /getRenamedMerchantSlug\(slug\)/);
 assert.match(page, /permanentRedirect\(/, "old addresses redirect permanently");
 assert.match(await read("app/admin/components/merchant-form.tsx"), /<MerchantSlugPanel /);
-for (const layout of ["chinese", "classic", "elegant", "malay", "minimal", "modern", "rustic"]) {
-  assert.doesNotMatch(await read(`app/layouts/${layout}-layout.tsx`), /RM \{product\.|`RM \$\{product\./, `${layout}: prices use formatPrice`);
-}
+assert.doesNotMatch(await read("app/layouts/store-layout.tsx"), /RM \{product\.|`RM \$\{product\./, "prices use formatPrice (T7: one page structure)");
 
 const migration = await read("supabase/migrations/20260927140000_merchant_slug_history.sql");
 assert.doesNotMatch(migration.replace(/private\.merchant_id_is_public/g, ""), /security definer/i, "no new definer functions");
