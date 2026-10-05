@@ -46,6 +46,7 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('today');
   // Set by Today's "Fix" button: Merchant Manager opens this restaurant's editor once, then clears it.
   const [openMerchantId, setOpenMerchantId] = useState<string | null>(null);
+  const [openMerchantTab, setOpenMerchantTab] = useState<string | undefined>(undefined);
   const [dateRange, setDateRange] = useState('7d');
   const [showEditor, setShowEditor] = useState(false);
   const [editingSlug, setEditingSlug] = useState<string | null>(null);
@@ -157,7 +158,7 @@ export default function AdminPage() {
         </div>
       )}
       {activeTab === 'today' && (
-        <TodayPanel onOpenTab={setActiveTab} onOpenMerchant={(id) => { setOpenMerchantId(id); setActiveTab('merchant-manager'); }} />
+        <TodayPanel onOpenTab={setActiveTab} onOpenMerchant={(id) => { setOpenMerchantTab(undefined); setOpenMerchantId(id); setActiveTab('merchant-manager'); }} />
       )}
 
       {activeTab === 'overview' && <PerformancePanel onOpenTab={setActiveTab} />}
@@ -347,7 +348,7 @@ export default function AdminPage() {
       )}
 
       {activeTab === 'monthly-summaries' && <MonthlySummaries />}
-      {activeTab === 'menu-photos' && <MenuPhotosQueue />}
+      {activeTab === 'menu-photos' && <MenuPhotosQueue onOpenMenu={(id) => { setOpenMerchantTab('Menu'); setOpenMerchantId(id); setActiveTab('merchant-manager'); }} />}
       {activeTab === 'site-errors' && <SiteErrorsInbox />}
       {activeTab === 'photo-cleanup' && <PhotoCleanup />}
       {activeTab === 'jobs' && <JobsAdmin />}
@@ -358,7 +359,7 @@ export default function AdminPage() {
       {/* Merchant Manager */}
       {activeTab === 'merchant-manager' && (
         <div className="space-y-6">
-          <MerchantManager onOpenChangeRequests={() => setActiveTab('link-reviews')} openMerchantId={openMerchantId} onOpened={() => setOpenMerchantId(null)} />
+          <MerchantManager onOpenChangeRequests={() => setActiveTab('link-reviews')} openMerchantId={openMerchantId} openMerchantTab={openMerchantTab} onOpened={() => setOpenMerchantId(null)} />
         </div>
       )}
 

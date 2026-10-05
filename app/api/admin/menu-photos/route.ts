@@ -2,7 +2,7 @@
 
 /**
  * Admin menu photos (CH 2026-09-30): restaurants that sent photos of their menu.
- *   GET                  → the queue: restaurant, number of photos, oldest upload
+ *   GET                  → the queue: restaurant, number of photos, oldest upload, dishes on its menu now
  *   GET ?merchantId=     → that restaurant's photos (signed URLs, valid one hour)
  *   DELETE ?merchantId=  → "Done": delete all of that restaurant's photos after adding the menu
  * Before migration 20261003130000 the bucket is missing and GET answers `available: false`.
@@ -43,7 +43,10 @@ export async function GET(request: NextRequest) {
   if (error) return fail(500, 'INTERNAL_ERROR', 'Could not load the restaurants.');
   const byId = new Map((merchants ?? []).map((m) => [m.id as string, m as { id: string; name: string; slug: string }]));
   // A folder left behind by a deleted restaurant is not shown.
-  const items = queue.value.filter((q) => byId.has(q.merchantId)).map((q) => ({ ...q, name: byId.get(q.merchantId)!.name, slug: byId.get(q.merchantId)!.slug }));
+  const shown = queue.value.filter((q) => byId.has(q.merchantId));
+  // Dishes on the menu now (T4): "Done" with 0 dishes asks again. null = could not count.
+  const dishCounts = await Promise.all(shown.map((q) => supabase.from('products').select('id', { count: 'exact', head: true }).eq('merchant_id', q.merchantId)));
+  const items = shown.map((q, i) => ({ ...q, name: byId.get(q.merchantId)!.name, slug: byId.get(q.merchantId)!.slug, dishes: dishCounts[i].error ? null : dishCounts[i].count ?? 0 }));
   return NextResponse.json({ data: { available: true, items } }, { headers: NO_STORE });
 }
 

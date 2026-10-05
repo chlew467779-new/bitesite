@@ -66,7 +66,7 @@ function getPlatformStatusBadge(merchant: Merchant) {
   </span>;
 }
 
-export default function MerchantManager({ onOpenChangeRequests, openMerchantId = null, onOpened }: { onOpenChangeRequests: () => void; openMerchantId?: string | null; onOpened?: () => void }) {
+export default function MerchantManager({ onOpenChangeRequests, openMerchantId = null, openMerchantTab, onOpened }: { onOpenChangeRequests: () => void; openMerchantId?: string | null; openMerchantTab?: string; onOpened?: () => void }) {
   const { token } = useAuth();
   const [merchants, setMerchants] = useState<Merchant[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,6 +77,7 @@ export default function MerchantManager({ onOpenChangeRequests, openMerchantId =
   const [showForm, setShowForm] = useState(false);
   const [editingMerchant, setEditingMerchant] = useState<Merchant | null>(null);
   const [editLoadWarning, setEditLoadWarning] = useState('');
+  const [editInitialTab, setEditInitialTab] = useState<string | undefined>(undefined);
   const [refreshingId, setRefreshingId] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [linkingMerchant, setLinkingMerchant] = useState<Merchant | null>(null);
@@ -115,11 +116,13 @@ export default function MerchantManager({ onOpenChangeRequests, openMerchantId =
     onOpened?.();
     if (!target) { setError('That restaurant is no longer in the list.'); return; }
     setEditLoadWarning('');
+    setEditInitialTab(openMerchantTab);
     setEditingMerchant(target);
     setShowForm(true);
-  }, [openMerchantId, loading, merchants, onOpened]);
+  }, [openMerchantId, openMerchantTab, loading, merchants, onOpened]);
 
   const handleNew = () => {
+    setEditInitialTab(undefined);
     setEditingMerchant(null);
     setEditLoadWarning('');
     setShowForm(true);
@@ -151,12 +154,15 @@ export default function MerchantManager({ onOpenChangeRequests, openMerchantId =
       setMerchants(freshList);
       const fresh = freshList.find((m) => m.id === merchant.id);
       if (fresh) {
+        setEditInitialTab(undefined);
         setEditingMerchant(fresh);
       } else {
+        setEditInitialTab(undefined);
         setEditingMerchant(merchant);
         setEditLoadWarning('Could not find this merchant in the latest server data — showing the last loaded values. Reload before changing status fields.');
       }
     } catch (err) {
+      setEditInitialTab(undefined);
       setEditingMerchant(merchant);
       setEditLoadWarning(
         `Could not refresh this merchant from the server (${err instanceof Error ? err.message : 'unknown error'}) — showing the last loaded values. Reload before changing status fields.`
@@ -169,12 +175,14 @@ export default function MerchantManager({ onOpenChangeRequests, openMerchantId =
 
   const handleBack = () => {
     setShowForm(false);
+    setEditInitialTab(undefined);
     setEditingMerchant(null);
     setEditLoadWarning('');
   };
 
   const handleSaved = () => {
     setShowForm(false);
+    setEditInitialTab(undefined);
     setEditingMerchant(null);
     setEditLoadWarning('');
     setRefreshKey((k) => k + 1);
@@ -243,6 +251,7 @@ export default function MerchantManager({ onOpenChangeRequests, openMerchantId =
         onBack={handleBack}
         onSaved={handleSaved}
         loadWarning={editLoadWarning}
+        initialTab={editInitialTab}
       />
     );
   }
