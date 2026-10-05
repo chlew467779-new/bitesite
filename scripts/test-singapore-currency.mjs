@@ -6,7 +6,7 @@
 
 import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
-import { CURRENCIES, currencySymbol, formatPrice } from "../lib/price-format.mjs";
+import { CURRENCIES, currencyAreaMismatch, currencySymbol, formatPrice } from "../lib/price-format.mjs";
 import { PUBLIC_MERCHANT_COLUMNS } from "../lib/public-merchant-projection.mjs";
 import { validateRestaurantDraft } from "../lib/merchant-auth-validation.mjs";
 
@@ -65,4 +65,14 @@ assert.match(store, /locale: merchant\.currency === "SGD" \? "en_SG" : "en_MY"/)
 assert.doesNotMatch(await read("app/admin/components/restaurant-review-queue.tsx"), /RM \$\{/, "review queue uses the restaurant's currency");
 assert.match(await read("app/api/admin/restaurant-reviews/route.ts"), /select\('id, currency'\)/);
 
+// T6: currency vs the area's country (a reminder, never a refusal).
+assert.equal(currencyAreaMismatch("MYR", "Bedok", "SG"), "Prices show RM (Malaysia), but the area Bedok is in Singapore.");
+assert.equal(currencyAreaMismatch("SGD", "Cheras", "MY"), "Prices show S$ (Singapore), but the area Cheras is in Malaysia.");
+assert.equal(currencyAreaMismatch("MYR", "Cheras", "MY"), null);
+assert.equal(currencyAreaMismatch("SGD", "Bedok", "SG"), null);
+assert.equal(currencyAreaMismatch("MYR", "Somewhere", null), null, "unlisted area: no reminder");
+assert.equal(currencyAreaMismatch(undefined, "Bedok", "SG"), null);
+assert.match(await read("app/merchant/components/currency-setting.tsx"), /currencyAreaMismatch\(currency, area, areaCountry\)/);
+assert.match(await read("app/api/admin/restaurant-reviews/route.ts"), /from\('areas'\)\.select\('name, country'\)/);
+assert.match(await read("app/admin/components/restaurant-review-queue.tsx"), /currencyAreaMismatch\(item\.currency, item\.snapshot\.area, item\.areaCountry\)/);
 console.log("singapore currency checks passed");

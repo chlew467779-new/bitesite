@@ -4,13 +4,18 @@
 /**
  * "Prices shown in" (#24, Singapore): RM for Malaysia, S$ for Singapore. Saved at once, no review;
  * it only changes the symbol in front of every menu price on the restaurant page.
+ * When the saved area is in the other country, a reminder shows under the choice (T6).
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { CURRENCIES, type CurrencyCode } from '@/lib/price-format.mjs';
+import { CURRENCIES, currencyAreaMismatch, type CurrencyCode } from '@/lib/price-format.mjs';
+import { findArea } from '@/lib/areas-core.mjs';
+import { getAreas } from '@/lib/supabase';
 
-export function CurrencySetting({ merchantId, getHeaders, readOnly, onCurrency }: {
+export function CurrencySetting({ merchantId, area, getHeaders, readOnly, onCurrency }: {
   merchantId: string;
+  /** The saved (live) area, for the country check. */
+  area?: string | null;
   getHeaders: () => Promise<Record<string, string> | null>;
   readOnly: boolean;
   onCurrency: (currency: CurrencyCode) => void;
@@ -19,6 +24,17 @@ export function CurrencySetting({ merchantId, getHeaders, readOnly, onCurrency }
   const [currency, setCurrency] = useState<CurrencyCode | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
+  const [areaCountry, setAreaCountry] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!area) { setAreaCountry(null); return; }
+    getAreas()
+      .then((areas) => { if (!cancelled) setAreaCountry(findArea(areas, area)?.country ?? null); })
+      .catch(() => { /* no reminder when the list cannot load */ });
+    return () => { cancelled = true; };
+  }, [area]);
+  const mismatch = currency ? currencyAreaMismatch(currency, area, areaCountry) : null;
 
   const load = useCallback(async () => {
     try {
@@ -66,6 +82,7 @@ export function CurrencySetting({ merchantId, getHeaders, readOnly, onCurrency }
           </label>
         ))}
       </div>
+      {mismatch && <p className="mt-2 rounded-lg border border-amber-300 bg-amber-50 p-2 text-sm text-amber-900" role="note">{mismatch} Check that both are right.</p>}
       {message && <p className={`mt-2 text-sm ${message.kind === 'ok' ? 'text-emerald-800' : 'text-red-700'}`} role={message.kind === 'ok' ? 'status' : 'alert'}>{message.text}</p>}
     </fieldset>
   );
