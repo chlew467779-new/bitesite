@@ -14,6 +14,10 @@ export interface MerchantFeatures {
   events: boolean;
   /** R4b: show the menu as a photo grid instead of a list (needs release SQL 20261006120000). */
   menu_grid: boolean;
+  /** R5: set by BiteSite Admin after checking a valid JAKIM / state / MUIS certificate. */
+  halal_certified: boolean;
+  /** R5: declared by the restaurant (at least one vegetarian dish, G28 definition). */
+  vegetarian_options: boolean;
 }
 
 export interface Review {
@@ -200,6 +204,8 @@ export const defaultFeatures: MerchantFeatures = {
   seasonal_popup: false,
   events: false,
   menu_grid: false,
+  halal_certified: false,
+  vegetarian_options: false,
 };
 
 export function mergeFeatures(partial?: Partial<MerchantFeatures>): MerchantFeatures {

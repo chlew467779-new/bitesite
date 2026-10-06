@@ -44,7 +44,7 @@ function saveState(state: string | null) {
 
 function readHomeFilters() {
   if (typeof window === "undefined") {
-    return { cuisines: [] as string[], state: null as string | null, area: null as string | null, more: [] as string[], openNow: false, search: "" };
+    return { cuisines: [] as string[], state: null as string | null, area: null as string | null, more: [] as string[], openNow: false, search: "", labels: [] as string[] };
   }
   const params = new URLSearchParams(window.location.search);
   return {
@@ -53,6 +53,7 @@ function readHomeFilters() {
     area: params.get("area") || null,
     more: params.get("more")?.split(",").map(value => value.trim()).filter(Boolean) || [],
     openNow: params.get("open") === "1",
+    labels: params.get("label")?.split(",").filter((value) => value === "halal" || value === "veg") || [],
     search: params.get("q") || "",
   };
 }
@@ -67,6 +68,8 @@ export default function HomePage() {
   const [activeMore, setActiveMore] = useState<string[]>(() => readHomeFilters().more);
   const [searchQuery, setSearchQuery] = useState(() => readHomeFilters().search);
   const [openNow, setOpenNow] = useState(() => readHomeFilters().openNow);
+  // R5 food labels: "halal" (BiteSite-verified certificate) and "veg" (restaurant-declared).
+  const [labels, setLabels] = useState<string[]>(() => readHomeFilters().labels);
   const [isSearching, setIsSearching] = useState(false);
   const [productIndex, setProductIndex] = useState<Map<string, string[]>>(new Map());
   const { slugs: savedSlugs } = useFavourites();
@@ -96,6 +99,7 @@ export default function HomePage() {
       setActiveMore(filters.more);
       setSearchQuery(filters.search);
       setOpenNow(filters.openNow);
+      setLabels(filters.labels);
     };
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
@@ -109,9 +113,10 @@ export default function HomePage() {
     if (activeArea && activeArea !== "All Areas") params.set("area", activeArea);
     if (activeMore.length > 0) params.set("more", activeMore.join(","));
     if (openNow) params.set("open", "1");
+    if (labels.length > 0) params.set("label", labels.join(","));
     const query = params.toString();
     window.history.replaceState(window.history.state, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
-  }, [activeCuisines, activeState, activeArea, activeMore, searchQuery, openNow]);
+  }, [activeCuisines, activeState, activeArea, activeMore, searchQuery, openNow, labels]);
 
   // Fetch merchants + products on mount. View counts are private (DEC-29) and not read here.
   // Only the public merchant columns are readable; row level security decides which merchants.
@@ -253,6 +258,9 @@ export default function HomePage() {
           );
         });
 
+      const matchesLabels = labels.every((label) =>
+        label === "halal" ? m.features?.halal_certified === true : m.features?.vegetarian_options === true);
+
       const matchesOpenNow = !openNow || (() => {
         const todayKey = getTodayKey();
         const hours = m.operating_hours?.[todayKey];
@@ -270,9 +278,14 @@ export default function HomePage() {
         return merchantProducts.some((name) => name.includes(q));
       })();
 
-      return matchesCuisine && matchesState && matchesArea && matchesMore && matchesOpenNow && searchMatch;
+      return matchesCuisine && matchesState && matchesArea && matchesMore && matchesOpenNow && matchesLabels && searchMatch;
     });
-  }, [activeCuisines, currentState, areaStates, activeArea, activeMore, openNow, searchQuery, merchants, productIndex]);
+  }, [activeCuisines, currentState, areaStates, activeArea, activeMore, openNow, labels, searchQuery, merchants, productIndex]);
+  // A label chip appears only when at least one restaurant carries that label.
+  const availableLabels = useMemo(() => [
+    ...(merchants.some((m) => m.features?.halal_certified === true) ? ["halal"] : []),
+    ...(merchants.some((m) => m.features?.vegetarian_options === true) ? ["veg"] : []),
+  ], [merchants]);
   useEffect(() => {
     searchResultsRef.current = loading ? null : filtered.length;
   }, [loading, filtered]);
@@ -370,6 +383,7 @@ export default function HomePage() {
     setActiveArea(null);
     setActiveMore([]);
     setOpenNow(false);
+    setLabels([]);
     setSavedOnly(false);
     setTimeout(() => setIsSearching(false), 300);
   }, [handleNearbyChange]);
@@ -382,6 +396,7 @@ export default function HomePage() {
     (activeArea && activeArea !== "All Areas" ? 1 : 0) +
     activeMore.length +
     (openNow ? 1 : 0) +
+    labels.length +
     (nearbyActive ? 1 : 0) +
     (savedOnly ? 1 : 0) +
     (searchQuery ? 1 : 0);
@@ -410,6 +425,9 @@ export default function HomePage() {
           onNearbyChange={handleNearbyChange}
           openNow={openNow}
           onOpenNowChange={handleOpenNowChange}
+          availableLabels={availableLabels}
+          labels={labels}
+          onLabelsChange={setLabels}
           availableStates={availableStates}
           currentState={currentState}
           onStateChange={handleStateChange}

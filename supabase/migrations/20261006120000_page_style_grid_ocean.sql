@@ -2,8 +2,10 @@
 -- R4b (CH 2026-10-06 redesign): Ocean colour + photo-grid menu.
 -- =====================================================================
 -- 1. private.merchant_persistable_layouts(): adds 'ocean' (copied from 20261004150000).
--- 2. private.merchant_field_registry(): adds features.menu_grid, Owner- and Admin-writable
---    (copied from 20261003150000; one new row). merchant_field_patch already validates feature
+-- 2. private.merchant_field_registry(): adds features.menu_grid (Owner + Admin), and for R5 the
+--    dietary labels (ChatGPT G28): features.vegetarian_options (Owner self-declared, shown as
+--    "declared by the restaurant") and features.halal_certified (Admin only, set after BiteSite
+--    checks a valid JAKIM / state / MUIS certificate). Copied from 20261003150000; three new rows. merchant_field_patch already validates feature
 --    values as booleans and merchant_field_snapshot_read already returns every Owner-writable
 --    feature, so nothing else changes. CREATE OR REPLACE keeps the EXECUTE grants.
 -- DEPLOY ORDER: this SQL first, then the app. Before it runs the app hides the menu-look choice
@@ -52,6 +54,8 @@ as $$
     ('features.appointment',    'feature', 'appointment',    true,  true, null),
     ('features.seasonal_popup', 'feature', 'seasonal_popup', true,  true, null),
     ('features.menu_grid',      'feature', 'menu_grid',      true,  true, null),
+    ('features.halal_certified',    'feature', 'halal_certified',    false, true, null),
+    ('features.vegetarian_options', 'feature', 'vegetarian_options', true,  true, null),
     ('features.menu',           'feature', 'menu',           false, false, null),
     ('features.reviews',        'feature', 'reviews',        false, false, null),
     ('profile.name',         'text',      'name',      private.merchant_listing_basics_enabled(), true, 160),
@@ -72,14 +76,18 @@ begin
      or has_function_privilege('authenticated', 'private.merchant_persistable_layouts()', 'execute') then
     raise exception 'grid/ocean self-check: wrong EXECUTE grants on merchant_persistable_layouts';
   end if;
-  if (select count(*) from private.merchant_field_registry() where owner_writable and (kind = 'feature' or path = 'presentation.layout')) <> 8 then
-    raise exception 'grid/ocean self-check: expected the layout and 7 section switches to be Owner-writable';
+  if (select count(*) from private.merchant_field_registry() where owner_writable and (kind = 'feature' or path = 'presentation.layout')) <> 9 then
+    raise exception 'grid/ocean self-check: expected the layout and 8 switches to be Owner-writable';
   end if;
-  if exists (select 1 from private.merchant_field_registry() where owner_writable and path in ('features.events', 'features.menu', 'features.reviews')) then
-    raise exception 'grid/ocean self-check: events, menu and reviews must stay closed to Owners';
+  -- Halal-certified is set only by BiteSite after checking the certificate (G28 / R5).
+  if exists (select 1 from private.merchant_field_registry() where owner_writable and path in ('features.events', 'features.menu', 'features.reviews', 'features.halal_certified')) then
+    raise exception 'grid/ocean self-check: events, menu, reviews and halal_certified must stay closed to Owners';
   end if;
-  if (select count(*) from private.merchant_field_registry()) <> 33 then
-    raise exception 'grid/ocean self-check: expected 33 registry rows';
+  if not exists (select 1 from private.merchant_field_registry() where path = 'features.halal_certified' and admin_writable) then
+    raise exception 'grid/ocean self-check: Admin must be able to set halal_certified';
+  end if;
+  if (select count(*) from private.merchant_field_registry()) <> 35 then
+    raise exception 'grid/ocean self-check: expected 35 registry rows';
   end if;
   raise notice 'PASSED: page style grid + ocean';
 end $$;

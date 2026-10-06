@@ -183,6 +183,19 @@ export function StoreLayout({
           </div>
           <h1 className="mt-2.5 break-words text-[28px] font-extrabold leading-[1.15] tracking-[-0.03em] md:text-4xl">{merchant.name}</h1>
           {meta && <p className="mt-1.5 text-[15px] text-muted">{meta}</p>}
+          {(resolvedFeatures.halal_certified || resolvedFeatures.vegetarian_options) && (
+            // R5 labels, wording from ChatGPT G28. Halal-certified is only ever set by BiteSite after a
+            // certificate check; vegetarian is the restaurant's own declaration and says so.
+            <div className="mt-2.5 flex flex-wrap items-center gap-2">
+              {resolvedFeatures.halal_certified && <StatusPill tone="open">Halal-certified</StatusPill>}
+              {resolvedFeatures.vegetarian_options && (
+                <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <StatusPill tone="neutral">Vegetarian options</StatusPill>
+                  <span className="text-xs text-muted">Declared by the restaurant; ask about ingredients.</span>
+                </span>
+              )}
+            </div>
+          )}
           {resolvedFeatures.about && merchant.description && (
             <p className="mt-2.5 max-w-2xl whitespace-pre-line text-[15px] leading-[1.55] text-ink-2">{merchant.description}</p>
           )}

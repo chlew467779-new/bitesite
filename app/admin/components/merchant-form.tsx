@@ -81,6 +81,10 @@ const WRITABLE_FEATURES = [
   // Events: hidden until CH decides whether restaurants get an events editor (09-30); nobody can add events yet.
   { key: 'appointment', label: 'Book a Table', desc: 'Shown only when the restaurant has a valid WhatsApp number' },
   { key: 'seasonal_popup', label: 'Featured dishes', desc: 'A "Featured Dishes" block with the dishes marked Featured in the menu' },
+  // Migration 20261006120000 (R4b / R5). Each switch shows only once the database offers it.
+  { key: 'menu_grid', label: 'Photo-grid menu', desc: 'Menu as a grid of dish photos instead of a list' },
+  { key: 'halal_certified', label: 'Halal-certified', desc: 'Only after checking a valid JAKIM / state / MUIS certificate for this outlet (Owners cannot set this)' },
+  { key: 'vegetarian_options', label: 'Vegetarian options', desc: 'Restaurant-declared; shown as "declared by the restaurant"' },
 ];
 const TAG_GROUPS = [
   { path: 'tags.cuisine', label: 'Cuisine', options: CUISINE_TAGS, max: 3 },
@@ -304,7 +308,8 @@ function LocationSection(props: SectionProps) {
 }
 
 function FeaturesSection(props: SectionProps) {
-  const paths = useMemo(() => WRITABLE_FEATURES.map((feature) => `features.${feature.key}`), []);
+  const available = useMemo(() => WRITABLE_FEATURES.filter((feature) => `features.${feature.key}` in props.fields), [props.fields]);
+  const paths = useMemo(() => available.map((feature) => `features.${feature.key}`), [available]);
   const section = useSectionSave(paths, props.fields, props.send, props.onConfirmed);
   const { register } = props;
   useEffect(() => { register('features', section.handle); return () => register('features', null); }, [register, section.handle]);
@@ -313,7 +318,7 @@ function FeaturesSection(props: SectionProps) {
     <div className={panel}>
       <PanelTitle title="Page sections" note="A switch shows the page default until it has been set. Changing it back to the default leaves the stored value unset." />
       <fieldset disabled={props.readOnly} className="grid gap-3 sm:grid-cols-2">
-        {WRITABLE_FEATURES.map((feature) => {
+        {available.map((feature) => {
           const path = `features.${feature.key}`;
           const stored = section.state.baseline[path];
           const draft = section.state.draft[path];
@@ -334,7 +339,7 @@ function FeaturesSection(props: SectionProps) {
           );
         })}
       </fieldset>
-      <SectionSaveBar state={section.state} labels={WRITABLE_FEATURES.map((feature) => ({ path: `features.${feature.key}`, label: feature.label }))} canSave={section.canSave} dirty={section.dirty} readOnly={props.readOnly} lastOutcome={section.lastOutcome}
+      <SectionSaveBar state={section.state} labels={available.map((feature) => ({ path: `features.${feature.key}`, label: feature.label }))} canSave={section.canSave} dirty={section.dirty} readOnly={props.readOnly} lastOutcome={section.lastOutcome}
         onSave={() => void section.save()} onRetry={() => void section.retry()} onKeepCurrent={section.chooseCurrent} onUseMine={section.chooseMine} />
     </div>
   );
