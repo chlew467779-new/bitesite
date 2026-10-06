@@ -41,25 +41,45 @@
   --color-jp-footer: #2D2D2D;
   --color-jp-footer-text: #9A958D;
 
-  /* Fonts */
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-serif: "Playfair Display", ui-serif, Georgia, serif;
-  --font-luxury: "Cormorant Garamond", ui-serif, Georgia, serif;
-  --font-jp-serif: "Noto Serif JP", ui-serif, Georgia, serif;
-  --font-jp-sans: "Noto Sans JP", ui-sans-serif, system-ui, sans-serif;
+  /* === BITESITE 2026 DESIGN (docs/DESIGN.md) — use these for all new work === */
+  --color-ink: #17201B;
+  --color-ink-2: #3D4741;
+  --color-muted: #5B655E;
+  --color-brand: #1F4D3A;
+  --color-brand-hover: #163828;
+  --color-brand-soft: #EAF2EC;
+  --color-kaya: #E9A23B;
+  --color-kaya-hover: #D99128;
+  --color-kaya-ink: #2A1A04;
+  --color-surface: #F3F5F0;
+  --color-line: #E3E7DF;
+  --color-line-strong: #DDE2D8;
+  --color-open: #1E6B43;
+  --color-open-dot: #1E8A50;
+  --color-open-bg: #E6F4EA;
+  --color-soldout: #A23B2A;
+  --color-soldout-bg: #FBE9E5;
+
+  /* Fonts: Plus Jakarta Sans (EN / BM) + Noto Sans SC (中文). font-serif is kept as an
+     alias so older pages lose Playfair without touching every file. */
+  --font-sans: var(--font-jakarta), var(--font-noto-sc), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-sans);
+  --font-display: var(--font-sans);
 }
 
 @layer base {
   html { scroll-behavior: smooth; }
   body {
-    background-color: var(--color-fresh-bg);
-    color: var(--color-fresh-text);
+    background-color: #FFFFFF;
+    color: var(--color-ink);
     font-family: var(--font-sans);
+    line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
   h1, h2, h3, h4 {
-    font-family: var(--font-serif);
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
   }
 }
 
