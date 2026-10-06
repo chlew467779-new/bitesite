@@ -1,94 +1,60 @@
 /* bitesite/components/sections/merchant-card.tsx */
 
 import Link from "next/link";
-import { ArrowRight, Clock } from "lucide-react";
 import { SafeImage } from "@/app/components/safe-image";
-import { CuisineTag } from "@/components/ui/cuisine-tag";
-import { ShareMenu } from "@/components/sections/share-menu";
-import { getTodayHours } from "@/lib/hours";
+import { OpenStatusPill } from "@/components/store/open-status-pill";
+import { getTodayKey } from "@/lib/hours";
+import { formatDistanceKm } from "@/lib/nearby-core.mjs";
 import type { PublicMerchant } from "@/types";
 
 interface MerchantCardProps {
   merchant: PublicMerchant;
   distanceKm?: number;
+  /** "RM 5–15" from lib/store-summary.mjs priceRange; omitted when unknown. */
+  priceText?: string | null;
 }
 
-export function MerchantCard({ merchant, distanceKm }: MerchantCardProps) {
-  const { isOpen, hoursText } = getTodayHours(merchant.operating_hours);
+/** Restaurant card (R3 design): big photo with open status, name, cuisine · area, distance, price. */
+export function MerchantCard({ merchant, distanceKm, priceText }: MerchantCardProps) {
+  const todayHours = merchant.operating_hours?.[getTodayKey()];
+  const cuisine = merchant.cuisine_type?.split(",")[0].trim();
+  const meta = [cuisine, merchant.area].filter(Boolean).join(" · ");
 
   return (
-    <div className="relative">
-      {/* 卡片主体 - 点击跳转 */}
-      <Link
-        href={`/store/${merchant.slug}`}
-        className="group block active:scale-[0.98] transition-all duration-200"
-        style={{ WebkitTapHighlightColor: "transparent" }}
-      >
-        <article className="overflow-hidden rounded-xl border border-[#DDE5DC] bg-[#FAFBF7] shadow-sm transition-shadow duration-300 hover:shadow-md">
-          <div className="relative aspect-[4/3] overflow-hidden">
-            <SafeImage
-              src={merchant.cover_image}
-              alt={`${merchant.name} cover photo`}
-              fill
-              className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            />
-            
-            {/* Open Now badge - top left */}
-            <div className="absolute top-3 left-3 z-10">
-              <span
-                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium backdrop-blur-md ${
-                  isOpen
-                    ? "bg-green-500/90 text-white"
-                    : "bg-stone-800/80 text-stone-300"
-                }`}
-              >
-                <Clock className="h-3 w-3" />
-                {isOpen ? "Open Now" : "Closed"}
-              </span>
-            </div>
-
-            <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-          </div>
-          <div className="p-5">
-            {/* Tags */}
-            <div className="mb-2 flex flex-wrap items-center gap-1.5">
-              {merchant.cuisine_type && (
-                <CuisineTag label={merchant.cuisine_type.split(",")[0].trim()} />
-              )}
-              {merchant.tags?.slice(0, 3).map((tag) => (
-                <span
-                  key={tag}
-                  className="inline-flex rounded-full border border-[#DDE5DC] bg-white px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-[#8A968B]"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-            <h3 className="mb-1 font-serif text-xl font-medium text-[#2C3E2D] leading-tight tracking-wide">
-              {merchant.name}
-            </h3>
-            <p className="mb-3 line-clamp-2 text-sm text-[#6B6560] leading-relaxed">
-              {merchant.description || "Discover this amazing restaurant."}
-            </p>
-            {/* Hours info */}
-            <p className="mb-4 text-xs text-[#8A968B] flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              Today: {hoursText}
-            </p>
-            {distanceKm !== undefined && <p className="mb-3 text-xs font-medium text-[#5A8F6E]">About {distanceKm < 0.1 ? "<0.1" : distanceKm.toFixed(1)} km away</p>}
-            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-[#5A8F6E] transition-colors group-hover:text-[#4A7A5E]">
-              View Menu
-              <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-            </span>
-          </div>
-        </article>
-      </Link>
-
-      {/* Share Menu - 放在 Link 外面，绝对定位覆盖在图片上 */}
-      <div className="absolute top-3 right-3 z-20">
-        <ShareMenu slug={merchant.slug} name={merchant.name} />
+    <Link
+      href={`/store/${merchant.slug}`}
+      className="group flex flex-col gap-2.5 text-ink [-webkit-tap-highlight-color:transparent]"
+    >
+      <div className="relative h-[196px] overflow-hidden rounded-[20px] bg-surface sm:h-auto sm:aspect-[4/3]">
+        {merchant.cover_image ? (
+          <SafeImage
+            src={merchant.cover_image}
+            alt={`${merchant.name} cover photo`}
+            fill
+            className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          />
+        ) : (
+          <span aria-hidden className="flex h-full items-center justify-center bg-brand-soft text-6xl font-extrabold text-brand opacity-40">
+            {merchant.name.charAt(0).toUpperCase()}
+          </span>
+        )}
+        <div className="absolute bottom-3 left-3">
+          <OpenStatusPill todayHours={todayHours} onPhoto />
+        </div>
       </div>
-    </div>
+      <div className="flex justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="break-words text-[17px] font-bold leading-snug group-hover:text-brand">{merchant.name}</h3>
+          {meta && <p className="mt-0.5 text-sm text-muted">{meta}</p>}
+        </div>
+        {(distanceKm !== undefined || priceText) && (
+          <div className="shrink-0 text-right">
+            {distanceKm !== undefined && <p className="text-sm font-bold">{formatDistanceKm(distanceKm)}</p>}
+            {priceText && <p className="mt-0.5 text-[13px] text-muted">{priceText}</p>}
+          </div>
+        )}
+      </div>
+    </Link>
   );
 }

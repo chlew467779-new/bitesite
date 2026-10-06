@@ -5,11 +5,12 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { SafeImage } from "@/app/components/safe-image";
-import { FadeIn } from "@/app/components/animations";
+import { SectionTitle } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
 import type { PublicArticle } from "@/types";
 import { PUBLIC_ARTICLE_SELECT } from "@/lib/public-article-projection.mjs";
 
+/** Home page "Stories": the three newest, as a compact list (photo left, text right). */
 export function LatestStories() {
   const [articles, setArticles] = useState<PublicArticle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,102 +31,48 @@ export function LatestStories() {
     fetchArticles();
   }, []);
 
-  if (loading) {
-    return (
-      <section className="border-t border-[#DDE5DC] px-4 py-16 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-6xl">
-          <div className="mb-8 h-8 w-48 animate-pulse rounded bg-gray-100" />
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="overflow-hidden rounded-xl border border-[#DDE5DC] bg-white"
-              >
-                <div className="aspect-[16/9] animate-pulse bg-gray-100" />
-                <div className="p-4 space-y-2">
-                  <div className="h-4 w-16 animate-pulse rounded bg-gray-100" />
-                  <div className="h-5 w-3/4 animate-pulse rounded bg-gray-100" />
-                  <div className="h-3 w-24 animate-pulse rounded bg-gray-100" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  if (articles.length === 0) return null;
+  if (!loading && articles.length === 0) return null;
 
   return (
-    <section className="border-t border-[#DDE5DC] px-4 py-16 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-6xl">
-        <FadeIn>
-          <div className="mb-8 flex items-center justify-between">
-            <h2 className="font-serif text-2xl font-medium text-[#2C3E2D]">
-              Latest Stories
-            </h2>
-            <Link
-              href="/stories"
-              className="inline-flex min-h-11 items-center gap-1 text-sm font-medium text-[#5A8F6E] transition-colors hover:text-[#4A7A5E]"
-            >
-              View All
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M5 12h14" />
-                <path d="m12 5 7 7-7 7" />
-              </svg>
-            </Link>
-          </div>
-        </FadeIn>
-
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {articles.map((article, index) => (
-            <FadeIn key={article.id} delay={index * 0.1} direction="up">
-              <Link href={`/stories/${article.slug}`} className="group block">
-                <article className="overflow-hidden rounded-xl border border-[#DDE5DC] bg-white transition-shadow duration-300 hover:shadow-md">
-                  <div className="relative aspect-[16/9] overflow-hidden">
-                    {article.cover_image ? (
-                      <SafeImage
-                        src={article.cover_image}
-                        alt={article.title}
-                        fill
-                        className="object-cover transition-transform duration-500 group-hover:scale-105"
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      />
-                    ) : (
-                      <div className="h-full w-full bg-[#F0F4EC]" />
-                    )}
-                  </div>
-                  <div className="p-4">
-                    <span className="mb-1 inline-block rounded-full bg-[#5A8F6E]/10 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-[#5A8F6E]">
-                      {article.category}
-                    </span>
-                    <h3 className="font-serif text-base font-medium text-[#2C3E2D] transition-colors group-hover:text-[#5A8F6E] line-clamp-2">
-                      {article.title}
-                    </h3>
-                    <p className="mt-1 text-xs text-[#8A968B]">
-                      {new Date(article.created_at).toLocaleDateString("en-MY", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </p>
-                  </div>
-                </article>
-              </Link>
-            </FadeIn>
-          ))}
-        </div>
+    <section aria-labelledby="stories-heading" className="mx-auto max-w-6xl px-4 pt-8">
+      <div className="flex items-center justify-between">
+        <SectionTitle id="stories-heading">Stories</SectionTitle>
+        <Link href="/stories" className="inline-flex min-h-11 items-center text-sm font-semibold text-brand">
+          All stories
+        </Link>
       </div>
+      <ul className="mt-2 grid gap-4 md:grid-cols-3">
+        {loading
+          ? [1, 2, 3].map((i) => (
+              <li key={i} className="flex items-center gap-3.5" aria-hidden>
+                <span className="size-24 shrink-0 animate-pulse rounded-2xl bg-surface" />
+                <span className="flex-1 space-y-2">
+                  <span className="block h-3 w-20 animate-pulse rounded bg-surface" />
+                  <span className="block h-4 w-4/5 animate-pulse rounded bg-surface" />
+                </span>
+              </li>
+            ))
+          : articles.map((article) => (
+              <li key={article.id}>
+                <Link href={`/stories/${article.slug}`} className="group flex items-center gap-3.5 text-ink">
+                  <span className="relative size-24 shrink-0 overflow-hidden rounded-2xl bg-surface">
+                    {article.cover_image && (
+                      <SafeImage src={article.cover_image} alt="" fill sizes="96px" className="object-cover" />
+                    )}
+                  </span>
+                  <span className="flex min-w-0 flex-col gap-1">
+                    {article.category && (
+                      <span className="text-xs font-bold uppercase tracking-[0.06em] text-[#8A5A12]">{article.category}</span>
+                    )}
+                    <span className="line-clamp-2 text-base font-bold leading-snug group-hover:text-brand">{article.title}</span>
+                    <span className="text-[13px] text-muted">
+                      {new Date(article.created_at).toLocaleDateString("en-MY", { day: "numeric", month: "short", year: "numeric" })}
+                    </span>
+                  </span>
+                </Link>
+              </li>
+            ))}
+      </ul>
     </section>
   );
 }
