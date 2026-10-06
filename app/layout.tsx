@@ -1,30 +1,26 @@
 /* bitesite/app/layout.tsx */
 
 import type { Metadata } from "next";
-import { Inter, Playfair_Display, Noto_Sans_JP } from "next/font/google";
+import { Plus_Jakarta_Sans, Noto_Sans_SC } from "next/font/google";
 import { SiteHeader } from "@/components/sections/site-header";
 import { getSettings } from "@/lib/settings";
 import { getSiteUrl } from "@/lib/site-url";
 import { safeJsonLd } from "@/lib/safe-json-ld.mjs";
 import "./globals.css";
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ["latin", "latin-ext"],
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-jakarta",
   display: "swap",
 });
 
-const playfair = Playfair_Display({
-  subsets: ["latin"],
-  variable: "--font-playfair",
+// Chinese glyphs are split into unicode-range chunks; only pages with 中文 download them.
+const notoSansSC = Noto_Sans_SC({
+  weight: ["400", "600", "700"],
+  variable: "--font-noto-sc",
   display: "swap",
-});
-
-const notoSansJP = Noto_Sans_JP({
-  subsets: ["latin"],
-  weight: ["300", "400", "500"],
-  variable: "--font-noto-sans-jp",
-  display: "swap",
+  preload: false,
 });
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -91,9 +87,9 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${playfair.variable} ${notoSansJP.variable}`}
+      className={`${jakarta.variable} ${notoSansSC.variable}`}
     >
-      <body className="min-h-screen bg-[#FAFBF7] font-sans antialiased">
+      <body className="min-h-screen bg-white font-sans text-ink antialiased">
         <SiteHeader />
         <main>{children}</main>
         <script

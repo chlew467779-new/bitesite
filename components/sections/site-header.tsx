@@ -26,10 +26,10 @@ export function SiteHeader() {
   if (pathname?.startsWith("/store/") || pathname?.startsWith("/admin")) return null;
 
   return (
-    <header className="sticky top-0 z-50 border-b border-[#DDE5DC] bg-[#FAFBF7]/95 backdrop-blur-sm">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+    <header className="sticky top-0 z-50 border-b border-line bg-white/95 backdrop-blur-sm">
+      <div className="mx-auto flex h-[60px] max-w-6xl items-center justify-between px-4">
         {/* Logo */}
-        <Link href="/" className="inline-flex min-h-11 items-center">
+        <Link href="/" className="inline-flex min-h-11 items-center" aria-label="BiteSite home">
           <BiteSiteLogo showTagline={false} size="small" />
         </Link>
 
@@ -41,10 +41,9 @@ export function SiteHeader() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
-                  isActive
-                    ? "bg-[#5A8F6E] text-white"
-                    : "text-[#6B6560] hover:bg-[#5A8F6E]/10 hover:text-[#2C3E2D]"
+                aria-current={isActive ? "page" : undefined}
+                className={`inline-flex min-h-11 items-center rounded-full px-4 text-sm font-semibold transition-colors ${
+                  isActive ? "bg-brand-soft text-brand" : "text-ink-2 hover:bg-surface hover:text-ink"
                 }`}
               >
                 {link.label}
@@ -55,22 +54,24 @@ export function SiteHeader() {
 
         {/* Mobile Hamburger */}
         <button
+          type="button"
           onClick={() => setMenuOpen(!menuOpen)}
-          className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-[#2C3E2D] transition-colors hover:bg-[#5A8F6E]/10 md:hidden"
+          className="-mr-2 flex size-11 items-center justify-center rounded-full text-ink transition-colors hover:bg-surface md:hidden"
           style={{ WebkitTapHighlightColor: "transparent" }}
-          aria-label="Toggle menu"
+          aria-label={menuOpen ? "Close menu" : "Open menu"}
+          aria-expanded={menuOpen}
         >
-          {menuOpen ? <X size={20} /> : <Menu size={20} />}
+          {menuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
 
       {/* Mobile Dropdown */}
       <div
-        className={`overflow-hidden border-t border-[#DDE5DC] bg-[#FAFBF7]/98 backdrop-blur-md transition-all duration-300 md:hidden ${
-          menuOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+        className={`overflow-hidden border-line bg-white transition-all duration-300 md:hidden ${
+          menuOpen ? "max-h-[420px] border-t opacity-100" : "max-h-0 opacity-0"
         }`}
       >
-        <nav className="flex flex-col px-4 py-2">
+        <nav className="flex flex-col gap-1 px-4 py-3">
           {navLinks.map((link) => {
             const isActive = pathname === link.href;
             return (
@@ -78,10 +79,10 @@ export function SiteHeader() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setMenuOpen(false)}
-                className={`rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
-                  isActive
-                    ? "bg-[#5A8F6E]/10 text-[#5A8F6E]"
-                    : "text-[#6B6560] hover:bg-[#5A8F6E]/5 hover:text-[#2C3E2D]"
+                aria-current={isActive ? "page" : undefined}
+                tabIndex={menuOpen ? undefined : -1}
+                className={`flex min-h-12 items-center rounded-[14px] px-4 text-base font-semibold transition-colors ${
+                  isActive ? "bg-brand-soft text-brand" : "text-ink hover:bg-surface"
                 }`}
               >
                 {link.label}
