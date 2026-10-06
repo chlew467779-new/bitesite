@@ -29,6 +29,7 @@ import { PhoneField } from './components/phone-field';
 import { PaymentSection } from './components/payment-section';
 import { AmenitiesSection } from './components/amenities-section';
 import { PageStyleSection } from './components/page-style-section';
+import { TableQrPanel } from './components/table-qr-panel';
 import { createAreaRequests } from '@/lib/area-requests.mjs';
 
 /**
@@ -737,6 +738,9 @@ export default function MerchantDashboardPage() {
           {'presentation.layout' in sectionProps.fields && (
             <SectionCard id="style" title="Page style" description="Choose how your page looks and which sections it shows. Changes show on your page right away.">
               <PageStyleSection key={`style:${sectionKey}`} {...sectionProps} />
+              <div className="mt-8 border-t border-line pt-6">
+                <TableQrPanel slug={profile.slug} name={profile.name} layoutKey={typeof value('presentation.layout') === 'string' ? (value('presentation.layout') as string) : null} isPublic={Boolean(listing?.public || listing?.stateSource === 'legacy')} />
+              </div>
             </SectionCard>
           )}
 

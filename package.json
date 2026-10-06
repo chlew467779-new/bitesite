@@ -72,7 +72,8 @@
     "test:owner-page-style": "node scripts/test-owner-page-style.mjs",
     "test:share-preview": "node scripts/test-share-preview.mjs",
     "test:store-summary": "node scripts/test-store-summary.mjs",
-    "verify": "npm run typecheck && npm run lint && npm run check:security && npm run test:security && npm run test:menu-safety && npm run test:layout && npm run test:preview-safety && npm run test:prices && npm run test:fixtures && npm run test:theme && npm run test:merchant && npm run test:booking-safety && npm run test:merchant-state && npm run test:public-projection && npm run test:admin-whatsapp && npm run test:article-projection && npm run test:story-review-sync && npm run test:merchant-access && npm run test:merchant-auth && npm run test:field-patch && npm run test:section-save && npm run test:write-cutover && npm run test:admin-navigation && npm run test:governance && npm run test:media && npm run test:menu && npm run test:links && npm run test:basics && npm run test:history && npm run test:owner-assign && npm run test:discovery && npm run test:reports && npm run test:review && npm run test:slug && npm run test:dish-media && npm run test:preview && npm run test:feedback && npm run test:notifications && git diff --check && npm run test:areas && npm run test:admin-areas && npm run test:nearby && npm run test:coordinates && npm run test:map-discovery && npm run test:phone && npm run test:announcements && npm run test:admin-today && npm run test:site-feedback && npm run test:admin-performance && npm run test:menu-import && npm run test:story-slug && npm run test:story-submissions && npm run test:whatsapp-notify && npm run test:monthly-summary && npm run test:admin-nav-groups && npm run test:menu-photos && npm run test:owner-amenities && npm run test:owner-page-style && npm run test:share-preview && npm run test:analytics-pagination && npm run test:site-errors && npm run test:privacy-policy && npm run test:photo-cleanup && npm run test:email-notify && npm run test:jobs && npm run test:singapore && npm run test:store-summary"
+    "test:table-qr": "node scripts/test-table-qr.mjs",
+    "verify": "npm run typecheck && npm run lint && npm run check:security && npm run test:security && npm run test:menu-safety && npm run test:layout && npm run test:preview-safety && npm run test:prices && npm run test:fixtures && npm run test:theme && npm run test:merchant && npm run test:booking-safety && npm run test:merchant-state && npm run test:public-projection && npm run test:admin-whatsapp && npm run test:article-projection && npm run test:story-review-sync && npm run test:merchant-access && npm run test:merchant-auth && npm run test:field-patch && npm run test:section-save && npm run test:write-cutover && npm run test:admin-navigation && npm run test:governance && npm run test:media && npm run test:menu && npm run test:links && npm run test:basics && npm run test:history && npm run test:owner-assign && npm run test:discovery && npm run test:reports && npm run test:review && npm run test:slug && npm run test:dish-media && npm run test:preview && npm run test:feedback && npm run test:notifications && git diff --check && npm run test:areas && npm run test:admin-areas && npm run test:nearby && npm run test:coordinates && npm run test:map-discovery && npm run test:phone && npm run test:announcements && npm run test:admin-today && npm run test:site-feedback && npm run test:admin-performance && npm run test:menu-import && npm run test:story-slug && npm run test:story-submissions && npm run test:whatsapp-notify && npm run test:monthly-summary && npm run test:admin-nav-groups && npm run test:menu-photos && npm run test:owner-amenities && npm run test:owner-page-style && npm run test:share-preview && npm run test:analytics-pagination && npm run test:site-errors && npm run test:privacy-policy && npm run test:photo-cleanup && npm run test:email-notify && npm run test:jobs && npm run test:singapore && npm run test:store-summary && npm run test:table-qr"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -84,6 +85,7 @@
     "leaflet": "^1.9.4",
     "lucide-react": "^0.487.0",
     "next": "16.3.5",
+    "qrcode": "^1.5.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-markdown": "^9.0.1",
@@ -96,6 +98,7 @@
   "devDependencies": {
     "@types/leaflet": "^1.9.16",
     "@types/node": "^20",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9.39.5",
