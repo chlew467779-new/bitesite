@@ -16,6 +16,7 @@ import { supabase } from '@/lib/supabase';
 import { layouts } from '@/app/layouts';
 import { resolvePublicLayoutKey } from '@/lib/layout-registry.mjs';
 import { analyticsSuppressedProps } from '@/lib/analytics';
+import { DeliveryOrderButtons } from '@/components/sections/delivery-order-buttons';
 import { merchantApiUrl, merchantPageUrl, selectedMerchantIdFromSearch } from '@/lib/merchant-context-url.mjs';
 import type { Category, EventItem, LayoutProps, MerchantVideo, Product, PublicMerchant } from '@/types';
 
@@ -25,6 +26,7 @@ type PreviewData = {
   products: Product[];
   videos: MerchantVideo[];
   events: EventItem[];
+  deliveryLinks?: { link_type: string; url: string }[];
   footerText: string | null;
   status: { public: boolean; stateSource: string; reviewStatus: string; restriction: string };
 };
@@ -124,6 +126,8 @@ export default function MerchantPreviewPage() {
         events={data.events}
         footerText={data.footerText ?? undefined}
       />
+      {/* Same order bar as the public page; clicks are not counted (analytics suppressed above). */}
+      <DeliveryOrderButtons links={data.deliveryLinks ?? []} slug={data.merchant.slug} />
     </div>
   );
 }

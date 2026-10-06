@@ -12,6 +12,7 @@ const navLinks = [
   { href: "/", label: "Home" },
   { href: "/our-partner", label: "Our Partner" },
   { href: "/stories", label: "Stories" },
+  { href: "/jobs", label: "Jobs" },
   { href: "/join-us", label: "Join Us" },
   { href: "/merchant/login", label: "Merchant login" },
 ];
@@ -66,7 +67,7 @@ export function SiteHeader() {
       {/* Mobile Dropdown */}
       <div
         className={`overflow-hidden border-t border-[#DDE5DC] bg-[#FAFBF7]/98 backdrop-blur-md transition-all duration-300 md:hidden ${
-          menuOpen ? "max-h-60 opacity-100" : "max-h-0 opacity-0"
+          menuOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
         }`}
       >
         <nav className="flex flex-col px-4 py-2">

@@ -4,19 +4,20 @@
  * Menu photos from restaurants (CH 2026-09-30): look at the photos, add the menu with "Import a
  * menu from photos" (Merchant Manager → restaurant → Menu), then press Done: the photos are
  * deleted and a one-tap WhatsApp message tells the restaurant its menu is online.
+ * "Open Menu" jumps straight to that restaurant's Menu tab; Done with no dishes asks again (T4, T5).
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { Check, ExternalLink, Images, Loader2, RefreshCw } from 'lucide-react';
+import { Check, ExternalLink, Images, Loader2, RefreshCw, UtensilsCrossed } from 'lucide-react';
 import { useAuth } from './auth-context';
 import NotifyMerchant, { type Notice } from './notify-merchant';
 
-type Item = { merchantId: string; name: string; slug: string; count: number; oldest: string | null };
+type Item = { merchantId: string; name: string; slug: string; count: number; oldest: string | null; dishes?: number | null };
 type Photo = { name: string; uploadedAt: string | null; url: string | null };
 
 const when = (iso: string | null) => (iso ? new Date(iso).toLocaleString('en-MY', { timeZone: 'Asia/Kuala_Lumpur', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '');
 
-export default function MenuPhotosQueue() {
+export default function MenuPhotosQueue({ onOpenMenu }: { onOpenMenu?: (merchantId: string) => void }) {
   const { token } = useAuth();
   const [items, setItems] = useState<Item[] | null>(null);
   const [available, setAvailable] = useState(true);
@@ -52,7 +53,9 @@ export default function MenuPhotosQueue() {
   };
 
   const done = async (item: Item) => {
-    if (!token || !window.confirm(`Delete the ${item.count} menu photo(s) from ${item.name}? Do this after the menu is added.`)) return;
+    if (!token) return;
+    if (item.dishes === 0 && !window.confirm(`${item.name} has no dishes on its menu yet. Press OK only if you really want to finish without adding the menu.`)) return;
+    if (!window.confirm(`Delete the ${item.count} menu photo(s) from ${item.name}? Do this after the menu is added.`)) return;
     setBusy(item.merchantId); setError('');
     try {
       const r = await fetch(`/api/admin/menu-photos?merchantId=${encodeURIComponent(item.merchantId)}`, { method: 'DELETE', headers: { 'x-admin-token': token } });
@@ -88,9 +91,11 @@ export default function MenuPhotosQueue() {
               <div className="min-w-0">
                 <p className="break-words font-semibold text-white">{item.name}</p>
                 <p className="mt-1 text-sm text-slate-400">{item.count} photo{item.count === 1 ? '' : 's'} · first sent {when(item.oldest)} · /{item.slug}</p>
+                {typeof item.dishes === 'number' && <p className={`mt-1 text-sm ${item.dishes === 0 ? 'font-medium text-amber-300' : 'text-slate-300'}`}>{item.dishes === 0 ? 'No dishes on the menu yet' : `${item.dishes} dish${item.dishes === 1 ? '' : 'es'} on the menu now`}</p>}
               </div>
               <div className="flex flex-wrap gap-2">
                 <button type="button" onClick={() => void show(item)} aria-expanded={open === item.merchantId} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-slate-600 px-3 text-sm text-slate-200 hover:border-slate-400"><Images className="h-4 w-4" />{open === item.merchantId ? 'Hide photos' : 'Show photos'}</button>
+                {onOpenMenu && <button type="button" onClick={() => onOpenMenu(item.merchantId)} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-slate-600 px-3 text-sm text-slate-200 hover:border-slate-400"><UtensilsCrossed className="h-4 w-4" />Open Menu</button>}
                 <button type="button" onClick={() => void done(item)} disabled={busy === item.merchantId} className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-emerald-600 px-4 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50"><Check className="h-4 w-4" />Done, menu added</button>
               </div>
             </div>

@@ -11,7 +11,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Check, ExternalLink, Loader2, X } from 'lucide-react';
 import { useAuth } from './auth-context';
 import NotifyMerchant, { type Notice } from './notify-merchant';
-import { LINK_FIELDS, type LinkQueueItem } from '@/lib/merchant-links-core.mjs';
+import { LINK_FIELDS, LINK_PROBLEM_TEXT, linkProblem, type LinkQueueItem } from '@/lib/merchant-links-core.mjs';
 
 const LABEL = Object.fromEntries(LINK_FIELDS.map((f) => [f.field, f.label]));
 
@@ -108,6 +108,8 @@ export default function LinkReviewQueue({ searchQuery = '' }: { searchQuery?: st
               <div><dt className="inline text-[#6B6560]">Now: </dt><dd className="inline break-all">{current ? <a href={current} target="_blank" rel="noopener noreferrer nofollow" className="underline">{item.currentUrl}</a> : 'Not set'}</dd></div>
               <div><dt className="inline text-[#6B6560]">Requested: </dt><dd className="inline break-all">{proposed ? <a href={proposed} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex items-center gap-1 underline">{item.proposedUrl} <ExternalLink className="h-3 w-3" /></a> : 'Remove the link'}</dd></div>
             </dl>
+            {/* Requests sent before a check existed (e.g. a delivery app's home page, T2) are flagged here. */}
+            {item.proposedUrl && linkProblem(item.field, item.proposedUrl) && <p className="mt-1 text-xs text-amber-800" role="note">Check this link: {LINK_PROBLEM_TEXT[linkProblem(item.field, item.proposedUrl)!]}</p>}
             {item.currentUrl !== item.baseValue && <p className="mt-1 text-xs text-amber-800">The link changed after this request was sent, so approving will be refused.</p>}
             <label className="mt-3 block text-sm">Note for the restaurant (needed to reject)
               <textarea rows={2} maxLength={500} value={notes[item.id] ?? ''} onChange={(event) => setNotes((n) => ({ ...n, [item.id]: event.target.value }))}

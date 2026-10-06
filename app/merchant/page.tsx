@@ -556,6 +556,8 @@ export default function MerchantDashboardPage() {
         ? 'Your restaurant is waiting for review, so it cannot be changed. Withdraw it from review if you need to edit.'
         : null;
   const value = (path: string) => snapshotValue(confirmed[path]);
+  const savedLocation = value('location');
+  const liveArea = savedLocation && typeof savedLocation === 'object' && typeof (savedLocation as { area?: unknown }).area === 'string' ? (savedLocation as { area: string }).area : null;
   const hasText = (path: string) => typeof value(path) === 'string' && (value(path) as string).trim() !== '';
   const checklist = listing?.stateSource === 'managed' ? [
     { label: 'Restaurant name', complete: listing.checks.name, anchor: 'basics' },
@@ -739,7 +741,7 @@ export default function MerchantDashboardPage() {
           )}
 
           <SectionCard id="menu" title="Menu" description="Add categories and dishes, change prices, and mark dishes sold out. Changes show on your page right away.">
-            <div className="mb-6"><CurrencySetting key={`currency:${profile.id}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={profile.restriction === 'suspended' || profile.restriction === 'archived'} onCurrency={setCurrency} /></div>
+            <div className="mb-6"><CurrencySetting key={`currency:${profile.id}`} merchantId={profile.id} area={liveArea} getHeaders={photoHeaders} readOnly={profile.restriction === 'suspended' || profile.restriction === 'archived'} onCurrency={setCurrency} /></div>
             <div className="mb-6"><MenuPhotosPanel key={`menu-photos:${profile.id}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={profile.restriction === 'suspended' || profile.restriction === 'archived'} /></div>
             <MenuManager onChanged={refreshListing} key={`menu:${profile.id}:${data.loadId}`} merchantId={profile.id} currency={currency} getHeaders={photoHeaders} readOnly={readOnly} />
           </SectionCard>

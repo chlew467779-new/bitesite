@@ -41,8 +41,9 @@ assert.equal(hasDisplayablePrice({ price: '' }), false, "an empty price string i
 // Every registered layout, including ones not yet public, so a new layout cannot skip the guard.
 const LAYOUTS = LAYOUT_KEYS;
 
-for (const layout of LAYOUTS) {
-  const relPath = `app/layouts/${layout}-layout.tsx`;
+// Since T7 every key renders the one shared structure.
+assert.ok(LAYOUTS.length > 0);
+for (const relPath of ["app/layouts/store-layout.tsx"]) {
   const source = await read(relPath);
 
   assert.match(
