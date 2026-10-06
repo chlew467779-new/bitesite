@@ -79,5 +79,10 @@ assert.match(panel, /if \(r\.status === 503\) \{ setHidden\(true\); return; \}/,
 assert.match(panel, /uploadToSignedUrl\(/);
 const queue = await read("app/admin/components/menu-photos-queue.tsx");
 assert.match(queue, /kind: 'menu_added'/);
+// T4/T5: the card shows the dish count, Done with 0 dishes asks again, and Open Menu jumps to the Menu tab.
+assert.match(queue, /item\.dishes === 0 && !window\.confirm\(/, "Done with no dishes asks again");
+assert.match(queue, /onOpenMenu\(item\.merchantId\)/);
+assert.match(await read("app/api/admin/menu-photos/route.ts"), /from\('products'\)\.select\('id', \{ count: 'exact', head: true \}\)\.eq\('merchant_id', q\.merchantId\)/);
+assert.match(await read("app/admin/page.tsx"), /setOpenMerchantTab\('Menu'\)/);
 
 console.log("menu photo checks passed");

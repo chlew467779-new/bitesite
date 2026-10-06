@@ -359,6 +359,12 @@ A new feature idea must not silently become a decision. Add it here only after C
 
 - After ChatGPT G18 (#102, simpler designs) and the database part (#98, SQL run by CH), `productionReady` is true for both. Owners and Admin can pick them in Page style; the descriptions now match the simpler designs ("Simple and clean, with a red seal accent" / "Simple and warm, with an emerald accent").
 
+## SYNC-081 — CH test fixes T2, T4, T5, T6 (2026-10-05)
+
+- T2: the public page did show the approved GrabFood link (checked on production, 375 px: 48 px button, not covered). The Owner/Admin page preview left the order bar out, so it now shows the same bar from approved links (clicks not counted). Delivery links must open the restaurant: `www.grab.com` and app home pages are refused in the forms/API; the Admin link queue flags older requests. App-side only (stricter than the database check), so no SQL.
+- T5: production check — the `menu-photos` bucket is empty, so "Done" deletes the photos. Each Menu photos card now shows the dish count and an "Open Menu" button (Merchant Manager opens on that restaurant's Menu tab).
+- T4: "Done, menu added" asks again when the restaurant has 0 dishes.
+- T6: RM with a Singapore area (or S$ with a Malaysian one) shows a reminder on the Owner dashboard (under "Prices shown in") and on the Admin review card. Warning only.
 ## SYNC-082 — One page structure for every style; Chinese and Malay retired (T7, T8, CH 2026-10-05)
 
 - CH: every page style should have the same features, "neat and clean", no category chips and no section tabs; CH likes Modern, with dish photos in the menu. Chinese / Malay: remove them, or replace them, Claude decides.

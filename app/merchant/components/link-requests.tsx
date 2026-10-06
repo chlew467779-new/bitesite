@@ -133,6 +133,7 @@ export function LinkRequests({ merchantId, getHeaders, readOnly, register }: {
             {pending && (
               <div className="mt-2 rounded-lg bg-amber-50 p-2 text-sm text-amber-900">
                 <p>Waiting for review: {pending.proposedUrl ? <span className="break-all">{pending.proposedUrl}</span> : 'remove this link'}</p>
+                {(field === 'grabfood' || field === 'shopeefood' || field === 'foodpanda') && pending.proposedUrl && <p className="mt-1">BiteSite approves it before the button shows on your page.</p>}
                 <button type="button" disabled={locked} onClick={() => void send({ requestId: crypto.randomUUID(), body: { action: 'withdraw', linkRequestId: pending.id }, success: 'Request withdrawn.' })}
                   className={`${btn} mt-2 w-full border border-amber-800 sm:w-auto`}>Withdraw request</button>
               </div>
