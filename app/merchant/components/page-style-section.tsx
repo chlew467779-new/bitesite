@@ -77,13 +77,13 @@ function SectionSwitches(props: SectionProps) {
             const shown = typeof draft === 'boolean' ? draft : Boolean(defaults[item.key]);
             return (
               <label key={item.key} className="flex min-h-11 items-start gap-3 rounded-lg border border-[#EEF2EC] p-3">
-                <input type="checkbox" className="mt-1 h-5 w-5 accent-[#2C3E2D]" checked={shown}
+                <input type="checkbox" className="mt-1 h-5 w-5 shrink-0 accent-[#2C3E2D]" checked={shown}
                   onChange={() => {
                     const next = !shown;
                     // A default shown for a missing value is not stored: going back to it clears the edit.
                     section.edit(path, !stored?.exists && next === Boolean(defaults[item.key]) ? null : next);
                   }} />
-                <span>
+                <span className="min-w-0">
                   <span className="block text-sm font-medium text-[#2C3E2D]">{item.label}</span>
                   <span className="block text-xs text-[#6B6560]">{item.desc}</span>
                 </span>
