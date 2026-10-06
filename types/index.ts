@@ -183,6 +183,8 @@ export interface LayoutProps {
   features?: MerchantFeatures;
   events?: EventItem[];
   footerText?: string;
+  /** Shared sections shown after the restaurant's own (jobs, nearby, footer), inside its colours. */
+  children?: import("react").ReactNode;
 }
 
 export const defaultFeatures: MerchantFeatures = {

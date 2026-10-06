@@ -109,6 +109,14 @@ assert.doesNotMatch(tier, /phone=\{/, "no phone is handed to the booking form");
   assert.doesNotMatch(source, /reviews-section|reserve-section/, "no section tabs");
   assert.doesNotMatch(source, /ReviewsSection|merchant\.reviews/, "the page does not render legacy reviews itself");
   assert.doesNotMatch(source, /60165660239/, "no hard-coded booking number");
+  // R2: the store page opens the same form in a sheet, under the same rule.
+  assert.match(
+    source,
+    /const canBook = resolvedFeatures\.appointment && normalizeBookingWhatsApp\(merchant\.whatsapp\) !== null;/,
+    "the booking sheet needs both the feature and a valid WhatsApp number",
+  );
+  assert.match(source, /\{canBook && \(\s*\n\s*<Sheet/, "the sheet renders only when bookable");
+  assert.doesNotMatch(source, /<AppointmentSection[^>]*phone=\{/, "no phone is handed to the booking form");
 }
 
 /* ── wiring: server → public renderer boundary ─────────────────────────────────────────────── */
@@ -116,7 +124,8 @@ assert.doesNotMatch(tier, /phone=\{/, "no phone is handed to the booking form");
 const store = await read("app/store/[merchant]/page.tsx");
 assert.match(store, /return \{ \.\.\.merchant, reviews: null \};/, "the store page strips legacy reviews");
 assert.match(store, /<LayoutComponent\s*\n\s*merchant=\{publicMerchant\}/, "the layout receives the stripped merchant");
-assert.match(store, /<RelatedMerchants merchants=\{publicRelatedMerchants\}/, "related merchants are stripped too");
+assert.match(store, /const related = publicRelatedMerchants\s*\n/, "related merchants are stripped too");
+assert.doesNotMatch(store, /relatedMerchants\.map\(\(m\) => \(\{ slug/, "the related list is built from the stripped rows");
 
 // lib/whatsapp.ts is the platform's own enquiry CTA, a different purpose; it is not touched here.
 const platformWhatsApp = await read("lib/whatsapp.ts");

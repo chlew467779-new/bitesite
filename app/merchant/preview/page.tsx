@@ -125,9 +125,10 @@ export default function MerchantPreviewPage() {
         features={data.merchant.features ?? undefined}
         events={data.events}
         footerText={data.footerText ?? undefined}
-      />
-      {/* Same order bar as the public page; clicks are not counted (analytics suppressed above). */}
-      <DeliveryOrderButtons links={data.deliveryLinks ?? []} slug={data.merchant.slug} />
+      >
+        {/* Same order bar as the public page; clicks are not counted (analytics suppressed above). */}
+        <DeliveryOrderButtons links={data.deliveryLinks ?? []} slug={data.merchant.slug} />
+      </Layout>
     </div>
   );
 }

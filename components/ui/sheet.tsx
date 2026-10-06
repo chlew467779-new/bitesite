@@ -41,12 +41,12 @@ export function Sheet({
         if (event.target === ref.current) onClose();
       }}
       className={cn(
-        "m-0 mt-auto max-h-[88dvh] w-full max-w-none overflow-y-auto rounded-t-3xl bg-white p-0 text-ink backdrop:bg-black/40",
+        "m-0 mt-auto max-h-[88dvh] w-full max-w-none overflow-y-auto rounded-t-3xl bg-page p-0 text-ink backdrop:bg-black/40",
         "md:m-auto md:max-w-lg md:rounded-3xl",
         className
       )}
     >
-      <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-line bg-white px-4 py-2">
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-line bg-page px-4 py-2">
         <h2 className="text-lg font-extrabold">{title}</h2>
         <IconButton label="Close" onClick={onClose}>
           <X size={22} />

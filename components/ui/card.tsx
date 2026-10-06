@@ -14,8 +14,8 @@ export function Card({
       className={cn(
         "rounded-[20px] p-4",
         tone === "surface" && "bg-surface",
-        tone === "outline" && "border border-line bg-white",
-        tone === "brand" && "bg-brand text-white",
+        tone === "outline" && "border border-line bg-page",
+        tone === "brand" && "bg-brand text-on-brand",
         className
       )}
       {...props}

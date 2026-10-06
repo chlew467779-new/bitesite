@@ -11,9 +11,9 @@ export const buttonClasses = cva(
   {
     variants: {
       variant: {
-        primary: "bg-brand text-white hover:bg-brand-hover",
+        primary: "bg-brand text-on-brand hover:bg-brand-hover",
         kaya: "bg-kaya text-kaya-ink hover:bg-kaya-hover",
-        secondary: "border border-line-strong bg-white text-ink hover:bg-surface",
+        secondary: "border border-line-strong bg-page text-ink hover:bg-surface",
         ghost: "bg-transparent text-ink hover:bg-surface",
       },
       size: {
