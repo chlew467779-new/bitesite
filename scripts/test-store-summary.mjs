@@ -31,7 +31,8 @@ assert.equal(priceRange([{ price: 8 }, { price: 8 }], "SGD"), "S$ 8");
 assert.equal(priceRange([{ price: 10, discount_price: 6 }, { price: "12.00" }], "MYR"), "RM 6–12", "discount price counts, string prices count");
 assert.equal(priceRange([{ price: 3, show_prices: false }, { price: 9 }, { price: 11 }], "MYR"), "RM 9–11", "hidden prices are skipped");
 assert.equal(priceRange([{ price: 0 }, { price: 4 }, { price: 6 }], "MYR"), "RM 4–6", "zero is skipped");
-const ten = [1, 5, 6, 7, 8, 9, 10, 11, 12, 80].map((price) => ({ price }));
+assert.equal(priceRange([{ price: 0.5 }, { price: 6.8 }], "MYR"), "RM 0.50–7", "under RM 1 keeps its cents instead of showing RM 0");
+const ten =[1, 5, 6, 7, 8, 9, 10, 11, 12, 80].map((price) => ({ price }));
 assert.equal(priceRange(ten, "MYR"), "RM 5–12", "10% trimmed at each end");
 
 console.log("store summary checks passed");
