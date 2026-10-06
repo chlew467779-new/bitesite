@@ -181,7 +181,7 @@ export function StoreLayout({
           </div>
           <h1 className="mt-2.5 break-words text-[28px] font-extrabold leading-[1.15] tracking-[-0.03em] md:text-4xl">{merchant.name}</h1>
           {meta && <p className="mt-1.5 text-[15px] text-muted">{meta}</p>}
-          {merchant.description && (
+          {resolvedFeatures.about && merchant.description && (
             <p className="mt-2.5 max-w-2xl whitespace-pre-line text-[15px] leading-[1.55] text-ink-2">{merchant.description}</p>
           )}
         </section>
