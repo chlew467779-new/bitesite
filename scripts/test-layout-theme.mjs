@@ -396,7 +396,8 @@ for (const [relPath, group] of Object.entries(THEMED_COMPONENTS)) {
   );
   assert.match(
     source,
-    new RegExp(`const theme = getLayoutTheme\\(variant\\)\\.${group};`),
+    // The booking form's `bare` mode (R2 store sheet) uses site tokens instead of a layout theme.
+    new RegExp(`const theme = (?:bare \\? BARE_THEME : )?getLayoutTheme\\(variant\\)\\.${group};`),
     `${relPath} reads the ${group} theme group`,
   );
   assert.doesNotMatch(source, /Record<(LayoutVariant|LayoutKey)/, `${relPath} keeps no per-layout map of its own`);

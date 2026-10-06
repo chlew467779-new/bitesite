@@ -21,7 +21,19 @@ interface AppointmentSectionProps {
   variant?: LayoutVariant;
   id?: string;
   slug?: string;
+  /** Just the form (or the WhatsApp hand-off), in site colours, for the store page's booking sheet. */
+  bare?: boolean;
 }
+
+// Site tokens (docs/DESIGN.md); inside the store page they follow the restaurant's colour.
+const BARE_THEME = {
+  input: "border-line bg-surface text-ink placeholder:text-muted focus:border-brand",
+  text: "text-ink",
+  card: "border-line bg-page",
+  successIcon: "text-brand",
+  buttonPrimary: "bg-brand !text-on-brand hover:bg-brand-hover",
+  sectionBg: "",
+};
 
 type BookingField = "name" | "phone" | "date" | "time" | "guests" | "notes";
 type FieldErrors = Partial<Record<BookingField, string>>;
@@ -36,8 +48,9 @@ export function AppointmentSection({
   variant = "classic",
   id,
   slug,
+  bare = false,
 }: AppointmentSectionProps) {
-  const theme = getLayoutTheme(variant).appointment;
+  const theme = bare ? BARE_THEME : getLayoutTheme(variant).appointment;
   const inputStyles = `${inputBase} ${theme.input}`;
   const uid = useId();
   const fieldId = (field: BookingField) => `${uid}-${field}`;
@@ -132,11 +145,8 @@ export function AppointmentSection({
   const labelClass = `block text-sm font-medium mb-1.5 ${theme.text}`;
 
   if (bookingUrl) {
-    return (
-      <FadeIn>
-        <section id={id} className={`py-16 px-4 sm:px-6 lg:px-8 ${theme.sectionBg}`}>
-          <div className="max-w-md mx-auto">
-            <div className={`p-8 rounded-2xl border text-center ${theme.card}`} role="status">
+    const handoff = (
+            <div className={`rounded-2xl text-center ${bare ? "py-4" : `p-8 border ${theme.card}`}`} role="status">
               <Send size={44} className={`mx-auto mb-4 ${theme.successIcon}`} aria-hidden="true" />
               <h3 className={`text-2xl font-bold mb-3 ${theme.text}`}>Continue in WhatsApp</h3>
               <p className={`opacity-70 leading-relaxed mb-6 ${theme.text}`}>
@@ -165,21 +175,18 @@ export function AppointmentSection({
                 Edit booking details
               </button>
             </div>
-          </div>
+    );
+    if (bare) return handoff;
+    return (
+      <FadeIn>
+        <section id={id} className={`py-16 px-4 sm:px-6 lg:px-8 ${theme.sectionBg}`}>
+          <div className="max-w-md mx-auto">{handoff}</div>
         </section>
       </FadeIn>
     );
   }
 
-  return (
-    <FadeIn>
-      <section id={id} className={`py-16 px-4 sm:px-6 lg:px-8 ${theme.sectionBg}`}>
-        <div className="max-w-2xl mx-auto">
-          <h2 className={`text-3xl font-bold text-center mb-3 ${theme.text}`}>{title}</h2>
-          <p className={`text-center mb-10 opacity-60 ${theme.text}`}>
-            Fill in your details and send the request to the restaurant in WhatsApp
-          </p>
-          <div className={`p-6 sm:p-8 rounded-2xl border ${theme.card}`}>
+  const form = (
             <form ref={formRef} onSubmit={handleSubmit} noValidate className="space-y-5">
               <div className="grid sm:grid-cols-2 gap-5">
                 <div>
@@ -237,7 +244,26 @@ export function AppointmentSection({
                 <Send size={18} aria-hidden="true" />Continue in WhatsApp
               </button>
             </form>
-          </div>
+  );
+
+  if (bare) {
+    return (
+      <div className="space-y-4">
+        <p className="text-sm text-muted">Fill in your details and send the request to the restaurant in WhatsApp.</p>
+        {form}
+      </div>
+    );
+  }
+
+  return (
+    <FadeIn>
+      <section id={id} className={`py-16 px-4 sm:px-6 lg:px-8 ${theme.sectionBg}`}>
+        <div className="max-w-2xl mx-auto">
+          <h2 className={`text-3xl font-bold text-center mb-3 ${theme.text}`}>{title}</h2>
+          <p className={`text-center mb-10 opacity-60 ${theme.text}`}>
+            Fill in your details and send the request to the restaurant in WhatsApp
+          </p>
+          <div className={`p-6 sm:p-8 rounded-2xl border ${theme.card}`}>{form}</div>
         </div>
       </section>
     </FadeIn>

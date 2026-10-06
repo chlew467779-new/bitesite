@@ -2,27 +2,32 @@ import Link from "next/link";
 import type { PublicJob } from "@/lib/jobs-public";
 import { jobTypeLabel } from "@/lib/merchant-jobs-core.mjs";
 
-/** Shared by all seven public restaurant layouts; omitted when this restaurant has no open jobs. */
+/** "We're hiring" strip on the restaurant page; omitted when this restaurant has no open jobs. */
 export function HiringSection({ jobs }: { jobs: PublicJob[] }) {
   if (jobs.length === 0) return null;
+  const first = jobs[0];
+  const more = jobs.length - 1;
 
   return (
-    <section aria-labelledby="hiring-heading" className="bg-[#FAFBF7] px-4 py-10 text-[#2C3E2D] sm:px-6">
-      <div className="mx-auto max-w-4xl">
-        <h2 id="hiring-heading" className="text-2xl font-semibold">We&apos;re hiring</h2>
-        <p className="mt-2 text-sm text-[#6B6560]">Apply directly to the restaurant.</p>
-        <ul className="mt-5 grid gap-3 sm:grid-cols-2">
-          {jobs.slice(0, 4).map((job) => (
-            <li key={job.id}>
-              <Link href={`/jobs/${job.id}`} className="flex min-h-16 flex-col justify-center rounded-xl border border-[#DDE5DC] bg-white p-4 hover:border-[#5A8F6E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700">
-                <span className="font-semibold break-words">{job.title}</span>
-                <span className="mt-1 text-sm text-[#6B6560]">{jobTypeLabel(job.jobType)}{job.salary ? ` · ${job.salary}` : ""}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-        <Link href="/jobs" className="mt-4 inline-flex min-h-11 items-center text-sm font-medium text-emerald-800 underline">Browse all jobs</Link>
-      </div>
-    </section>
+    <div className="mx-auto max-w-5xl px-4 pt-4">
+      <section
+        aria-labelledby="hiring-heading"
+        className="flex items-center justify-between gap-3 rounded-[22px] border border-[#F0D9B0] bg-[#FDF6E8] px-[18px] py-4 text-[#2A1A04]"
+      >
+        <div className="min-w-0">
+          <h2 id="hiring-heading" className="text-base font-extrabold">We&apos;re hiring</h2>
+          <p className="mt-0.5 break-words text-sm text-[#6B5326]">
+            {first.title} · {jobTypeLabel(first.jobType)}
+            {more > 0 ? ` · +${more} more` : ""}
+          </p>
+        </div>
+        <Link
+          href={jobs.length === 1 ? `/jobs/${first.id}` : "/jobs"}
+          className="inline-flex min-h-11 shrink-0 items-center rounded-xl border border-[#E6C98F] bg-white px-4 text-sm font-bold text-[#6B4A0E] hover:bg-[#FFFBF2]"
+        >
+          {jobs.length === 1 ? "View job" : "View jobs"}
+        </Link>
+      </section>
+    </div>
   );
 }

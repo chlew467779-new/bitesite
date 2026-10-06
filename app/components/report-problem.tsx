@@ -10,9 +10,9 @@
 import { useState } from 'react';
 import { REPORT_REASONS, type ReportTargetType } from '@/lib/public-report-core.mjs';
 
-const field = 'mt-1.5 block w-full rounded-lg border border-[#C9D6C7] bg-white px-3 py-2.5 text-base text-[#2C3E2D] focus:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-700/20';
+const field = 'mt-1.5 block w-full rounded-lg border border-line-strong bg-page px-3 py-2.5 text-base text-ink focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20';
 
-export function ReportProblem({ targetType, slug }: { targetType: ReportTargetType; slug: string }) {
+export function ReportProblem({ targetType, slug, className = "mx-auto max-w-xl px-4 pb-10" }: { targetType: ReportTargetType; slug: string; className?: string }) {
   const [reason, setReason] = useState('');
   const [note, setNote] = useState('');
   const [email, setEmail] = useState('');
@@ -43,18 +43,18 @@ export function ReportProblem({ targetType, slug }: { targetType: ReportTargetTy
   };
 
   return (
-    <details className="mx-auto max-w-xl px-4 pb-10 text-sm text-[#6B6560]">
+    <details className={`${className} text-sm text-ink-2`}>
       <summary className="inline-flex min-h-11 cursor-pointer items-center underline underline-offset-2">Report a problem with this page</summary>
-      <div className="mt-3 rounded-xl border border-[#DDE5DC] bg-white p-4 text-left text-[#2C3E2D]">
+      <div className="mt-3 rounded-xl border border-line bg-page p-4 text-left text-ink">
         {sent ? (
-          <p role="status" className="text-emerald-800">Thank you. The BiteSite team will check it.</p>
+          <p role="status" className="text-open">Thank you. The BiteSite team will check it.</p>
         ) : (
           <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); void submit(); }} noValidate>
             <fieldset>
               <legend className="font-medium">What is wrong?</legend>
               <div className="mt-2 space-y-2">
                 {REPORT_REASONS[targetType].map((option) => (
-                  <label key={option.value} className="flex min-h-11 items-center gap-3 rounded-lg border border-[#EEF2EC] px-3">
+                  <label key={option.value} className="flex min-h-11 items-center gap-3 rounded-lg border border-line px-3">
                     <input type="radio" name={`${idBase}-reason`} value={option.value} checked={reason === option.value} onChange={() => { setReason(option.value); setError(''); }} className="h-4 w-4" />
                     {option.label}
                   </label>
@@ -71,8 +71,8 @@ export function ReportProblem({ targetType, slug }: { targetType: ReportTargetTy
             <div aria-hidden="true" className="absolute left-[-10000px] h-px w-px overflow-hidden">
               <label>Website<input tabIndex={-1} autoComplete="off" value={website} onChange={(event) => setWebsite(event.target.value)} /></label>
             </div>
-            {error && <p role="alert" className="text-red-700">{error}</p>}
-            <button type="submit" disabled={busy} className="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-[#2C3E2D] px-4 font-medium text-white disabled:opacity-50 sm:w-auto">{busy ? 'Sending…' : 'Send report'}</button>
+            {error && <p role="alert" className="text-soldout">{error}</p>}
+            <button type="submit" disabled={busy} className="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-brand px-4 font-semibold text-on-brand disabled:opacity-50 sm:w-auto">{busy ? 'Sending…' : 'Send report'}</button>
           </form>
         )}
       </div>

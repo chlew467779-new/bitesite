@@ -17,7 +17,6 @@ import { supabase } from "@/lib/supabase";
 import { getSettings } from "@/lib/settings";
 import { layouts } from "@/app/layouts";
 import { describeLayoutValueForLog, resolvePublicLayoutKey } from "@/lib/layout-registry.mjs";
-import { RelatedMerchants } from "@/components/sections/related-merchants";
 import { ViewTracker } from "@/components/sections/view-tracker";
 import { PageViewTracker } from "@/app/components/page-view-tracker";
 import { DeliveryOrderButtons } from "@/components/sections/delivery-order-buttons";
@@ -30,6 +29,7 @@ import { getSiteUrl } from "@/lib/site-url";
 import { safeJsonLd } from "@/lib/safe-json-ld.mjs";
 import { discoveryPath, discoverySlug, merchantArea, merchantCuisines } from "@/lib/discovery-core.mjs";
 import { ReportProblem } from "@/app/components/report-problem";
+import { chipClasses } from "@/components/ui/chip";
 import type { PublicMerchant } from "@/types";
 
 export const revalidate = 60;
@@ -64,7 +64,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description: "The restaurant you are looking for could not be found.",
     };
   }
-  
+
   if (merchant.status === 'inactive' || ['TEMPORARILY_CLOSED', 'MOVED', 'PERMANENTLY_CLOSED'].includes(merchant.business_status || '')) {
     return {
       title: `${merchant.name} — Currently Unavailable | BiteSite`,
@@ -221,7 +221,7 @@ export default async function MerchantPage({ params }: PageProps) {
     merchant.latitude != null && merchant.longitude != null ? getPublishedMerchants().catch(() => []) : Promise.resolve([]),
   ]);
   const nearby = nearbyOtherRestaurants(merchant, publicMerchants).map(({ merchant: m, distanceKm }) => ({
-    slug: m.slug, name: m.name, cuisine: merchantCuisines(m)[0] ?? null, distanceKm,
+    slug: m.slug, name: m.name, cuisine: merchantCuisines(m)[0] ?? null, distanceKm, image: m.cover_image ?? null,
   }));
 
   // Unknown, blank or not-yet-public-ready layout values render Classic instead of 404ing
@@ -240,6 +240,10 @@ export default async function MerchantPage({ params }: PageProps) {
   // server → client boundary so their text is not serialised into the page payload at all.
   const publicMerchant = withoutLegacyReviews(merchant);
   const publicRelatedMerchants = relatedMerchants.map(withoutLegacyReviews);
+  // Same compact list as "Nearby restaurants"; a place already listed there is not repeated.
+  const related = publicRelatedMerchants
+    .filter((m) => !nearby.some((n) => n.slug === m.slug))
+    .map((m) => ({ slug: m.slug, name: m.name, cuisine: merchantCuisines(m)[0] ?? null, image: m.cover_image ?? null }));
 
   const canonicalUrl = `${siteUrl}/store/${merchant.slug}`;
   const dayMap: Record<string, string> = {
@@ -266,13 +270,13 @@ export default async function MerchantPage({ params }: PageProps) {
   }
   if (merchant.phone) schemaData.telephone = merchant.phone;
   if (merchant.cuisine_type) schemaData.servesCuisine = merchant.cuisine_type;
-  
+
   schemaData.hasMenu = {
     "@type": "Menu",
     name: "Menu",
     url: `${canonicalUrl}#menu-section`,
   };
-  
+
   if (merchant.operating_hours && typeof merchant.operating_hours === "object") {
     schemaData.openingHours = Object.entries(merchant.operating_hours).map(
       ([day, time]) => `${dayMap[day] || day} ${time}`
@@ -291,7 +295,6 @@ export default async function MerchantPage({ params }: PageProps) {
     <>
       <PageViewTracker pageType="merchant" slug={merchant.slug} />
       <ViewTracker slug={merchant.slug} />
-      <DeliveryOrderButtons links={externalLinksRes.data ?? []} slug={merchant.slug} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(schemaData) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbSchema) }} />
       <LayoutComponent
@@ -302,12 +305,21 @@ export default async function MerchantPage({ params }: PageProps) {
         features={merchant.features}
         events={events}
         footerText={settings.footer_text}
-      />
-      <HiringSection jobs={jobs} />
-      <NearbyRestaurants items={nearby} />
-      <RelatedMerchants merchants={publicRelatedMerchants} variant={layoutKey} />
-      <DiscoveryLinks area={merchantArea(merchant)} cuisines={merchantCuisines(merchant)} />
-      <ReportProblem targetType="merchant" slug={merchant.slug} />
+      >
+        <HiringSection jobs={jobs} />
+        <NearbyRestaurants items={nearby} />
+        <NearbyRestaurants title="You may also like" headingId="related-heading" items={related} />
+        <DiscoveryLinks area={merchantArea(merchant)} cuisines={merchantCuisines(merchant)} />
+        <footer className="mx-auto mt-8 flex max-w-5xl flex-col items-start gap-1 border-t border-line px-4 pb-8 pt-4">
+          <ReportProblem targetType="merchant" slug={merchant.slug} className="w-full" />
+          <nav aria-label="BiteSite" className="flex flex-wrap gap-x-5">
+            <Link href="/" className="inline-flex min-h-11 items-center text-sm text-ink-2 hover:text-brand">{settings.footer_text || "More on BiteSite"}</Link>
+            <Link href="/feedback" className="inline-flex min-h-11 items-center text-sm text-ink-2 hover:text-brand">Send feedback</Link>
+          </nav>
+        </footer>
+        {/* Last, so its spacer keeps the fixed order bar from covering the footer. */}
+        <DeliveryOrderButtons links={externalLinksRes.data ?? []} slug={merchant.slug} />
+      </LayoutComponent>
     </>
   );
 }
@@ -320,9 +332,9 @@ function DiscoveryLinks({ area, cuisines }: { area: string | null; cuisines: str
   ];
   if (links.length === 0) return null;
   return (
-    <nav aria-label="Explore similar places" className="mx-auto flex max-w-6xl flex-wrap justify-center gap-2 px-4 pb-10">
+    <nav aria-label="Explore similar places" className="mx-auto flex max-w-5xl flex-wrap gap-2 px-4 pt-6">
       {links.map((link) => (
-        <a key={link.href} href={link.href} className="inline-flex min-h-11 items-center rounded-full border border-[#C9D6C7] bg-white px-4 text-sm text-[#2C3E2D] hover:border-emerald-700">{link.label}</a>
+        <a key={link.href} href={link.href} className={chipClasses()}>{link.label}</a>
       ))}
     </nav>
   );

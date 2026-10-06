@@ -3,397 +3,407 @@
 "use client";
 
 /**
- * The one restaurant page structure (T7, CH 2026-10-05): every page style shows the same
- * sections in the same order, built on the Modern layout CH preferred. Styles differ only in
- * colours and type (PAGE_THEMES below); the shared sections take theirs from lib/layout-theme.mjs.
- * No category chips and no section tabs: the menu is one clean list per category, and a dish
- * shows its photo when it has one.
- *
- * Every class string is a complete literal (Tailwind only generates CSS for names it can find
- * verbatim in the source), so a style is one object of literals, never built by concatenation.
+ * The one restaurant page (R2 redesign, CH 2026-10-06; design: Documents\Codex\2026-10-06\design\Store).
+ * Phone first: cover photo, name card, four quick actions, "Popular here", a searchable menu,
+ * one "Hours & location" card. Every page style is this same structure; a style only changes the
+ * colour tokens (STYLE_COLOURS) that the shared parts in components/ui/ read, so "elegant" is a
+ * dark page without any extra markup. Shared sections that follow the menu (jobs, nearby,
+ * report, footer) come in as children so they sit inside the themed page.
  */
 
+import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import Link from "next/link";
+import {
+  ChevronLeft, MessageCircle, Phone, Navigation, CalendarDays, Globe, Instagram, Facebook, Mail,
+} from "lucide-react";
 import { DishDescription } from "@/components/sections/dish-description";
 import { ListingTags } from "@/components/sections/listing-tags";
 import { SafeImage } from "@/app/components/safe-image";
-import { FadeIn } from "@/app/components/animations";
 import { TierSections } from "@/app/components/sections/tier-sections";
-import { ShareButtons } from "@/components/sections/share-buttons";
+import { AppointmentSection } from "@/app/components/sections/appointment-section";
+import { MenuViewTracker } from "@/components/sections/menu-view-tracker";
+import { MapEmbed } from "@/app/components/map-embed";
+import { OpenStatusPill } from "@/components/store/open-status-pill";
+import { StoreShareButton } from "@/components/store/store-share-button";
+import { iconButtonClasses } from "@/components/ui/icon-button";
+import { buttonClasses } from "@/components/ui/button";
+import { SectionTitle } from "@/components/ui/card";
+import { SearchInput } from "@/components/ui/search-input";
+import { StatusPill } from "@/components/ui/status-pill";
+import { Sheet } from "@/components/ui/sheet";
 import { mergeFeatures } from "@/types";
-import type { LayoutProps } from "@/types";
-import type { LayoutKey } from "@/lib/layout-registry.mjs";
-import { MapPin, Phone, Mail, Instagram, Facebook, Globe, ArrowLeft, MessageSquare, Clock, Banknote, Smartphone, CreditCard } from "lucide-react";
+import type { LayoutProps, Product } from "@/types";
 import { formatPhone, phoneLinkDigits } from "@/lib/phone-core.mjs";
 import { trackEvent } from "@/lib/analytics";
-import { MenuViewTracker } from "@/components/sections/menu-view-tracker";
 import { hasDisplayablePrice } from "@/lib/menu-display.mjs";
-import Link from "next/link";
 import { getTodayKey, formatOperatingHours, DAYS } from "@/lib/hours";
-import { MapEmbed } from "@/app/components/map-embed";
 import { formatPrice } from "@/lib/price-format.mjs";
+import { normalizeBookingWhatsApp } from "@/lib/merchant-booking-target.mjs";
+import { priceRange } from "@/lib/store-summary.mjs";
+import { cn } from "@/lib/utils";
 
-type PageTheme = {
-  page: string;
-  topBar: string;
-  backLink: string;
-  chip: string;
-  title: string;
-  body: string;
-  muted: string;
-  coverEmpty: string;
-  coverLetter: string;
-  sectionTitle: string;
-  categoryTitle: string;
-  dishRow: string;
-  dishName: string;
-  price: string;
-  dishText: string;
-  soldOut: string;
-  dishPhoto: string;
-  contactBg: string;
-  link: string;
-  whatsapp: string;
-  dayToday: string;
-  dayOther: string;
-  divider: string;
-  label: string;
-  pill: string;
-  mapBorder: string;
-  footer: string;
-  footerLink: string;
-  footerFeedback: string;
-};
+type StyleKey = "classic" | "elegant" | "minimal" | "modern" | "rustic";
 
-// Colours follow each style's original palette (registry swatches), on the Modern structure.
-const PAGE_THEMES: Record<"classic" | "elegant" | "minimal" | "modern" | "rustic", PageTheme> = {
-  modern: {
-    page: "min-h-screen bg-white text-slate-800",
-    topBar: "sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-100",
-    backLink: "min-h-11 inline-flex items-center gap-2 text-slate-600 text-sm font-medium active:scale-95 transition-transform",
-    chip: "inline-block px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold",
-    title: "break-words text-4xl lg:text-5xl font-bold text-slate-900 mb-4 leading-tight",
-    body: "text-slate-600 leading-relaxed",
-    muted: "text-slate-500",
-    coverEmpty: "aspect-[4/3] rounded-2xl bg-slate-100 flex items-center justify-center",
-    coverLetter: "text-6xl font-bold text-slate-300",
-    sectionTitle: "text-2xl font-bold text-slate-900 mb-8",
-    categoryTitle: "text-lg font-bold text-slate-800 mb-2 pb-2 border-b-2 border-slate-900",
-    dishRow: "flex gap-4 py-4 border-b border-slate-100 last:border-b-0",
-    dishName: "font-semibold text-slate-800 break-words",
-    price: "font-bold text-slate-900 whitespace-nowrap",
-    dishText: "text-sm text-slate-500 mt-1 whitespace-pre-line break-words",
-    soldOut: "text-xs text-red-600 mt-1 block",
-    dishPhoto: "relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-slate-100",
-    contactBg: "py-12 px-4 bg-slate-50",
-    link: "min-h-11 flex items-center gap-3 text-slate-600 hover:text-slate-900 transition-colors",
-    whatsapp: "min-h-11 flex items-center gap-3 text-green-700 hover:text-green-800 transition-colors",
-    dayToday: "flex justify-between py-2 px-3 rounded-lg text-sm bg-white shadow-sm text-slate-900 font-medium",
-    dayOther: "flex justify-between py-2 px-3 rounded-lg text-sm text-slate-500",
-    divider: "mt-8 pt-6 border-t border-slate-200",
-    label: "text-xs font-medium uppercase tracking-wider text-slate-500 mb-3",
-    pill: "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200",
-    mapBorder: "#E2E8F0",
-    footer: "py-8 px-4 text-center border-t border-slate-100",
-    footerLink: "min-h-11 inline-flex items-center text-sm text-slate-500 hover:text-slate-700 transition-colors",
-    footerFeedback: "min-h-11 mt-1 flex items-center justify-center text-sm text-slate-500 underline hover:text-slate-700",
-  },
-  classic: {
-    page: "min-h-screen bg-amber-50 text-amber-950",
-    topBar: "sticky top-0 z-40 bg-amber-50/85 backdrop-blur-md border-b border-amber-200",
-    backLink: "min-h-11 inline-flex items-center gap-2 text-amber-800 text-sm font-medium active:scale-95 transition-transform",
-    chip: "inline-block px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-semibold",
-    title: "break-words font-serif text-4xl lg:text-5xl font-bold text-amber-900 mb-4 leading-tight",
-    body: "text-amber-900/80 leading-relaxed",
-    muted: "text-amber-800/80",
-    coverEmpty: "aspect-[4/3] rounded-2xl bg-amber-100 flex items-center justify-center",
-    coverLetter: "font-serif text-6xl font-bold text-amber-300",
-    sectionTitle: "font-serif text-2xl font-bold text-amber-900 mb-8",
-    categoryTitle: "font-serif text-lg font-bold text-amber-900 mb-2 pb-2 border-b-2 border-amber-800",
-    dishRow: "flex gap-4 py-4 border-b border-amber-200/70 last:border-b-0",
-    dishName: "font-semibold text-amber-950 break-words",
-    price: "font-bold text-amber-800 whitespace-nowrap",
-    dishText: "text-sm text-amber-900/70 mt-1 whitespace-pre-line break-words",
-    soldOut: "text-xs text-red-700 mt-1 block",
-    dishPhoto: "relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-amber-100",
-    contactBg: "py-12 px-4 bg-amber-100/60",
-    link: "min-h-11 flex items-center gap-3 text-amber-900 hover:text-amber-700 transition-colors",
-    whatsapp: "min-h-11 flex items-center gap-3 text-green-800 hover:text-green-900 transition-colors",
-    dayToday: "flex justify-between py-2 px-3 rounded-lg text-sm bg-white shadow-sm text-amber-950 font-medium",
-    dayOther: "flex justify-between py-2 px-3 rounded-lg text-sm text-amber-900/80",
-    divider: "mt-8 pt-6 border-t border-amber-200",
-    label: "text-xs font-medium uppercase tracking-wider text-amber-800 mb-3",
-    pill: "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-white text-amber-900 border border-amber-200",
-    mapBorder: "#FDE68A",
-    footer: "py-8 px-4 text-center border-t border-amber-200",
-    footerLink: "min-h-11 inline-flex items-center text-sm text-amber-800 hover:text-amber-900 transition-colors",
-    footerFeedback: "min-h-11 mt-1 flex items-center justify-center text-sm text-amber-800 underline hover:text-amber-900",
-  },
+// Colour per page style (docs/DESIGN.md "Restaurant page styles"). Only token values change.
+const STYLE_COLOURS: Record<StyleKey, CSSProperties> = {
+  // Forest — the site defaults.
+  modern: {},
+  // Amber
+  classic: { "--color-brand": "#8A4B0F", "--color-brand-hover": "#723D0B", "--color-brand-soft": "#F7EBDD" } as CSSProperties,
+  // Chilli
+  rustic: { "--color-brand": "#A2341F", "--color-brand-hover": "#862A18", "--color-brand-soft": "#F8E5E0" } as CSSProperties,
+  // Stone
+  minimal: { "--color-brand": "#44403C", "--color-brand-hover": "#292524", "--color-brand-soft": "#EFEDEA" } as CSSProperties,
+  // Night: dark page, gold accent.
   elegant: {
-    page: "min-h-screen bg-slate-950 text-slate-200",
-    topBar: "sticky top-0 z-40 bg-slate-950/85 backdrop-blur-md border-b border-slate-800",
-    backLink: "min-h-11 inline-flex items-center gap-2 text-amber-100 text-sm font-medium active:scale-95 transition-transform",
-    chip: "inline-block px-3 py-1 rounded-full border border-amber-200/40 text-amber-100 text-xs font-semibold",
-    title: "break-words font-serif text-4xl lg:text-5xl font-bold text-white mb-4 leading-tight",
-    body: "text-slate-300 leading-relaxed",
-    muted: "text-slate-400",
-    coverEmpty: "aspect-[4/3] rounded-2xl bg-slate-900 flex items-center justify-center",
-    coverLetter: "font-serif text-6xl font-bold text-slate-700",
-    sectionTitle: "font-serif text-2xl font-bold text-amber-100 mb-8",
-    categoryTitle: "font-serif text-lg font-bold text-amber-100 mb-2 pb-2 border-b border-amber-200/50",
-    dishRow: "flex gap-4 py-4 border-b border-slate-800 last:border-b-0",
-    dishName: "font-semibold text-white break-words",
-    price: "font-bold text-amber-200 whitespace-nowrap",
-    dishText: "text-sm text-slate-400 mt-1 whitespace-pre-line break-words",
-    soldOut: "text-xs text-red-300 mt-1 block",
-    dishPhoto: "relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-slate-900",
-    contactBg: "py-12 px-4 bg-slate-900",
-    link: "min-h-11 flex items-center gap-3 text-slate-300 hover:text-amber-100 transition-colors",
-    whatsapp: "min-h-11 flex items-center gap-3 text-green-400 hover:text-green-300 transition-colors",
-    dayToday: "flex justify-between py-2 px-3 rounded-lg text-sm bg-slate-800 text-amber-100 font-medium",
-    dayOther: "flex justify-between py-2 px-3 rounded-lg text-sm text-slate-400",
-    divider: "mt-8 pt-6 border-t border-slate-800",
-    label: "text-xs font-medium uppercase tracking-wider text-slate-400 mb-3",
-    pill: "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-slate-800 text-slate-200 border border-slate-700",
-    mapBorder: "#1E293B",
-    footer: "py-8 px-4 text-center border-t border-slate-800",
-    footerLink: "min-h-11 inline-flex items-center text-sm text-slate-400 hover:text-amber-100 transition-colors",
-    footerFeedback: "min-h-11 mt-1 flex items-center justify-center text-sm text-slate-400 underline hover:text-amber-100",
-  },
-  minimal: {
-    page: "min-h-screen bg-stone-50 text-stone-800",
-    topBar: "sticky top-0 z-40 bg-stone-50/85 backdrop-blur-md border-b border-stone-200",
-    backLink: "min-h-11 inline-flex items-center gap-2 text-stone-600 text-sm active:scale-95 transition-transform",
-    chip: "inline-block px-3 py-1 rounded-full border border-stone-300 text-stone-600 text-xs font-medium",
-    title: "break-words text-4xl lg:text-5xl font-light text-stone-900 mb-4 leading-tight",
-    body: "text-stone-600 leading-relaxed",
-    muted: "text-stone-500",
-    coverEmpty: "aspect-[4/3] rounded-2xl bg-stone-100 flex items-center justify-center",
-    coverLetter: "text-6xl font-light text-stone-300",
-    sectionTitle: "text-sm font-medium tracking-widest uppercase text-stone-500 mb-8",
-    categoryTitle: "text-sm font-semibold uppercase tracking-wider text-stone-800 mb-2 pb-2 border-b border-stone-300",
-    dishRow: "flex gap-4 py-4 border-b border-stone-200 last:border-b-0",
-    dishName: "font-medium text-stone-900 break-words",
-    price: "font-medium text-stone-900 whitespace-nowrap",
-    dishText: "text-sm text-stone-500 mt-1 whitespace-pre-line break-words",
-    soldOut: "text-xs text-red-600 mt-1 block",
-    dishPhoto: "relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-stone-100",
-    contactBg: "py-12 px-4 bg-white",
-    link: "min-h-11 flex items-center gap-3 text-stone-600 hover:text-stone-900 transition-colors",
-    whatsapp: "min-h-11 flex items-center gap-3 text-green-700 hover:text-green-800 transition-colors",
-    dayToday: "flex justify-between py-2 px-3 rounded-lg text-sm bg-stone-100 text-stone-900 font-medium",
-    dayOther: "flex justify-between py-2 px-3 rounded-lg text-sm text-stone-500",
-    divider: "mt-8 pt-6 border-t border-stone-200",
-    label: "text-xs font-medium uppercase tracking-widest text-stone-500 mb-3",
-    pill: "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-stone-50 text-stone-700 border border-stone-200",
-    mapBorder: "#E7E5E4",
-    footer: "py-8 px-4 text-center border-t border-stone-200",
-    footerLink: "min-h-11 inline-flex items-center text-sm text-stone-500 hover:text-stone-700 transition-colors",
-    footerFeedback: "min-h-11 mt-1 flex items-center justify-center text-sm text-stone-500 underline hover:text-stone-700",
-  },
-  rustic: {
-    page: "min-h-screen bg-orange-50 text-orange-950",
-    topBar: "sticky top-0 z-40 bg-orange-50/85 backdrop-blur-md border-b border-orange-200",
-    backLink: "min-h-11 inline-flex items-center gap-2 text-orange-800 text-sm font-medium active:scale-95 transition-transform",
-    chip: "inline-block px-3 py-1 rounded-full bg-orange-100 text-orange-800 text-xs font-semibold",
-    title: "break-words font-serif text-4xl lg:text-5xl font-bold text-orange-900 mb-4 leading-tight",
-    body: "text-orange-900/80 leading-relaxed",
-    muted: "text-orange-800/80",
-    coverEmpty: "aspect-[4/3] rounded-2xl bg-orange-100 flex items-center justify-center",
-    coverLetter: "font-serif text-6xl font-bold text-orange-300",
-    sectionTitle: "font-serif text-2xl font-bold text-orange-900 mb-8",
-    categoryTitle: "font-serif text-lg font-bold text-orange-900 mb-2 pb-2 border-b-2 border-orange-800",
-    dishRow: "flex gap-4 py-4 border-b border-orange-200/70 last:border-b-0",
-    dishName: "font-semibold text-orange-950 break-words",
-    price: "font-bold text-orange-800 whitespace-nowrap",
-    dishText: "text-sm text-orange-900/70 mt-1 whitespace-pre-line break-words",
-    soldOut: "text-xs text-red-700 mt-1 block",
-    dishPhoto: "relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-orange-100",
-    contactBg: "py-12 px-4 bg-orange-100/60",
-    link: "min-h-11 flex items-center gap-3 text-orange-900 hover:text-orange-700 transition-colors",
-    whatsapp: "min-h-11 flex items-center gap-3 text-green-800 hover:text-green-900 transition-colors",
-    dayToday: "flex justify-between py-2 px-3 rounded-lg text-sm bg-white shadow-sm text-orange-950 font-medium",
-    dayOther: "flex justify-between py-2 px-3 rounded-lg text-sm text-orange-900/80",
-    divider: "mt-8 pt-6 border-t border-orange-200",
-    label: "text-xs font-medium uppercase tracking-wider text-orange-800 mb-3",
-    pill: "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-white text-orange-900 border border-orange-200",
-    mapBorder: "#FFEDD5",
-    footer: "py-8 px-4 text-center border-t border-orange-200",
-    footerLink: "min-h-11 inline-flex items-center text-sm text-orange-800 hover:text-orange-900 transition-colors",
-    footerFeedback: "min-h-11 mt-1 flex items-center justify-center text-sm text-orange-800 underline hover:text-orange-900",
-  },
+    "--color-page": "#0F172A",
+    "--color-ink": "#F8FAFC",
+    "--color-ink-2": "#CBD5E1",
+    "--color-muted": "#94A3B8",
+    "--color-surface": "#1E293B",
+    "--color-line": "#334155",
+    "--color-line-strong": "#475569",
+    "--color-brand": "#FDE68A",
+    "--color-brand-hover": "#FCD34D",
+    "--color-brand-soft": "#1E293B",
+    "--color-on-brand": "#0F172A",
+    colorScheme: "dark",
+  } as CSSProperties,
 };
 
-export type PageStyle = keyof typeof PAGE_THEMES;
+export type PageStyle = StyleKey;
+
+// A long menu starts folded so the hours, map and delivery buttons are not 3000px away.
+const FOLD_OVER = 12;
+const FOLDED_COUNT = 8;
+const QUICK_GRID = ["", "grid-cols-1", "grid-cols-2", "grid-cols-3", "grid-cols-4"];
+
+function priceText(product: Product, merchant: { currency: string | null | undefined }) {
+  return product.discount_price != null ? (
+    <>
+      <span className="mr-1.5 font-medium text-muted line-through">{formatPrice(product.price, merchant.currency)}</span>
+      <span className="text-brand">{formatPrice(product.discount_price, merchant.currency)}</span>
+    </>
+  ) : (
+    formatPrice(product.price, merchant.currency)
+  );
+}
 
 export function StoreLayout({
-  style, merchant, categories, products, features, events, footerText,
-}: LayoutProps & { style: PageStyle }) {
-  const t = PAGE_THEMES[style];
-  // The shared sections (gallery, featured dishes, events, booking, share) use the same style key.
-  const variant: LayoutKey = style;
+  style, merchant, categories, products, features, events, children,
+}: LayoutProps & { style: PageStyle; children?: ReactNode }) {
   const resolvedFeatures = mergeFeatures(features);
   const today = getTodayKey();
   const hours = merchant.operating_hours as Record<string, string> | null;
   const hasHours = Boolean(hours && Object.values(hours).some((value) => value?.trim()));
+  const range = priceRange(products, merchant.currency);
+  const canBook = resolvedFeatures.appointment && normalizeBookingWhatsApp(merchant.whatsapp) !== null;
+  const [bookingOpen, setBookingOpen] = useState(false);
+
+  const featured = products.filter((p) => p.is_featured).slice(0, 10);
+  const directionsHref =
+    merchant.latitude != null && merchant.longitude != null
+      ? `https://www.google.com/maps/search/?api=1&query=${merchant.latitude},${merchant.longitude}`
+      : merchant.address
+        ? `https://maps.google.com/?q=${encodeURIComponent(merchant.address)}`
+        : null;
+
+  const quickActions: { key: string; label: string; icon: ReactNode; href?: string; onClick?: () => void; primary?: boolean; external?: boolean }[] = [];
+  if (resolvedFeatures.contact && merchant.whatsapp) {
+    quickActions.push({
+      key: "whatsapp", label: "WhatsApp", icon: <MessageCircle size={22} aria-hidden />, primary: true, external: true,
+      href: `https://wa.me/${phoneLinkDigits(merchant.whatsapp)}`,
+      onClick: () => trackEvent("whatsapp_click", { slug: merchant.slug, pageType: "merchant" }),
+    });
+  }
+  if (resolvedFeatures.contact && merchant.phone) {
+    quickActions.push({
+      key: "call", label: "Call", icon: <Phone size={22} aria-hidden />,
+      href: `tel:+${phoneLinkDigits(merchant.phone)}`,
+      onClick: () => trackEvent("phone_click", { slug: merchant.slug, pageType: "merchant" }),
+    });
+  }
+  if (resolvedFeatures.contact && directionsHref) {
+    quickActions.push({
+      key: "directions", label: "Directions", icon: <Navigation size={22} aria-hidden />, href: directionsHref, external: true,
+      onClick: () => trackEvent("directions_click", { slug: merchant.slug, pageType: "merchant" }),
+    });
+  }
+  if (canBook) {
+    quickActions.push({ key: "book", label: "Book", icon: <CalendarDays size={22} aria-hidden />, onClick: () => setBookingOpen(true) });
+  }
+  if (quickActions.length > 0 && !quickActions.some((a) => a.primary)) quickActions[0].primary = true;
+
+  const meta = [merchant.cuisine_type, merchant.area, range].filter(Boolean).join(" · ");
+  const socialLinks = [
+    merchant.website && { key: "website", href: merchant.website, label: "Website", icon: <Globe size={18} aria-hidden />, event: "website_click" as const },
+    merchant.instagram && { key: "instagram", href: merchant.instagram, label: "Instagram", icon: <Instagram size={18} aria-hidden /> },
+    merchant.facebook && { key: "facebook", href: merchant.facebook, label: "Facebook", icon: <Facebook size={18} aria-hidden /> },
+    merchant.email && { key: "email", href: `mailto:${merchant.email}`, label: "Email", icon: <Mail size={18} aria-hidden />, event: "email_click" as const },
+  ].filter(Boolean) as { key: string; href: string; label: string; icon: ReactNode; event?: "website_click" | "email_click" }[];
+  const pillClass = "inline-flex min-h-[30px] items-center rounded-full border border-line bg-page px-3 text-[13px] font-semibold text-ink";
 
   return (
-    <div data-restaurant-layout data-page-style={style} className={t.page}>
-      <div data-menu-sticky className={t.topBar}>
-        <div className="max-w-5xl mx-auto px-4 py-3">
-          <Link href="/" className={t.backLink} style={{ WebkitTapHighlightColor: "transparent" }}>
-            <ArrowLeft size={18} /> Back to BiteSite
-          </Link>
+    <div data-restaurant-layout data-page-style={style} className="min-h-screen bg-page text-ink" style={STYLE_COLOURS[style]}>
+      {/* Cover */}
+      <div className="relative md:mx-auto md:max-w-5xl md:px-4 md:pt-4">
+        <div className="relative h-[250px] overflow-hidden bg-surface md:h-[380px] md:rounded-3xl">
+          {resolvedFeatures.hero && merchant.cover_image ? (
+            <SafeImage src={merchant.cover_image} alt={merchant.name} fill priority sizes="(min-width: 1024px) 1024px, 100vw" className="object-cover" />
+          ) : (
+            <div className="flex h-full items-center justify-center bg-brand-soft">
+              <span aria-hidden className="text-7xl font-extrabold text-brand opacity-40">{merchant.name.charAt(0).toUpperCase()}</span>
+            </div>
+          )}
+          <div className="absolute inset-x-4 top-4 flex items-center justify-between">
+            <Link href="/" aria-label="Back to BiteSite" className={iconButtonClasses({ variant: "overlay" })}>
+              <ChevronLeft size={22} aria-hidden />
+            </Link>
+            <StoreShareButton slug={merchant.slug} name={merchant.name} />
+          </div>
         </div>
       </div>
 
-      {resolvedFeatures.hero && (
-        <FadeIn>
-          <div className="max-w-5xl mx-auto px-4 pt-8">
-            <div className="grid lg:grid-cols-2 gap-8 items-center">
-              <div className="min-w-0">
-                {merchant.cuisine_type && <div className="mb-4"><span className={t.chip}>{merchant.cuisine_type}</span></div>}
-                <h1 className={t.title}>{merchant.name}</h1>
-                {merchant.description && <p className={t.body}>{merchant.description}</p>}
-                {hasHours && (
-                  <p className={`mt-4 text-sm flex items-center gap-2 ${t.muted}`}>
-                    <Clock size={16} /> Today: {formatOperatingHours(hours?.[today]) || "Closed"}
-                  </p>
-                )}
-              </div>
-              {merchant.cover_image ? (
-                <div className="relative aspect-[4/3] rounded-2xl overflow-hidden">
-                  <SafeImage src={merchant.cover_image} alt={merchant.name} fill className="object-cover" priority />
-                </div>
-              ) : (
-                <div className={t.coverEmpty}>
-                  <span className={t.coverLetter}>{merchant.name.charAt(0).toUpperCase()}</span>
-                </div>
-              )}
+      <div className="mx-auto max-w-5xl">
+        {/* Name card, overlapping the cover on phones */}
+        <section className="relative -mt-7 rounded-t-[28px] bg-page px-4 pt-[22px] md:mt-0 md:pt-6">
+          {merchant.logo_image && (
+            <div className="absolute -top-9 right-4 size-[72px] overflow-hidden rounded-[20px] border-4 border-page bg-page shadow-sm md:static md:mb-3 md:size-20">
+              <SafeImage src={merchant.logo_image} alt={`${merchant.name} logo`} fill sizes="80px" className="object-cover" />
             </div>
+          )}
+          <div className="flex min-h-7 flex-wrap gap-2">
+            {hasHours && <OpenStatusPill todayHours={hours?.[today]} />}
           </div>
-        </FadeIn>
-      )}
+          <h1 className="mt-2.5 break-words text-[28px] font-extrabold leading-[1.15] tracking-[-0.03em] md:text-4xl">{merchant.name}</h1>
+          {meta && <p className="mt-1.5 text-[15px] text-muted">{meta}</p>}
+          {merchant.description && (
+            <p className="mt-2.5 max-w-2xl whitespace-pre-line text-[15px] leading-[1.55] text-ink-2">{merchant.description}</p>
+          )}
+        </section>
 
-      {resolvedFeatures.menu && products.length > 0 && (
-        <FadeIn>
-          <MenuViewTracker slug={merchant.slug} />
-          <section id="menu-section" className="py-12 px-4">
-            <div className="max-w-5xl mx-auto">
-              <h2 className={t.sectionTitle}>Menu</h2>
-              <div className="grid md:grid-cols-2 gap-x-12 gap-y-10">
-                {categories.map((cat) => {
-                  const catProducts = products.filter((p) => p.category_id === cat.id);
-                  if (catProducts.length === 0) return null;
-                  return (
-                    <div key={cat.id} className="min-w-0">
-                      <h3 className={t.categoryTitle}>{cat.name}</h3>
-                      <ul>
-                        {catProducts.map((product) => (
-                          <li key={product.id} className={t.dishRow}>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex justify-between items-baseline gap-3">
-                                <h4 className={t.dishName}>{product.name}</h4>
-                                {hasDisplayablePrice(product) && (
-                                  <span className={t.price}>
-                                    {product.discount_price != null ? (
-                                      <><span className="line-through opacity-50 text-sm mr-1">{formatPrice(product.price, merchant.currency)}</span>{formatPrice(product.discount_price, merchant.currency)}</>
-                                    ) : formatPrice(product.price, merchant.currency)}
-                                  </span>
-                                )}
-                              </div>
-                              {product.description && <DishDescription description={product.description} clamp={false} className={t.dishText} />}
-                              {!product.is_available && <span className={t.soldOut}>Currently Unavailable</span>}
-                            </div>
-                            {product.image_url && (
-                              <div className={t.dishPhoto}>
-                                <SafeImage src={product.image_url} alt={product.name} fill sizes="80px" className="object-cover" />
-                              </div>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </section>
-        </FadeIn>
-      )}
+        {/* Quick actions */}
+        {quickActions.length > 0 && (
+          <nav aria-label="Contact" className={cn("grid max-w-xl gap-2 px-4 pt-4", QUICK_GRID[quickActions.length])}>
+            {quickActions.map((action) => {
+              const look = cn(
+                "flex h-[68px] flex-col items-center justify-center gap-1 rounded-2xl text-[13px] font-bold transition-colors [-webkit-tap-highlight-color:transparent]",
+                action.primary ? "bg-brand-soft text-brand" : "bg-surface text-ink hover:bg-line"
+              );
+              return action.href ? (
+                <a
+                  key={action.key}
+                  href={action.href}
+                  onClick={action.onClick}
+                  {...(action.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                  className={look}
+                >
+                  {action.icon}{action.label}
+                </a>
+              ) : (
+                <button key={action.key} type="button" onClick={action.onClick} className={look}>
+                  {action.icon}{action.label}
+                </button>
+              );
+            })}
+          </nav>
+        )}
 
-      <TierSections merchant={merchant} categories={categories} products={products} features={features} variant={variant} events={events} />
-
-      {resolvedFeatures.contact && (
-        <FadeIn>
-          <section className={t.contactBg}>
-            <div className="max-w-5xl mx-auto">
-              <h2 className={t.sectionTitle}>Visit Us</h2>
-              <div className="grid sm:grid-cols-2 gap-8">
-                <div className="min-w-0 space-y-2">
-                  {merchant.address && <a href={`https://maps.google.com/?q=${encodeURIComponent(merchant.address)}`} onClick={() => trackEvent('directions_click', { slug: merchant.slug, pageType: 'merchant' })} target="_blank" rel="noopener noreferrer" className={t.link}><MapPin size={18} className="flex-shrink-0" /><span className="text-sm break-words">{merchant.address}</span></a>}
-                  {merchant.phone && <a href={`tel:+${phoneLinkDigits(merchant.phone)}`} onClick={() => trackEvent('phone_click', { slug: merchant.slug, pageType: 'merchant' })} className={t.link}><Phone size={18} /><span className="text-sm">{formatPhone(merchant.phone)}</span></a>}
-                  {merchant.website && <a href={merchant.website} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent('website_click', { slug: merchant.slug, pageType: 'merchant' })} className={t.link}><Globe size={18} /><span className="text-sm">Website</span></a>}
-                  {merchant.instagram && <a href={merchant.instagram} target="_blank" rel="noopener noreferrer" className={t.link}><Instagram size={18} /><span className="text-sm">Instagram</span></a>}
-                  {merchant.facebook && <a href={merchant.facebook} target="_blank" rel="noopener noreferrer" className={t.link}><Facebook size={18} /><span className="text-sm">Facebook</span></a>}
-                  {merchant.whatsapp && (
-                    <a
-                      href={`https://wa.me/${phoneLinkDigits(merchant.whatsapp)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => trackEvent('whatsapp_click', { slug: merchant.slug, pageType: 'merchant' })}
-                      className={t.whatsapp}
-                    >
-                      <MessageSquare size={18} /><span className="text-sm font-medium">WhatsApp</span>
-                    </a>
-                  )}
-                  {merchant.email && <a href={`mailto:${merchant.email}`} onClick={() => trackEvent('email_click', { slug: merchant.slug, pageType: 'merchant' })} className={t.link}><Mail size={18} /><span className="text-sm break-all">{merchant.email}</span></a>}
-                </div>
-                <div className="space-y-2">
-                  {hasHours && DAYS.map((day) => {
-                    const time = hours?.[day];
-                    if (!time) return null;
-                    return (
-                      <div key={day} className={day === today ? t.dayToday : t.dayOther}>
-                        <span className="capitalize">{day}</span><span>{formatOperatingHours(time)}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <MapEmbed address={merchant.address} latitude={merchant.latitude} longitude={merchant.longitude} borderColor={t.mapBorder} />
-
-              {merchant.payment_methods && merchant.payment_methods.length > 0 && (
-                <div className={t.divider}>
-                  <p className={t.label}>Payment Methods</p>
-                  <div className="flex flex-wrap gap-2">
-                    {merchant.payment_methods.map((method) => (
-                      <span key={method} className={t.pill}>
-                        {method === "Cash" && <Banknote className="h-3 w-3" />}
-                        {method === "Cashless" && <Smartphone className="h-3 w-3" />}
-                        {method === "Cards" && <CreditCard className="h-3 w-3" />}
-                        {method}
-                      </span>
-                    ))}
+        {/* Popular here (the Owner's "featured" dishes) */}
+        {resolvedFeatures.seasonal_popup && featured.length > 0 && (
+          <section aria-labelledby="popular-heading" className="pt-7">
+            <SectionTitle id="popular-heading" className="px-4">Popular here</SectionTitle>
+            <ul className="mt-3 flex snap-x gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none]">
+              {featured.map((product) => (
+                <li key={product.id} className="flex w-[150px] shrink-0 snap-start flex-col gap-1.5">
+                  <div className="relative size-[150px] overflow-hidden rounded-[18px] bg-surface">
+                    {product.image_url ? (
+                      <SafeImage src={product.image_url} alt={product.name} fill sizes="150px" className="object-cover" />
+                    ) : (
+                      <span aria-hidden className="flex h-full items-center justify-center text-4xl font-extrabold text-muted opacity-40">{product.name.charAt(0)}</span>
+                    )}
                   </div>
-                </div>
-              )}
-
-              <ListingTags amenities={merchant.amenities} occasion={merchant.occasion} wrapperClass={t.divider} labelClass={t.label} chipClass={t.pill} />
-
-              <div className={t.divider}>
-                <p className={t.label}>Share</p>
-                <ShareButtons slug={merchant.slug} name={merchant.name} variant={variant} />
-              </div>
-            </div>
+                  <span className="line-clamp-2 text-[15px] font-bold leading-snug">{product.name}</span>
+                  {hasDisplayablePrice(product) && (
+                    <span className="text-sm font-bold text-brand">{product.discount_price != null ? formatPrice(product.discount_price, merchant.currency) : formatPrice(product.price, merchant.currency)}</span>
+                  )}
+                </li>
+              ))}
+            </ul>
           </section>
-        </FadeIn>
+        )}
+
+        {/* Menu */}
+        {resolvedFeatures.menu && products.length > 0 && (
+          <>
+            <MenuViewTracker slug={merchant.slug} />
+            <StoreMenu categories={categories} products={products} merchant={merchant} />
+          </>
+        )}
+      </div>
+
+      {/* Gallery and events keep their own sections; featured dishes and booking are shown above. */}
+      <TierSections
+        merchant={merchant}
+        categories={categories}
+        products={products}
+        features={{ ...resolvedFeatures, seasonal_popup: false, appointment: false }}
+        variant={style}
+        events={events}
+      />
+
+      {/* Hours & location */}
+      {resolvedFeatures.contact && (
+        <div className="mx-auto max-w-5xl px-4 pt-6">
+          <section aria-labelledby="visit-heading" className="flex flex-col gap-3.5 rounded-[22px] bg-surface p-[18px]">
+            <h2 id="visit-heading" className="text-lg font-extrabold">Hours &amp; location</h2>
+            {hasHours && (
+              <>
+                <div className="flex justify-between gap-3 text-[15px] font-bold">
+                  <span>Today <span className="font-semibold capitalize text-muted">({today.slice(0, 3)})</span></span>
+                  <span className="text-right">{formatOperatingHours(hours?.[today]) || "Closed"}</span>
+                </div>
+                <details className="group">
+                  <summary className="flex min-h-11 cursor-pointer list-none items-center text-sm font-semibold text-brand [&::-webkit-details-marker]:hidden">
+                    <span className="group-open:hidden">See all opening hours</span>
+                    <span className="hidden group-open:inline">Hide opening hours</span>
+                  </summary>
+                  <ul className="mt-1 space-y-1">
+                    {DAYS.map((day) => {
+                      const time = hours?.[day];
+                      if (!time) return null;
+                      return (
+                        <li key={day} className={cn("flex justify-between gap-3 rounded-lg px-3 py-2 text-sm", day === today ? "bg-page font-bold text-ink" : "text-ink-2")}>
+                          <span className="capitalize">{day}</span><span className="text-right">{formatOperatingHours(time)}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </details>
+              </>
+            )}
+            <MapEmbed address={merchant.address} latitude={merchant.latitude} longitude={merchant.longitude} borderColor="var(--color-line)" />
+            {merchant.address && <p className="text-[15px] leading-normal text-ink-2 break-words">{merchant.address}</p>}
+            {merchant.phone && <p className="text-sm text-muted">{formatPhone(merchant.phone)}</p>}
+
+            {merchant.payment_methods && merchant.payment_methods.length > 0 && (
+              <div>
+                <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-muted">Payment</p>
+                <ul className="flex flex-wrap gap-2">
+                  {merchant.payment_methods.map((method) => <li key={method} className={pillClass}>{method}</li>)}
+                </ul>
+              </div>
+            )}
+            <ListingTags amenities={merchant.amenities} occasion={merchant.occasion} wrapperClass="" labelClass="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-muted" chipClass={pillClass} />
+
+            {socialLinks.length > 0 && (
+              <div className="flex flex-wrap gap-2 pt-1">
+                {socialLinks.map((link) => (
+                  <a
+                    key={link.key}
+                    href={link.href}
+                    {...(link.key === "email" ? {} : { target: "_blank", rel: "noopener noreferrer" })}
+                    onClick={link.event ? () => trackEvent(link.event!, { slug: merchant.slug, pageType: "merchant" }) : undefined}
+                    className={buttonClasses({ variant: "secondary", size: "md" })}
+                  >
+                    {link.icon}{link.label}
+                  </a>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
       )}
 
-      <footer className={t.footer}>
-        <Link href="/" className={t.footerLink}>{footerText || "Discover more restaurants on BiteSite"}</Link>
-        <Link href="/feedback" className={t.footerFeedback}>Send feedback</Link>
-      </footer>
+      {children}
+
+      {canBook && (
+        <Sheet open={bookingOpen} onClose={() => setBookingOpen(false)} title="Book a table">
+          <AppointmentSection bare merchantName={merchant.name} whatsapp={merchant.whatsapp} slug={merchant.slug} />
+        </Sheet>
+      )}
     </div>
+  );
+}
+
+/** Menu with a dish search; long menus start folded. One list per category, photo on the right. */
+function StoreMenu({ categories, products, merchant }: Pick<LayoutProps, "categories" | "products" | "merchant">) {
+  const [query, setQuery] = useState("");
+  const [expanded, setExpanded] = useState(false);
+
+  const groups = useMemo(
+    () => categories
+      .map((cat) => ({ cat, items: products.filter((p) => p.category_id === cat.id) }))
+      .filter((group) => group.items.length > 0),
+    [categories, products],
+  );
+  const total = groups.reduce((sum, group) => sum + group.items.length, 0);
+  const needle = query.trim().toLowerCase();
+  const folded = !needle && !expanded && total > FOLD_OVER;
+
+  let shown = 0;
+  const visible = groups
+    .map(({ cat, items }) => {
+      let list = needle
+        ? items.filter((p) => `${p.name} ${p.description ?? ""}`.toLowerCase().includes(needle))
+        : items;
+      if (folded) {
+        list = list.slice(0, Math.max(0, FOLDED_COUNT - shown));
+        shown += list.length;
+      }
+      return { cat, items: list };
+    })
+    .filter((group) => group.items.length > 0);
+
+  return (
+    <section id="menu-section" aria-labelledby="menu-heading" className="scroll-mt-4 px-4 pt-7">
+      <div className="flex items-center justify-between gap-3">
+        <SectionTitle id="menu-heading">Menu</SectionTitle>
+        {total > 6 && (
+          <SearchInput
+            label="Find a dish"
+            placeholder="Find a dish"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            wrapperClassName="h-11 max-w-[200px] flex-1 rounded-xl px-3"
+          />
+        )}
+      </div>
+
+      {visible.length === 0 && <p className="py-6 text-[15px] text-muted">No dishes match &ldquo;{query.trim()}&rdquo;.</p>}
+
+      <div className="md:grid md:grid-cols-2 md:gap-x-12">
+        {visible.map(({ cat, items }) => (
+          <div key={cat.id} className="min-w-0">
+            <h3 className="mb-0.5 mt-5 text-[13px] font-extrabold uppercase tracking-[0.08em] text-muted">{cat.name}</h3>
+            <ul>
+              {items.map((product) => (
+                <li key={product.id} className="flex gap-3.5 border-b border-line py-3.5 last:border-b-0">
+                  <div className="flex min-w-0 flex-1 flex-col gap-1">
+                    <h4 className={cn("break-words text-base font-bold", !product.is_available && "text-muted")}>{product.name}</h4>
+                    {product.description && <DishDescription description={product.description} className="text-sm leading-[1.45] text-muted whitespace-pre-line break-words" />}
+                    {hasDisplayablePrice(product) && (
+                      <span className="mt-0.5 text-[15px] font-bold">{priceText(product, merchant)}</span>
+                    )}
+                    {!product.is_available && <StatusPill tone="soldout" className="mt-1 self-start">Sold out today</StatusPill>}
+                  </div>
+                  {product.image_url && (
+                    <div className={cn("relative size-[84px] shrink-0 overflow-hidden rounded-[14px] bg-surface", !product.is_available && "opacity-60")}>
+                      <SafeImage src={product.image_url} alt={product.name} fill sizes="84px" className="object-cover" />
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+
+      {folded && (
+        <button type="button" onClick={() => setExpanded(true)} className={cn(buttonClasses({ variant: "secondary", size: "lg", block: true }), "mt-3")}>
+          Show full menu ({total} dishes)
+        </button>
+      )}
+    </section>
   );
 }

@@ -1,35 +1,41 @@
 import Link from "next/link";
-import { MapPin } from "lucide-react";
+import { SafeImage } from "@/app/components/safe-image";
+import { SectionTitle } from "@/components/ui/card";
 import { formatDistanceKm } from "@/lib/nearby-core.mjs";
 
-export type NearbyRestaurant = { slug: string; name: string; cuisine: string | null; distanceKm: number };
+export type NearbyRestaurant = { slug: string; name: string; cuisine: string | null; distanceKm?: number; image?: string | null };
 
 /**
- * "Nearby restaurants" on the restaurant page (G19), shared by every page style. Measured from this
- * restaurant's own coordinates on the server (never the visitor's location); omitted when the
- * restaurant has no coordinates or no other public restaurant is within 5 km.
+ * "Nearby restaurants" on the restaurant page (G19). Measured from this restaurant's own
+ * coordinates on the server (never the visitor's location); omitted when the restaurant has no
+ * coordinates or no other public restaurant is within 5 km.
  */
-export function NearbyRestaurants({ items }: { items: NearbyRestaurant[] }) {
+export function NearbyRestaurants({ items, title = "Nearby restaurants", headingId = "nearby-heading" }: { items: NearbyRestaurant[]; title?: string; headingId?: string }) {
   if (items.length === 0) return null;
 
   return (
-    <section aria-labelledby="nearby-heading" className="bg-white px-4 py-10 text-[#2C3E2D] sm:px-6">
-      <div className="mx-auto max-w-4xl">
-        <h2 id="nearby-heading" className="text-2xl font-semibold">Nearby restaurants</h2>
-        <ul className="mt-5 grid gap-3 sm:grid-cols-2">
-          {items.map((item) => (
-            <li key={item.slug}>
-              <Link href={`/store/${item.slug}`} className="flex min-h-16 items-center justify-between gap-3 rounded-xl border border-[#DDE5DC] bg-white p-4 hover:border-[#5A8F6E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700">
-                <span className="min-w-0">
-                  <span className="block font-semibold break-words">{item.name}</span>
-                  {item.cuisine && <span className="mt-1 block text-sm text-[#6B6560] break-words">{item.cuisine}</span>}
-                </span>
-                <span className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-[#5A8F6E]"><MapPin className="h-4 w-4" aria-hidden="true" />{formatDistanceKm(item.distanceKm)}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </div>
+    <section aria-labelledby={headingId} className="mx-auto max-w-5xl px-4 pt-7">
+      <SectionTitle id={headingId}>{title}</SectionTitle>
+      <ul className="mt-2 grid gap-x-8 sm:grid-cols-2">
+        {items.map((item) => (
+          <li key={item.slug}>
+            <Link href={`/store/${item.slug}`} className="flex min-h-16 items-center gap-3 py-1.5 text-ink">
+              <span className="relative size-14 shrink-0 overflow-hidden rounded-[14px] bg-surface">
+                {item.image ? (
+                  <SafeImage src={item.image} alt="" fill sizes="56px" className="object-cover" />
+                ) : (
+                  <span aria-hidden className="flex h-full items-center justify-center text-xl font-extrabold text-muted opacity-50">{item.name.charAt(0)}</span>
+                )}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block break-words text-[15px] font-bold">{item.name}</span>
+                {item.cuisine && <span className="mt-0.5 block break-words text-[13px] text-muted">{item.cuisine}</span>}
+              </span>
+              {item.distanceKm != null && <span className="shrink-0 text-sm font-bold text-brand">{formatDistanceKm(item.distanceKm)}</span>}
+            </Link>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
