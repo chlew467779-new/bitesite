@@ -382,7 +382,8 @@ for (const value of [undefined, null, "", "Classic", "unknown", "__proto__", "co
 /* ── the shared sections read from the theme ───────────────────────────────────────────────── */
 
 const THEMED_COMPONENTS = {
-  "app/components/sections/gallery-section.tsx": "gallery",
+  // gallery-section.tsx left this list in the R2 redesign: it uses the site colour tokens,
+  // which the store page re-colours per style.
   "app/components/sections/seasonal-section.tsx": "seasonal",
   "app/components/sections/appointment-section.tsx": "appointment",
   "app/components/sections/events-section.tsx": "events",

@@ -4,11 +4,10 @@
 
 import { useState, useCallback } from "react";
 import { SafeImage } from "@/app/components/safe-image";
-import { FadeIn } from "@/app/components/animations";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 
 import type { LayoutKey } from "@/lib/layout-registry.mjs";
-import { getLayoutTheme } from "@/lib/layout-theme.mjs";
+import { SectionTitle } from "@/components/ui/card";
 
 /** Shared styling variant for section components. Sourced from the layout registry; the
  *  per-layout class strings live in lib/layout-theme.mjs, whose test fails if a registered
@@ -24,11 +23,9 @@ interface GallerySectionProps {
 
 export function GallerySection({
   images,
-  title = "Gallery",
-  variant = "classic",
+  title = "Photos",
   id,
 }: GallerySectionProps) {
-  const theme = getLayoutTheme(variant).gallery;
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const validImages = images
@@ -63,34 +60,25 @@ export function GallerySection({
 
   return (
     <>
-      <FadeIn>
-        <section id={id} className={`py-16 px-4 sm:px-6 lg:px-8 ${theme.sectionBg}`}>
-          <div className="max-w-6xl mx-auto">
-            <h2 className={`text-3xl font-bold text-center mb-10 ${theme.title}`}>
-              {title}
-            </h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {validImages.map((src, i) => (
-                <button
-                  key={`${src}-${i}`}
-                  onClick={() => openLightbox(i)}
-                  className="relative aspect-square overflow-hidden rounded-xl group active:scale-[0.96] transition-transform duration-150 touch-manipulation"
-                  style={{ WebkitTapHighlightColor: "transparent" }}
-                >
-                  <SafeImage
-                    src={src}
-                    alt={`Gallery image ${i + 1}`}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                  />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-                </button>
-              ))}
-            </div>
-          </div>
-        </section>
-      </FadeIn>
+      {/* One swipeable row on phones (R2 redesign); tap a photo to see it large. */}
+      <section id={id} aria-labelledby={`${id ?? "gallery"}-heading`} className="mx-auto max-w-5xl pt-7">
+        <SectionTitle id={`${id ?? "gallery"}-heading`} className="px-4">{title}</SectionTitle>
+        <ul className="mt-3 flex snap-x gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none]">
+          {validImages.map((src, i) => (
+            <li key={`${src}-${i}`} className="shrink-0 snap-start">
+              <button
+                type="button"
+                onClick={() => openLightbox(i)}
+                aria-label={`Open photo ${i + 1} of ${validImages.length}`}
+                className="relative block size-40 overflow-hidden rounded-[18px] bg-surface touch-manipulation md:size-48"
+                style={{ WebkitTapHighlightColor: "transparent" }}
+              >
+                <SafeImage src={src} alt="" fill className="object-cover" sizes="192px" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      </section>
 
       {lightboxIndex !== null && (
         <div
