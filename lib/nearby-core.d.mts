@@ -1,2 +1,10 @@
+type Located = { latitude: number | null; longitude: number | null };
+export declare const NEARBY_RADII_KM: readonly (1 | 3 | 5 | 10)[];
+export declare const DEFAULT_NEARBY_RADIUS_KM: 5;
+export declare const STORE_NEARBY_LIMIT: number;
+export declare const STORE_NEARBY_RADIUS_KM: number;
 export function distanceKm(fromLatitude: number | null, fromLongitude: number | null, toLatitude: number | null, toLongitude: number | null): number | null;
-export function selectNearby<T extends { latitude: number | null; longitude: number | null }>(merchants: T[], latitude: number, longitude: number): { results: { merchant: T; distanceKm: number }[]; radiusKm: 10 | 25 };
+export function nearbyRadius(value: unknown): number;
+export function selectNearby<T extends Located>(merchants: T[], latitude: number, longitude: number, radiusKm?: number): { results: { merchant: T; distanceKm: number }[]; radiusKm: number };
+export function nearbyOtherRestaurants<T extends Located & { id: string }>(origin: (Located & { id: string }) | null | undefined, merchants: T[], limit?: number, radiusKm?: number): { merchant: T; distanceKm: number }[];
+export function formatDistanceKm(distance: number): string;

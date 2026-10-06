@@ -22,6 +22,8 @@ import { ViewTracker } from "@/components/sections/view-tracker";
 import { PageViewTracker } from "@/app/components/page-view-tracker";
 import { DeliveryOrderButtons } from "@/components/sections/delivery-order-buttons";
 import { HiringSection } from "@/components/sections/hiring-section";
+import { NearbyRestaurants } from "@/components/sections/nearby-restaurants";
+import { nearbyOtherRestaurants } from "@/lib/nearby-core.mjs";
 import { getRestaurantJobs } from "@/lib/jobs-public";
 import { DELIVERY_LINK_TYPES } from "@/lib/merchant-links-core.mjs";
 import { getSiteUrl } from "@/lib/site-url";
@@ -207,7 +209,7 @@ export default async function MerchantPage({ params }: PageProps) {
     );
   }
 
-  const [categories, products, videos, relatedMerchants, events, externalLinksRes, jobs] = await Promise.all([
+  const [categories, products, videos, relatedMerchants, events, externalLinksRes, jobs, publicMerchants] = await Promise.all([
     getCategoriesByMerchant(merchant.id),
     getProductsByMerchant(merchant.id),
     getVideosByMerchant(merchant.id),
@@ -215,7 +217,12 @@ export default async function MerchantPage({ params }: PageProps) {
     getEventsByMerchant(merchant.id),
     supabase.from("merchant_external_links").select("link_type, url").eq("merchant_id", merchant.id).in("link_type", [...DELIVERY_LINK_TYPES]).eq("is_active", true),
     getRestaurantJobs(merchant.id),
+    // G19 "Nearby restaurants": public rows only (RLS + public projection); a failure just hides it.
+    merchant.latitude != null && merchant.longitude != null ? getPublishedMerchants().catch(() => []) : Promise.resolve([]),
   ]);
+  const nearby = nearbyOtherRestaurants(merchant, publicMerchants).map(({ merchant: m, distanceKm }) => ({
+    slug: m.slug, name: m.name, cuisine: merchantCuisines(m)[0] ?? null, distanceKm,
+  }));
 
   // Unknown, blank or not-yet-public-ready layout values render Classic instead of 404ing
   // the storefront. A null value is the ordinary default and stays silent; anything else is
@@ -297,6 +304,7 @@ export default async function MerchantPage({ params }: PageProps) {
         footerText={settings.footer_text}
       />
       <HiringSection jobs={jobs} />
+      <NearbyRestaurants items={nearby} />
       <RelatedMerchants merchants={publicRelatedMerchants} variant={layoutKey} />
       <DiscoveryLinks area={merchantArea(merchant)} cuisines={merchantCuisines(merchant)} />
       <ReportProblem targetType="merchant" slug={merchant.slug} />
