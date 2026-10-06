@@ -5,7 +5,7 @@ import { useAuth } from './auth-context';
 import NotificationStatus from './notification-status';
 import NotifyMerchant, { type Notice } from './notify-merchant';
 import type { IntakeMode, ReviewItem } from '@/lib/merchant-review-core.mjs';
-import { formatPrice } from '@/lib/price-format.mjs';
+import { currencyAreaMismatch, formatPrice } from '@/lib/price-format.mjs';
 
 type Queue = { intakeMode: IntakeMode; capacity: number; pending: number; pilotCapacity: number; pilotUsed: number; items: ReviewItem[] };
 const MODES: { value: IntakeMode; label: string; hint: string }[] = [
@@ -119,6 +119,7 @@ export default function RestaurantReviewQueue() {
       <p className="mt-1 text-xs text-[#6B6560]">Submitted {new Date(item.createdAt).toLocaleString()}</p>
       <a href={`/merchant/preview?merchant=${encodeURIComponent(item.merchantId)}&as=admin`} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex min-h-11 items-center rounded-lg border border-[#2C3E2D] px-3 text-sm font-medium">Preview page</a>
       {item.changed && <p className="mt-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">Content changed after submission. Ask the Owner to correct and resubmit; approval is blocked.</p>}
+      {currencyAreaMismatch(item.currency, item.snapshot.area, item.areaCountry) && <p className="mt-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-900" role="note">Currency and area do not match: {currencyAreaMismatch(item.currency, item.snapshot.area, item.areaCountry)}</p>}
       {item.restriction !== 'none' && <p className="mt-2 text-sm text-red-700">Restaurant is {item.restriction}. Publishing remains blocked.</p>}
       <div className="mt-3 flex flex-wrap gap-3">{(['logoImage', 'coverImage'] as const).map((key) => imageUrl(item.snapshot[key]) && // eslint-disable-next-line @next/next/no-img-element -- review snapshot previews merchant-uploaded URLs from any host
       <img key={key} src={imageUrl(item.snapshot[key])} alt={key === 'logoImage' ? 'Restaurant logo' : 'Restaurant cover'} className="h-24 w-32 rounded-lg object-cover" />)}</div>

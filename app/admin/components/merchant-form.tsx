@@ -65,6 +65,8 @@ interface MerchantFormProps {
   onSaved: () => void;
   /** Non-blocking warning shown when the caller could not confirm this record is server-fresh. */
   loadWarning?: string;
+  /** Tab to open first, by label (e.g. 'Menu' from Menu photos). */
+  initialTab?: string;
 }
 
 type Current = { id: string; name: string; slug: string; currency?: string };
@@ -350,10 +352,10 @@ const tabs = [
   { label: 'Jobs', icon: Briefcase },
 ];
 
-export default function MerchantForm({ merchant, onBack, onSaved, loadWarning }: MerchantFormProps) {
+export default function MerchantForm({ merchant, onBack, onSaved, loadWarning, initialTab }: MerchantFormProps) {
   const { token } = useAuth();
   const [current, setCurrent] = useState<Current | null>(merchant ? { id: merchant.id, name: merchant.name, slug: merchant.slug, currency: merchant.currency } : null);
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeTab, setActiveTab] = useState(() => Math.max(0, tabs.findIndex((t) => t.label === initialTab)));
   const [fields, setFields] = useState<Record<string, Snapshot> | null>(null);
   const [loadError, setLoadError] = useState('');
   const [loadId, setLoadId] = useState(0);

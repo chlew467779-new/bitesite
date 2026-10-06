@@ -13,7 +13,7 @@ export interface ReviewSnapshot {
   phone: string | null; whatsapp: string | null; email: string | null; cuisine: string[] | null;
   logoImage: string | null; coverImage: string | null; menu: MenuSnapshot;
 }
-export interface ReviewItem { id: string; merchantId: string; slug: string; createdAt: string; snapshot: ReviewSnapshot; changed: boolean; restriction: string; /** Added by the Admin route (MYR or SGD). */ currency?: string }
+export interface ReviewItem { id: string; merchantId: string; slug: string; createdAt: string; snapshot: ReviewSnapshot; changed: boolean; restriction: string; /** Added by the Admin route (MYR or SGD). */ currency?: string; /** Added by the Admin route: country of snapshot.area (MY/SG), null if not on the list. */ areaCountry?: string | null }
 type Invalid = { ok: false; status: number; code: string; message: string };
 export declare const LISTING_BASICS_PATHS: readonly string[];
 export declare const MAX_REVIEW_BODY_BYTES: number;

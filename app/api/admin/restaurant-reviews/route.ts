@@ -24,13 +24,18 @@ export async function GET(request: NextRequest) {
     console.error('merchant_review_queue failed:', error.message);
     return errorResponse(500, 'INTERNAL_ERROR', 'Could not load the restaurant submissions.');
   }
-  // The snapshot has no currency: add each restaurant's (RM or S$) so Admin sees prices as shown.
+  // The snapshot has no currency: add each restaurant's (RM or S$) so Admin sees prices as shown,
+  // and the area's country so a currency/country mismatch is flagged (T6).
   const items = (data as { items?: { merchantId?: string }[] } | null)?.items ?? [];
   const ids = [...new Set(items.map((i) => i.merchantId).filter((id): id is string => typeof id === 'string'))];
   if (ids.length > 0) {
     const { data: rows } = await supabase.from('merchants').select('id, currency').in('id', ids);
     const currencyById = new Map((rows ?? []).map((r: { id: string; currency: string }) => [r.id, r.currency]));
     for (const item of items as { merchantId?: string; currency?: string }[]) item.currency = currencyById.get(item.merchantId ?? '') ?? 'MYR';
+    const areaNames = [...new Set((items as { snapshot?: { area?: unknown } }[]).map((i) => i.snapshot?.area).filter((a): a is string => typeof a === 'string' && a.length > 0))];
+    const { data: areaRows } = areaNames.length ? await supabase.from('areas').select('name, country').in('name', areaNames) : { data: [] };
+    const countryByArea = new Map((areaRows ?? []).map((r: { name: string; country: string }) => [r.name, r.country]));
+    for (const item of items as { snapshot?: { area?: unknown }; areaCountry?: string | null }[]) item.areaCountry = typeof item.snapshot?.area === 'string' ? countryByArea.get(item.snapshot.area) ?? null : null;
   }
   return NextResponse.json({ data }, { headers: { 'Cache-Control': 'no-store' } });
 }
