@@ -365,3 +365,9 @@ A new feature idea must not silently become a decision. Add it here only after C
 - T5: production check — the `menu-photos` bucket is empty, so "Done" deletes the photos. Each Menu photos card now shows the dish count and an "Open Menu" button (Merchant Manager opens on that restaurant's Menu tab).
 - T4: "Done, menu added" asks again when the restaurant has 0 dishes.
 - T6: RM with a Singapore area (or S$ with a Malaysian one) shows a reminder on the Owner dashboard (under "Prices shown in") and on the Admin review card. Warning only.
+## SYNC-082 — One page structure for every style; Chinese and Malay retired (T7, T8, CH 2026-10-05)
+
+- CH: every page style should have the same features, "neat and clean", no category chips and no section tabs; CH likes Modern, with dish photos in the menu. Chinese / Malay: remove them, or replace them, Claude decides.
+- Every style now renders `app/layouts/store-layout.tsx` (the Modern structure): cover, menu (one list per category, a dish shows its photo when it has one), the shared sections, Visit Us, footer. Styles differ only in colours and type (`PAGE_THEMES`; shared sections keep `lib/layout-theme.mjs`). The seven old layout files and the category chip bar are removed.
+- Chinese and Malay are retired from the picker (`productionReady: false`); no restaurant used them (production: 1 restaurant, Modern). The values stay registered because the database accepts them; the public page would show Classic. No SQL.
+- Picker order: Modern, Classic, Minimal, Rustic, Elegant. The fallback for an unset style is still Classic (unchanged; changing the database default would need SQL).
