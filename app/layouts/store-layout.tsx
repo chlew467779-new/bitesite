@@ -43,7 +43,7 @@ import { normalizeBookingWhatsApp } from "@/lib/merchant-booking-target.mjs";
 import { priceRange } from "@/lib/store-summary.mjs";
 import { cn } from "@/lib/utils";
 
-type StyleKey = "classic" | "elegant" | "minimal" | "modern" | "rustic";
+type StyleKey = "classic" | "elegant" | "minimal" | "modern" | "rustic" | "ocean";
 
 // Colour per page style (docs/DESIGN.md "Restaurant page styles"). Only token values change.
 const STYLE_COLOURS: Record<StyleKey, CSSProperties> = {
@@ -53,6 +53,8 @@ const STYLE_COLOURS: Record<StyleKey, CSSProperties> = {
   classic: { "--color-brand": "#8A4B0F", "--color-brand-hover": "#723D0B", "--color-brand-soft": "#F7EBDD" } as CSSProperties,
   // Chilli
   rustic: { "--color-brand": "#A2341F", "--color-brand-hover": "#862A18", "--color-brand-soft": "#F8E5E0" } as CSSProperties,
+  // Ocean (R4b)
+  ocean: { "--color-brand": "#1E4E79", "--color-brand-hover": "#163C5E", "--color-brand-soft": "#E3ECF5" } as CSSProperties,
   // Stone
   minimal: { "--color-brand": "#44403C", "--color-brand-hover": "#292524", "--color-brand-soft": "#EFEDEA" } as CSSProperties,
   // Night: dark page, gold accent.
@@ -241,7 +243,7 @@ export function StoreLayout({
         {resolvedFeatures.menu && products.length > 0 && (
           <>
             <MenuViewTracker slug={merchant.slug} />
-            <StoreMenu categories={categories} products={products} merchant={merchant} />
+            <StoreMenu categories={categories} products={products} merchant={merchant} grid={resolvedFeatures.menu_grid} />
           </>
         )}
       </div>
@@ -331,7 +333,7 @@ export function StoreLayout({
 }
 
 /** Menu with a dish search; long menus start folded. One list per category, photo on the right. */
-function StoreMenu({ categories, products, merchant }: Pick<LayoutProps, "categories" | "products" | "merchant">) {
+function StoreMenu({ categories, products, merchant, grid = false }: Pick<LayoutProps, "categories" | "products" | "merchant"> & { grid?: boolean }) {
   const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState(false);
 
@@ -376,6 +378,37 @@ function StoreMenu({ categories, products, merchant }: Pick<LayoutProps, "catego
 
       {visible.length === 0 && <p className="py-6 text-[15px] text-muted">No dishes match &ldquo;{query.trim()}&rdquo;.</p>}
 
+      {grid ? (
+        // R4b photo grid (design: StoreGrid): two photos across on phones, name and price below.
+        visible.map(({ cat, items }) => (
+          <div key={cat.id}>
+            <h3 className="mb-2.5 mt-5 text-[13px] font-extrabold uppercase tracking-[0.08em] text-muted">{cat.name}</h3>
+            <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+              {items.map((product) => (
+                <li key={product.id} className="flex min-w-0 flex-col gap-1.5">
+                  <div className="relative aspect-square overflow-hidden rounded-[18px] bg-surface">
+                    {product.image_url ? (
+                      <SafeImage src={product.image_url} alt={product.name} fill sizes="(min-width: 1024px) 240px, 50vw" className={cn("object-cover", !product.is_available && "opacity-40")} />
+                    ) : (
+                      <span aria-hidden className="flex h-full items-center justify-center text-4xl font-extrabold text-muted opacity-40">{product.name.charAt(0)}</span>
+                    )}
+                    {product.is_featured && product.is_available && (
+                      <span className="absolute left-2 top-2 inline-flex h-6 items-center rounded-full bg-white px-2 text-[11px] font-extrabold text-brand">Popular</span>
+                    )}
+                    {!product.is_available && (
+                      <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-soldout">Sold out today</span>
+                    )}
+                  </div>
+                  <h4 className={cn("line-clamp-2 break-words text-[15px] font-bold leading-snug", !product.is_available && "text-muted")}>{product.name}</h4>
+                  {hasDisplayablePrice(product) && (
+                    <span className="text-sm font-bold">{priceText(product, merchant)}</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
+      ) : (
       <div className="md:grid md:grid-cols-2 md:gap-x-12">
         {visible.map(({ cat, items }) => (
           <div key={cat.id} className="min-w-0">
@@ -402,6 +435,7 @@ function StoreMenu({ categories, products, merchant }: Pick<LayoutProps, "catego
           </div>
         ))}
       </div>
+      )}
 
       {folded && (
         <button type="button" onClick={() => setExpanded(true)} className={cn(buttonClasses({ variant: "secondary", size: "lg", block: true }), "mt-3")}>

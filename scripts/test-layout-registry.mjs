@@ -70,7 +70,7 @@ const NON_KEYS = [
 // layout lands in UNFINISHED (productionReady: false) and moves across in its own small PR.
 // T7/T8 (CH 2026-10-05): one structure for every style, Modern listed first; Chinese and Malay
 // are retired from the picker (still registered, the database accepts the values).
-const PRODUCTION_READY = ["modern", "classic", "minimal", "rustic", "elegant"];
+const PRODUCTION_READY = ["modern", "classic", "minimal", "rustic", "elegant", "ocean"];
 const UNFINISHED = ["chinese", "malay"];
 
 assert.deepEqual(

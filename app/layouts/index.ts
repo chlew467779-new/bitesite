@@ -23,6 +23,7 @@ export const layouts = {
   minimal: styled("minimal"),
   modern: styled("modern"),
   rustic: styled("rustic"),
+  ocean: styled("ocean"),
   // Retired from the picker in T8 (productionReady: false, so the public page never reaches
   // these); kept registered because the database still accepts the values.
   chinese: styled("classic"),

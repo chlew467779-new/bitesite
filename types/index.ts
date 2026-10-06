@@ -12,6 +12,8 @@ export interface MerchantFeatures {
   appointment: boolean;
   seasonal_popup: boolean;
   events: boolean;
+  /** R4b: show the menu as a photo grid instead of a list (needs release SQL 20261006120000). */
+  menu_grid: boolean;
 }
 
 export interface Review {
@@ -197,6 +199,7 @@ export const defaultFeatures: MerchantFeatures = {
   appointment: false,
   seasonal_popup: false,
   events: false,
+  menu_grid: false,
 };
 
 export function mergeFeatures(partial?: Partial<MerchantFeatures>): MerchantFeatures {

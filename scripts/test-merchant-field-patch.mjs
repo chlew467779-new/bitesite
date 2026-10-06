@@ -53,8 +53,9 @@ assert.deepEqual(sqlRows, MERCHANT_FIELD_REGISTRY.map((row) => ({ ...row })), "J
 
 for (const row of MERCHANT_FIELD_REGISTRY) {
   if (/^profile\.(website|instagram|facebook|menu_pdf_url)$/.test(row.path)) assert.ok(!row.owner && !row.admin, `${row.path}: links are closed for both`);
-  // Migration 20261003150000 (issue #11): Owners set six section switches, never events/menu/reviews.
-  if (row.kind === "feature") assert.equal(row.owner, ["hero", "about", "contact", "gallery", "appointment", "seasonal_popup"].includes(row.target), `${row.path}: Owner switch rule`);
+  // Migration 20261003150000 (issue #11): Owners set six section switches, never events/menu/reviews;
+  // 20261006120000 (R4b) adds the menu look.
+  if (row.kind === "feature") assert.equal(row.owner, ["hero", "about", "contact", "gallery", "appointment", "seasonal_popup", "menu_grid"].includes(row.target), `${row.path}: Owner switch rule`);
 }
 assert.ok(!isWritablePath("features.menu", "admin") && !isWritablePath("features.reviews", "admin"), "menu/reviews features are protected");
 for (const column of ["name", "slug", "address", "layout", "is_published", "platform_status", "review_status", "listing_visibility", "platform_restriction", "business_status", "settings", "reviews"]) {

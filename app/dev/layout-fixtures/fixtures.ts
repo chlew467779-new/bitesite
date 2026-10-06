@@ -221,6 +221,8 @@ export function buildMerchant(
       appointment: allSections,
       seasonal_popup: true,
       events: allSections,
+      // R4b: "all sections" also shows the photo-grid menu; default shows the list.
+      menu_grid: allSections,
       ...(disabledFeature === "none" ? {} : { [disabledFeature]: false }),
     },
     settings: {},

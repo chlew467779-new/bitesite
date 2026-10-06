@@ -62,7 +62,47 @@ function LayoutPicker(props: SectionProps) {
   );
 }
 
-function SectionSwitches(props: SectionProps) {
+const menuLookPaths = ['features.menu_grid'];
+
+/** R4b: list or photo grid. Offered only once release SQL 20261006120000 adds the field. */
+function MenuLookPicker(props: SectionProps) {
+  const section = useSectionSave(menuLookPaths, props.fields, props.send, props.onConfirmed);
+  const { register } = props;
+  useEffect(() => { register('menu-look', section.handle); return () => register('menu-look', null); }, [register, section.handle]);
+  const stored = section.state.baseline['features.menu_grid'];
+  const grid = section.state.draft['features.menu_grid'] === true;
+  const choose = (next: boolean) => section.edit('features.menu_grid', !stored?.exists && !next ? null : next);
+  const option = (value: boolean, label: string, picture: React.ReactNode) => (
+    <button type="button" aria-pressed={grid === value} onClick={() => choose(value)}
+      className={`flex min-h-[120px] flex-col items-center justify-center gap-2 rounded-2xl border p-3 text-sm font-semibold text-ink transition-colors disabled:opacity-50 ${grid === value ? 'border-ink bg-surface ring-2 ring-ink/15' : 'border-line hover:bg-surface'}`}>
+      {picture}
+      {label}
+    </button>
+  );
+  return (
+    <div className="space-y-3">
+      <fieldset disabled={props.readOnly}>
+        <legend className="text-base font-extrabold text-ink">2. How the menu looks</legend>
+        <p className="mt-1 text-sm text-muted">Photo grid suits cafés and desserts with good dish photos. List suits long menus.</p>
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          {option(false, 'List', (
+            <span aria-hidden className="flex w-16 flex-col gap-1.5">
+              {[0, 1, 2].map((i) => <span key={i} className="flex items-center gap-1.5"><span className="h-2 flex-1 rounded bg-line-strong" /><span className="size-4 rounded bg-line-strong" /></span>)}
+            </span>
+          ))}
+          {option(true, 'Photo grid', (
+            <span aria-hidden className="grid w-16 grid-cols-2 gap-1.5">
+              {[0, 1, 2, 3].map((i) => <span key={i} className="aspect-square rounded bg-line-strong" />)}
+            </span>
+          ))}
+        </div>
+      </fieldset>
+      <SectionSaveBar state={section.state} labels={[{ path: 'features.menu_grid', label: 'Menu look' }]} canSave={section.canSave} dirty={section.dirty} readOnly={props.readOnly} lastOutcome={section.lastOutcome} savedMessage="Saved. Your menu uses the new look now." onSave={() => void section.save()} onRetry={() => void section.retry()} onKeepCurrent={section.chooseCurrent} onUseMine={section.chooseMine} />
+    </div>
+  );
+}
+
+function SectionSwitches(props: SectionProps & { step: number }) {
   const section = useSectionSave(sectionPaths, props.fields, props.send, props.onConfirmed);
   const { register } = props;
   useEffect(() => { register('page-sections', section.handle); return () => register('page-sections', null); }, [register, section.handle]);
@@ -70,7 +110,7 @@ function SectionSwitches(props: SectionProps) {
   return (
     <div className="space-y-3">
       <fieldset disabled={props.readOnly}>
-        <legend className="text-base font-extrabold text-ink">2. Sections on your page</legend>
+        <legend className="text-base font-extrabold text-ink">{props.step}. Sections on your page</legend>
         <p className="mt-1 text-sm text-muted">Your name and menu are always shown.</p>
         <div className="mt-3 divide-y divide-line overflow-hidden rounded-2xl border border-line">
           {SECTIONS.map((item) => {
@@ -101,10 +141,12 @@ function SectionSwitches(props: SectionProps) {
 }
 
 export function PageStyleSection(props: SectionProps) {
+  const hasMenuLook = 'features.menu_grid' in props.fields;
   return (
     <div className="space-y-8">
       {'presentation.layout' in props.fields && <LayoutPicker {...props} />}
-      {sectionPaths.every((path) => path in props.fields) && <div className="border-t border-line pt-6"><SectionSwitches {...props} /></div>}
+      {hasMenuLook && <div className="border-t border-line pt-6"><MenuLookPicker {...props} /></div>}
+      {sectionPaths.every((path) => path in props.fields) && <div className="border-t border-line pt-6"><SectionSwitches {...props} step={hasMenuLook ? 3 : 2} /></div>}
     </div>
   );
 }
