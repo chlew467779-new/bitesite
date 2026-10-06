@@ -3,15 +3,19 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { Hero } from "@/components/sections/hero";
-import { CategoryFilter } from "@/components/sections/category-filter";
+import Link from "next/link";
+import { HomeFilters } from "@/components/home/home-filters";
 import { MerchantCard } from "@/components/sections/merchant-card";
+import { SearchInput } from "@/components/ui/search-input";
+import { SectionTitle } from "@/components/ui/card";
+import { Chip, chipClasses } from "@/components/ui/chip";
+import { buttonClasses } from "@/components/ui/button";
+import { priceRange } from "@/lib/store-summary.mjs";
 import { MerchantCardSkeleton } from "@/components/sections/merchant-card-skeleton";
 import { Footer } from "@/components/sections/footer";
 import { LatestStories } from "@/components/sections/latest-stories";
 import { SiteAnnouncement } from "@/components/sections/site-announcement";
 import { supabase, getAreas } from "@/lib/supabase";
-import { FadeIn } from "@/app/components/animations";
 import { isCurrentlyOpen, getTodayKey } from "@/lib/hours";
 import { trackEvent } from "@/lib/analytics";
 import { CUISINE_TYPES } from "@/lib/presets";
@@ -21,6 +25,11 @@ import { discoveryGroups, discoveryPath } from "@/lib/discovery-core.mjs";
 import { DEFAULT_NEARBY_RADIUS_KM, NEARBY_RADII_KM, selectNearby } from "@/lib/nearby-core.mjs";
 
 const STATE_KEY = "bitesite.home.state";
+
+type MenuPrice = { price: number | null; discount_price: number | null; show_prices: boolean | null };
+
+// Pastel tiles for "Craving something?" (photos come later; colours keep the row lively).
+const CRAVING_TILES = ["bg-[#F1E0C8]", "bg-[#F3D6CC]", "bg-[#DCE6D6]", "bg-[#E9E2F0]", "bg-[#D6E3EE]", "bg-[#F0E6C4]"];
 
 // The chosen state is remembered in this browser; storage can be blocked, so every access is guarded.
 function readSavedState(): string | null {
@@ -59,6 +68,7 @@ export default function HomePage() {
   const [openNow, setOpenNow] = useState(() => readHomeFilters().openNow);
   const [isSearching, setIsSearching] = useState(false);
   const [productIndex, setProductIndex] = useState<Map<string, string[]>>(new Map());
+  const [menuPrices, setMenuPrices] = useState<Map<string, MenuPrice[]>>(new Map());
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   // How many restaurants the current search shows (null while loading), sent with the search event.
   const searchResultsRef = useRef<number | null>(null);
@@ -112,7 +122,7 @@ export default function HomePage() {
           .returns<PublicMerchant[]>(),
         supabase
           .from("products")
-          .select("merchant_id, name")
+          .select("merchant_id, name, price, discount_price, show_prices")
           .eq("is_available", true),
       ]);
 
@@ -122,12 +132,17 @@ export default function HomePage() {
 
       if (productsData) {
         const map = new Map<string, string[]>();
-        productsData.forEach((p: { merchant_id: string; name: string }) => {
+        const prices = new Map<string, MenuPrice[]>();
+        productsData.forEach((p: { merchant_id: string; name: string } & MenuPrice) => {
           const list = map.get(p.merchant_id) || [];
           list.push(p.name.toLowerCase());
           map.set(p.merchant_id, list);
+          const priced = prices.get(p.merchant_id) || [];
+          priced.push({ price: p.price, discount_price: p.discount_price, show_prices: p.show_prices });
+          prices.set(p.merchant_id, priced);
         });
         setProductIndex(map);
+        setMenuPrices(prices);
       }
 
       setLoading(false);
@@ -202,7 +217,7 @@ export default function HomePage() {
     return Array.from(allMore).sort();
   }, [merchants]);
 
-  const browseGroups = useMemo(() => (["area", "cuisine"] as const).map((kind) => ({
+  const browseGroups = useMemo(() => (["cuisine", "area"] as const).map((kind) => ({
     kind,
     title: kind === "area" ? "Browse by area" : "Browse by cuisine",
     groups: discoveryGroups(kind, merchants).filter((group) => group.indexable).slice(0, 12),
@@ -264,6 +279,10 @@ export default function HomePage() {
     : null, [nearbyActive, coordinates, filtered, nearbyRadiusKm]);
   const visibleMerchants = nearbySelection?.results.map((item) => item.merchant) ?? filtered;
   const distanceById = new Map(nearbySelection?.results.map((item) => [item.merchant.id, item.distanceKm]) ?? []);
+  const priceById = useMemo(
+    () => new Map(merchants.map((m) => [m.id, priceRange(menuPrices.get(m.id) ?? [], m.currency)])),
+    [merchants, menuPrices],
+  );
 
   const handleNearbyChange = useCallback((active: boolean) => {
     locationRequestRef.current += 1;
@@ -360,164 +379,146 @@ export default function HomePage() {
     (nearbyActive ? 1 : 0) +
     (searchQuery ? 1 : 0);
 
+  const resultsTitle = nearbySelection ? "Near you" : openNow ? "Open now" : activeFilterCount > 0 ? "Results" : "Restaurants";
+
   return (
     <main>
-      {/* Restaurant owner banner */}
-      <div className="bg-[#2C3E2D] px-4 py-3 text-center">
-        <p className="text-sm text-white">
-          Are you a restaurant owner?{" "}
-          <a
-             href="/join-us"
-             className="inline-flex min-h-11 items-center font-semibold underline underline-offset-2 transition-colors hover:text-[#5A8F6E]"
-          >
-            Join BiteSite
-          </a>
-        </p>
-      </div>
-      <Hero searchQuery={searchQuery} onSearch={handleSearch} />
+      <div className="mx-auto max-w-6xl px-4">
+        <section className="flex flex-col gap-3.5 pb-2 pt-5 md:pt-10">
+          <h1 className="text-[28px] font-extrabold leading-[1.15] tracking-[-0.03em] md:text-[40px]">
+            Find your next<br className="md:hidden" /> makan spot
+          </h1>
+          <SearchInput
+            label="Search restaurants"
+            placeholder="Dish, restaurant or area"
+            value={searchQuery}
+            onChange={(event) => handleSearch(event.target.value)}
+            wrapperClassName="md:max-w-xl"
+          />
+        </section>
 
-      {availableStates.length > 1 && (
-        <div className="px-4 pt-6">
-          <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-2" role="group" aria-label="Choose a state">
-            <span className="mr-1 text-sm font-medium text-[#2C3E2D]">State</span>
-            {[null, ...availableStates].map((state) => (
-              <button key={state ?? "all"} type="button" aria-pressed={currentState === state} onClick={() => handleStateChange(state)}
-                className={`inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-medium transition-colors ${currentState === state ? "border-[#2C3E2D] bg-[#2C3E2D] text-white" : "border-[#C9D6C7] bg-white text-[#2C3E2D] hover:bg-[#F0F4EC]"}`}>
-                {state ?? "All states"}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+        <HomeFilters
+          nearbyActive={nearbyActive}
+          nearbyLoading={nearbyLoading}
+          onNearbyChange={handleNearbyChange}
+          openNow={openNow}
+          onOpenNowChange={handleOpenNowChange}
+          availableStates={availableStates}
+          currentState={currentState}
+          onStateChange={handleStateChange}
+          availableAreas={availableAreas}
+          activeArea={activeArea}
+          onAreaChange={handleAreaChange}
+          availableCuisines={availableCuisines}
+          activeCuisines={activeCuisines}
+          onCuisineChange={handleCuisineChange}
+          availableMore={availableMore}
+          activeMore={activeMore}
+          onMoreChange={handleMoreChange}
+        />
 
-      <CategoryFilter
-        activeCuisines={activeCuisines}
-        onCuisineChange={handleCuisineChange}
-        activeArea={activeArea}
-        onAreaChange={handleAreaChange}
-        activeMore={activeMore}
-        onMoreChange={handleMoreChange}
-        openNow={openNow}
-        onOpenNowChange={handleOpenNowChange}
-        availableAreas={availableAreas}
-        availableCuisines={availableCuisines}
-        availableMore={availableMore}
-        nearbyActive={nearbyActive}
-        nearbyLoading={nearbyLoading}
-        onNearbyChange={handleNearbyChange}
-      />
-
-      {locationError && <p role="status" className="mx-auto max-w-6xl px-4 pt-4 text-sm text-[#6B6560]">{locationError}</p>}
-      {nearbySelection && (
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-2 px-4 pt-4 text-sm text-[#6B6560]">
-          <p role="status">Within {nearbySelection.radiusKm} km of you:</p>
-          <div role="group" aria-label="Distance" className="flex gap-2">
+        {locationError && <p role="status" className="pt-3 text-sm text-muted">{locationError}</p>}
+        {nearbySelection && (
+          <div role="group" aria-label="Distance" className="flex flex-wrap items-center gap-2 pt-2 text-[13px] text-muted">
+            <span>Within</span>
             {NEARBY_RADII_KM.map((km) => (
-              <button key={km} type="button" aria-pressed={nearbyRadiusKm === km} onClick={() => setNearbyRadiusKm(km)}
-                className={`min-h-11 min-w-11 rounded-full px-3 text-xs font-medium transition-colors ${nearbyRadiusKm === km ? "bg-[#2C3E2D] text-white" : "border border-[#DDE5DC] bg-white text-[#2C3E2D] hover:border-[#2C3E2D]"}`}>
+              <Chip key={km} selected={nearbyRadiusKm === km} onClick={() => setNearbyRadiusKm(km)} className="px-3">
                 {km} km
-              </button>
+              </Chip>
             ))}
           </div>
-        </div>
-      )}
+        )}
 
-      <section className="px-4 pb-16">
-        <div className="mx-auto max-w-6xl">
-          {!showLoading && visibleMerchants.length > 0 && (
-            <FadeIn>
-              <div className="mb-6 flex flex-wrap items-center gap-2">
-                <p className="text-sm text-[#8A968B]">
-                  {visibleMerchants.length} {visibleMerchants.length === 1 ? "restaurant" : "restaurants"} found
-                </p>
+        <section aria-labelledby="results-heading" className="pt-5">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+            <SectionTitle id="results-heading">{resultsTitle}</SectionTitle>
+            {!showLoading && (
+              <p role="status" className="text-sm text-muted">
+                {visibleMerchants.length} {visibleMerchants.length === 1 ? "restaurant" : "restaurants"}
                 {activeFilterCount > 0 && (
-                  <span className="rounded-full bg-[#5A8F6E]/10 px-2 py-0.5 text-xs text-[#5A8F6E]">
-                    {activeFilterCount} filter{activeFilterCount > 1 ? "s" : ""} active
-                  </span>
+                  <>
+                    {" · "}
+                    <button type="button" onClick={handleClearAll} className="inline-flex min-h-11 items-center font-semibold text-brand underline-offset-2 hover:underline">
+                      Clear filters
+                    </button>
+                  </>
                 )}
-              </div>
-            </FadeIn>
-          )}
+              </p>
+            )}
+          </div>
 
           {showLoading ? (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <MerchantCardSkeleton key={i} delay={i * 0.08} />
-              ))}
+            <div className="mt-3 grid gap-x-6 gap-y-7 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 3 }).map((_, i) => <MerchantCardSkeleton key={i} />)}
             </div>
           ) : visibleMerchants.length === 0 ? (
-            <FadeIn>
-              <div className="py-20 text-center">
-                <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-[#F0F4EC]">
-                  <svg
-                    width="28"
-                    height="28"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#8A968B"
-                    strokeWidth="1.5"
-                  >
-                    <circle cx="11" cy="11" r="8" />
-                    <path d="M21 21l-4.35-4.35" />
-                  </svg>
-                </div>
-                <p className="text-lg font-medium text-[#2C3E2D]">
-                  No restaurants found
-                </p>
-                <p className="mt-2 text-sm text-[#8A968B]">
-                  {nearbySelection
-                    ? nearbySelection.radiusKm < 10 ? `Nothing within ${nearbySelection.radiusKm} km. Choose a larger distance above, or clear other filters.` : "Nothing within 10 km. Clear other filters or turn off Nearby."
-                    : "Try adjusting your filters or search."}
-                </p>
-                {activeFilterCount > 0 && (
-                  <button
-                    onClick={handleClearAll}
-                    className="mt-4 rounded-full bg-[#5A8F6E] px-6 py-2 text-sm font-medium text-white active:scale-[0.98] transition-transform duration-150"
-                    style={{ WebkitTapHighlightColor: "transparent" }}
-                  >
-                    Clear All Filters
-                  </button>
-                )}
-              </div>
-            </FadeIn>
+            <div className="py-14 text-center">
+              <p className="text-lg font-bold">No restaurants found</p>
+              <p className="mt-2 text-sm text-muted">
+                {nearbySelection
+                  ? nearbySelection.radiusKm < 10 ? `Nothing within ${nearbySelection.radiusKm} km. Choose a larger distance above, or clear other filters.` : "Nothing within 10 km. Clear other filters or turn off Nearby."
+                  : "Try adjusting your filters or search."}
+              </p>
+              {activeFilterCount > 0 && (
+                <button type="button" onClick={handleClearAll} className={`${buttonClasses({ variant: "primary", size: "lg" })} mt-5`}>
+                  Clear all filters
+                </button>
+              )}
+            </div>
           ) : (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {visibleMerchants.map((merchant, index) => (
-                <FadeIn
-                  key={`${merchant.id}-${activeCuisines.join(",")}-${currentState}-${activeArea}-${activeMore.join(",")}-${openNow}-${searchQuery}`}
-                  delay={index * 0.06}
-                  duration={0.4}
-                  direction="up"
-                >
-                  <MerchantCard merchant={merchant} distanceKm={distanceById.get(merchant.id)} />
-                </FadeIn>
+            <div className="mt-3 grid gap-x-6 gap-y-7 sm:grid-cols-2 lg:grid-cols-3">
+              {visibleMerchants.map((merchant) => (
+                <MerchantCard key={merchant.id} merchant={merchant} distanceKm={distanceById.get(merchant.id)} priceText={priceById.get(merchant.id)} />
               ))}
             </div>
           )}
-        </div>
-      </section>
+        </section>
+      </div>
 
       {browseGroups.some(({ groups }) => groups.length > 0) && (
-        <section className="px-4 pb-16" aria-label="Browse restaurants">
-          <div className="mx-auto max-w-6xl space-y-8">
-            {browseGroups.map(({ kind, title, groups }) => groups.length > 0 && (
-              <div key={kind}>
-                <h2 className="mb-3 text-xl font-semibold text-[#2C3E2D]">{title}</h2>
-                <div className="flex flex-wrap gap-2">
+        <section aria-label="Browse restaurants" className="mx-auto max-w-6xl pt-9">
+          {browseGroups.map(({ kind, groups }) => groups.length > 0 && (
+            <div key={kind} className={kind === "area" ? "px-4 pt-6" : ""}>
+              <SectionTitle className={kind === "cuisine" ? "px-4" : ""}>{kind === "cuisine" ? "Craving something?" : "Browse by area"}</SectionTitle>
+              {kind === "cuisine" ? (
+                <div className="mt-3 flex gap-2.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+                  {groups.map((group, index) => (
+                    <a key={group.slug} href={discoveryPath(kind, group.slug)} className="flex w-[104px] shrink-0 flex-col items-center gap-1.5 text-ink">
+                      <span aria-hidden className={`flex size-[104px] items-center justify-center rounded-[20px] text-3xl font-extrabold text-ink/30 ${CRAVING_TILES[index % CRAVING_TILES.length]}`}>
+                        {group.label.charAt(0)}
+                      </span>
+                      <span className="line-clamp-2 text-center text-sm font-semibold leading-tight">{group.label}</span>
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-3 flex flex-wrap gap-2">
                   {groups.map((group) => (
-                    <a key={group.slug} href={discoveryPath(kind, group.slug)}
-                      className="inline-flex min-h-11 items-center rounded-full border border-[#C9D6C7] bg-white px-4 text-sm font-medium text-[#2C3E2D] transition-colors hover:bg-[#F0F4EC]">
+                    <a key={group.slug} href={discoveryPath(kind, group.slug)} className={chipClasses()}>
                       {group.label}
                     </a>
                   ))}
                 </div>
-              </div>
-            ))}
-          </div>
+              )}
+            </div>
+          ))}
         </section>
       )}
 
       <LatestStories />
+
+      <div className="mx-auto max-w-6xl px-4 pt-8">
+        <section className="flex flex-col gap-3 rounded-3xl bg-brand px-5 py-[22px] text-white md:flex-row md:items-center md:justify-between md:px-8">
+          <div>
+            <p className="text-xl font-extrabold leading-tight tracking-[-0.02em]">Own a restaurant?<br className="md:hidden" /> Get a free menu page.</p>
+            <p className="mt-2 text-sm leading-normal text-[#D5E5DA]">Set it up on your phone in 10 minutes. Free during the pilot.</p>
+          </div>
+          <Link href="/join-us" className={`${buttonClasses({ variant: "kaya", size: "lg" })} self-start md:self-center`}>
+            Join BiteSite
+          </Link>
+        </section>
+      </div>
+
       <Footer />
       <SiteAnnouncement />
     </main>

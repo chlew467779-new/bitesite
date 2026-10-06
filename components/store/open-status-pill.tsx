@@ -16,13 +16,23 @@ function subscribe(onChange: () => void) {
 const clientMinutes = () => malaysiaMinutes();
 const serverMinutes = () => null;
 
-export function OpenStatusPill({ todayHours, className }: { todayHours: string | null | undefined; className?: string }) {
+export function OpenStatusPill({
+  todayHours,
+  className,
+  onPhoto = false,
+}: {
+  todayHours: string | null | undefined;
+  className?: string;
+  /** White pill for use over a photo (home cards). */
+  onPhoto?: boolean;
+}) {
   const minutes = useSyncExternalStore(subscribe, clientMinutes, serverMinutes);
   if (minutes === null) return null;
   const status = openStatus(todayHours, minutes);
   if (!status) return null;
+  const tone = onPhoto ? "onPhoto" : status.open ? "open" : "closed";
   return (
-    <StatusPill tone={status.open ? "open" : "closed"} dot={status.open} className={className}>
+    <StatusPill tone={tone} dot={status.open} className={onPhoto && !status.open ? `text-muted ${className ?? ""}` : className}>
       {status.label}
     </StatusPill>
   );
