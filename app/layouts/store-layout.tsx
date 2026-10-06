@@ -25,6 +25,7 @@ import { MenuViewTracker } from "@/components/sections/menu-view-tracker";
 import { MapEmbed } from "@/app/components/map-embed";
 import { OpenStatusPill } from "@/components/store/open-status-pill";
 import { StoreShareButton } from "@/components/store/store-share-button";
+import { FavouriteButton } from "@/components/store/favourite-button";
 import { iconButtonClasses } from "@/components/ui/icon-button";
 import { buttonClasses } from "@/components/ui/button";
 import { SectionTitle } from "@/components/ui/card";
@@ -159,7 +160,10 @@ export function StoreLayout({
             <Link href="/" aria-label="Back to BiteSite" className={iconButtonClasses({ variant: "overlay" })}>
               <ChevronLeft size={22} aria-hidden />
             </Link>
-            <StoreShareButton slug={merchant.slug} name={merchant.name} />
+            <div className="flex gap-2">
+              <FavouriteButton slug={merchant.slug} name={merchant.name} />
+              <StoreShareButton slug={merchant.slug} name={merchant.name} />
+            </div>
           </div>
         </div>
       </div>

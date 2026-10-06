@@ -36,7 +36,7 @@ export function DeliveryOrderButtons({ links, slug }: { links: { link_type: stri
               rel="noopener noreferrer"
               aria-label={`Order on ${APPS[type].name}`}
               onClick={() => trackEvent('merchant_order_click', { slug, pageType: 'merchant', detail: type })}
-              className={`flex h-[52px] min-w-0 flex-1 items-center justify-center rounded-2xl px-2 text-[15px] font-bold text-white transition-colors ${APPS[type].className}`}
+              className={`flex h-[52px] min-w-0 flex-1 items-center justify-center rounded-2xl px-2 font-bold text-white transition-colors ${items.length > 2 ? 'text-sm' : 'text-[15px]'} ${APPS[type].className}`}
             >
               <span className="truncate">{single ? `Order on ${APPS[type].name}` : APPS[type].name}</span>
             </a>
