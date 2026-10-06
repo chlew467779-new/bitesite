@@ -9,15 +9,13 @@ import { safeJsonLd } from "@/lib/safe-json-ld.mjs";
 import "./globals.css";
 
 const jakarta = Plus_Jakarta_Sans({
-  subsets: ["latin", "latin-ext"],
-  weight: ["400", "500", "600", "700", "800"],
+  subsets: ["latin"],
   variable: "--font-jakarta",
   display: "swap",
 });
 
 // Chinese glyphs are split into unicode-range chunks; only pages with 中文 download them.
 const notoSansSC = Noto_Sans_SC({
-  weight: ["400", "600", "700"],
   variable: "--font-noto-sc",
   display: "swap",
   preload: false,
