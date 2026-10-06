@@ -3,7 +3,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { ChevronDown, Clock, MapPin } from "lucide-react";
+import { ChevronDown, Clock, Heart, MapPin } from "lucide-react";
 import { Chip } from "@/components/ui/chip";
 import { Button } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
@@ -28,6 +28,10 @@ export interface HomeFiltersProps {
   availableMore: string[];
   activeMore: string[];
   onMoreChange: (more: string[]) => void;
+  /** Restaurants saved on this device; the Saved chip appears once there is one. */
+  savedCount: number;
+  savedOnly: boolean;
+  onSavedOnlyChange: (value: boolean) => void;
 }
 
 const toggle = (list: string[], value: string) =>
@@ -49,6 +53,12 @@ export function HomeFilters(props: HomeFiltersProps) {
           <MapPin size={16} aria-hidden />
           {props.nearbyLoading ? "Locating…" : "Nearby"}
         </Chip>
+        {(props.savedCount > 0 || props.savedOnly) && (
+          <Chip selected={props.savedOnly} onClick={() => props.onSavedOnlyChange(!props.savedOnly)}>
+            <Heart size={16} aria-hidden className={props.savedOnly ? "fill-current" : ""} />
+            Saved
+          </Chip>
+        )}
         <Chip selected={props.openNow} onClick={() => props.onOpenNowChange(!props.openNow)}>
           <Clock size={16} aria-hidden />
           Open now

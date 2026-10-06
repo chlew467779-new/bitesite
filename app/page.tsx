@@ -11,6 +11,7 @@ import { SectionTitle } from "@/components/ui/card";
 import { Chip, chipClasses } from "@/components/ui/chip";
 import { buttonClasses } from "@/components/ui/button";
 import { priceRange } from "@/lib/store-summary.mjs";
+import { useFavourites } from "@/lib/favourites";
 import { MerchantCardSkeleton } from "@/components/sections/merchant-card-skeleton";
 import { Footer } from "@/components/sections/footer";
 import { LatestStories } from "@/components/sections/latest-stories";
@@ -68,6 +69,8 @@ export default function HomePage() {
   const [openNow, setOpenNow] = useState(() => readHomeFilters().openNow);
   const [isSearching, setIsSearching] = useState(false);
   const [productIndex, setProductIndex] = useState<Map<string, string[]>>(new Map());
+  const { slugs: savedSlugs } = useFavourites();
+  const [savedOnly, setSavedOnly] = useState(false);
   const [menuPrices, setMenuPrices] = useState<Map<string, MenuPrice[]>>(new Map());
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   // How many restaurants the current search shows (null while loading), sent with the search event.
@@ -277,7 +280,9 @@ export default function HomePage() {
   const nearbySelection = useMemo(() => nearbyActive && coordinates
     ? selectNearby(filtered, coordinates.latitude, coordinates.longitude, nearbyRadiusKm)
     : null, [nearbyActive, coordinates, filtered, nearbyRadiusKm]);
-  const visibleMerchants = nearbySelection?.results.map((item) => item.merchant) ?? filtered;
+  const nearbyOrAll = nearbySelection?.results.map((item) => item.merchant) ?? filtered;
+  // Saved (R6) narrows whatever else is chosen; saved restaurants stay in nearest-first order.
+  const visibleMerchants = savedOnly ? nearbyOrAll.filter((m) => savedSlugs.includes(m.slug)) : nearbyOrAll;
   const distanceById = new Map(nearbySelection?.results.map((item) => [item.merchant.id, item.distanceKm]) ?? []);
   const priceById = useMemo(
     () => new Map(merchants.map((m) => [m.id, priceRange(menuPrices.get(m.id) ?? [], m.currency)])),
@@ -365,6 +370,7 @@ export default function HomePage() {
     setActiveArea(null);
     setActiveMore([]);
     setOpenNow(false);
+    setSavedOnly(false);
     setTimeout(() => setIsSearching(false), 300);
   }, [handleNearbyChange]);
 
@@ -377,9 +383,10 @@ export default function HomePage() {
     activeMore.length +
     (openNow ? 1 : 0) +
     (nearbyActive ? 1 : 0) +
+    (savedOnly ? 1 : 0) +
     (searchQuery ? 1 : 0);
 
-  const resultsTitle = nearbySelection ? "Near you" : openNow ? "Open now" : activeFilterCount > 0 ? "Results" : "Restaurants";
+  const resultsTitle = savedOnly ? "Saved" : nearbySelection ? "Near you" : openNow ? "Open now" : activeFilterCount > 0 ? "Results" : "Restaurants";
 
   return (
     <main>
@@ -415,6 +422,9 @@ export default function HomePage() {
           availableMore={availableMore}
           activeMore={activeMore}
           onMoreChange={handleMoreChange}
+          savedCount={savedSlugs.length}
+          savedOnly={savedOnly}
+          onSavedOnlyChange={setSavedOnly}
         />
 
         {locationError && <p role="status" className="pt-3 text-sm text-muted">{locationError}</p>}
@@ -457,7 +467,7 @@ export default function HomePage() {
               <p className="mt-2 text-sm text-muted">
                 {nearbySelection
                   ? nearbySelection.radiusKm < 10 ? `Nothing within ${nearbySelection.radiusKm} km. Choose a larger distance above, or clear other filters.` : "Nothing within 10 km. Clear other filters or turn off Nearby."
-                  : "Try adjusting your filters or search."}
+                  : savedOnly ? "None of your saved restaurants match. Clear other filters, or tap the heart on a restaurant to save it." : "Try adjusting your filters or search."}
               </p>
               {activeFilterCount > 0 && (
                 <button type="button" onClick={handleClearAll} className={`${buttonClasses({ variant: "primary", size: "lg" })} mt-5`}>
