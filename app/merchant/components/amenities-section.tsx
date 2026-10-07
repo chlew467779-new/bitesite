@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { AMENITY_TAGS, OCCASION_TAGS } from '@/lib/presets';
+import { SELECTABLE_AMENITY_TAGS, OCCASION_TAGS } from '@/lib/presets';
 import { useSectionSave } from '@/app/components/section-save/use-section-save';
 import { SectionSaveBar } from '@/app/components/section-save/section-save-bar';
 import type { SectionProps } from '@/app/components/section-save/hours-section';
@@ -12,7 +12,7 @@ import type { SectionProps } from '@/app/components/section-save/hours-section';
  */
 
 const GROUPS = [
-  { path: 'tags.amenities', label: 'Facilities', hint: 'Choose up to 5 that customers should know about.', options: AMENITY_TAGS as readonly string[], max: 5 },
+  { path: 'tags.amenities', label: 'Facilities', hint: 'Choose up to 5 that customers should know about.', options: SELECTABLE_AMENITY_TAGS, max: 5 },
   { path: 'tags.occasion', label: 'Good for', hint: 'Choose up to 3.', options: OCCASION_TAGS as readonly string[], max: 3 },
 ] as const;
 const paths = GROUPS.map((g) => g.path);

@@ -4,6 +4,8 @@
  * classes of its own payment-methods block so the chips match the layout.
  */
 
+import { RETIRED_AMENITY_TAGS } from "@/lib/presets";
+
 type Props = {
   amenities?: string[] | null;
   occasion?: string[] | null;
@@ -14,7 +16,8 @@ type Props = {
 
 export function ListingTags({ amenities, occasion, wrapperClass, labelClass, chipClass }: Props) {
   const groups = [
-    { label: "Good to know", tags: amenities ?? [] },
+    // Self-declared Halal / Pork-Free are never shown (see RETIRED_AMENITY_TAGS in lib/presets.ts).
+    { label: "Good to know", tags: (amenities ?? []).filter((tag) => !RETIRED_AMENITY_TAGS.includes(tag)) },
     { label: "Great for", tags: occasion ?? [] },
   ].filter((group) => group.tags.length > 0);
   if (groups.length === 0) return null;

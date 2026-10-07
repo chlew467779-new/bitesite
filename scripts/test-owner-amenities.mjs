@@ -32,4 +32,11 @@ assert.match(await read("app/layouts/store-layout.tsx"), /<ListingTags amenities
 const projection = await read("lib/public-merchant-projection.mjs");
 assert.match(projection, /"amenities",\n\s+"occasion",/, "both are public columns");
 
+// CH 2026-10-07 (G28): self-declared Halal / Pork-Free are not offered and never shown publicly.
+const presets = await read("lib/presets.ts");
+assert.ok(presets.includes('RETIRED_AMENITY_TAGS: readonly string[] = ["Halal", "Pork-Free"]'), "Halal and Pork-Free are retired");
+assert.match(await read("app/merchant/components/amenities-section.tsx"), /options: SELECTABLE_AMENITY_TAGS/, "Owners are not offered the retired tags");
+assert.match(await read("app/admin/components/merchant-form.tsx"), /options: SELECTABLE_AMENITY_TAGS/, "nor is Admin");
+assert.ok((await read("components/sections/listing-tags.tsx")).includes("filter((tag) => !RETIRED_AMENITY_TAGS.includes(tag))"), "the public page hides them");
+
 console.log("owner amenities checks passed");
