@@ -380,5 +380,16 @@
   "owner.tile.stories": "美食故事",
   "owner.tile.storiesHint": "分享店讯和美食故事",
   "owner.tile.feedback": "意见反馈",
-  "owner.tile.feedbackHint": "告诉 BiteSite 哪里要改进"
+  "owner.tile.feedbackHint": "告诉 BiteSite 哪里要改进",
+  "owner.entry.title": "餐厅后台",
+  "owner.entry.loading": "正在载入你的餐厅…",
+  "owner.entry.signedOut": "请用餐厅的电邮登入，管理你的网页。",
+  "owner.entry.signIn": "登入",
+  "owner.entry.none": "先建立你的第一家餐厅网页。BiteSite 审核通过前，只有你看得到。",
+  "owner.entry.create": "建立餐厅",
+  "owner.entry.choose": "选择你要管理的餐厅。",
+  "owner.entry.discarded": "已放弃",
+  "owner.entry.readOnly": "只能查看",
+  "owner.entry.retry": "再试一次",
+  "owner.entry.back": "回到我的餐厅"
 }

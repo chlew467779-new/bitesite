@@ -380,5 +380,16 @@
   "owner.tile.stories": "Stories",
   "owner.tile.storiesHint": "Share news and food stories",
   "owner.tile.feedback": "Feedback",
-  "owner.tile.feedbackHint": "Tell BiteSite what to improve"
+  "owner.tile.feedbackHint": "Tell BiteSite what to improve",
+  "owner.entry.title": "Restaurant dashboard",
+  "owner.entry.loading": "Loading your restaurant…",
+  "owner.entry.signedOut": "Sign in with your restaurant email to manage your page.",
+  "owner.entry.signIn": "Sign in",
+  "owner.entry.none": "Create your first restaurant page to get started. Only you can see it until BiteSite approves it.",
+  "owner.entry.create": "Create a restaurant",
+  "owner.entry.choose": "Choose the restaurant you want to manage.",
+  "owner.entry.discarded": "Discarded",
+  "owner.entry.readOnly": "Read only",
+  "owner.entry.retry": "Try again",
+  "owner.entry.back": "Back to my restaurants"
 }
