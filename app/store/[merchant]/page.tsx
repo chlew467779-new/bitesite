@@ -29,7 +29,7 @@ import { getSiteUrl } from "@/lib/site-url";
 import { safeJsonLd } from "@/lib/safe-json-ld.mjs";
 import { discoveryPath, discoverySlug, merchantArea, merchantCuisines } from "@/lib/discovery-core.mjs";
 import { ReportProblem } from "@/app/components/report-problem";
-import { chipClasses } from "@/components/ui/chip";
+import { DiscoveryLinks, StoreFooterLinks } from "@/components/store/store-footer";
 import type { PublicMerchant } from "@/types";
 
 export const revalidate = 60;
@@ -308,34 +308,15 @@ export default async function MerchantPage({ params }: PageProps) {
       >
         <HiringSection jobs={jobs} />
         <NearbyRestaurants items={nearby} />
-        <NearbyRestaurants title="You may also like" headingId="related-heading" items={related} />
+        <NearbyRestaurants titleKey="store.related" headingId="related-heading" items={related} />
         <DiscoveryLinks area={merchantArea(merchant)} cuisines={merchantCuisines(merchant)} />
         <footer className="mx-auto mt-8 flex max-w-5xl flex-col items-start gap-1 border-t border-line px-4 pb-8 pt-4">
           <ReportProblem targetType="merchant" slug={merchant.slug} className="w-full" />
-          <nav aria-label="BiteSite" className="flex flex-wrap gap-x-5">
-            <Link href="/" className="inline-flex min-h-11 items-center text-sm text-ink-2 hover:text-brand">{settings.footer_text || "More on BiteSite"}</Link>
-            <Link href="/feedback" className="inline-flex min-h-11 items-center text-sm text-ink-2 hover:text-brand">Send feedback</Link>
-          </nav>
+          <StoreFooterLinks footerText={settings.footer_text} />
         </footer>
         {/* Last, so its spacer keeps the fixed order bar from covering the footer. */}
         <DeliveryOrderButtons links={externalLinksRes.data ?? []} slug={merchant.slug} />
       </LayoutComponent>
     </>
-  );
-}
-
-// Links to this restaurant's area and cuisine landing pages (internal links for visitors and search).
-function DiscoveryLinks({ area, cuisines }: { area: string | null; cuisines: string[] }) {
-  const links = [
-    ...(area ? [{ href: discoveryPath("area", discoverySlug(area)), label: `More in ${area}` }] : []),
-    ...cuisines.slice(0, 3).map((c) => ({ href: discoveryPath("cuisine", discoverySlug(c)), label: `More ${c} food` })),
-  ];
-  if (links.length === 0) return null;
-  return (
-    <nav aria-label="Explore similar places" className="mx-auto flex max-w-5xl flex-wrap gap-2 px-4 pt-6">
-      {links.map((link) => (
-        <a key={link.href} href={link.href} className={chipClasses()}>{link.label}</a>
-      ))}
-    </nav>
   );
 }

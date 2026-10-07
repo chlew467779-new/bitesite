@@ -4,7 +4,10 @@
  * classes of its own payment-methods block so the chips match the layout.
  */
 
+"use client";
+
 import { RETIRED_AMENITY_TAGS } from "@/lib/presets";
+import { presetLabel, useLang, useT } from "@/lib/i18n";
 
 type Props = {
   amenities?: string[] | null;
@@ -15,10 +18,12 @@ type Props = {
 };
 
 export function ListingTags({ amenities, occasion, wrapperClass, labelClass, chipClass }: Props) {
+  const t = useT();
+  const lang = useLang();
   const groups = [
     // Self-declared Halal / Pork-Free are never shown (see RETIRED_AMENITY_TAGS in lib/presets.ts).
-    { label: "Good to know", tags: (amenities ?? []).filter((tag) => !RETIRED_AMENITY_TAGS.includes(tag)) },
-    { label: "Great for", tags: occasion ?? [] },
+    { label: t("store.goodToKnow"), tags: (amenities ?? []).filter((tag) => !RETIRED_AMENITY_TAGS.includes(tag)) },
+    { label: t("store.greatFor"), tags: occasion ?? [] },
   ].filter((group) => group.tags.length > 0);
   if (groups.length === 0) return null;
   return (
@@ -28,7 +33,7 @@ export function ListingTags({ amenities, occasion, wrapperClass, labelClass, chi
           <p className={labelClass}>{group.label}</p>
           <ul className="flex flex-wrap gap-2" aria-label={group.label}>
             {group.tags.map((tag) => (
-              <li key={tag} className={chipClass}>{tag}</li>
+              <li key={tag} className={chipClass}>{presetLabel(lang, tag)}</li>
             ))}
           </ul>
         </div>

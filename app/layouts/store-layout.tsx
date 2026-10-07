@@ -42,6 +42,8 @@ import { formatPrice } from "@/lib/price-format.mjs";
 import { normalizeBookingWhatsApp } from "@/lib/merchant-booking-target.mjs";
 import { priceRange } from "@/lib/store-summary.mjs";
 import { cn } from "@/lib/utils";
+import { dayName, formatTime, presetLabel, useLang, useT } from "@/lib/i18n";
+import { LanguageSwitch } from "@/components/ui/language-switch";
 
 type StyleKey = "classic" | "elegant" | "minimal" | "modern" | "rustic" | "ocean";
 
@@ -95,6 +97,20 @@ function priceText(product: Product, merchant: { currency: string | null | undef
 export function StoreLayout({
   style, merchant, categories, products, features, events, children,
 }: LayoutProps & { style: PageStyle; children?: ReactNode }) {
+  const t = useT();
+  const lang = useLang();
+  // Opening hours are stored in English ("9:00 AM - 3:00 PM", "Closed"); show them in the
+  // visitor's language. 24-hour times ("14:00") already read the same everywhere.
+  const localHours = (text: string) => {
+    if (!text) return text;
+    if (text === "Closed") return t("hours.closed");
+    if (text === "Hours unavailable") return t("hours.unavailable");
+    if (lang === "en") return text;
+    return text.replace(/(\d{1,2}):(\d{2})\s*(AM|PM)/gi, (_, h: string, m: string, period: string) => {
+      const hour = Number(h) % 12 + (period.toUpperCase() === "PM" ? 12 : 0);
+      return formatTime(lang, hour * 60 + Number(m));
+    });
+  };
   const resolvedFeatures = mergeFeatures(features);
   const today = getTodayKey();
   const hours = merchant.operating_hours as Record<string, string> | null;
@@ -114,35 +130,35 @@ export function StoreLayout({
   const quickActions: { key: string; label: string; icon: ReactNode; href?: string; onClick?: () => void; primary?: boolean; external?: boolean }[] = [];
   if (resolvedFeatures.contact && merchant.whatsapp) {
     quickActions.push({
-      key: "whatsapp", label: "WhatsApp", icon: <MessageCircle size={22} aria-hidden />, primary: true, external: true,
+      key: "whatsapp", label: t("store.whatsapp"), icon: <MessageCircle size={22} aria-hidden />, primary: true, external: true,
       href: `https://wa.me/${phoneLinkDigits(merchant.whatsapp)}`,
       onClick: () => trackEvent("whatsapp_click", { slug: merchant.slug, pageType: "merchant" }),
     });
   }
   if (resolvedFeatures.contact && merchant.phone) {
     quickActions.push({
-      key: "call", label: "Call", icon: <Phone size={22} aria-hidden />,
+      key: "call", label: t("store.call"), icon: <Phone size={22} aria-hidden />,
       href: `tel:+${phoneLinkDigits(merchant.phone)}`,
       onClick: () => trackEvent("phone_click", { slug: merchant.slug, pageType: "merchant" }),
     });
   }
   if (resolvedFeatures.contact && directionsHref) {
     quickActions.push({
-      key: "directions", label: "Directions", icon: <Navigation size={22} aria-hidden />, href: directionsHref, external: true,
+      key: "directions", label: t("store.directions"), icon: <Navigation size={22} aria-hidden />, href: directionsHref, external: true,
       onClick: () => trackEvent("directions_click", { slug: merchant.slug, pageType: "merchant" }),
     });
   }
   if (canBook) {
-    quickActions.push({ key: "book", label: "Book", icon: <CalendarDays size={22} aria-hidden />, onClick: () => setBookingOpen(true) });
+    quickActions.push({ key: "book", label: t("store.book"), icon: <CalendarDays size={22} aria-hidden />, onClick: () => setBookingOpen(true) });
   }
   if (quickActions.length > 0 && !quickActions.some((a) => a.primary)) quickActions[0].primary = true;
 
-  const meta = [merchant.cuisine_type, merchant.area, range].filter(Boolean).join(" · ");
+  const meta = [merchant.cuisine_type && presetLabel(lang, merchant.cuisine_type), merchant.area, range].filter(Boolean).join(" · ");
   const socialLinks = [
-    merchant.website && { key: "website", href: merchant.website, label: "Website", icon: <Globe size={18} aria-hidden />, event: "website_click" as const },
-    merchant.instagram && { key: "instagram", href: merchant.instagram, label: "Instagram", icon: <Instagram size={18} aria-hidden /> },
-    merchant.facebook && { key: "facebook", href: merchant.facebook, label: "Facebook", icon: <Facebook size={18} aria-hidden /> },
-    merchant.email && { key: "email", href: `mailto:${merchant.email}`, label: "Email", icon: <Mail size={18} aria-hidden />, event: "email_click" as const },
+    merchant.website && { key: "website", href: merchant.website, label: t("store.website"), icon: <Globe size={18} aria-hidden />, event: "website_click" as const },
+    merchant.instagram && { key: "instagram", href: merchant.instagram, label: t("store.instagram"), icon: <Instagram size={18} aria-hidden /> },
+    merchant.facebook && { key: "facebook", href: merchant.facebook, label: t("store.facebook"), icon: <Facebook size={18} aria-hidden /> },
+    merchant.email && { key: "email", href: `mailto:${merchant.email}`, label: t("store.email"), icon: <Mail size={18} aria-hidden />, event: "email_click" as const },
   ].filter(Boolean) as { key: string; href: string; label: string; icon: ReactNode; event?: "website_click" | "email_click" }[];
   const pillClass = "inline-flex min-h-[30px] items-center rounded-full border border-line bg-page px-3 text-[13px] font-semibold text-ink";
 
@@ -159,10 +175,11 @@ export function StoreLayout({
             </div>
           )}
           <div className="absolute inset-x-4 top-4 flex items-center justify-between">
-            <Link href="/" aria-label="Back to BiteSite" className={iconButtonClasses({ variant: "overlay" })}>
+            <Link href="/" aria-label={t("store.back")} className={iconButtonClasses({ variant: "overlay" })}>
               <ChevronLeft size={22} aria-hidden />
             </Link>
             <div className="flex gap-2">
+              <LanguageSwitch overlay />
               <FavouriteButton slug={merchant.slug} name={merchant.name} />
               <StoreShareButton slug={merchant.slug} name={merchant.name} />
             </div>
@@ -175,7 +192,7 @@ export function StoreLayout({
         <section className="relative -mt-7 rounded-t-[28px] bg-page px-4 pt-[22px] md:mt-0 md:pt-6">
           {merchant.logo_image && (
             <div className="absolute -top-9 right-4 size-[72px] overflow-hidden rounded-[20px] border-4 border-page bg-page shadow-sm md:static md:mb-3 md:size-20">
-              <SafeImage src={merchant.logo_image} alt={`${merchant.name} logo`} fill sizes="80px" className="object-cover" />
+              <SafeImage src={merchant.logo_image} alt={t("store.logoAlt", { name: merchant.name })} fill sizes="80px" className="object-cover" />
             </div>
           )}
           <div className="flex min-h-7 flex-wrap gap-2">
@@ -187,11 +204,11 @@ export function StoreLayout({
             // R5 labels, wording from ChatGPT G28. Halal-certified is only ever set by BiteSite after a
             // certificate check; vegetarian is the restaurant's own declaration and says so.
             <div className="mt-2.5 flex flex-wrap items-center gap-2">
-              {resolvedFeatures.halal_certified && <StatusPill tone="open">Halal-certified</StatusPill>}
+              {resolvedFeatures.halal_certified && <StatusPill tone="open">{t("store.halalCertified")}</StatusPill>}
               {resolvedFeatures.vegetarian_options && (
                 <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
-                  <StatusPill tone="neutral">Vegetarian options</StatusPill>
-                  <span className="text-xs text-muted">Declared by the restaurant; ask about ingredients.</span>
+                  <StatusPill tone="neutral">{t("store.vegetarian")}</StatusPill>
+                  <span className="text-xs text-muted">{t("store.vegetarianNote")}</span>
                 </span>
               )}
             </div>
@@ -203,7 +220,7 @@ export function StoreLayout({
 
         {/* Quick actions */}
         {quickActions.length > 0 && (
-          <nav aria-label="Contact" className={cn("grid max-w-xl gap-2 px-4 pt-4", QUICK_GRID[quickActions.length])}>
+          <nav aria-label={t("store.contactLabel")} className={cn("grid max-w-xl gap-2 px-4 pt-4", QUICK_GRID[quickActions.length])}>
             {quickActions.map((action) => {
               const look = cn(
                 "flex h-[68px] flex-col items-center justify-center gap-1 rounded-2xl text-[13px] font-bold transition-colors [-webkit-tap-highlight-color:transparent]",
@@ -231,7 +248,7 @@ export function StoreLayout({
         {/* Popular here (the Owner's "featured" dishes) */}
         {resolvedFeatures.seasonal_popup && featured.length > 0 && (
           <section aria-labelledby="popular-heading" className="pt-7">
-            <SectionTitle id="popular-heading" className="px-4">Popular here</SectionTitle>
+            <SectionTitle id="popular-heading" className="px-4">{t("store.popular")}</SectionTitle>
             <ul className="mt-3 flex snap-x gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none]">
               {featured.map((product) => (
                 <li key={product.id} className="flex w-[150px] shrink-0 snap-start flex-col gap-1.5">
@@ -275,17 +292,17 @@ export function StoreLayout({
       {resolvedFeatures.contact && (
         <div className="mx-auto max-w-5xl px-4 pt-6">
           <section aria-labelledby="visit-heading" className="flex flex-col gap-3.5 rounded-[22px] bg-surface p-[18px]">
-            <h2 id="visit-heading" className="text-lg font-extrabold">Hours &amp; location</h2>
+            <h2 id="visit-heading" className="text-lg font-extrabold">{t("store.hoursLocation")}</h2>
             {hasHours && (
               <>
                 <div className="flex justify-between gap-3 text-[15px] font-bold">
-                  <span>Today <span className="font-semibold capitalize text-muted">({today.slice(0, 3)})</span></span>
-                  <span className="text-right">{formatOperatingHours(hours?.[today]) || "Closed"}</span>
+                  <span>{t("store.today")} <span className="font-semibold text-muted">({dayName(lang, today, true)})</span></span>
+                  <span className="text-right">{localHours(formatOperatingHours(hours?.[today])) || t("hours.closed")}</span>
                 </div>
                 <details className="group">
                   <summary className="flex min-h-11 cursor-pointer list-none items-center text-sm font-semibold text-brand [&::-webkit-details-marker]:hidden">
-                    <span className="group-open:hidden">See all opening hours</span>
-                    <span className="hidden group-open:inline">Hide opening hours</span>
+                    <span className="group-open:hidden">{t("store.allHours")}</span>
+                    <span className="hidden group-open:inline">{t("store.hideHours")}</span>
                   </summary>
                   <ul className="mt-1 space-y-1">
                     {DAYS.map((day) => {
@@ -293,7 +310,7 @@ export function StoreLayout({
                       if (!time) return null;
                       return (
                         <li key={day} className={cn("flex justify-between gap-3 rounded-lg px-3 py-2 text-sm", day === today ? "bg-page font-bold text-ink" : "text-ink-2")}>
-                          <span className="capitalize">{day}</span><span className="text-right">{formatOperatingHours(time)}</span>
+                          <span>{dayName(lang, day)}</span><span className="text-right">{localHours(formatOperatingHours(time))}</span>
                         </li>
                       );
                     })}
@@ -307,7 +324,7 @@ export function StoreLayout({
 
             {merchant.payment_methods && merchant.payment_methods.length > 0 && (
               <div>
-                <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-muted">Payment</p>
+                <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-muted">{t("store.payment")}</p>
                 <ul className="flex flex-wrap gap-2">
                   {merchant.payment_methods.map((method) => <li key={method} className={pillClass}>{method}</li>)}
                 </ul>
@@ -337,7 +354,7 @@ export function StoreLayout({
       {children}
 
       {canBook && (
-        <Sheet open={bookingOpen} onClose={() => setBookingOpen(false)} title="Book a table">
+        <Sheet open={bookingOpen} onClose={() => setBookingOpen(false)} title={t("booking.title")}>
           <AppointmentSection bare merchantName={merchant.name} whatsapp={merchant.whatsapp} slug={merchant.slug} />
         </Sheet>
       )}
@@ -347,6 +364,7 @@ export function StoreLayout({
 
 /** Menu with a dish search; long menus start folded. One list per category, photo on the right. */
 function StoreMenu({ categories, products, merchant, grid = false }: Pick<LayoutProps, "categories" | "products" | "merchant"> & { grid?: boolean }) {
+  const t = useT();
   const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState(false);
 
@@ -377,11 +395,11 @@ function StoreMenu({ categories, products, merchant, grid = false }: Pick<Layout
   return (
     <section id="menu-section" aria-labelledby="menu-heading" className="scroll-mt-4 px-4 pt-7">
       <div className="flex items-center justify-between gap-3">
-        <SectionTitle id="menu-heading">Menu</SectionTitle>
+        <SectionTitle id="menu-heading">{t("store.menu")}</SectionTitle>
         {total > 6 && (
           <SearchInput
-            label="Find a dish"
-            placeholder="Find a dish"
+            label={t("store.findDish")}
+            placeholder={t("store.findDish")}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             wrapperClassName="h-11 max-w-[200px] flex-1 rounded-xl px-3"
@@ -389,7 +407,7 @@ function StoreMenu({ categories, products, merchant, grid = false }: Pick<Layout
         )}
       </div>
 
-      {visible.length === 0 && <p className="py-6 text-[15px] text-muted">No dishes match &ldquo;{query.trim()}&rdquo;.</p>}
+      {visible.length === 0 && <p className="py-6 text-[15px] text-muted">{t("store.dishNone", { query: query.trim() })}</p>}
 
       {grid ? (
         // R4b photo grid (design: StoreGrid): two photos across on phones, name and price below.
@@ -406,10 +424,10 @@ function StoreMenu({ categories, products, merchant, grid = false }: Pick<Layout
                       <span aria-hidden className="flex h-full items-center justify-center text-4xl font-extrabold text-muted opacity-40">{product.name.charAt(0)}</span>
                     )}
                     {product.is_featured && product.is_available && (
-                      <span className="absolute left-2 top-2 inline-flex h-6 items-center rounded-full bg-white px-2 text-[11px] font-extrabold text-brand">Popular</span>
+                      <span className="absolute left-2 top-2 inline-flex h-6 items-center rounded-full bg-white px-2 text-[11px] font-extrabold text-brand">{t("store.popularBadge")}</span>
                     )}
                     {!product.is_available && (
-                      <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-soldout">Sold out today</span>
+                      <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-soldout">{t("store.soldOut")}</span>
                     )}
                   </div>
                   <h4 className={cn("line-clamp-2 break-words text-[15px] font-bold leading-snug", !product.is_available && "text-muted")}>{product.name}</h4>
@@ -435,7 +453,7 @@ function StoreMenu({ categories, products, merchant, grid = false }: Pick<Layout
                     {hasDisplayablePrice(product) && (
                       <span className="mt-0.5 text-[15px] font-bold">{priceText(product, merchant)}</span>
                     )}
-                    {!product.is_available && <StatusPill tone="soldout" className="mt-1 self-start">Sold out today</StatusPill>}
+                    {!product.is_available && <StatusPill tone="soldout" className="mt-1 self-start">{t("store.soldOut")}</StatusPill>}
                   </div>
                   {product.image_url && (
                     <div className={cn("relative size-[84px] shrink-0 overflow-hidden rounded-[14px] bg-surface", !product.is_available && "opacity-60")}>
@@ -452,7 +470,7 @@ function StoreMenu({ categories, products, merchant, grid = false }: Pick<Layout
 
       {folded && (
         <button type="button" onClick={() => setExpanded(true)} className={cn(buttonClasses({ variant: "secondary", size: "lg", block: true }), "mt-3")}>
-          Show full menu ({total} dishes)
+          {t("store.fullMenu", { count: total })}
         </button>
       )}
     </section>

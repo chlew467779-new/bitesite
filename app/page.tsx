@@ -12,6 +12,7 @@ import { Chip, chipClasses } from "@/components/ui/chip";
 import { buttonClasses } from "@/components/ui/button";
 import { priceRange } from "@/lib/store-summary.mjs";
 import { useFavourites } from "@/lib/favourites";
+import { useT, type MessageKey } from "@/lib/i18n";
 import { MerchantCardSkeleton } from "@/components/sections/merchant-card-skeleton";
 import { Footer } from "@/components/sections/footer";
 import { LatestStories } from "@/components/sections/latest-stories";
@@ -72,6 +73,7 @@ export default function HomePage() {
   const [labels, setLabels] = useState<string[]>(() => readHomeFilters().labels);
   const [isSearching, setIsSearching] = useState(false);
   const [productIndex, setProductIndex] = useState<Map<string, string[]>>(new Map());
+  const t = useT();
   const { slugs: savedSlugs } = useFavourites();
   const [savedOnly, setSavedOnly] = useState(false);
   const [menuPrices, setMenuPrices] = useState<Map<string, MenuPrice[]>>(new Map());
@@ -82,7 +84,7 @@ export default function HomePage() {
   const [nearbyLoading, setNearbyLoading] = useState(false);
   const [nearbyRadiusKm, setNearbyRadiusKm] = useState<number>(DEFAULT_NEARBY_RADIUS_KM);
   const [coordinates, setCoordinates] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [locationError, setLocationError] = useState("");
+  const [locationError, setLocationError] = useState<MessageKey | "">("");
   const locationRequestRef = useRef(0);
 
   // Keep discovery state shareable and restore it when users navigate back.
@@ -315,7 +317,7 @@ export default function HomePage() {
     }
     setLocationError("");
     if (!navigator.geolocation) {
-      setLocationError("Location is unavailable. Showing restaurants by your selected state or area instead.");
+      setLocationError("nearby.unavailable");
       return;
     }
     setNearbyLoading(true);
@@ -330,7 +332,7 @@ export default function HomePage() {
       setCoordinates(null);
       setNearbyActive(false);
       setNearbyLoading(false);
-      setLocationError("Location permission was denied or unavailable. Showing restaurants by your selected state or area instead.");
+      setLocationError("nearby.denied");
     }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 });
   }, []);
 
@@ -402,18 +404,18 @@ export default function HomePage() {
     (savedOnly ? 1 : 0) +
     (searchQuery ? 1 : 0);
 
-  const resultsTitle = savedOnly ? "Saved" : nearbySelection ? "Near you" : openNow ? "Open now" : activeFilterCount > 0 ? "Results" : "Restaurants";
+  const resultsTitle = savedOnly ? t("filter.saved") : nearbySelection ? t("home.nearYou") : openNow ? t("filter.openNow") : activeFilterCount > 0 ? t("home.results") : t("home.restaurants");
 
   return (
     <main>
       <div className="mx-auto max-w-6xl px-4">
         <section className="flex flex-col gap-3.5 pb-2 pt-5 md:pt-10">
           <h1 className="text-[28px] font-extrabold leading-[1.15] tracking-[-0.03em] md:text-[40px]">
-            Find your next<br className="md:hidden" /> makan spot
+            {t("home.title")}
           </h1>
           <SearchInput
-            label="Search restaurants"
-            placeholder="Dish, restaurant or area"
+            label={t("home.searchLabel")}
+            placeholder={t("home.search")}
             value={searchQuery}
             onChange={(event) => handleSearch(event.target.value)}
             wrapperClassName="md:max-w-xl"
@@ -446,13 +448,13 @@ export default function HomePage() {
           onSavedOnlyChange={setSavedOnly}
         />
 
-        {locationError && <p role="status" className="pt-3 text-sm text-muted">{locationError}</p>}
+        {locationError && <p role="status" className="pt-3 text-sm text-muted">{t(locationError)}</p>}
         {nearbySelection && (
-          <div role="group" aria-label="Distance" className="flex flex-wrap items-center gap-2 pt-2 text-[13px] text-muted">
-            <span>Within</span>
+          <div role="group" aria-label={t("nearby.distanceLabel")} className="flex flex-wrap items-center gap-2 pt-2 text-[13px] text-muted">
+            <span>{t("nearby.within")}</span>
             {NEARBY_RADII_KM.map((km) => (
               <Chip key={km} selected={nearbyRadiusKm === km} onClick={() => setNearbyRadiusKm(km)} className="px-3">
-                {km} km
+                {t("nearby.km", { distance: km })}
               </Chip>
             ))}
           </div>
@@ -463,12 +465,12 @@ export default function HomePage() {
             <SectionTitle id="results-heading">{resultsTitle}</SectionTitle>
             {!showLoading && (
               <p role="status" className="text-sm text-muted">
-                {visibleMerchants.length} {visibleMerchants.length === 1 ? "restaurant" : "restaurants"}
+                {t(visibleMerchants.length === 1 ? "home.countOne" : "home.countMany", { count: visibleMerchants.length })}
                 {activeFilterCount > 0 && (
                   <>
                     {" · "}
                     <button type="button" onClick={handleClearAll} className="inline-flex min-h-11 items-center font-semibold text-brand underline-offset-2 hover:underline">
-                      Clear filters
+                      {t("filter.clear")}
                     </button>
                   </>
                 )}
@@ -482,15 +484,15 @@ export default function HomePage() {
             </div>
           ) : visibleMerchants.length === 0 ? (
             <div className="py-14 text-center">
-              <p className="text-lg font-bold">No restaurants found</p>
+              <p className="text-lg font-bold">{t("home.none")}</p>
               <p className="mt-2 text-sm text-muted">
                 {nearbySelection
-                  ? nearbySelection.radiusKm < 10 ? `Nothing within ${nearbySelection.radiusKm} km. Choose a larger distance above, or clear other filters.` : "Nothing within 10 km. Clear other filters or turn off Nearby."
-                  : savedOnly ? "None of your saved restaurants match. Clear other filters, or tap the heart on a restaurant to save it." : "Try adjusting your filters or search."}
+                  ? nearbySelection.radiusKm < 10 ? t("home.nearbyNoneBody") : t("home.nearbyMaxNoneBody")
+                  : savedOnly ? t("home.savedNoneBody") : t("home.noneBody")}
               </p>
               {activeFilterCount > 0 && (
                 <button type="button" onClick={handleClearAll} className={`${buttonClasses({ variant: "primary", size: "lg" })} mt-5`}>
-                  Clear all filters
+                  {t("filter.clearAll")}
                 </button>
               )}
             </div>
@@ -505,10 +507,10 @@ export default function HomePage() {
       </div>
 
       {browseGroups.some(({ groups }) => groups.length > 0) && (
-        <section aria-label="Browse restaurants" className="mx-auto max-w-6xl pt-9">
+        <section aria-label={t("home.browseLabel")} className="mx-auto max-w-6xl pt-9">
           {browseGroups.map(({ kind, groups }) => groups.length > 0 && (
             <div key={kind} className={kind === "area" ? "px-4 pt-6" : ""}>
-              <SectionTitle className={kind === "cuisine" ? "px-4" : ""}>{kind === "cuisine" ? "Craving something?" : "Browse by area"}</SectionTitle>
+              <SectionTitle className={kind === "cuisine" ? "px-4" : ""}>{kind === "cuisine" ? t("home.craving") : t("home.browseArea")}</SectionTitle>
               {kind === "cuisine" ? (
                 <div className="mt-3 flex gap-2.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
                   {groups.map((group, index) => (
@@ -539,11 +541,11 @@ export default function HomePage() {
       <div className="mx-auto max-w-6xl px-4 pt-8">
         <section className="flex flex-col gap-3 rounded-3xl bg-brand px-5 py-[22px] text-white md:flex-row md:items-center md:justify-between md:px-8">
           <div>
-            <p className="text-xl font-extrabold leading-tight tracking-[-0.02em]">Own a restaurant?<br className="md:hidden" /> Get a free menu page.</p>
-            <p className="mt-2 text-sm leading-normal text-[#D5E5DA]">Set it up on your phone in 10 minutes. Free during the pilot.</p>
+            <p className="text-xl font-extrabold leading-tight tracking-[-0.02em]">{t("home.joinTitle")}</p>
+            <p className="mt-2 text-sm leading-normal text-[#D5E5DA]">{t("home.joinBody")}</p>
           </div>
           <Link href="/join-us" className={`${buttonClasses({ variant: "kaya", size: "lg" })} self-start md:self-center`}>
-            Join BiteSite
+            {t("home.joinButton")}
           </Link>
         </section>
       </div>

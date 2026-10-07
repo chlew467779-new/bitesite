@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useT, type MessageKey } from "@/lib/i18n";
 import { SafeImage } from "@/app/components/safe-image";
 import { SectionTitle } from "@/components/ui/card";
 import { formatDistanceKm } from "@/lib/nearby-core.mjs";
@@ -10,12 +13,13 @@ export type NearbyRestaurant = { slug: string; name: string; cuisine: string | n
  * coordinates on the server (never the visitor's location); omitted when the restaurant has no
  * coordinates or no other public restaurant is within 5 km.
  */
-export function NearbyRestaurants({ items, title = "Nearby restaurants", headingId = "nearby-heading" }: { items: NearbyRestaurant[]; title?: string; headingId?: string }) {
+export function NearbyRestaurants({ items, titleKey = "store.nearby", headingId = "nearby-heading" }: { items: NearbyRestaurant[]; titleKey?: MessageKey; headingId?: string }) {
+  const t = useT();
   if (items.length === 0) return null;
 
   return (
     <section aria-labelledby={headingId} className="mx-auto max-w-5xl px-4 pt-7">
-      <SectionTitle id={headingId}>{title}</SectionTitle>
+      <SectionTitle id={headingId}>{t(titleKey)}</SectionTitle>
       <ul className="mt-2 grid gap-x-8 sm:grid-cols-2">
         {items.map((item) => (
           <li key={item.slug}>

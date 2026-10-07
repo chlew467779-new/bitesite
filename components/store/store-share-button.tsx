@@ -7,16 +7,18 @@ import { Check, Share } from "lucide-react";
 import { IconButton } from "@/components/ui/icon-button";
 import { trackEvent } from "@/lib/analytics";
 import { getSiteUrl } from "@/lib/site-url";
+import { useT } from "@/lib/i18n";
 
 /** Share icon on the store cover: the phone's share sheet, or copy the link where there is none. */
 export function StoreShareButton({ slug, name }: { slug: string; name: string }) {
+  const t = useT();
   const [copied, setCopied] = useState(false);
   const url = `${getSiteUrl()}/store/${slug}`;
 
   const share = async () => {
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
-        await navigator.share({ title: `${name} on BiteSite`, text: `Check out ${name} on BiteSite!`, url });
+        await navigator.share({ title: t("store.shareTitle", { name }), text: t("store.shareText", { name }), url });
         trackEvent("share", { pageType: "merchant", slug, detail: "native" });
       } catch {
         // Visitor closed the share sheet.
@@ -34,7 +36,7 @@ export function StoreShareButton({ slug, name }: { slug: string; name: string })
   };
 
   return (
-    <IconButton variant="overlay" label={copied ? "Link copied" : "Share"} onClick={share}>
+    <IconButton variant="overlay" label={copied ? t("store.copied") : t("store.share")} onClick={share}>
       {copied ? <Check size={20} aria-hidden /> : <Share size={20} aria-hidden />}
     </IconButton>
   );

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { openStatus, priceRange, shortTime, malaysiaMinutes } from "../lib/store-summary.mjs";
+import { openStatus, openStatusParts, priceRange, shortTime, malaysiaMinutes } from "../lib/store-summary.mjs";
 
 const at = (h, m = 0) => h * 60 + m;
 
@@ -21,6 +21,9 @@ assert.deepEqual(openStatus("11:00 - 14:30, 18:00 - 22:00", at(13)), { open: tru
 // Overnight slot
 assert.deepEqual(openStatus("6:00 PM - 2:00 AM", at(1)), { open: true, label: "Open now · till 2 am" });
 assert.deepEqual(openStatus("6:00 PM - 2:00 AM", at(23)), { open: true, label: "Open now · till 2 am" });
+assert.deepEqual(openStatusParts("11:00 - 14:30, 18:00 - 22:00", at(13)), { open: true, kind: "openUntil", minutes: at(14, 30) });
+assert.deepEqual(openStatusParts("8:00 AM - 3:00 PM", at(7)), { open: false, kind: "opensAt", minutes: at(8) });
+assert.deepEqual(openStatusParts("Closed", at(7)), { open: false, kind: "closedToday", minutes: null });
 assert.ok(malaysiaMinutes(new Date("2026-10-06T00:30:00Z")) === at(8, 30), "KL is UTC+8");
 
 // priceRange

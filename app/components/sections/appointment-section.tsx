@@ -12,6 +12,7 @@ import type { LayoutVariant } from "./gallery-section";
 import { getLayoutTheme } from "@/lib/layout-theme.mjs";
 import { getBookingUrl, normalizeBookingWhatsApp } from "@/lib/merchant-booking-target.mjs";
 import { getMytToday } from "@/lib/myt-date";
+import { useT } from "@/lib/i18n";
 
 interface AppointmentSectionProps {
   merchantName: string;
@@ -50,6 +51,7 @@ export function AppointmentSection({
   slug,
   bare = false,
 }: AppointmentSectionProps) {
+  const t = useT();
   const theme = bare ? BARE_THEME : getLayoutTheme(variant).appointment;
   const inputStyles = `${inputBase} ${theme.input}`;
   const uid = useId();
@@ -77,11 +79,11 @@ export function AppointmentSection({
 
   const validate = (): FieldErrors => {
     const next: FieldErrors = {};
-    if (!formData.name.trim()) next.name = "Enter your name.";
-    if (!formData.phone.trim()) next.phone = "Enter a phone number the restaurant can reach you on.";
-    if (!formData.date) next.date = "Choose a date.";
-    else if (formData.date < today) next.date = "Choose today or a later date.";
-    if (!formData.time) next.time = "Choose a time.";
+    if (!formData.name.trim()) next.name = t("booking.requiredName");
+    if (!formData.phone.trim()) next.phone = t("booking.requiredPhone");
+    if (!formData.date) next.date = t("booking.requiredDate");
+    else if (formData.date < today) next.date = t("booking.pastDate");
+    if (!formData.time) next.time = t("booking.requiredTime");
     return next;
   };
 
@@ -148,10 +150,10 @@ export function AppointmentSection({
     const handoff = (
             <div className={`rounded-2xl text-center ${bare ? "py-4" : `p-8 border ${theme.card}`}`} role="status">
               <Send size={44} className={`mx-auto mb-4 ${theme.successIcon}`} aria-hidden="true" />
-              <h3 className={`text-2xl font-bold mb-3 ${theme.text}`}>Continue in WhatsApp</h3>
+              <h3 className={`text-2xl font-bold mb-3 ${theme.text}`}>{t("booking.continue")}</h3>
               <p className={`opacity-70 leading-relaxed mb-6 ${theme.text}`}>
-                Please send the message in WhatsApp. Your booking is not confirmed until{" "}
-                {merchantName} replies.
+                {/* en: "Please send the message in WhatsApp. Your booking is not confirmed until {name} replies." */}
+                {t("booking.handoffNote", { name: merchantName })}
               </p>
               <a
                 href={bookingUrl}
@@ -162,17 +164,17 @@ export function AppointmentSection({
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                   <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
                 </svg>
-                Open WhatsApp
+                {t("booking.openWhatsApp")}
               </a>
               <p className={`mt-4 text-sm opacity-60 ${theme.text}`}>
-                If WhatsApp did not open, use the button above.
+                {t("booking.notOpened")}
               </p>
               <button
                 type="button"
                 onClick={() => setBookingUrl(null)}
                 className={`mt-4 text-sm underline underline-offset-2 ${theme.text}`}
               >
-                Edit booking details
+                {t("booking.edit")}
               </button>
             </div>
     );
@@ -191,14 +193,14 @@ export function AppointmentSection({
               <div className="grid sm:grid-cols-2 gap-5">
                 <div>
                   <label htmlFor={fieldId("name")} className={labelClass}>
-                    <User size={14} className="inline mr-1.5 -mt-0.5 opacity-60" aria-hidden="true" />Name
+                    <User size={14} className="inline mr-1.5 -mt-0.5 opacity-60" aria-hidden="true" />{t("booking.name")}
                   </label>
-                  <input type="text" required autoComplete="name" {...fieldA11y("name")} value={formData.name} onChange={(e) => updateField("name", e.target.value)} className={inputStyles} placeholder="Your name" />
+                  <input type="text" required autoComplete="name" {...fieldA11y("name")} value={formData.name} onChange={(e) => updateField("name", e.target.value)} className={inputStyles} placeholder={t("booking.namePlaceholder")} />
                   {fieldError("name")}
                 </div>
                 <div>
                   <label htmlFor={fieldId("phone")} className={labelClass}>
-                    <Phone size={14} className="inline mr-1.5 -mt-0.5 opacity-60" aria-hidden="true" />Phone
+                    <Phone size={14} className="inline mr-1.5 -mt-0.5 opacity-60" aria-hidden="true" />{t("booking.phone")}
                   </label>
                   <input type="tel" required autoComplete="tel" {...fieldA11y("phone")} value={formData.phone} onChange={(e) => updateField("phone", e.target.value)} className={inputStyles} placeholder="+60 12-345 6789" />
                   {fieldError("phone")}
@@ -207,14 +209,14 @@ export function AppointmentSection({
               <div className="grid sm:grid-cols-2 gap-5">
                 <div>
                   <label htmlFor={fieldId("date")} className={labelClass}>
-                    <Calendar size={14} className="inline mr-1.5 -mt-0.5 opacity-60" aria-hidden="true" />Date
+                    <Calendar size={14} className="inline mr-1.5 -mt-0.5 opacity-60" aria-hidden="true" />{t("booking.date")}
                   </label>
                   <input type="date" required {...fieldA11y("date")} value={formData.date} onChange={(e) => updateField("date", e.target.value)} className={inputStyles} min={today} />
                   {fieldError("date")}
                 </div>
                 <div>
                   <label htmlFor={fieldId("time")} className={labelClass}>
-                    <Clock size={14} className="inline mr-1.5 -mt-0.5 opacity-60" aria-hidden="true" />Time
+                    <Clock size={14} className="inline mr-1.5 -mt-0.5 opacity-60" aria-hidden="true" />{t("booking.time")}
                   </label>
                   <input type="time" required {...fieldA11y("time")} value={formData.time} onChange={(e) => updateField("time", e.target.value)} className={inputStyles} />
                   {fieldError("time")}
@@ -222,26 +224,26 @@ export function AppointmentSection({
               </div>
               <div>
                 <label htmlFor={fieldId("guests")} className={labelClass}>
-                  <Users size={14} className="inline mr-1.5 -mt-0.5 opacity-60" aria-hidden="true" />Number of Guests
+                  <Users size={14} className="inline mr-1.5 -mt-0.5 opacity-60" aria-hidden="true" />{t("booking.guests")}
                 </label>
                 <select {...fieldA11y("guests")} value={formData.guests} onChange={(e) => updateField("guests", e.target.value)} className={inputStyles}>
                   {[1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 15, 20].map((n) => (
-                    <option key={n} value={n}>{n} {n === 1 ? "person" : "people"}</option>
+                    <option key={n} value={n}>{t(n === 1 ? "booking.onePerson" : "booking.manyPeople", { count: n })}</option>
                   ))}
                 </select>
               </div>
               <div>
                 <label htmlFor={fieldId("notes")} className={labelClass}>
-                  <MessageSquare size={14} className="inline mr-1.5 -mt-0.5 opacity-60" aria-hidden="true" />Special Requests
+                  <MessageSquare size={14} className="inline mr-1.5 -mt-0.5 opacity-60" aria-hidden="true" />{t("booking.requests")}
                 </label>
-                <textarea {...fieldA11y("notes")} value={formData.notes} onChange={(e) => updateField("notes", e.target.value)} className={`${inputStyles} resize-none`} rows={3} placeholder="Any dietary requirements or special occasions?" />
+                <textarea {...fieldA11y("notes")} value={formData.notes} onChange={(e) => updateField("notes", e.target.value)} className={`${inputStyles} resize-none`} rows={3} placeholder={t("booking.requestsPlaceholder")} />
               </div>
               <button
                 type="submit"
                 className={`w-full py-3.5 rounded-xl font-semibold text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${theme.buttonPrimary}`}
                 style={{ WebkitTapHighlightColor: "transparent" }}
               >
-                <Send size={18} aria-hidden="true" />Continue in WhatsApp
+                <Send size={18} aria-hidden="true" />{t("booking.continue")}
               </button>
             </form>
   );
@@ -249,7 +251,7 @@ export function AppointmentSection({
   if (bare) {
     return (
       <div className="space-y-4">
-        <p className="text-sm text-muted">Fill in your details and send the request to the restaurant in WhatsApp.</p>
+        <p className="text-sm text-muted">{t("booking.intro")}</p>
         {form}
       </div>
     );

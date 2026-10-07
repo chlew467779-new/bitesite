@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { useT } from "@/lib/i18n";
 
 /** Keep two-line previews, but only offer expansion when text actually overflows. */
 export function DishDescription({ description, className = "", clamp = true }: { description: string; className?: string; clamp?: boolean }) {
+  const t = useT();
   const id = useId();
   const probe = useRef<HTMLParagraphElement>(null);
   const [expanded, setExpanded] = useState(false);
@@ -36,7 +38,7 @@ export function DishDescription({ description, className = "", clamp = true }: {
         <button type="button" aria-expanded={showFull} aria-controls={id}
           onClick={() => setExpanded(!showFull)}
           className="inline-flex min-h-11 items-center px-2 text-xs underline underline-offset-4">
-          {showFull ? "Less" : "More"}
+          {showFull ? t("store.descriptionLess") : t("store.descriptionMore")}
         </button>
       )}
     </div>
