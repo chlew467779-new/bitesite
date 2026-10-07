@@ -82,7 +82,7 @@ assert.match(helper, /^import 'server-only';/m);
 assert.match(helper, /\.range\(start, start \+ PAGE - 1\)/, "rows are read page by page, never cut at 1000");
 assert.match(helper, /from\('merchant_slug_history'\)/, "former web addresses count too");
 const dashboard = await read("app/merchant/page.tsx");
-assert.match(dashboard, /\(listing\?\.stateSource === 'legacy' \|\| listing\?\.public\) && <MonthlySummaryCard/, "the card shows only for a live page");
+assert.ok(dashboard.includes("const isLive = listing?.stateSource === 'legacy' || Boolean(listing?.public);") && dashboard.includes("{isLive && <MonthlySummaryCard"), "the card shows only for a live page");
 const page = await read("app/admin/page.tsx");
 assert.match(page, /activeTab === 'monthly-summaries' && <MonthlySummaries \/>/);
 const list = await read("app/admin/components/monthly-summaries.tsx");

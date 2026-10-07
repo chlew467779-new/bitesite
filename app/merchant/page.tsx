@@ -32,6 +32,10 @@ import { PageStyleSection } from './components/page-style-section';
 import { TableQrPanel } from './components/table-qr-panel';
 import { FoodLabelsSection } from './components/food-labels-section';
 import { createAreaRequests } from '@/lib/area-requests.mjs';
+import { ChecklistLink, DASHBOARD_TILES, DashboardSideNav, DashboardTiles, ViewBar, useDashboardView, viewOfSection, type DashboardView } from './components/dashboard-shell';
+import { StatusPill } from '@/components/ui/status-pill';
+import { buttonClasses } from '@/components/ui/button';
+import { useT } from '@/lib/i18n';
 
 /**
  * Merchant self-service dashboard (D2-B / M1-B).
@@ -73,20 +77,8 @@ function archivedLast(choices: Choice[]) {
   return [...choices].sort((a, b) => Number(a.restriction === 'archived') - Number(b.restriction === 'archived'));
 }
 
-const SECTIONS = [
-  { id: 'basics', label: 'Listing basics' },
-  { id: 'about', label: 'About' },
-  { id: 'contact', label: 'Contact & links' },
-  { id: 'photos', label: 'Photos' },
-  { id: 'style', label: 'Page style' },
-  { id: 'menu', label: 'Menu' },
-  { id: 'hours', label: 'Opening hours' },
-  { id: 'jobs', label: 'Hiring' },
-  { id: 'stats', label: 'Visitors' },
-  { id: 'feedback', label: 'Feedback' },
-] as const;
-
-const cardClass = 'scroll-mt-24 rounded-2xl border border-[#DDE5DC] bg-white p-5 shadow-sm sm:p-7';
+// Below the sticky site header and the view bar.
+const cardClass = 'scroll-mt-32 rounded-[20px] border border-line bg-page p-4 sm:p-6';
 
 function statusLabel(value: string | null | undefined, fallback: string) {
   return (value || fallback).replaceAll('_', ' ').toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
@@ -123,11 +115,15 @@ function safeHref(value: unknown) {
   }
 }
 
-function SectionCard({ id, title, description, children }: { id: string; title: string; description?: string; children: ReactNode }) {
+/**
+ * One editor card. `hidden` keeps it mounted (unsaved typing survives) while another view is open;
+ * `soleTitle` hides the heading visually when the view bar above already names it.
+ */
+function SectionCard({ id, title, description, hidden, soleTitle, children }: { id: string; title: string; description?: string; hidden?: boolean; soleTitle?: boolean; children: ReactNode }) {
   return (
-    <section id={id} aria-labelledby={`${id}-heading`} className={cardClass}>
-      <h2 id={`${id}-heading`} className="font-serif text-xl text-[#2C3E2D] sm:text-2xl">{title}</h2>
-      {description && <p className="mt-1 text-sm text-[#6B6560]">{description}</p>}
+    <section id={id} aria-labelledby={`${id}-heading`} className={cardClass} hidden={hidden}>
+      <h2 id={`${id}-heading`} className={soleTitle ? 'sr-only' : 'text-xl font-extrabold tracking-[-0.02em] text-ink'}>{title}</h2>
+      {description && <p className={`${soleTitle ? '' : 'mt-1 '}text-sm text-muted`}>{description}</p>}
       <div className="mt-5">{children}</div>
     </section>
   );
@@ -233,6 +229,8 @@ const CONTACT_FIELDS = [
 ];
 
 export default function MerchantDashboardPage() {
+  const t = useT();
+  const { view, open, home } = useDashboardView();
   const [areaRequests] = useState(createAreaRequests);
   const [load, setLoad] = useState<LoadState>({ kind: 'loading' });
   const [data, setData] = useState<Loaded | null>(null);
@@ -579,45 +577,16 @@ export default function MerchantDashboardPage() {
   const percent = Math.round((completed / checklist.length) * 100);
   const sectionKey = `${data.userId}:${profile.id}:${data.loadId}`;
   const sectionProps = { fields: data.fields, send, readOnly, register, onConfirmed };
+  const isLive = listing?.stateSource === 'legacy' || Boolean(listing?.public);
+  const tiles = DASHBOARD_TILES.filter((tile) => tile.id !== 'jobs' || jobsOn);
+  const attention = new Set<DashboardView>(checklist.filter((item) => !item.complete).map((item) => viewOfSection(item.anchor) as DashboardView));
+  const openTile = (id: DashboardView | '') => { if (id === 'stories') requestStories(); else open(id); };
+  const activeTile = tiles.find((tile) => tile.id === view) ?? null;
+  // Only one card is shown in these views, so the view bar names it and the card heading is hidden.
+  const sole = (id: DashboardView) => ({ hidden: view !== id, soleTitle: true });
 
   return (
-    <main className="min-h-screen bg-[#FAFBF7] pb-16">
-      <header className="border-b border-[#DDE5DC] bg-white">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-start justify-between gap-4 px-4 py-5 sm:px-6">
-          <div className="min-w-0">
-            <p className="text-xs font-medium uppercase tracking-wider text-emerald-800">Merchant dashboard</p>
-            <h1 className="mt-1 font-serif text-2xl text-[#2C3E2D] break-words sm:text-3xl">{profile.name}</h1>
-            <div className="mt-2 flex flex-wrap gap-2 text-xs">
-              <span className="rounded-full bg-[#F0F4EC] px-2.5 py-1 text-[#2C3E2D]">Listing: {listing?.stateSource === 'managed' ? (listing.public ? 'Live' : statusLabel(listing.reviewStatus, 'Draft')) : statusLabel(profile.platform_status, 'Published')}</span>
-              <span className="rounded-full bg-[#F0F4EC] px-2.5 py-1 text-[#2C3E2D]">Business: {statusLabel(profile.business_status, 'Open')}</span>
-            </div>
-            {merchants.length > 1 && (
-              <label className="mt-3 flex max-w-full flex-wrap items-center gap-2 text-sm text-[#2C3E2D]">
-                <span className="font-medium">Restaurant</span>
-                <select
-                  value={profile.id}
-                  onChange={(event) => requestSwitch(event.target.value)}
-                  className="min-w-0 max-w-full rounded-lg border border-[#C9D6C7] bg-white px-3 py-2 text-sm"
-                >
-                  {archivedLast(merchants).map((choice) => (
-                    <option key={choice.id} value={choice.id}>{choice.name}{choice.restriction === 'archived' ? ' (Discarded)' : choice.restriction !== 'none' ? ' (read only)' : ''}</option>
-                  ))}
-                </select>
-              </label>
-            )}
-          </div>
-          <nav aria-label="Merchant links" className="flex flex-wrap items-center gap-2 text-sm">
-            <a href="/merchant/new" onClick={(event) => { event.preventDefault(); requestNewRestaurant(); }} className="inline-flex min-h-11 items-center rounded-lg border border-[#DDE5DC] px-3 py-2 font-medium text-[#2C3E2D] hover:border-emerald-700">Create another restaurant</a>
-            {(listing?.stateSource === 'legacy' || listing?.public) && <a href={`/store/${profile.slug}`} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center rounded-lg border border-[#DDE5DC] px-3 py-2 font-medium text-[#2C3E2D] hover:border-emerald-700">View public page</a>}
-            <div className="max-w-xs">
-              <a href={merchantPageUrl('/merchant/preview', profile.id)} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center rounded-lg border border-[#DDE5DC] px-3 py-2 font-medium text-[#2C3E2D] hover:border-emerald-700">Preview page</a>
-              <p className="mt-1 text-xs leading-5 text-[#6B6560]">Changes waiting for BiteSite review (links, name, address, cuisine) are not shown here until approved.</p>
-            </div>
-            <Link href={merchantPageUrl('/merchant/stories', profile.id)} onClick={(event) => { event.preventDefault(); requestStories(); }} className="inline-flex min-h-11 items-center rounded-lg border border-[#DDE5DC] px-3 py-2 font-medium text-[#2C3E2D] hover:border-emerald-700">Stories</Link>
-            <button type="button" onClick={requestSignOut} className="min-h-11 rounded-lg px-3 py-2 font-medium text-[#6B6560] hover:text-[#2C3E2D]">Sign out</button>
-          </nav>
-        </div>
-      </header>
+    <main className="min-h-screen bg-page pb-16">
 
       {switchPrompt && (
         <div role="dialog" aria-modal="true" aria-labelledby="switch-title" className="fixed inset-0 z-40 flex items-end justify-center bg-black/30 p-4 sm:items-center">
@@ -659,125 +628,155 @@ export default function MerchantDashboardPage() {
         </div>
       )}
 
-      {readOnlyNotice && (
-        <div className="mx-auto max-w-6xl px-4 pt-6 sm:px-6">
-          <p role="status" className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            {readOnlyNotice}
-          </p>
-        </div>
-      )}
-
-      <div className="mx-auto grid max-w-6xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[15rem_minmax(0,1fr)] lg:py-8">
-        <aside className="min-w-0 lg:sticky lg:top-6 lg:self-start">
-          {listing?.stateSource !== 'managed' && <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-5">
-            <div className="flex items-baseline justify-between gap-2">
-              <h2 className="text-sm font-semibold text-[#2C3E2D]">Listing checklist</h2>
-              <span className="text-xs font-semibold text-emerald-800">{completed}/{checklist.length}</span>
-            </div>
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-white" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent} aria-label={`Listing ${percent}% complete`}>
-              <div className="h-full rounded-full bg-emerald-700 transition-all" style={{ width: `${percent}%` }} />
-            </div>
-            <ul className="mt-3 space-y-1.5 text-sm">
-              {checklist.map((item) => (
-                <li key={item.label}>
-                  {item.complete
-                    ? <span className="text-emerald-800">✓ {item.label}</span>
-                    : <a href={`#${item.anchor}`} className="inline-flex min-h-11 items-center text-[#2C3E2D] underline underline-offset-2">○ {item.label}</a>}
-                </li>
-              ))}
-            </ul>
-          </div>}
-          <nav aria-label="Dashboard sections" className="mt-4">
-            <ul className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible">
-              {SECTIONS.filter((section) => section.id !== 'jobs' || jobsOn).map((section) => (
-                <li key={section.id} className="shrink-0">
-                  <a href={`#${section.id}`} className="flex min-h-11 items-center rounded-lg border border-[#DDE5DC] bg-white px-3 py-2 text-sm text-[#2C3E2D] hover:border-emerald-700 lg:border-transparent lg:bg-transparent lg:hover:bg-white">{section.label}</a>
-                </li>
-              ))}
-            </ul>
-          </nav>
-          <p className="mt-4 hidden text-xs leading-relaxed text-[#6B6560] lg:block">
-            Save each section separately. You can edit listing basics until approval; later changes to those details are requested and checked by BiteSite. External links are reviewed.
-          </p>
+      <div className="mx-auto grid max-w-6xl gap-6 px-4 pb-6 sm:px-6 lg:grid-cols-[15rem_minmax(0,1fr)] lg:py-8">
+        <aside className="min-w-0 lg:sticky lg:top-[84px] lg:self-start">
+          <DashboardSideNav tiles={tiles} view={view} onOpen={openTile} />
         </aside>
 
-        <div className="min-w-0 space-y-6">
-          {listingError && <p role="alert" className="text-sm text-red-700">{listingError}</p>}
-          {listing && <ListingPanel key={sectionKey} merchantId={profile.id} state={listing} getHeaders={photoHeaders} refresh={refreshListing} onState={onListingState} onBusy={setListingBusy} register={register} beforeAction={() => { const status = anyStatus(); return !status.dirty && !status.busy; }} />}
-          {(listing?.stateSource === 'legacy' || listing?.public) && <MonthlySummaryCard key={`summary:${profile.id}`} merchantId={profile.id} getHeaders={photoHeaders} />}
-          <SectionCard id="basics" title="Listing basics" description="Your restaurant name, location and cuisine.">
-            <ListingBasics key={`basics:${sectionKey}`} {...sectionProps} readOnly={readOnly || !listing?.basicsEditable} merchantId={profile.id} getHeaders={photoHeaders} areaRequests={areaRequests} />
-            {listing && !listing.basicsEditable && <BasicsRequests key={`basics-requests:${profile.id}:${data.loadId}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={readOnly} register={register} areaRequests={areaRequests} />}
-          </SectionCard>
-          <SectionCard id="about" title="About" description="A short line and description help visitors decide to come in.">
-            <TextSection key={`about:${sectionKey}`} id="about" config={ABOUT_FIELDS} {...sectionProps} />
-            {'tags.amenities' in sectionProps.fields && 'tags.occasion' in sectionProps.fields && (
-              <div className="mt-6 border-t border-[#EEF2EC] pt-5">
-                <AmenitiesSection key={`amenities:${sectionKey}`} {...sectionProps} />
-              </div>
-            )}
-            {/* Shown once migration 20261006120000 offers the field (R5). */}
-            {'features.vegetarian_options' in sectionProps.fields && (
-              <div className="mt-6 border-t border-[#EEF2EC] pt-5">
-                <FoodLabelsSection key={`food-labels:${sectionKey}`} {...sectionProps} />
-              </div>
-            )}
-          </SectionCard>
-
-          <SectionCard id="contact" title="Contact & links" description="All optional. Leave a field empty to hide it from your page.">
-            <TextSection key={`contact:${sectionKey}`} id="contact" config={CONTACT_FIELDS} {...sectionProps} />
-            {/* Shown once the database offers tags.payment (migration 20260929120000). */}
-            {'tags.payment' in sectionProps.fields && (
-              <div className="mt-6 border-t border-[#EEF2EC] pt-5">
-                <PaymentSection key={`payment:${sectionKey}`} {...sectionProps} />
-              </div>
-            )}
-            <div className="mt-6 rounded-lg border border-[#EEF2EC] bg-[#FAFBF7] p-4">
-              <h3 className="mb-2 text-sm font-semibold text-[#2C3E2D]">Links</h3>
-              <LinkRequests key={`links:${profile.id}:${data.loadId}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={readOnly} register={register} />
-            </div>
-          </SectionCard>
-
-          <SectionCard id="photos" title="Photos" description="Choose a photo from your phone or take a new one. It is resized before upload and appears on your page after BiteSite checks the file. The public gallery shows up to 8 photos: your cover first, then dish photos in menu order.">
-            <ProfileImagesPanel key={`photos:${profile.id}:${data.loadId}`} apiBase={`/api/merchant/restaurants/${encodeURIComponent(profile.id)}/media`} getHeaders={photoHeaders} disabled={readOnly} register={register} onChanged={onPhotoChanged} />
-          </SectionCard>
-
-          {'presentation.layout' in sectionProps.fields && (
-            <SectionCard id="style" title="Page style" description="Choose how your page looks and which sections it shows. Changes show on your page right away.">
-              <PageStyleSection key={`style:${sectionKey}`} {...sectionProps} />
-              <div className="mt-8 border-t border-line pt-6">
-                <TableQrPanel slug={profile.slug} name={profile.name} layoutKey={typeof value('presentation.layout') === 'string' ? (value('presentation.layout') as string) : null} isPublic={Boolean(listing?.public || listing?.stateSource === 'legacy')} />
-              </div>
-            </SectionCard>
+        <div className="min-w-0 space-y-4">
+          {readOnlyNotice && (
+            <p role="status" className="mt-4 rounded-[14px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 lg:mt-0">
+              {readOnlyNotice}
+            </p>
           )}
 
-          <SectionCard id="menu" title="Menu" description="Add categories and dishes, change prices, and mark dishes sold out. Changes show on your page right away.">
+          {/* Home screen: the restaurant, its review state, what is left to do, and the tiles. */}
+          <div hidden={view !== null} className="space-y-5 pt-5 lg:pt-0">
+            <div>
+              <div className="flex flex-wrap gap-2">
+                <StatusPill tone={isLive ? 'open' : 'neutral'} dot={isLive}>{listing?.stateSource === 'managed' ? (listing.public ? 'Live' : statusLabel(listing.reviewStatus, 'Draft')) : statusLabel(profile.platform_status, 'Published')}</StatusPill>
+                {profile.business_status && profile.business_status !== 'OPEN' && <StatusPill tone="closed">{statusLabel(profile.business_status, 'Open')}</StatusPill>}
+              </div>
+              <h1 className="mt-2 break-words text-[26px] font-extrabold leading-tight tracking-[-0.03em] text-ink lg:text-[32px]">{profile.name}</h1>
+              {merchants.length > 1 && (
+                <label className="mt-2 flex max-w-full flex-wrap items-center gap-2 text-sm text-ink">
+                  <span className="font-semibold">{t('owner.home.restaurant')}</span>
+                  <select
+                    value={profile.id}
+                    onChange={(event) => requestSwitch(event.target.value)}
+                    className="min-h-11 min-w-0 max-w-full rounded-[14px] border border-line-strong bg-page px-3 text-sm"
+                  >
+                    {archivedLast(merchants).map((choice) => (
+                      <option key={choice.id} value={choice.id}>{choice.name}{choice.restriction === 'archived' ? ' (Discarded)' : choice.restriction !== 'none' ? ' (read only)' : ''}</option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              <div className="mt-4 grid grid-cols-2 gap-2 sm:flex">
+                {isLive && <a href={`/store/${profile.slug}`} target="_blank" rel="noopener noreferrer" className={buttonClasses({ variant: 'primary', size: 'md' })}>{t('owner.home.viewPage')}</a>}
+                <a href={merchantPageUrl('/merchant/preview', profile.id)} target="_blank" rel="noopener noreferrer" className={buttonClasses({ variant: 'secondary', size: 'md' })}>{t('owner.home.preview')}</a>
+              </div>
+              <p className="mt-2 text-xs leading-5 text-muted">{t('owner.home.previewNote')}</p>
+            </div>
+
+            {listingError && <p role="alert" className="text-sm text-red-700">{listingError}</p>}
+            {listing && <ListingPanel key={sectionKey} merchantId={profile.id} state={listing} getHeaders={photoHeaders} refresh={refreshListing} onState={onListingState} onBusy={setListingBusy} register={register} beforeAction={() => { const status = anyStatus(); return !status.dirty && !status.busy; }} />}
+
+            {listing?.stateSource !== 'managed' && completed < checklist.length && (
+              <div className="rounded-[20px] bg-brand-soft p-4">
+                <div className="flex items-baseline justify-between gap-2">
+                  <h2 className="text-[15px] font-bold text-ink">{t('owner.home.checklistTitle')}</h2>
+                  <span className="text-xs font-bold text-brand">{t('owner.home.checklistCount', { done: completed, total: checklist.length })}</span>
+                </div>
+                <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-page" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent} aria-label={t('owner.home.checklistTitle')}>
+                  <div className="h-full rounded-full bg-brand" style={{ width: `${percent}%` }} />
+                </div>
+                <ul className="mt-2">
+                  {checklist.filter((item) => !item.complete).map((item) => (
+                    <li key={item.label}><ChecklistLink label={item.label} onOpen={() => open(item.anchor)} /></li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <DashboardTiles tiles={tiles} attention={attention} onOpen={openTile} />
+
+            <div className="border-t border-line pt-4">
+              <h2 className="text-xs font-bold uppercase tracking-[0.06em] text-muted">{t('owner.home.account')}</h2>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <a href="/merchant/new" onClick={(event) => { event.preventDefault(); requestNewRestaurant(); }} className={buttonClasses({ variant: 'secondary', size: 'md' })}>{t('owner.home.newRestaurant')}</a>
+                <button type="button" onClick={requestSignOut} className={buttonClasses({ variant: 'ghost', size: 'md' })}>{t('owner.home.signOut')}</button>
+              </div>
+              <p className="mt-3 text-xs leading-relaxed text-muted">{t('owner.home.saveNote')}</p>
+            </div>
+          </div>
+
+          {/* One view at a time. Every card stays mounted so nothing typed is lost when moving between views. */}
+          {activeTile && <ViewBar title={t(activeTile.title)} onBack={home} />}
+
+          <SectionCard id="menu" title="Menu" description="Add categories and dishes, change prices, and mark dishes sold out. Changes show on your page right away." {...sole('menu')}>
             <div className="mb-6"><CurrencySetting key={`currency:${profile.id}`} merchantId={profile.id} area={liveArea} getHeaders={photoHeaders} readOnly={profile.restriction === 'suspended' || profile.restriction === 'archived'} onCurrency={setCurrency} /></div>
             <div className="mb-6"><MenuPhotosPanel key={`menu-photos:${profile.id}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={profile.restriction === 'suspended' || profile.restriction === 'archived'} /></div>
             <MenuManager onChanged={refreshListing} key={`menu:${profile.id}:${data.loadId}`} merchantId={profile.id} currency={currency} getHeaders={photoHeaders} readOnly={readOnly} />
           </SectionCard>
 
-          <SectionCard id="hours" title="Opening hours" description="Customers see these on your page. Changes to one day leave the other days as they are.">
-            <div className="mb-6 border-b border-[#EEF2EC] pb-6">
+          <SectionCard id="hours" title="Opening hours" description="Customers see these on your page. Changes to one day leave the other days as they are." {...sole('hours')}>
+            <div className="mb-6 border-b border-line pb-6">
               <ClosurePanel key={`closure:${profile.id}:${data.loadId}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={readOnly} onStatus={onBusinessStatus} />
             </div>
             <HoursSection key={`hours:${sectionKey}`} {...sectionProps} />
           </SectionCard>
 
-          <JobsPanel key={`jobs:${profile.id}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={readOnly} register={register} onAvailable={setJobsOn}
-            renderSection={(body) => <SectionCard id="jobs" title="Hiring" description="Looking for staff? Post a job on your page. People apply by WhatsApp or phone; posts stay up for 30 days.">{body}</SectionCard>} />
-
-          <SectionCard id="stats" title="Visitors" description="How many people opened your page and what they did.">
-            <StatsPanel key={`stats:${profile.id}`} merchantId={profile.id} getHeaders={photoHeaders} />
+          <SectionCard id="photos" title="Photos" description="Choose a photo from your phone or take a new one. It is resized before upload and appears on your page after BiteSite checks the file. The public gallery shows up to 8 photos: your cover first, then dish photos in menu order." {...sole('photos')}>
+            <ProfileImagesPanel key={`photos:${profile.id}:${data.loadId}`} apiBase={`/api/merchant/restaurants/${encodeURIComponent(profile.id)}/media`} getHeaders={photoHeaders} disabled={readOnly} register={register} onChanged={onPhotoChanged} />
           </SectionCard>
 
-          <SectionCard id="feedback" title="Feedback" description="Tell the BiteSite team what would make the dashboard or your page work better for you.">
+          <SectionCard id="basics" title="Listing basics" description="Your restaurant name, location and cuisine." hidden={view !== 'info'}>
+            <ListingBasics key={`basics:${sectionKey}`} {...sectionProps} readOnly={readOnly || !listing?.basicsEditable} merchantId={profile.id} getHeaders={photoHeaders} areaRequests={areaRequests} />
+            {listing && !listing.basicsEditable && <BasicsRequests key={`basics-requests:${profile.id}:${data.loadId}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={readOnly} register={register} areaRequests={areaRequests} />}
+          </SectionCard>
+          <SectionCard id="about" title="About" description="A short line and description help visitors decide to come in." hidden={view !== 'info'}>
+            <TextSection key={`about:${sectionKey}`} id="about" config={ABOUT_FIELDS} {...sectionProps} />
+            {'tags.amenities' in sectionProps.fields && 'tags.occasion' in sectionProps.fields && (
+              <div className="mt-6 border-t border-line pt-5">
+                <AmenitiesSection key={`amenities:${sectionKey}`} {...sectionProps} />
+              </div>
+            )}
+            {/* Shown once migration 20261006120000 offers the field (R5). */}
+            {'features.vegetarian_options' in sectionProps.fields && (
+              <div className="mt-6 border-t border-line pt-5">
+                <FoodLabelsSection key={`food-labels:${sectionKey}`} {...sectionProps} />
+              </div>
+            )}
+          </SectionCard>
+          <SectionCard id="contact" title="Contact & links" description="All optional. Leave a field empty to hide it from your page." hidden={view !== 'info'}>
+            <TextSection key={`contact:${sectionKey}`} id="contact" config={CONTACT_FIELDS} {...sectionProps} />
+            {/* Shown once the database offers tags.payment (migration 20260929120000). */}
+            {'tags.payment' in sectionProps.fields && (
+              <div className="mt-6 border-t border-line pt-5">
+                <PaymentSection key={`payment:${sectionKey}`} {...sectionProps} />
+              </div>
+            )}
+            <div className="mt-6 rounded-[14px] border border-line bg-surface p-4">
+              <h3 className="mb-2 text-sm font-bold text-ink">Links</h3>
+              <LinkRequests key={`links:${profile.id}:${data.loadId}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={readOnly} register={register} />
+            </div>
+          </SectionCard>
+
+          {'presentation.layout' in sectionProps.fields && (
+            <SectionCard id="style" title="Page style" description="Choose how your page looks and which sections it shows. Changes show on your page right away." {...sole('style')}>
+              <PageStyleSection key={`style:${sectionKey}`} {...sectionProps} />
+              <div className="mt-8 border-t border-line pt-6">
+                <TableQrPanel slug={profile.slug} name={profile.name} layoutKey={typeof value('presentation.layout') === 'string' ? (value('presentation.layout') as string) : null} isPublic={isLive} />
+              </div>
+            </SectionCard>
+          )}
+
+          <div hidden={view !== 'stats'} className="space-y-4">
+            {isLive && <MonthlySummaryCard key={`summary:${profile.id}`} merchantId={profile.id} getHeaders={photoHeaders} />}
+            <SectionCard id="stats" title="Visitors" description="How many people opened your page and what they did." soleTitle>
+              <StatsPanel key={`stats:${profile.id}`} merchantId={profile.id} getHeaders={photoHeaders} />
+            </SectionCard>
+          </div>
+
+          <div hidden={view !== 'jobs'}>
+            <JobsPanel key={`jobs:${profile.id}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={readOnly} register={register} onAvailable={setJobsOn}
+              renderSection={(body) => <SectionCard id="jobs" title="Hiring" description="Looking for staff? Post a job on your page. People apply by WhatsApp or phone; posts stay up for 30 days." soleTitle>{body}</SectionCard>} />
+          </div>
+
+          <SectionCard id="feedback" title="Feedback" description="Tell the BiteSite team what would make the dashboard or your page work better for you." {...sole('feedback')}>
             <FeedbackPanel merchantId={profile.id} getHeaders={photoHeaders} />
           </SectionCard>
-
-          <p className="text-xs leading-relaxed text-[#6B6560] lg:hidden">
-            Save each section separately. You can edit listing basics until approval; later changes to those details go through BiteSite. External links are reviewed.
-          </p>
         </div>
       </div>
     </main>

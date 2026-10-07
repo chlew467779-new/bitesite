@@ -26,6 +26,7 @@ assert.doesNotMatch(component, /key: 'events'/, "no events switch");
 assert.ok(getPersistableLayouts().every((l) => l.productionReady), "persistable = production-ready");
 const dashboard = await read("app/merchant/page.tsx");
 assert.match(dashboard, /<PageStyleSection key=\{`style:\$\{sectionKey\}`\} \{\.\.\.sectionProps\} \/>/);
-assert.match(dashboard, /\{ id: 'style', label: 'Page style' \}/, "listed in the dashboard section links");
+const shell = await read("app/merchant/components/dashboard-shell.tsx");
+assert.ok(shell.includes("{ id: 'style', title: 'owner.tile.style'"), "listed in the dashboard tiles");
 
 console.log("owner page style checks passed");
