@@ -30,7 +30,7 @@ import MerchantSlugPanel from './merchant-slug-panel';
 import MerchantHistoryPanel from './merchant-history-panel';
 import { ProfileImagesPanel } from '@/app/components/media/profile-images-panel';
 import { JobsPanel } from '@/app/merchant/components/jobs-panel';
-import { AMENITY_TAGS, CUISINE_TAGS, OCCASION_TAGS } from '@/lib/presets';
+import { SELECTABLE_AMENITY_TAGS, CUISINE_TAGS, OCCASION_TAGS } from '@/lib/presets';
 import { getPersistableLayouts } from '@/lib/layout-registry.mjs';
 import { defaultFeatures } from '@/types';
 import { snapshotValue, type Snapshot } from '@/lib/section-save.mjs';
@@ -88,7 +88,7 @@ const WRITABLE_FEATURES = [
 ];
 const TAG_GROUPS = [
   { path: 'tags.cuisine', label: 'Cuisine', options: CUISINE_TAGS, max: 3 },
-  { path: 'tags.amenities', label: 'Amenities', options: AMENITY_TAGS, max: 5 },
+  { path: 'tags.amenities', label: 'Amenities', options: SELECTABLE_AMENITY_TAGS, max: 5 },
   { path: 'tags.occasion', label: 'Occasion', options: OCCASION_TAGS, max: 3 },
 ] as const;
 
