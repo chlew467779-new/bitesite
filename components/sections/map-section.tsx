@@ -83,6 +83,19 @@ export function MapSection({ merchants, selectedMerchant, onSelect }: MapSection
     };
   }, []);
 
+  // Leaflet draws its zoom buttons in English; relabel them whenever the language changes.
+  const zoomIn = t("map.zoomIn");
+  const zoomOut = t("map.zoomOut");
+  useEffect(() => {
+    const root = containerRef.current;
+    if (!root) return;
+    for (const [selector, label] of [[".leaflet-control-zoom-in", zoomIn], [".leaflet-control-zoom-out", zoomOut]] as const) {
+      const button = root.querySelector(selector);
+      button?.setAttribute("title", label);
+      button?.setAttribute("aria-label", label);
+    }
+  }, [zoomIn, zoomOut]);
+
   useEffect(() => {
     const map = mapRef.current;
     const layer = markersLayerRef.current;
