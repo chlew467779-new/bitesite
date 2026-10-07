@@ -380,5 +380,16 @@
   "owner.tile.stories": "Cerita makanan",
   "owner.tile.storiesHint": "Kongsi berita dan cerita makanan",
   "owner.tile.feedback": "Maklum balas",
-  "owner.tile.feedbackHint": "Beritahu BiteSite apa yang perlu diperbaiki"
+  "owner.tile.feedbackHint": "Beritahu BiteSite apa yang perlu diperbaiki",
+  "owner.entry.title": "Papan pemuka restoran",
+  "owner.entry.loading": "Memuatkan restoran anda…",
+  "owner.entry.signedOut": "Log masuk dengan e-mel restoran anda untuk mengurus halaman anda.",
+  "owner.entry.signIn": "Log masuk",
+  "owner.entry.none": "Cipta halaman restoran pertama anda untuk bermula. Hanya anda boleh melihatnya sehingga BiteSite meluluskannya.",
+  "owner.entry.create": "Cipta restoran",
+  "owner.entry.choose": "Pilih restoran yang anda mahu urus.",
+  "owner.entry.discarded": "Dibuang",
+  "owner.entry.readOnly": "Baca sahaja",
+  "owner.entry.retry": "Cuba lagi",
+  "owner.entry.back": "Kembali ke restoran saya"
 }

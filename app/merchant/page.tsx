@@ -36,6 +36,7 @@ import { ChecklistLink, DASHBOARD_TILES, DashboardSideNav, DashboardTiles, ViewB
 import { StatusPill } from '@/components/ui/status-pill';
 import { buttonClasses } from '@/components/ui/button';
 import { useT } from '@/lib/i18n';
+import { ChevronRight } from 'lucide-react';
 
 /**
  * Merchant self-service dashboard (D2-B / M1-B).
@@ -501,42 +502,49 @@ export default function MerchantDashboardPage() {
 
   if (load.kind !== 'ready' || !data) {
     return (
-      <main className="min-h-screen bg-[#FAFBF7] px-4 py-16 sm:py-20">
-        <div className="mx-auto max-w-xl rounded-2xl border border-[#DDE5DC] bg-white p-6 shadow-sm sm:p-8">
-          <h1 className="font-serif text-3xl text-[#2C3E2D]">Merchant dashboard</h1>
-          {load.kind === 'loading' && <p className="mt-4 text-sm text-[#6B6560]" aria-live="polite">Loading your merchant account…</p>}
+      <main className="min-h-screen bg-page px-4 pb-16 pt-8 sm:pt-16">
+        <div className="mx-auto max-w-md">
+          <h1 className="text-[28px] font-extrabold leading-tight tracking-[-0.03em] text-ink">{t('owner.entry.title')}</h1>
+          {load.kind === 'loading' && <p className="mt-3 text-[15px] text-muted" aria-live="polite">{t('owner.entry.loading')}</p>}
           {load.kind === 'signed-out' && (
             <>
-              <p className="mt-4 text-sm text-[#6B6560]">Please sign in with your merchant email to manage your listing.</p>
-              <Link href="/merchant/login" className="mt-5 inline-flex min-h-11 w-full items-center justify-center sm:w-auto rounded-lg bg-[#2C3E2D] px-4 py-2.5 text-sm font-medium text-white">Merchant login</Link>
+              <p className="mt-3 text-[15px] text-ink-2">{t('owner.entry.signedOut')}</p>
+              <Link href="/merchant/login" className={`mt-6 ${buttonClasses({ variant: 'primary', size: 'lg', block: true })}`}>{t('owner.entry.signIn')}</Link>
             </>
           )}
           {load.kind === 'no-merchant' && (
-            <div className="mt-4"><p className="text-sm text-[#6B6560]">Create your first private restaurant draft to get started.</p><Link href="/merchant/new" className="mt-5 inline-block rounded-lg bg-[#2C3E2D] px-4 py-2.5 text-sm font-medium text-white">Create a restaurant</Link><button type="button" onClick={() => void performSignOut()} className="mt-2 min-h-11 w-full text-sm underline sm:ml-4 sm:w-auto">Sign out</button></div>
+            <>
+              <p className="mt-3 text-[15px] text-ink-2">{t('owner.entry.none')}</p>
+              <Link href="/merchant/new" className={`mt-6 ${buttonClasses({ variant: 'primary', size: 'lg', block: true })}`}>{t('owner.entry.create')}</Link>
+              <button type="button" onClick={() => void performSignOut()} className={`mt-2 ${buttonClasses({ variant: 'ghost', size: 'md', block: true })}`}>{t('owner.home.signOut')}</button>
+            </>
           )}
           {load.kind === 'choose' && (
             <>
-              <p className="mt-4 text-sm text-[#6B6560]">Choose the restaurant you want to manage.</p>
-              <Link href="/merchant/new" className="mt-4 inline-block text-sm text-emerald-800 underline">Create another restaurant</Link>
-              <ul className="mt-4 space-y-2">
+              <p className="mt-3 text-[15px] text-ink-2">{t('owner.entry.choose')}</p>
+              <ul className="mt-5 space-y-2">
                 {archivedLast(load.merchants).map((choice) => (
                   <li key={choice.id}>
                     {/* A full page load, so nothing from one restaurant carries over to another. */}
-                    <a href={merchantPageUrl('/merchant', choice.id)} className="flex items-center justify-between gap-3 rounded-lg border border-[#DDE5DC] px-4 py-3 text-sm font-medium text-[#2C3E2D] hover:border-emerald-700">
+                    <a href={merchantPageUrl('/merchant', choice.id)} className="flex min-h-14 items-center justify-between gap-3 rounded-[16px] border border-line px-4 py-3 text-[15px] font-bold text-ink transition-colors hover:bg-surface">
                       <span className="min-w-0 break-words">{choice.name}</span>
-                      {choice.restriction !== 'none' && <span className="shrink-0 text-xs font-normal text-[#6B6560]">{choice.restriction === 'archived' ? 'Discarded' : 'Read only'}</span>}
+                      <span className="flex shrink-0 items-center gap-2">
+                        {choice.restriction !== 'none' && <StatusPill tone="closed">{choice.restriction === 'archived' ? t('owner.entry.discarded') : t('owner.entry.readOnly')}</StatusPill>}
+                        <ChevronRight className="size-4 text-muted" />
+                      </span>
                     </a>
                   </li>
                 ))}
               </ul>
+              <Link href="/merchant/new" className={`mt-4 ${buttonClasses({ variant: 'secondary', size: 'md', block: true })}`}>{t('owner.home.newRestaurant')}</Link>
             </>
           )}
           {load.kind === 'error' && (
             <>
-              <p className="mt-4 text-sm text-red-700" role="alert">{load.message}</p>
-              <div className="mt-5 flex flex-wrap gap-2">
-                <button type="button" onClick={() => void loadMerchant()} className="rounded-lg border border-[#2C3E2D] px-4 py-2 text-sm font-medium text-[#2C3E2D]">Try again</button>
-                <a href="/merchant" className="rounded-lg px-4 py-2 text-sm font-medium text-emerald-800 underline">Back to my restaurants</a>
+              <p className="mt-3 rounded-[14px] bg-soldout-bg px-4 py-3 text-sm text-soldout" role="alert">{load.message}</p>
+              <div className="mt-5 grid gap-2">
+                <button type="button" onClick={() => void loadMerchant()} className={buttonClasses({ variant: 'primary', size: 'lg', block: true })}>{t('owner.entry.retry')}</button>
+                <a href="/merchant" className={buttonClasses({ variant: 'ghost', size: 'md', block: true })}>{t('owner.entry.back')}</a>
               </div>
             </>
           )}
