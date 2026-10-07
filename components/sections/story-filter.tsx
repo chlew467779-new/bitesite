@@ -2,7 +2,8 @@
 
 "use client";
 
-import { cn } from "@/lib/utils";
+import { Chip } from "@/components/ui/chip";
+import { useT } from "@/lib/i18n";
 
 interface StoryFilterProps {
   categories: string[];
@@ -10,39 +11,14 @@ interface StoryFilterProps {
   onCategoryChange: (category: string | null) => void;
 }
 
-export function StoryFilter({
-  categories,
-  activeCategory,
-  onCategoryChange,
-}: StoryFilterProps) {
+/** Story categories as one scrolling row of chips (R10). Category names are Story content. */
+export function StoryFilter({ categories, activeCategory, onCategoryChange }: StoryFilterProps) {
+  const t = useT();
   return (
-    <div className="flex flex-wrap items-center gap-2 py-4">
-      <button
-        onClick={() => onCategoryChange(null)}
-        className={cn(
-          "min-h-11 rounded-full px-4 py-2 text-xs font-medium uppercase tracking-wider transition-all duration-200 active:scale-95 select-none",
-          !activeCategory
-            ? "bg-[#5A8F6E] text-white shadow-sm"
-            : "border border-[#DDE5DC] bg-white text-[#6B6560] hover:border-[#5A8F6E] hover:text-[#5A8F6E]"
-        )}
-        style={{ WebkitTapHighlightColor: "transparent" }}
-      >
-        All
-      </button>
+    <div role="group" aria-label={t("stories.title")} className="-mx-4 flex gap-2 overflow-x-auto px-4 py-3 [scrollbar-width:none] md:mx-0 md:flex-wrap md:px-0">
+      <Chip selected={!activeCategory} onClick={() => onCategoryChange(null)}>{t("stories.all")}</Chip>
       {categories.map((cat) => (
-        <button
-          key={cat}
-          onClick={() => onCategoryChange(cat)}
-          className={cn(
-            "min-h-11 rounded-full px-4 py-2 text-xs font-medium uppercase tracking-wider transition-all duration-200 active:scale-95 select-none",
-            activeCategory === cat
-              ? "bg-[#5A8F6E] text-white shadow-sm"
-              : "border border-[#DDE5DC] bg-white text-[#6B6560] hover:border-[#5A8F6E] hover:text-[#5A8F6E]"
-          )}
-          style={{ WebkitTapHighlightColor: "transparent" }}
-        >
-          {cat}
-        </button>
+        <Chip key={cat} selected={activeCategory === cat} onClick={() => onCategoryChange(cat)}>{cat}</Chip>
       ))}
     </div>
   );

@@ -1,5 +1,4 @@
 import { Footer } from "@/components/sections/footer";
-import { FadeIn } from "@/app/components/animations";
 import { PageViewTracker } from "@/app/components/page-view-tracker";
 import { StoriesContent } from "./stories-content";
 import { supabase } from "@/lib/supabase";
@@ -20,18 +19,8 @@ export default async function StoriesPage() {
   }
 
   return (
-    <main style={{ backgroundColor: "#FAFBF7" }}>
+    <main className="min-h-screen bg-page text-ink">
       <PageViewTracker pageType="story_list" />
-      <section className="px-4 py-16 text-center sm:px-6 lg:px-8">
-        <FadeIn direction="up" duration={0.6}>
-          <h1 className="mb-4 font-serif text-3xl font-medium tracking-tight text-[#2C3E2D] sm:text-4xl md:text-5xl">
-            Stories
-          </h1>
-          <p className="mx-auto max-w-lg text-base leading-relaxed text-[#6B6560] md:text-lg">
-            Discover local restaurants, new openings & hidden gems
-          </p>
-        </FadeIn>
-      </section>
 
       <StoriesContent articles={data || []} />
       <Footer />

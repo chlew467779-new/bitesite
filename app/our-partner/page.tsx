@@ -10,7 +10,7 @@ export default async function OurPartnerPage() {
   const [merchants, areas] = await Promise.all([getPublishedMerchants(), getAreas().catch(() => [])]);
 
   return (
-    <main className="flex flex-col h-[calc(100dvh-53px)]">
+    <main className="flex flex-col h-[calc(100dvh-61px)]">
       <PageViewTracker pageType="our_partner" />
       <MapContainer merchants={merchants} areas={areas} />
     </main>

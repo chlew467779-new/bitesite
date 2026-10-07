@@ -2,6 +2,8 @@
 
 "use client";
 
+import { useT } from "@/lib/i18n";
+
 import { useEffect, useRef } from "react";
 import { SafeImage } from "@/app/components/safe-image";
 import { getTodayHours } from "@/lib/hours";
@@ -18,6 +20,7 @@ interface MapSidebarProps {
 }
 
 export function MapSidebar({ merchants, selected, onSelect }: MapSidebarProps) {
+  const t = useT();
   const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   // 当选中变化时，滚动到对应项
@@ -33,11 +36,11 @@ export function MapSidebar({ merchants, selected, onSelect }: MapSidebarProps) {
   if (merchants.length === 0) {
     return (
       <div className="flex h-full flex-col items-center justify-center p-6 text-center">
-        <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#F0F4EC]">
-          <MapPin className="h-5 w-5 text-[#8A968B]" />
+        <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-full bg-surface">
+          <MapPin className="h-5 w-5 text-muted" />
         </div>
-        <p className="text-sm font-medium text-[#2C3E2D]">No restaurants found</p>
-        <p className="mt-1 text-xs text-[#8A968B]">Try adjusting your filters.</p>
+        <p className="text-sm font-bold text-ink">{t("map.empty.title")}</p>
+        <p className="mt-1 text-xs text-muted">{t("map.empty.body")}</p>
       </div>
     );
   }
@@ -45,15 +48,15 @@ export function MapSidebar({ merchants, selected, onSelect }: MapSidebarProps) {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="border-b border-[#DDE5DC] bg-[#FAFBF7] px-4 py-3">
-        <p className="text-xs font-medium text-[#8A968B]">
-          {merchants.length} {merchants.length === 1 ? "restaurant" : "restaurants"} on map
+      <div className="border-b border-line bg-page px-4 py-3">
+        <p className="text-xs font-medium text-muted">
+          {t("map.count", { count: merchants.length })}
         </p>
       </div>
 
       {/* List */}
       <div className="flex-1 overflow-y-auto">
-        <div className="divide-y divide-[#DDE5DC]">
+        <div className="divide-y divide-line">
           {merchants.map((merchant) => {
             const isSelected = selected?.id === merchant.id;
             const type = merchantCuisines(merchant)[0] || "Other";
@@ -69,8 +72,8 @@ export function MapSidebar({ merchants, selected, onSelect }: MapSidebarProps) {
                 onClick={() => onSelect(isSelected ? null : merchant)}
                 className={`cursor-pointer p-4 transition-colors ${
                   isSelected
-                    ? "bg-[#5A8F6E]/10"
-                    : "bg-white hover:bg-[#F0F4EC]"
+                    ? "bg-brand/10"
+                    : "bg-white hover:bg-surface"
                 }`}
                 style={{ WebkitTapHighlightColor: "transparent" }}
               >
@@ -93,12 +96,12 @@ export function MapSidebar({ merchants, selected, onSelect }: MapSidebarProps) {
                         className="h-2 w-2 rounded-full flex-shrink-0"
                         style={{ backgroundColor: color }}
                       />
-                      <span className="text-[10px] font-medium uppercase tracking-wider text-[#8A968B] truncate">
+                      <span className="text-[10px] font-medium uppercase tracking-wider text-muted truncate">
                         {type}
                       </span>
                     </div>
 
-                    <h3 className="text-sm font-semibold text-[#2C3E2D] truncate">
+                    <h3 className="text-sm font-semibold text-ink truncate">
                       {merchant.name}
                     </h3>
 
@@ -111,10 +114,10 @@ export function MapSidebar({ merchants, selected, onSelect }: MapSidebarProps) {
                         }`}
                       >
                         <Clock className="h-2.5 w-2.5" />
-                        {isOpen ? "Open" : "Closed"}
+                        {isOpen ? t("map.open") : t("map.closed")}
                       </span>
                       {merchant.area && (
-                        <span className="text-[10px] text-[#8A968B] truncate">
+                        <span className="text-[10px] text-muted truncate">
                           {merchant.area}
                         </span>
                       )}
@@ -128,9 +131,9 @@ export function MapSidebar({ merchants, selected, onSelect }: MapSidebarProps) {
                     <Link
                       href={`/store/${merchant.slug}`}
                       onClick={(e) => e.stopPropagation()}
-                      className="inline-flex items-center gap-1 rounded-full bg-[#5A8F6E] px-3 py-1.5 text-xs font-medium text-white transition-all hover:bg-[#4A7A5E]"
+                      className="inline-flex items-center gap-1 rounded-full bg-brand px-3 py-1.5 text-xs font-medium text-white transition-all hover:bg-brand-hover"
                     >
-                      View Page
+                      {t("map.view")}
                       <ArrowRight className="h-3 w-3" />
                     </Link>
                     <a
@@ -138,9 +141,9 @@ export function MapSidebar({ merchants, selected, onSelect }: MapSidebarProps) {
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      className="inline-flex items-center gap-1 rounded-full border border-[#DDE5DC] bg-white px-3 py-1.5 text-xs font-medium text-[#6B6560] transition-all hover:border-[#5A8F6E] hover:text-[#5A8F6E]"
+                      className="inline-flex items-center gap-1 rounded-full border border-line bg-white px-3 py-1.5 text-xs font-medium text-muted transition-all hover:border-brand hover:text-brand"
                     >
-                      Directions
+                      {t("map.directions")}
                     </a>
                   </div>
                 )}
