@@ -19,7 +19,7 @@ import { SiteAnnouncement } from "@/components/sections/site-announcement";
 import { supabase, getAreas } from "@/lib/supabase";
 import { isCurrentlyOpen, getTodayKey } from "@/lib/hours";
 import { trackEvent } from "@/lib/analytics";
-import { CUISINE_TYPES } from "@/lib/presets";
+import { CUISINE_TYPES, RETIRED_AMENITY_TAGS } from "@/lib/presets";
 import type { PublicMerchant } from "@/types";
 import { PUBLIC_MERCHANT_SELECT } from "@/lib/public-merchant-projection.mjs";
 import { discoveryGroups, discoveryPath } from "@/lib/discovery-core.mjs";
@@ -214,7 +214,8 @@ export default function HomePage() {
   const availableMore = useMemo(() => {
     const allMore = new Set<string>();
     merchants.forEach((m) => {
-      m.tags?.forEach((t) => allMore.add(t));
+      // Self-declared halal claims are retired (lib/presets.ts); old rows must not surface them here.
+      m.tags?.forEach((t) => { if (!RETIRED_AMENITY_TAGS.includes(t)) allMore.add(t); });
       m.payment_methods?.forEach((p) => allMore.add(p));
     });
     return Array.from(allMore).sort();
