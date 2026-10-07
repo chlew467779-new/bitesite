@@ -69,7 +69,12 @@ assert.match(appointment, /const url = getBookingUrl\(whatsapp, message\);\s*\n\
 assert.doesNotMatch(appointment, /setTimeout/, "no artificial wait before opening WhatsApp");
 assert.match(appointment, /window\.open\(url, "_blank", "noopener,noreferrer"\)/, "opened synchronously without an opener");
 assert.doesNotMatch(appointment, /Request Sent/, "the page does not claim the request was sent");
-assert.match(appointment, /Your booking is not confirmed/, "the visitor is told the booking is not confirmed");
+assert.match(appointment, /t\("booking\.handoffNote", \{ name: merchantName \}\)/, "the visitor is told the booking is not confirmed (R8: text in lib/i18n)");
+for (const lang of ["en", "zh", "ms"]) {
+  const dict = JSON.parse(await read(`lib/i18n/${lang}.json`));
+  assert.ok(dict["booking.handoffNote"]?.includes("{name}"), `${lang}: the not-confirmed note names the restaurant`);
+}
+assert.match(JSON.parse(await read("lib/i18n/en.json"))["booking.handoffNote"], /Your booking is not confirmed/);
 assert.match(appointment, /href=\{bookingUrl\}/, "a manual link stays available if the new tab was blocked");
 assert.match(appointment, /getMytToday\(\)/, "the earliest date is Malaysia-local, not UTC");
 assert.doesNotMatch(appointment, /toISOString\(\)\.split/, "the old UTC date minimum is gone");

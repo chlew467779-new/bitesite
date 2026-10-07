@@ -3,6 +3,7 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Noto_Sans_SC } from "next/font/google";
 import { SiteHeader } from "@/components/sections/site-header";
+import { HtmlLangSync } from "@/components/ui/language-switch";
 import { getSettings } from "@/lib/settings";
 import { getSiteUrl } from "@/lib/site-url";
 import { safeJsonLd } from "@/lib/safe-json-ld.mjs";
@@ -88,6 +89,7 @@ export default async function RootLayout({
       className={`${jakarta.variable} ${notoSansSC.variable}`}
     >
       <body className="min-h-screen bg-white font-sans text-ink antialiased">
+        <HtmlLangSync />
         <SiteHeader />
         <main>{children}</main>
         <script

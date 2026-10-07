@@ -7,6 +7,7 @@ import { ChevronDown, Clock, Heart, MapPin } from "lucide-react";
 import { Chip } from "@/components/ui/chip";
 import { Button } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
+import { useT } from "@/lib/i18n";
 
 type Panel = "area" | "cuisine" | "more" | null;
 
@@ -46,30 +47,31 @@ const toggle = (list: string[], value: string) =>
  * Cuisine and More open a bottom sheet. Every filter combines with the others.
  */
 export function HomeFilters(props: HomeFiltersProps) {
+  const t = useT();
   const [panel, setPanel] = useState<Panel>(null);
   const areaChosen = Boolean(props.activeArea && props.activeArea !== "All Areas");
-  const areaLabel = areaChosen ? props.activeArea : props.currentState ?? "Area";
+  const areaLabel = areaChosen ? props.activeArea : props.currentState ?? t("filter.area");
 
   return (
     <>
-      <nav aria-label="Filters" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 pt-2 [scrollbar-width:none] md:mx-0 md:flex-wrap md:px-0">
+      <nav aria-label={t("filter.label")} className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 pt-2 [scrollbar-width:none] md:mx-0 md:flex-wrap md:px-0">
         <Chip selected={props.nearbyActive} disabled={props.nearbyLoading} onClick={() => props.onNearbyChange(!props.nearbyActive)}>
           <MapPin size={16} aria-hidden />
-          {props.nearbyLoading ? "Locating…" : "Nearby"}
+          {props.nearbyLoading ? t("filter.locating") : t("filter.nearby")}
         </Chip>
         {(props.savedCount > 0 || props.savedOnly) && (
           <Chip selected={props.savedOnly} onClick={() => props.onSavedOnlyChange(!props.savedOnly)}>
             <Heart size={16} aria-hidden className={props.savedOnly ? "fill-current" : ""} />
-            Saved
+            {t("filter.saved")}
           </Chip>
         )}
         <Chip selected={props.openNow} onClick={() => props.onOpenNowChange(!props.openNow)}>
           <Clock size={16} aria-hidden />
-          Open now
+          {t("filter.openNow")}
         </Chip>
         {props.availableLabels.map((label) => (
           <Chip key={label} selected={props.labels.includes(label)} onClick={() => props.onLabelsChange(toggle(props.labels, label))}>
-            {label === "halal" ? "Halal-certified" : "Vegetarian"}
+            {label === "halal" ? t("filter.halal") : t("filter.vegetarian")}
           </Chip>
         ))}
         {(props.availableAreas.length > 1 || props.availableStates.length > 1) && (
@@ -80,34 +82,34 @@ export function HomeFilters(props: HomeFiltersProps) {
         )}
         {props.availableCuisines.length > 0 && (
           <Chip selected={props.activeCuisines.length > 0} onClick={() => setPanel("cuisine")} aria-haspopup="dialog">
-            {props.activeCuisines.length === 1 ? props.activeCuisines[0] : props.activeCuisines.length > 1 ? `Cuisine · ${props.activeCuisines.length}` : "Cuisine"}
+            {props.activeCuisines.length === 1 ? props.activeCuisines[0] : props.activeCuisines.length > 1 ? t("filter.cuisineCount", { count: props.activeCuisines.length }) : t("filter.cuisine")}
             <ChevronDown size={16} aria-hidden />
           </Chip>
         )}
         {props.availableMore.length > 0 && (
           <Chip selected={props.activeMore.length > 0} onClick={() => setPanel("more")} aria-haspopup="dialog">
-            {props.activeMore.length > 0 ? `More · ${props.activeMore.length}` : "More"}
+            {props.activeMore.length > 0 ? t("filter.moreCount", { count: props.activeMore.length }) : t("filter.more")}
             <ChevronDown size={16} aria-hidden />
           </Chip>
         )}
       </nav>
 
-      <Sheet open={panel === "area"} onClose={() => setPanel(null)} title="Area">
+      <Sheet open={panel === "area"} onClose={() => setPanel(null)} title={t("filter.area")}>
         {props.availableStates.length > 1 && (
-          <ChoiceGroup label="State">
+          <ChoiceGroup label={t("filter.state")}>
             {[null, ...props.availableStates].map((state) => (
               <Chip key={state ?? "all"} selected={props.currentState === state} onClick={() => props.onStateChange(state)}>
-                {state ?? "All states"}
+                {state ?? t("filter.allStates")}
               </Chip>
             ))}
           </ChoiceGroup>
         )}
-        <ChoiceGroup label="Area">
+        <ChoiceGroup label={t("filter.area")}>
           {props.availableAreas.map((area) => {
             const selected = area === "All Areas" ? !areaChosen : props.activeArea === area;
             return (
               <Chip key={area} selected={selected} onClick={() => props.onAreaChange(area === "All Areas" ? null : area)}>
-                {area}
+                {area === "All Areas" ? t("filter.allAreas") : area}
               </Chip>
             );
           })}
@@ -115,8 +117,8 @@ export function HomeFilters(props: HomeFiltersProps) {
         <SheetDone onDone={() => setPanel(null)} />
       </Sheet>
 
-      <Sheet open={panel === "cuisine"} onClose={() => setPanel(null)} title="Cuisine">
-        <ChoiceGroup label="Choose one or more">
+      <Sheet open={panel === "cuisine"} onClose={() => setPanel(null)} title={t("filter.cuisine")}>
+        <ChoiceGroup label={t("filter.chooseMany")}>
           {props.availableCuisines.map((cuisine) => (
             <Chip key={cuisine} selected={props.activeCuisines.includes(cuisine)} onClick={() => props.onCuisineChange(toggle(props.activeCuisines, cuisine))}>
               {cuisine}
@@ -126,8 +128,8 @@ export function HomeFilters(props: HomeFiltersProps) {
         <SheetDone onDone={() => setPanel(null)} onClear={props.activeCuisines.length > 0 ? () => props.onCuisineChange([]) : undefined} />
       </Sheet>
 
-      <Sheet open={panel === "more"} onClose={() => setPanel(null)} title="More filters">
-        <ChoiceGroup label="Choose one or more">
+      <Sheet open={panel === "more"} onClose={() => setPanel(null)} title={t("filter.moreTitle")}>
+        <ChoiceGroup label={t("filter.chooseMany")}>
           {props.availableMore.map((item) => (
             <Chip key={item} selected={props.activeMore.includes(item)} onClick={() => props.onMoreChange(toggle(props.activeMore, item))}>
               {item}
@@ -150,10 +152,11 @@ function ChoiceGroup({ label, children }: { label: string; children: ReactNode }
 }
 
 function SheetDone({ onDone, onClear }: { onDone: () => void; onClear?: () => void }) {
+  const t = useT();
   return (
     <div className="flex gap-2 pt-1">
-      {onClear && <Button variant="secondary" onClick={onClear}>Clear</Button>}
-      <Button block onClick={onDone}>Show restaurants</Button>
+      {onClear && <Button variant="secondary" onClick={onClear}>{t("common.clear")}</Button>}
+      <Button block onClick={onDone}>{t("filter.showRestaurants")}</Button>
     </div>
   );
 }

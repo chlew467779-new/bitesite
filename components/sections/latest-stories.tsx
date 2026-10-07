@@ -9,9 +9,14 @@ import { SectionTitle } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
 import type { PublicArticle } from "@/types";
 import { PUBLIC_ARTICLE_SELECT } from "@/lib/public-article-projection.mjs";
+import { useLang, useT } from "@/lib/i18n";
+
+const DATE_LOCALES = { en: "en-MY", zh: "zh-Hans-MY", ms: "ms-MY" } as const;
 
 /** Home page "Stories": the three newest, as a compact list (photo left, text right). */
 export function LatestStories() {
+  const t = useT();
+  const lang = useLang();
   const [articles, setArticles] = useState<PublicArticle[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -36,9 +41,9 @@ export function LatestStories() {
   return (
     <section aria-labelledby="stories-heading" className="mx-auto max-w-6xl px-4 pt-8">
       <div className="flex items-center justify-between">
-        <SectionTitle id="stories-heading">Stories</SectionTitle>
+        <SectionTitle id="stories-heading">{t("nav.stories")}</SectionTitle>
         <Link href="/stories" className="inline-flex min-h-11 items-center text-sm font-semibold text-brand">
-          All stories
+          {t("home.allStories")}
         </Link>
       </div>
       <ul className="mt-2 grid gap-4 md:grid-cols-3">
@@ -66,7 +71,7 @@ export function LatestStories() {
                     )}
                     <span className="line-clamp-2 text-base font-bold leading-snug group-hover:text-brand">{article.title}</span>
                     <span className="text-[13px] text-muted">
-                      {new Date(article.created_at).toLocaleDateString("en-MY", { day: "numeric", month: "short", year: "numeric" })}
+                      {new Date(article.created_at).toLocaleDateString(DATE_LOCALES[lang], { day: "numeric", month: "short", year: "numeric" })}
                     </span>
                   </span>
                 </Link>

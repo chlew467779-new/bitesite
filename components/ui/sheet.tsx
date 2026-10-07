@@ -6,6 +6,7 @@ import { useEffect, useRef, type ReactNode } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { IconButton } from "@/components/ui/icon-button";
+import { useT } from "@/lib/i18n";
 
 // Bottom sheet on phones, centred dialog from md up. Built on <dialog> so focus
 // trapping, Esc and the backdrop come from the browser.
@@ -22,6 +23,7 @@ export function Sheet({
   children: ReactNode;
   className?: string;
 }) {
+  const t = useT();
   const ref = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -48,7 +50,7 @@ export function Sheet({
     >
       <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-line bg-page px-4 py-2">
         <h2 className="text-lg font-extrabold">{title}</h2>
-        <IconButton label="Close" onClick={onClose}>
+        <IconButton label={t("common.close")} onClick={onClose}>
           <X size={22} />
         </IconButton>
       </div>

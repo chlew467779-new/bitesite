@@ -7,19 +7,22 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { BiteSiteLogo } from "@/components/ui/bitesite-logo";
+import { LanguageSwitch } from "@/components/ui/language-switch";
+import { useT, type MessageKey } from "@/lib/i18n";
 
-const navLinks = [
-  { href: "/", label: "Home" },
-  { href: "/our-partner", label: "Our Partner" },
-  { href: "/stories", label: "Stories" },
-  { href: "/jobs", label: "Jobs" },
-  { href: "/join-us", label: "Join Us" },
-  { href: "/merchant/login", label: "Merchant login" },
+const navLinks: { href: string; label: MessageKey }[] = [
+  { href: "/", label: "nav.home" },
+  { href: "/our-partner", label: "nav.partner" },
+  { href: "/stories", label: "nav.stories" },
+  { href: "/jobs", label: "nav.jobs" },
+  { href: "/join-us", label: "nav.join" },
+  { href: "/merchant/login", label: "nav.login" },
 ];
 
 export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
+  const t = useT();
 
   // 商家页不显示导航栏
   // Admin has its own shell and header.
@@ -29,7 +32,7 @@ export function SiteHeader() {
     <header className="sticky top-0 z-50 border-b border-line bg-white/95 backdrop-blur-sm">
       <div className="mx-auto flex h-[60px] max-w-6xl items-center justify-between px-4">
         {/* Logo */}
-        <Link href="/" className="inline-flex min-h-11 items-center" aria-label="BiteSite home">
+        <Link href="/" className="inline-flex min-h-11 items-center" aria-label={t("nav.homeLabel")}>
           <BiteSiteLogo showTagline={false} size="small" />
         </Link>
 
@@ -46,23 +49,27 @@ export function SiteHeader() {
                   isActive ? "bg-brand-soft text-brand" : "text-ink-2 hover:bg-surface hover:text-ink"
                 }`}
               >
-                {link.label}
+                {t(link.label)}
               </Link>
             );
           })}
+          <LanguageSwitch />
         </nav>
 
-        {/* Mobile Hamburger */}
-        <button
-          type="button"
-          onClick={() => setMenuOpen(!menuOpen)}
-          className="-mr-2 flex size-11 items-center justify-center rounded-full text-ink transition-colors hover:bg-surface md:hidden"
-          style={{ WebkitTapHighlightColor: "transparent" }}
-          aria-label={menuOpen ? "Close menu" : "Open menu"}
-          aria-expanded={menuOpen}
-        >
-          {menuOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        {/* Mobile: language + menu */}
+        <div className="flex items-center gap-1 md:hidden">
+          <LanguageSwitch />
+          <button
+            type="button"
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="-mr-2 flex size-11 items-center justify-center rounded-full text-ink transition-colors hover:bg-surface md:hidden"
+            style={{ WebkitTapHighlightColor: "transparent" }}
+            aria-label={menuOpen ? t("nav.closeMenu") : t("nav.openMenu")}
+            aria-expanded={menuOpen}
+          >
+            {menuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Dropdown */}
@@ -85,7 +92,7 @@ export function SiteHeader() {
                   isActive ? "bg-brand-soft text-brand" : "text-ink hover:bg-surface"
                 }`}
               >
-                {link.label}
+                {t(link.label)}
               </Link>
             );
           })}

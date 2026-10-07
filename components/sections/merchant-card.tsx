@@ -1,5 +1,7 @@
 /* bitesite/components/sections/merchant-card.tsx */
 
+"use client";
+
 import Link from "next/link";
 import { SafeImage } from "@/app/components/safe-image";
 import { OpenStatusPill } from "@/components/store/open-status-pill";
@@ -7,6 +9,7 @@ import { FavouriteButton } from "@/components/store/favourite-button";
 import { getTodayKey } from "@/lib/hours";
 import { formatDistanceKm } from "@/lib/nearby-core.mjs";
 import type { PublicMerchant } from "@/types";
+import { presetLabel, useLang, useT } from "@/lib/i18n";
 
 interface MerchantCardProps {
   merchant: PublicMerchant;
@@ -17,9 +20,11 @@ interface MerchantCardProps {
 
 /** Restaurant card (R3 design): big photo with open status, name, cuisine · area, distance, price. */
 export function MerchantCard({ merchant, distanceKm, priceText }: MerchantCardProps) {
+  const t = useT();
+  const lang = useLang();
   const todayHours = merchant.operating_hours?.[getTodayKey()];
   const cuisine = merchant.cuisine_type?.split(",")[0].trim();
-  const meta = [cuisine, merchant.area].filter(Boolean).join(" · ");
+  const meta = [cuisine && presetLabel(lang, cuisine), merchant.area].filter(Boolean).join(" · ");
 
   return (
     <div className="relative">
@@ -31,7 +36,7 @@ export function MerchantCard({ merchant, distanceKm, priceText }: MerchantCardPr
           {merchant.cover_image ? (
             <SafeImage
               src={merchant.cover_image}
-              alt={`${merchant.name} cover photo`}
+              alt={t("image.cover", { name: merchant.name })}
               fill
               className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"

@@ -8,6 +8,7 @@ import { X, ChevronLeft, ChevronRight } from "lucide-react";
 
 import type { LayoutKey } from "@/lib/layout-registry.mjs";
 import { SectionTitle } from "@/components/ui/card";
+import { useT } from "@/lib/i18n";
 
 /** Shared styling variant for section components. Sourced from the layout registry; the
  *  per-layout class strings live in lib/layout-theme.mjs, whose test fails if a registered
@@ -23,9 +24,10 @@ interface GallerySectionProps {
 
 export function GallerySection({
   images,
-  title = "Photos",
+  title,
   id,
 }: GallerySectionProps) {
+  const t = useT();
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const validImages = images
@@ -62,14 +64,14 @@ export function GallerySection({
     <>
       {/* One swipeable row on phones (R2 redesign); tap a photo to see it large. */}
       <section id={id} aria-labelledby={`${id ?? "gallery"}-heading`} className="mx-auto max-w-5xl pt-7">
-        <SectionTitle id={`${id ?? "gallery"}-heading`} className="px-4">{title}</SectionTitle>
+        <SectionTitle id={`${id ?? "gallery"}-heading`} className="px-4">{title ?? t("store.photos")}</SectionTitle>
         <ul className="mt-3 flex snap-x gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none]">
           {validImages.map((src, i) => (
             <li key={`${src}-${i}`} className="shrink-0 snap-start">
               <button
                 type="button"
                 onClick={() => openLightbox(i)}
-                aria-label={`Open photo ${i + 1} of ${validImages.length}`}
+                aria-label={t("gallery.open", { index: i + 1, count: validImages.length })}
                 className="relative block size-40 overflow-hidden rounded-[18px] bg-surface touch-manipulation md:size-48"
                 style={{ WebkitTapHighlightColor: "transparent" }}
               >
@@ -88,7 +90,7 @@ export function GallerySection({
           <button
             onClick={closeLightbox}
             className="absolute top-4 right-4 z-10 p-2 text-white/80 hover:text-white transition-colors"
-            aria-label="Close gallery"
+            aria-label={t("gallery.close")}
           >
             <X size={32} strokeWidth={1.5} />
           </button>
@@ -98,7 +100,7 @@ export function GallerySection({
           <div className="relative w-full max-w-5xl mx-4 aspect-[4/3]">
             <SafeImage
               src={validImages[lightboxIndex]}
-              alt="Gallery preview"
+              alt={t("gallery.alt")}
               fill
               className="object-contain"
               sizes="100vw"
@@ -109,7 +111,7 @@ export function GallerySection({
             <button
               onClick={goPrev}
               className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 p-3 text-white/70 hover:text-white bg-black/30 hover:bg-black/50 rounded-full transition-all active:scale-90"
-              aria-label="Previous image"
+              aria-label={t("gallery.prev")}
             >
               <ChevronLeft size={28} />
             </button>
@@ -118,7 +120,7 @@ export function GallerySection({
             <button
               onClick={goNext}
               className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 p-3 text-white/70 hover:text-white bg-black/30 hover:bg-black/50 rounded-full transition-all active:scale-90"
-              aria-label="Next image"
+              aria-label={t("gallery.next")}
             >
               <ChevronRight size={28} />
             </button>
