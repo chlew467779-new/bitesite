@@ -3,6 +3,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { StoryExpiredNotice } from "@/components/sections/story-detail-text";
 import { StoryHero } from "@/components/sections/story-hero";
 import { StoryContent } from "@/components/sections/story-content";
 import { StoryRelated } from "@/components/sections/story-related";
@@ -147,7 +148,7 @@ export default async function StoryPage({ params }: PageProps) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(articleSchema) }} />
       <main style={{ backgroundColor: bgColor }}>
         <StoryViewTracker slug={slug} />
-        {isExpired && <div className="mx-auto max-w-3xl px-4 pt-6 text-sm font-medium text-amber-700">This promotion has ended. The Story remains available as editorial content.</div>}
+        {isExpired && <StoryExpiredNotice />}
         <StoryHero article={article} theme={theme} />
         <StoryContent content={article.content} articleSlug={slug} theme={theme} />
 

@@ -1,5 +1,6 @@
 /* bitesite/components/sections/story-related.tsx */
 
+import { StoryRelatedHeading } from "./story-detail-text";
 import Link from "next/link";
 import { SafeImage } from "@/app/components/safe-image";
 import { supabase } from "@/lib/supabase";
@@ -39,7 +40,7 @@ export async function StoryRelated({ currentSlug, category }: StoryRelatedProps)
     <section className="border-t border-[#DDE5DC] px-4 py-12 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-3xl">
         <h2 className="mb-8 font-serif text-2xl font-medium text-[#2C3E2D]">
-          More Stories
+          <StoryRelatedHeading />
         </h2>
         <div className="grid gap-6 sm:grid-cols-3">
           {articles.map((article) => (

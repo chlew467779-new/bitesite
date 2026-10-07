@@ -1,4 +1,5 @@
 // R8 interface languages: the three dictionaries stay in step and every key the code uses exists.
+import { REPORT_REASONS } from "../lib/public-report-core.mjs";
 import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
 
@@ -37,3 +38,14 @@ assert.ok(used.size > 50, "the interface uses the dictionary");
 for (const key of used) assert.ok(key in dicts.en, `t("${key}") exists in lib/i18n/en.json`);
 
 console.log(`i18n checks passed (${keys.length} keys, ${used.size} used)`);
+
+const reportSource = await read("app/components/report-problem.tsx");
+for (const [target, options] of Object.entries(REPORT_REASONS)) {
+  const map = reportSource.match(new RegExp(`const ${target.toUpperCase()}_REASON_KEYS[^=]*=\\s*\\{([\\s\\S]*?)\\};`))?.[1];
+  assert.ok(map, `the ${target} report has a label map`);
+  for (const { value } of options) {
+    const key = map.match(new RegExp(`\\b${value}:\\s*['"]([^'"]+)['"]`))?.[1];
+    assert.ok(key && key in dicts.en, `report ${target}:${value} has a translated label`);
+  }
+}
+console.log("All public report reasons have translated labels; backend values stay unchanged.");

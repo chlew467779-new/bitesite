@@ -1,7 +1,6 @@
 /* bitesite/app/store/[merchant]/page.tsx */
 
 import { Metadata } from "next";
-import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import {
   getMerchantBySlug,
@@ -29,6 +28,7 @@ import { getSiteUrl } from "@/lib/site-url";
 import { safeJsonLd } from "@/lib/safe-json-ld.mjs";
 import { discoveryPath, discoverySlug, merchantArea, merchantCuisines } from "@/lib/discovery-core.mjs";
 import { ReportProblem } from "@/app/components/report-problem";
+import { ClosedStore } from "@/components/store/closed-store";
 import { DiscoveryLinks, StoreFooterLinks } from "@/components/store/store-footer";
 import type { PublicMerchant } from "@/types";
 
@@ -138,73 +138,17 @@ export default async function MerchantPage({ params }: PageProps) {
     const { data: closure } = temporarilyClosed
       ? await supabase.from("merchant_closure_notices").select("note, reopen_on").eq("merchant_id", merchant.id).maybeSingle()
       : { data: null };
-    const reopenOn = closure?.reopen_on ? new Date(`${closure.reopen_on}T00:00:00`).toLocaleDateString("en-MY", { day: "numeric", month: "long", year: "numeric" }) : null;
 
     return (
       <>
         <PageViewTracker pageType="merchant" slug={merchant.slug} />
-        <div className="min-h-screen bg-[#FAFBF7] flex flex-col">
-          <div className="flex-1 flex items-center justify-center px-4 py-20">
-            <div className="max-w-md w-full text-center">
-              <div className="mb-6 text-6xl">{temporarilyClosed ? "🌙" : "😔"}</div>
-              <h1 className="text-2xl font-bold text-[#2C3E2D] mb-3">
-                {temporarilyClosed ? `${merchant.name} is temporarily closed` : "This Restaurant is Unavailable"}
-              </h1>
-              {temporarilyClosed ? (
-                <div className="mb-8 space-y-2 text-[#6B6560]">
-                  {closure?.note && <p className="whitespace-pre-wrap break-words rounded-xl bg-amber-50 p-4 text-amber-900">{closure.note}</p>}
-                  <p>{reopenOn ? <>Expected to reopen on <strong>{reopenOn}</strong>.</> : "Please check back soon."}</p>
-                </div>
-              ) : (
-                <>
-                <p className="text-[#6B6560] mb-2">
-                  We&apos;re sorry, but <strong>{merchant.name}</strong> is not taking orders
-                </p>
-                <p className="text-[#6B6560] mb-8">
-                  or reservations at the moment.
-                </p>
-                </>
-              )}
-              {relatedMerchants.length > 0 && (
-                <div className="border-t border-[#DDE5DC] pt-8">
-                  <p className="text-sm font-medium text-[#8A968B] mb-4">
-                    Explore Other Great Restaurants
-                  </p>
-                  <div className="space-y-3">
-                    {relatedMerchants.map((m) => (
-                      <Link
-                        key={m.slug}
-                        href={`/store/${m.slug}`}
-                        className="block p-4 bg-white rounded-xl border border-[#DDE5DC] hover:border-[#5A8F6E] transition-colors text-left"
-                      >
-                        <h3 className="font-semibold text-[#2C3E2D]">{m.name}</h3>
-                        <p className="text-sm text-[#8A968B]">{m.cuisine_type}</p>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-              <div className="mt-8">
-                <Link
-                  href="/"
-                  className="inline-flex items-center gap-2 text-[#5A8F6E] font-medium hover:text-[#4A7A5E] transition-colors"
-                >
-                  ← Back to BiteSite
-                </Link>
-              </div>
-              <ReportProblem targetType="merchant" slug={merchant.slug} />
-            </div>
-          </div>
-          <footer className="py-8 px-4 text-center border-t border-[#DDE5DC]">
-            <Link
-              href="/"
-              className="text-sm text-[#8A968B] hover:text-[#5A8F6E] transition-colors"
-            >
-              {settings.footer_text}
-            </Link>
-            <Link href="/feedback" className="mt-1 block text-sm text-[#5A8F6E] underline">Send feedback</Link>
-          </footer>
-        </div>
+        <ClosedStore
+          merchant={{ slug: merchant.slug, name: merchant.name }}
+          temporarilyClosed={temporarilyClosed}
+          closure={closure}
+          relatedMerchants={relatedMerchants.map(({ slug, name, cuisine_type }) => ({ slug, name, cuisine_type }))}
+          footerText={settings.footer_text}
+        />
       </>
     );
   }

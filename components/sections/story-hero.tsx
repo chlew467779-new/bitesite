@@ -1,5 +1,6 @@
 /* bitesite/components/sections/story-hero.tsx */
 
+import { StoryBackLabel, StoryDate } from "./story-detail-text";
 import { SafeImage } from "@/app/components/safe-image";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
@@ -82,14 +83,6 @@ const themeColors = {
 export function StoryHero({ article, theme = 'default' }: StoryHeroProps) {
   const colors = themeColors[(theme as keyof typeof themeColors) || 'default'] || themeColors.default;
   
-  const formattedDate = new Date(article.created_at).toLocaleDateString(
-    "en-MY",
-    {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    }
-  );
 
 
   return (
@@ -102,7 +95,7 @@ export function StoryHero({ article, theme = 'default' }: StoryHeroProps) {
           style={{ color: colors.bodyLight }}
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Stories
+          <StoryBackLabel />
         </Link>
 
         {/* Category & Tags */}
@@ -136,7 +129,7 @@ export function StoryHero({ article, theme = 'default' }: StoryHeroProps) {
         <div className="mb-8 flex flex-wrap items-center gap-3 text-sm" style={{ color: colors.bodyLight }}>
           <span className="font-medium" style={{ color: colors.body }}>{article.author}</span>
           <span>·</span>
-          <span>{formattedDate}</span>
+          <StoryDate value={article.created_at} />
         </div>
 
         {/* Cover Image */}
