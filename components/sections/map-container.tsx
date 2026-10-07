@@ -10,16 +10,22 @@ import type { PublicMerchant } from "@/types";
 import type { AreaItem } from "@/lib/areas-core.mjs";
 import { merchantCuisines } from "@/lib/discovery-core.mjs";
 import { mapDiscoveryOptions } from "@/lib/map-discovery-core.mjs";
+import { useT } from "@/lib/i18n";
+
+function MapLoading() {
+  const t = useT();
+  return (
+    <div className="h-full w-full flex items-center justify-center bg-surface">
+      <div className="text-muted text-sm">{t("map.loading")}</div>
+    </div>
+  );
+}
 
 const MapSection = dynamic(
   () => import("./map-section").then((mod) => mod.MapSection),
   {
     ssr: false,
-    loading: () => (
-      <div className="h-full w-full flex items-center justify-center bg-[#F0F4EC]">
-        <div className="text-[#8A968B] text-sm">Loading map...</div>
-      </div>
-    ),
+    loading: () => <MapLoading />,
   }
 );
 
@@ -73,7 +79,7 @@ export function MapContainer({ merchants, areas }: MapContainerProps) {
       />
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar - desktop only */}
-        <div className="hidden lg:block w-80 xl:w-96 border-r border-[#DDE5DC] bg-white flex-shrink-0">
+        <div className="hidden lg:block w-80 xl:w-96 border-r border-line bg-white flex-shrink-0">
           <MapSidebar
             merchants={filteredMerchants}
             selected={selectedMerchant}

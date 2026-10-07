@@ -2,6 +2,8 @@
 
 "use client";
 
+import { useT } from "@/lib/i18n";
+
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -20,6 +22,7 @@ interface MapSectionProps {
 }
 
 export function MapSection({ merchants, selectedMerchant, onSelect }: MapSectionProps) {
+  const t = useT();
   const mapRef = useRef<L.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
@@ -27,6 +30,9 @@ export function MapSection({ merchants, selectedMerchant, onSelect }: MapSection
   const onSelectRef = useRef(onSelect);
 
   onSelectRef.current = onSelect;
+  // The map is built once; its "you are here" popup reads the current language from a ref.
+  const youAreHereRef = useRef(t("map.youAreHere"));
+  youAreHereRef.current = t("map.youAreHere");
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -63,7 +69,7 @@ export function MapSection({ merchants, selectedMerchant, onSelect }: MapSection
 
           L.marker([latitude, longitude], { icon: pulseIcon, zIndexOffset: 1000 })
             .addTo(map)
-            .bindPopup("You are here");
+            .bindPopup(youAreHereRef.current);
 
           map.flyTo([latitude, longitude], 14, { duration: 1.5 });
         },
@@ -178,22 +184,22 @@ export function MapSection({ merchants, selectedMerchant, onSelect }: MapSection
 
       <button
         onClick={handleRecenter}
-        className="absolute right-4 top-4 z-[1000] flex h-11 w-11 items-center justify-center rounded-full bg-white text-[#2C3E2D] shadow-lg border border-[#DDE5DC] transition-all hover:bg-[#F0F4EC] active:scale-90"
+        className="absolute right-4 top-4 z-[1000] flex h-11 w-11 items-center justify-center rounded-full bg-white text-ink shadow-lg border border-line transition-all hover:bg-surface active:scale-90"
         style={{ WebkitTapHighlightColor: "transparent" }}
-        title="Go to my location"
+        title={t("map.myLocation")}
       >
         <Locate className="h-5 w-5" />
       </button>
 
       {merchants.length === 0 && (
-        <div className="absolute inset-0 z-[1000] flex items-center justify-center bg-[#FAFBF7]/80 backdrop-blur-sm">
+        <div className="absolute inset-0 z-[1000] flex items-center justify-center bg-page/80 backdrop-blur-sm">
           <div className="text-center">
-            <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-[#F0F4EC]">
-              <Search className="h-7 w-7 text-[#8A968B]" />
+            <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-surface">
+              <Search className="h-7 w-7 text-muted" />
             </div>
-            <p className="text-lg font-medium text-[#2C3E2D]">No restaurants found</p>
-            <p className="mt-2 text-sm text-[#8A968B]">
-              Try adjusting your filters or search.
+            <p className="text-lg font-bold text-ink">{t("map.empty.title")}</p>
+            <p className="mt-2 text-sm text-muted">
+              {t("map.empty.body")}
             </p>
           </div>
         </div>
@@ -201,10 +207,10 @@ export function MapSection({ merchants, selectedMerchant, onSelect }: MapSection
 
       {selectedMerchant && (
         <div className="absolute bottom-6 left-1/2 z-[1000] w-[92%] max-w-sm -translate-x-1/2">
-          <div className="relative rounded-2xl border border-[#DDE5DC] bg-white p-5 shadow-xl">
+          <div className="relative rounded-2xl border border-line bg-white p-5 shadow-xl">
             <button
               onClick={() => onSelect(null)}
-              className="absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-full text-[#8A968B] transition-colors hover:bg-[#F0F4EC] hover:text-[#2C3E2D]"
+              className="absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-full text-muted transition-colors hover:bg-surface hover:text-ink"
               style={{ WebkitTapHighlightColor: "transparent" }}
             >
               <X className="h-4 w-4" />
@@ -221,7 +227,7 @@ export function MapSection({ merchants, selectedMerchant, onSelect }: MapSection
               </div>
             )}
 
-            <h3 className="mb-2 pr-6 font-serif text-lg font-medium text-[#2C3E2D]">
+            <h3 className="mb-2 pr-6 text-lg font-medium text-ink">
               {selectedMerchant.name}
             </h3>
 
@@ -233,9 +239,9 @@ export function MapSection({ merchants, selectedMerchant, onSelect }: MapSection
                     : "bg-gray-200 text-gray-600"
                 }`}
               >
-                {isOpen ? "Open" : "Closed"}
+                {isOpen ? t("map.open") : t("map.closed")}
               </span>
-              <span className="inline-flex items-center gap-1.5 text-xs text-[#6B6560]">
+              <span className="inline-flex items-center gap-1.5 text-xs text-muted">
                 <span
                   className="h-2 w-2 rounded-full"
                   style={{ backgroundColor: selectedColor }}
@@ -247,10 +253,10 @@ export function MapSection({ merchants, selectedMerchant, onSelect }: MapSection
             <div className="flex flex-wrap gap-2">
               <Link
                 href={`/store/${selectedMerchant.slug}`}
-                className="inline-flex items-center gap-2 rounded-full bg-[#5A8F6E] px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#4A7A5E] active:scale-[0.98]"
+                className="inline-flex items-center gap-2 rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-brand-hover active:scale-[0.98]"
                 style={{ WebkitTapHighlightColor: "transparent" }}
               >
-                Go to Merchant Page
+                {t("map.view")}
                 <ArrowRight className="h-4 w-4" />
               </Link>
 
@@ -258,11 +264,11 @@ export function MapSection({ merchants, selectedMerchant, onSelect }: MapSection
                 href={directionsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-full border border-[#5A8F6E] px-5 py-2.5 text-sm font-semibold text-[#5A8F6E] transition-all hover:bg-[#5A8F6E]/10 active:scale-[0.98]"
+                className="inline-flex items-center gap-2 rounded-full border border-brand px-5 py-2.5 text-sm font-semibold text-brand transition-all hover:bg-brand/10 active:scale-[0.98]"
                 style={{ WebkitTapHighlightColor: "transparent" }}
               >
                 <MapPin className="h-4 w-4" />
-                Get Directions
+                {t("map.directions")}
               </a>
             </div>
           </div>

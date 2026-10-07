@@ -1,6 +1,10 @@
 /* bitesite/components/sections/story-list.tsx */
 
+"use client";
+
 import { StoryCard } from "./story-card";
+import { buttonClasses } from "@/components/ui/button";
+import { useT } from "@/lib/i18n";
 import type { PublicArticle } from "@/types";
 
 interface StoryListProps {
@@ -9,20 +13,15 @@ interface StoryListProps {
 }
 
 export function StoryList({ articles, onClearFilter }: StoryListProps) {
+  const t = useT();
   if (articles.length === 0) {
     return (
-      <div className="py-20 text-center">
-        <p className="text-lg font-medium text-[#2C3E2D]">No stories found</p>
-        <p className="mt-2 text-sm text-[#8A968B]">
-          {onClearFilter ? 'Try another category or clear the current filter.' : 'Check back later for new articles.'}
-        </p>
+      <div className="rounded-[20px] bg-surface p-8 text-center">
+        <p className="text-lg font-bold">{t("stories.empty.title")}</p>
+        <p className="mt-2 text-sm text-muted">{onClearFilter ? t("stories.empty.filtered") : t("stories.empty.all")}</p>
         {onClearFilter && (
-          <button
-            type="button"
-            onClick={onClearFilter}
-            className="mt-5 rounded-full border border-[#5A8F6E] px-4 py-2 text-sm font-medium text-[#5A8F6E] transition-colors hover:bg-[#5A8F6E] hover:text-white"
-          >
-            Show all stories
+          <button type="button" onClick={onClearFilter} className={`${buttonClasses({ variant: "secondary", size: "md" })} mt-4`}>
+            {t("stories.clear")}
           </button>
         )}
       </div>
@@ -33,16 +32,13 @@ export function StoryList({ articles, onClearFilter }: StoryListProps) {
 
   return (
     <div className="space-y-6">
-      {/* Featured Article */}
       {featured && <StoryCard article={featured} featured />}
-
-      {/* Article List */}
       {rest.length > 0 && (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <ul className="grid gap-4 md:grid-cols-2">
           {rest.map((article) => (
-            <StoryCard key={article.id} article={article} />
+            <li key={article.id}><StoryCard article={article} /></li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );

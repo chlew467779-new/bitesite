@@ -12,7 +12,7 @@ import { useT, type MessageKey } from "@/lib/i18n";
 
 const navLinks: { href: string; label: MessageKey }[] = [
   { href: "/", label: "nav.home" },
-  { href: "/our-partner", label: "nav.partner" },
+  { href: "/our-partner", label: "nav.map" },
   { href: "/stories", label: "nav.stories" },
   { href: "/jobs", label: "nav.jobs" },
   { href: "/join-us", label: "nav.join" },
