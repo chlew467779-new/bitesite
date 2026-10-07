@@ -13,7 +13,7 @@
 
 import type { SectionHandle } from '@/app/components/section-save/use-section-save';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowDown, ArrowUp, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Check, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
 import { findDuplicateDishName, MENU_LIMITS, parsePriceInput, type MenuCategory, type MenuProduct, type MenuSnapshot } from '@/lib/merchant-menu-core.mjs';
 import { ProfileImageField } from '@/app/components/media/profile-image-field';
 import { currencySymbol, formatPrice } from '@/lib/price-format.mjs';
@@ -32,10 +32,10 @@ type DishForm = {
   isAvailable: boolean;
 };
 
-const card = 'rounded-2xl border border-[#DDE5DC] bg-white';
-const btn = 'inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium disabled:opacity-50';
-const iconBtn = 'inline-flex h-11 w-11 items-center justify-center rounded-lg border border-[#DDE5DC] text-[#2C3E2D] disabled:opacity-40';
-const input = 'mt-1 block w-full rounded-lg border border-[#C9D6C7] bg-white px-3 py-3 text-base text-[#2C3E2D] focus:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-700/20';
+const card = 'rounded-[20px] border border-line bg-page';
+const btn = 'inline-flex min-h-11 items-center justify-center gap-2 rounded-[14px] px-4 text-sm font-bold disabled:opacity-50';
+const iconBtn = 'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface text-ink disabled:opacity-40';
+const input = 'mt-1 block w-full rounded-[14px] border border-line-strong bg-page px-3 py-3 text-base text-ink focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20';
 
 const priceText = (value: number | null) => (value === null ? '' : value.toFixed(2));
 const priceLabel = (product: MenuProduct, currency?: string) => {
@@ -72,6 +72,8 @@ export function MenuManager({ merchantId, getHeaders, readOnly, register, onChan
   const [dishError, setDishError] = useState('');
   const [newCategory, setNewCategory] = useState<string | null>(null);
   const [rename, setRename] = useState<{ id: string; name: string; original: string } | null>(null);
+  // Moving dishes and categories is its own mode, so the everyday list stays one sold-out switch per dish.
+  const [sorting, setSorting] = useState(false);
   const busyRef = useRef(false);
   useEffect(() => {
     register?.('menu', { status: () => ({ dirty: !!dish || newCategory !== null || !!rename, pending: busy, unknown: !!unknown, conflicts: false }), save: async () => 'skipped', discard: () => { setDish(null); setNewCategory(null); setRename(null); } });
@@ -197,67 +199,94 @@ export function MenuManager({ merchantId, getHeaders, readOnly, register, onChan
 
   return (
     <div className="space-y-4">
-      {readOnly && <p className="text-sm text-[#6B6560]">This restaurant is read only right now, so the menu cannot be changed.</p>}
-      {isPublic && <p className="text-xs text-[#6B6560]">Your page is public: changes show on it right away. Sold-out dishes stay on the menu, marked as unavailable.</p>}
+      {readOnly && <p className="text-sm text-muted">This restaurant is read only right now, so the menu cannot be changed.</p>}
+      {isPublic && <p className="text-xs text-muted">Your page is public: changes show on it right away. Sold-out dishes stay on the menu, marked as unavailable.</p>}
 
-      {categories.length === 0 && <p className="text-sm text-[#6B6560]">No categories yet. Add one (for example “Mains” or “Drinks”), then add dishes to it.</p>}
+      {categories.length === 0 && <p className="text-sm text-muted">No categories yet. Add one (for example “Mains” or “Drinks”), then add dishes to it.</p>}
+
+      {categories.length > 0 && (
+        <div className="flex justify-end">
+          <button type="button" disabled={locked} aria-pressed={sorting} onClick={() => setSorting(!sorting)}
+            className={`${btn} ${sorting ? 'bg-brand text-on-brand' : 'border border-line-strong text-ink'}`}>
+            {sorting ? <Check className="h-4 w-4" /> : <ArrowUpDown className="h-4 w-4" />}{sorting ? 'Done' : 'Reorder'}
+          </button>
+        </div>
+      )}
 
       {categories.map((category, ci) => {
         const products = productsOf(category.id);
         return (
           <section key={category.id} className={card}>
-            <div className="flex items-center gap-2 border-b border-[#EEF2EC] p-3">
+            <div className="flex items-center gap-2 border-b border-line p-3">
               {rename?.id === category.id ? (
                 <form className="flex flex-1 flex-col gap-2 sm:flex-row" onSubmit={(event) => { event.preventDefault(); if (rename.name.trim()) void change({ type: 'rename_category', id: category.id, name: rename.name, expectedName: rename.original }, 'Category renamed.').then((ok) => { if (ok) setRename(null); }); }}>
                   <input aria-label="Category name" className={input} maxLength={MENU_LIMITS.categoryName} placeholder="e.g. Mains" value={rename.name} onChange={(event) => setRename({ ...rename, name: event.target.value })} autoFocus />
                   <div className="flex gap-2">
-                    <button type="submit" disabled={locked || !rename.name.trim()} className={`${btn} flex-1 bg-[#2C3E2D] text-white`}>Save</button>
-                    <button type="button" onClick={() => setRename(null)} className={`${btn} flex-1 border border-[#C9D6C7]`}>Cancel</button>
+                    <button type="submit" disabled={locked || !rename.name.trim()} className={`${btn} flex-1 bg-brand text-on-brand`}>Save</button>
+                    <button type="button" onClick={() => setRename(null)} className={`${btn} flex-1 border border-line-strong`}>Cancel</button>
                   </div>
                 </form>
               ) : (
                 <>
-                  <h3 className="min-w-0 flex-1 truncate text-base font-semibold text-[#2C3E2D]">{category.name}</h3>
-                  <button type="button" aria-label={`Move ${category.name} up`} disabled={locked || ci === 0} onClick={() => reorderCategory(ci, -1)} className={iconBtn}><ArrowUp className="h-4 w-4" /></button>
-                  <button type="button" aria-label={`Move ${category.name} down`} disabled={locked || ci === categories.length - 1} onClick={() => reorderCategory(ci, 1)} className={iconBtn}><ArrowDown className="h-4 w-4" /></button>
-                  <button type="button" aria-label={`Rename ${category.name}`} disabled={locked} onClick={() => setRename({ id: category.id, name: category.name, original: category.name })} className={iconBtn}><Pencil className="h-4 w-4" /></button>
-                  <button type="button" aria-label={`Delete ${category.name}`} disabled={locked} onClick={() => deleteCategory(category)} className={`${iconBtn} text-red-700`}><Trash2 className="h-4 w-4" /></button>
+                  <h3 className="min-w-0 flex-1 truncate text-base font-bold text-ink">{category.name} <span className="font-normal text-muted">· {products.length}</span></h3>
+                  {sorting ? (
+                    <>
+                      <button type="button" aria-label={`Move ${category.name} up`} disabled={locked || ci === 0} onClick={() => reorderCategory(ci, -1)} className={iconBtn}><ArrowUp className="h-4 w-4" /></button>
+                      <button type="button" aria-label={`Move ${category.name} down`} disabled={locked || ci === categories.length - 1} onClick={() => reorderCategory(ci, 1)} className={iconBtn}><ArrowDown className="h-4 w-4" /></button>
+                    </>
+                  ) : (
+                    <>
+                      <button type="button" aria-label={`Rename ${category.name}`} disabled={locked} onClick={() => setRename({ id: category.id, name: category.name, original: category.name })} className={iconBtn}><Pencil className="h-4 w-4" /></button>
+                      <button type="button" aria-label={`Delete ${category.name}`} disabled={locked} onClick={() => deleteCategory(category)} className={`${iconBtn} text-red-700`}><Trash2 className="h-4 w-4" /></button>
+                    </>
+                  )}
                 </>
               )}
             </div>
 
-            <ul className="divide-y divide-[#EEF2EC]">
+            <ul className="divide-y divide-line">
               {products.map((product, pi) => (
-                <li key={product.id} className="flex items-center gap-2 p-3">
-                  {product.imageUrl && // eslint-disable-next-line @next/next/no-img-element -- merchant menu previews use uploaded image URLs
-                  <img src={product.imageUrl} alt="" className="h-11 w-11 shrink-0 rounded-lg object-cover" />}
-                  <button type="button" disabled={locked} onClick={() => openDish(category.id, product)} className="min-w-0 flex-1 text-left disabled:opacity-60">
-                    <span className="block truncate text-sm font-medium text-[#2C3E2D]">{product.name}{product.isFeatured ? ' ★' : ''}</span>
-                    <span className="block text-xs text-[#6B6560]">{product.showPrices ? priceLabel(product, currency) : 'Price hidden'}</span>
+                <li key={product.id} className="flex items-center gap-3 px-3 py-2">
+                  {product.imageUrl
+                    ? // eslint-disable-next-line @next/next/no-img-element -- merchant menu previews use uploaded image URLs
+                      <img src={product.imageUrl} alt="" className="h-11 w-11 shrink-0 rounded-[10px] object-cover" />
+                    : <span aria-hidden="true" className="h-11 w-11 shrink-0 rounded-[10px] bg-surface" />}
+                  <button type="button" disabled={locked} onClick={() => openDish(category.id, product)} className="min-h-11 min-w-0 flex-1 text-left disabled:opacity-60">
+                    <span className="block truncate text-sm font-bold text-ink">{product.name}{product.isFeatured ? ' ★' : ''}</span>
+                    <span className="block text-xs text-muted tabular-nums">{product.showPrices ? priceLabel(product, currency) : 'Price hidden'}</span>
                   </button>
-                  <div className="flex flex-col gap-1 sm:flex-row">
-                    <button type="button" aria-label={`Move ${product.name} up`} disabled={locked || pi === 0} onClick={() => reorderDish(category.id, pi, -1)} className={`${iconBtn} h-8 sm:h-11`}><ArrowUp className="h-4 w-4" /></button>
-                    <button type="button" aria-label={`Move ${product.name} down`} disabled={locked || pi === products.length - 1} onClick={() => reorderDish(category.id, pi, 1)} className={`${iconBtn} h-8 sm:h-11`}><ArrowDown className="h-4 w-4" /></button>
-                  </div>
-                  <button type="button" disabled={locked} onClick={() => void toggleAvailable(product)}
-                    className={`${btn} w-28 shrink-0 px-2 ${product.isAvailable ? 'border border-emerald-700 text-emerald-800' : 'bg-amber-100 text-amber-900'}`}>
-                    {product.isAvailable ? 'Available' : 'Sold out'}
-                  </button>
+                  {sorting ? (
+                    <div className="flex gap-1">
+                      <button type="button" aria-label={`Move ${product.name} up`} disabled={locked || pi === 0} onClick={() => reorderDish(category.id, pi, -1)} className={iconBtn}><ArrowUp className="h-4 w-4" /></button>
+                      <button type="button" aria-label={`Move ${product.name} down`} disabled={locked || pi === products.length - 1} onClick={() => reorderDish(category.id, pi, 1)} className={iconBtn}><ArrowDown className="h-4 w-4" /></button>
+                    </div>
+                  ) : (
+                    // One tap marks the dish sold out (or back on sale); the label under the switch says which.
+                    <button type="button" role="switch" aria-checked={!product.isAvailable} aria-label={`${product.name}: sold out`} disabled={locked} onClick={() => void toggleAvailable(product)}
+                      className="flex min-h-11 w-16 shrink-0 flex-col items-center justify-center gap-1 disabled:opacity-50">
+                      <span className={`relative h-6 w-10 rounded-full transition-colors ${product.isAvailable ? 'bg-line-strong' : 'bg-soldout'}`}>
+                        <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${product.isAvailable ? 'left-0.5' : 'left-[18px]'}`} />
+                      </span>
+                      <span className={`text-[11px] font-bold ${product.isAvailable ? 'text-muted' : 'text-soldout'}`}>{product.isAvailable ? 'Available' : 'Sold out'}</span>
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>
-            <div className="p-3">
-              <button type="button" disabled={locked} onClick={() => openDish(category.id)} className={`${btn} w-full border border-dashed border-[#2C3E2D] text-[#2C3E2D]`}><Plus className="h-4 w-4" /> Add dish</button>
-            </div>
+            {!sorting && (
+              <div className="p-3">
+                <button type="button" disabled={locked} onClick={() => openDish(category.id)} className={`${btn} w-full border border-dashed border-line-strong text-brand`}><Plus className="h-4 w-4" /> Add dish</button>
+              </div>
+            )}
           </section>
         );
       })}
 
       {uncategorized.length > 0 && (
         <section className={`${card} p-3`}>
-          <h3 className="text-sm font-semibold text-[#2C3E2D]">Not on your page</h3>
-          <p className="text-xs text-[#6B6560]">These dishes have no category, so they are not shown. Open one and choose a category.</p>
-          <ul className="mt-2 divide-y divide-[#EEF2EC]">
+          <h3 className="text-sm font-bold text-ink">Not on your page</h3>
+          <p className="text-xs text-muted">These dishes have no category, so they are not shown. Open one and choose a category.</p>
+          <ul className="mt-2 divide-y divide-line">
             {uncategorized.map((product) => (
               <li key={product.id}><button type="button" disabled={locked || categories.length === 0} onClick={() => openDish(categories[0]?.id ?? '', product)} className="min-h-11 w-full text-left text-sm disabled:opacity-60">{product.name}</button></li>
             ))}
@@ -266,7 +295,7 @@ export function MenuManager({ merchantId, getHeaders, readOnly, register, onChan
       )}
 
       {newCategory === null ? (
-        <button type="button" disabled={locked} onClick={() => setNewCategory('')} className={`${btn} w-full bg-[#2C3E2D] text-white sm:w-auto`}><Plus className="h-4 w-4" /> Add category</button>
+        <button type="button" disabled={locked} onClick={() => setNewCategory('')} className={`${btn} w-full bg-brand text-on-brand sm:w-auto`}><Plus className="h-4 w-4" /> Add category</button>
       ) : (
         <form className={`${card} flex flex-col gap-2 p-3 sm:flex-row sm:items-end`} onSubmit={(event) => { event.preventDefault(); if (newCategory.trim()) void change({ type: 'create_category', name: newCategory }, `${newCategory.trim()} added.`).then((ok) => { if (ok) setNewCategory(null); }); }}>
           <label className="flex-1 text-sm font-medium text-[#2C3E2D]">New category
