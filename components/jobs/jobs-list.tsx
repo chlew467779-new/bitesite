@@ -57,7 +57,8 @@ export function JobsList({ jobs, initialArea, initialType }: { jobs: PublicJob[]
             {areas.map((item) => <Chip key={item} selected={area === item} onClick={() => choose(item, type)}>{item}</Chip>)}
           </div>
         )}
-        <div role="group" aria-label={t("jobs.type")} className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:flex-wrap md:px-0">
+        {/* Only four types, so they wrap instead of scrolling: every choice stays visible on a phone. */}
+        <div role="group" aria-label={t("jobs.type")} className="flex flex-wrap gap-2">
           <Chip selected={!type} onClick={() => choose(area, "")}>{t("jobs.allTypes")}</Chip>
           {TYPES.map((item) => <Chip key={item.value} selected={type === item.value} onClick={() => choose(area, item.value)}>{t(item.key)}</Chip>)}
         </div>

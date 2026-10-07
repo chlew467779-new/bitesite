@@ -100,3 +100,10 @@
   justify-content: center;
   line-height: 1;
 }
+
+/* The map credit stays small text, but its links get a 44px tall tap area. */
+.leaflet-control-attribution a {
+  display: inline-block;
+  padding: 15px 2px;
+  margin: -15px 0;
+}

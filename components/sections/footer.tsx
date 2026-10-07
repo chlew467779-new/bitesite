@@ -28,7 +28,7 @@ export function Footer() {
             <Link
               key={link.href}
               href={link.href}
-              className="inline-flex min-h-11 items-center text-ink-2 transition-colors hover:text-brand"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center text-ink-2 transition-colors hover:text-brand"
               style={{ WebkitTapHighlightColor: "transparent" }}
             >
               {t(link.label)}
