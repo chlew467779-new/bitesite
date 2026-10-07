@@ -16,6 +16,10 @@ export interface HomeFiltersProps {
   onNearbyChange: (active: boolean) => void;
   openNow: boolean;
   onOpenNowChange: (value: boolean) => void;
+  /** R5 food labels present on at least one restaurant: "halal" and/or "veg". */
+  availableLabels: string[];
+  labels: string[];
+  onLabelsChange: (labels: string[]) => void;
   availableStates: string[];
   currentState: string | null;
   onStateChange: (state: string | null) => void;
@@ -63,6 +67,11 @@ export function HomeFilters(props: HomeFiltersProps) {
           <Clock size={16} aria-hidden />
           Open now
         </Chip>
+        {props.availableLabels.map((label) => (
+          <Chip key={label} selected={props.labels.includes(label)} onClick={() => props.onLabelsChange(toggle(props.labels, label))}>
+            {label === "halal" ? "Halal-certified" : "Vegetarian"}
+          </Chip>
+        ))}
         {(props.availableAreas.length > 1 || props.availableStates.length > 1) && (
           <Chip selected={areaChosen || Boolean(props.currentState)} onClick={() => setPanel("area")} aria-haspopup="dialog">
             {areaLabel}

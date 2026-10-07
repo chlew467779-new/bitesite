@@ -30,6 +30,7 @@ import { PaymentSection } from './components/payment-section';
 import { AmenitiesSection } from './components/amenities-section';
 import { PageStyleSection } from './components/page-style-section';
 import { TableQrPanel } from './components/table-qr-panel';
+import { FoodLabelsSection } from './components/food-labels-section';
 import { createAreaRequests } from '@/lib/area-requests.mjs';
 
 /**
@@ -713,6 +714,12 @@ export default function MerchantDashboardPage() {
             {'tags.amenities' in sectionProps.fields && 'tags.occasion' in sectionProps.fields && (
               <div className="mt-6 border-t border-[#EEF2EC] pt-5">
                 <AmenitiesSection key={`amenities:${sectionKey}`} {...sectionProps} />
+              </div>
+            )}
+            {/* Shown once migration 20261006120000 offers the field (R5). */}
+            {'features.vegetarian_options' in sectionProps.fields && (
+              <div className="mt-6 border-t border-[#EEF2EC] pt-5">
+                <FoodLabelsSection key={`food-labels:${sectionKey}`} {...sectionProps} />
               </div>
             )}
           </SectionCard>

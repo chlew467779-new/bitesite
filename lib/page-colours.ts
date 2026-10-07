@@ -8,6 +8,7 @@ export const PAGE_COLOURS: Record<string, { name: string; colour: string; dark?:
   modern: { name: "Forest", colour: "#1F4D3A" },
   classic: { name: "Amber", colour: "#8A4B0F" },
   rustic: { name: "Chilli", colour: "#A2341F" },
+  ocean: { name: "Ocean", colour: "#1E4E79" },
   minimal: { name: "Stone", colour: "#44403C" },
   elegant: { name: "Night", colour: "#0F172A", dark: true },
 };
