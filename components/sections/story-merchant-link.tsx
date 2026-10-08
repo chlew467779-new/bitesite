@@ -2,6 +2,7 @@
 
 'use client';
 
+import { useT } from '@/lib/i18n';
 import { useRouter } from 'next/navigation';
 import { trackEvent } from '@/lib/analytics';
 
@@ -12,6 +13,7 @@ interface StoryMerchantLinkProps {
 
 export function StoryMerchantLink({ slug, articleSlug }: StoryMerchantLinkProps) {
   const router = useRouter();
+  const t = useT();
 
   return (
     <section className="px-4 py-6 sm:px-6 lg:px-8">
@@ -31,7 +33,7 @@ export function StoryMerchantLink({ slug, articleSlug }: StoryMerchantLinkProps)
           className="inline-flex items-center gap-2 rounded-full bg-[#5A8F6E] px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-[#4A7A5E] active:scale-[0.98]"
           style={{ WebkitTapHighlightColor: 'transparent' }}
         >
-          Read more about this restaurant
+          {t('stories.restaurant')}
           <svg
             width="16"
             height="16"

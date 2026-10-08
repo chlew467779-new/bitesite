@@ -18,6 +18,16 @@ const MERCHANT_REASON_KEYS: Record<string, MessageKey> = {
   menu: 'report.menu', duplicate: 'report.duplicate', fake: 'report.fake', other: 'report.other',
 };
 
+const STORY_REASON_KEYS: Record<string, MessageKey> = {
+  rights: 'report.story.rights', personal_data: 'report.story.personalData',
+  misleading: 'report.story.misleading', offensive: 'report.story.offensive', other: 'report.other',
+};
+const JOB_REASON_KEYS: Record<string, MessageKey> = {
+  scam: 'report.job.scam', misleading: 'report.job.misleading',
+  discriminatory: 'report.job.discriminatory', filled: 'report.job.filled', other: 'report.other',
+};
+const REASON_KEYS = { merchant: MERCHANT_REASON_KEYS, story: STORY_REASON_KEYS, job: JOB_REASON_KEYS };
+
 export function ReportProblem({ targetType, slug, className = "mx-auto max-w-xl px-4 pb-10" }: { targetType: ReportTargetType; slug: string; className?: string }) {
   const t = useT();
   const lang = useLang();
@@ -64,7 +74,7 @@ export function ReportProblem({ targetType, slug, className = "mx-auto max-w-xl 
                 {REPORT_REASONS[targetType].map((option) => (
                   <label key={option.value} className="flex min-h-11 items-center gap-3 rounded-lg border border-line px-3">
                     <input type="radio" name={`${idBase}-reason`} value={option.value} checked={reason === option.value} onChange={() => { setReason(option.value); setError(''); }} className="h-4 w-4" />
-                    {targetType === 'merchant' && MERCHANT_REASON_KEYS[option.value] ? t(MERCHANT_REASON_KEYS[option.value]) : option.label}
+                    {REASON_KEYS[targetType][option.value] ? t(REASON_KEYS[targetType][option.value]) : option.label}
                   </label>
                 ))}
               </div>
