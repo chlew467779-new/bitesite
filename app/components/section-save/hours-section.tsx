@@ -7,8 +7,10 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
+import { useT, useLang, dayName } from '@/lib/i18n';
 import {
   WEEK_DAYS,
+  MAX_SLOTS_PER_DAY,
   parseDayForEditor,
   serializeDay,
   validateDay,
@@ -32,6 +34,8 @@ export type SectionProps = {
 };
 
 export function HoursSection(props: SectionProps) {
+  const t = useT();
+  const lang = useLang();
   const paths = useMemo(() => WEEK_DAYS.map((day) => `hours.${DAY_CODES[day]}`), []);
   const section = useSectionSave(paths, props.fields, props.send, props.onConfirmed);
   const [week, setWeek] = useState<WeekEditorState>(() => Object.fromEntries(WEEK_DAYS.map((day) => [day, parseDayForEditor(snapshotValue(props.fields[`hours.${DAY_CODES[day]}`]))])) as WeekEditorState);
@@ -71,7 +75,13 @@ export function HoursSection(props: SectionProps) {
     for (const day of WEEK_DAYS) {
       if (!week[day].dirty) continue;
       const message = validateDay(week[day]);
-      if (message) found[day] = message;
+      if (message) found[day] = ({
+      ["Add opening and closing times, or switch the day to Closed."]: t('owner.hours.addOpeningAndClosingTimesOr'),
+      [`Use at most ${MAX_SLOTS_PER_DAY} time ranges.`]: t('owner.hours.useAtMostTimeRanges', { max: MAX_SLOTS_PER_DAY }),
+      ["Choose both an opening and a closing time."]: t('owner.hours.chooseBothAnOpeningAndA'),
+      ["Choose times from the time picker."]: t('owner.hours.chooseTimesFromTheTimePicker'),
+      ["Opening and closing times must be different."]: t('owner.hours.openingAndClosingTimesMustBe')
+    } as Record<string, string>)[message] ?? message;
     }
     setErrors(found);
     if (Object.keys(found).length === 0) void section.save();
@@ -88,12 +98,12 @@ export function HoursSection(props: SectionProps) {
       </fieldset>
       <SectionSaveBar
         state={section.state}
-        labels={WEEK_DAYS.map((day) => ({ path: `hours.${DAY_CODES[day]}`, label: day.replace(/^\w/, (c) => c.toUpperCase()) }))}
+        labels={WEEK_DAYS.map((day) => ({ path: `hours.${DAY_CODES[day]}`, label: dayName(lang, day) }))}
         canSave={section.canSave}
         dirty={section.dirty}
         readOnly={props.readOnly}
         lastOutcome={section.lastOutcome}
-        savedMessage="Saved."
+        savedMessage={t('owner.common.saved')}
         onSave={save}
         onRetry={() => void section.retry()}
         onKeepCurrent={section.chooseCurrent}

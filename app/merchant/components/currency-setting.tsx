@@ -8,6 +8,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
+import { useT } from '@/lib/i18n';
 import { CURRENCIES, currencyAreaMismatch, type CurrencyCode } from '@/lib/price-format.mjs';
 import { findArea } from '@/lib/areas-core.mjs';
 import { getAreas } from '@/lib/supabase';
@@ -20,6 +21,7 @@ export function CurrencySetting({ merchantId, area, getHeaders, readOnly, onCurr
   readOnly: boolean;
   onCurrency: (currency: CurrencyCode) => void;
 }) {
+  const t = useT();
   const api = `/api/merchant/restaurants/${encodeURIComponent(merchantId)}/currency`;
   const [currency, setCurrency] = useState<CurrencyCode | null>(null);
   const [busy, setBusy] = useState(false);
@@ -56,15 +58,15 @@ export function CurrencySetting({ merchantId, area, getHeaders, readOnly, onCurr
     setMessage(null);
     try {
       const headers = await getHeaders();
-      if (!headers) { setMessage({ kind: 'error', text: 'Your session has ended. Sign in again.' }); return; }
+      if (!headers) { setMessage({ kind: 'error', text: t('owner.common.yourSessionHasEndedSignIn') }); return; }
       const response = await fetch(api, { method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify({ currency: next }) });
       const body = await response.json().catch(() => null);
-      if (!response.ok) { setMessage({ kind: 'error', text: body?.error?.message || 'Not saved. Try again.' }); return; }
+      if (!response.ok) { setMessage({ kind: 'error', text: body?.error?.message || t('owner.common.notSavedTryAgain') }); return; }
       setCurrency(next);
       onCurrency(next);
-      setMessage({ kind: 'ok', text: 'Saved. Your page shows the new currency now.' });
+      setMessage({ kind: 'ok', text: t('owner.currency.savedYourPageShowsTheNew') });
     } catch {
-      setMessage({ kind: 'error', text: 'Could not reach BiteSite. Try again.' });
+      setMessage({ kind: 'error', text: t('owner.currency.couldNotReachBitesiteTryAgain') });
     } finally {
       setBusy(false);
     }
@@ -72,18 +74,18 @@ export function CurrencySetting({ merchantId, area, getHeaders, readOnly, onCurr
 
   if (!currency) return null;
   return (
-    <fieldset className="rounded-xl border border-[#DDE5DC] p-3">
-      <legend className="px-1 text-sm font-medium text-[#2C3E2D]">Prices shown in</legend>
+    <fieldset className="rounded-xl border border-line p-3">
+      <legend className="px-1 text-sm font-medium text-ink">{t('owner.currency.pricesShownIn')}</legend>
       <div className="grid grid-cols-2 gap-2">
         {CURRENCIES.map((c) => (
-          <label key={c.code} className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border px-3 text-sm ${currency === c.code ? 'border-emerald-700 bg-emerald-50 text-emerald-900' : 'border-[#C9D6C7] text-[#2C3E2D]'}`}>
+          <label key={c.code} className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border px-3 text-sm ${currency === c.code ? 'border-brand bg-brand-soft text-brand' : 'border-line-strong text-ink'}`}>
             <input type="radio" name={`currency-${merchantId}`} value={c.code} checked={currency === c.code} disabled={busy || readOnly} onChange={() => void choose(c.code)} className="h-4 w-4" />
-            {c.symbol} <span className="text-[#6B6560]">({c.country})</span>
+            {c.symbol} <span className="text-muted">({t(c.code === 'MYR' ? 'owner.currency.malaysia' : 'owner.currency.singapore')})</span>
           </label>
         ))}
       </div>
-      {mismatch && <p className="mt-2 rounded-lg border border-amber-300 bg-amber-50 p-2 text-sm text-amber-900" role="note">{mismatch} Check that both are right.</p>}
-      {message && <p className={`mt-2 text-sm ${message.kind === 'ok' ? 'text-emerald-800' : 'text-red-700'}`} role={message.kind === 'ok' ? 'status' : 'alert'}>{message.text}</p>}
+      {mismatch && <p className="mt-2 rounded-lg border border-amber-300 bg-amber-50 p-2 text-sm text-amber-900" role="note">{t('owner.currency.mismatch', { symbol: currency === 'SGD' ? 'S$' : 'RM', country: t(currency === 'SGD' ? 'owner.currency.singapore' : 'owner.currency.malaysia'), area: area ?? '', areaCountry: t(areaCountry === 'SG' ? 'owner.currency.singapore' : 'owner.currency.malaysia') })} {t('owner.currency.checkThatBothAreRight')}</p>}
+      {message && <p className={`mt-2 text-sm ${message.kind === 'ok' ? 'text-brand' : 'text-red-700'}`} role={message.kind === 'ok' ? 'status' : 'alert'}>{message.text}</p>}
     </fieldset>
   );
 }

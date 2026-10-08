@@ -42,7 +42,7 @@ for (const file of files) {
 }
 const ownerMenu = await read("app/merchant/components/menu-manager.tsx");
 assert.doesNotMatch(ownerMenu, /`RM |\(RM\)/, "owner menu editor has no hard-coded RM");
-assert.match(ownerMenu, /priceLabel\(product, currency\)/);
+assert.match(ownerMenu, /priceLabel\(product, currency, t\)/);
 const adminMenu = await read("app/admin/components/menu-editor.tsx");
 assert.doesNotMatch(adminMenu, /\(RM\)/, "Admin menu editor has no hard-coded RM");
 for (const m of adminMenu.matchAll(/formatPrice\(([^()]*)\)/g)) assert.match(m[1], /, currency$/, "Admin menu prices pass the currency");
