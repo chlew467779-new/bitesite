@@ -49,7 +49,7 @@ const storePage = await read("app/store/[merchant]/page.tsx");
 assert.match(storePage, /<ReportProblem targetType="merchant" slug=\{merchant\.slug\} className="w-full" \/>/, "open restaurant page includes reporting");
 const unavailableBranch = storePage.split("// Inactive merchant friendly page")[1]?.split("const [categories, products")[0];
 assert.match(unavailableBranch, /<ClosedStore[\s\S]*merchant=\{\{ slug: merchant\.slug, name: merchant\.name \}\}/, "unavailable page passes the same public restaurant slug");
-assert.match(await read("components/store/closed-store.tsx"), /<ReportProblem targetType="merchant" slug=\{merchant\.slug\} \/>/, "unavailable restaurant component includes reporting");
+assert.match(await read("components/store/closed-store.tsx"), /<ReportProblem targetType="merchant" slug=\{merchant\.slug\}[^>]*\/>/, "unavailable restaurant component includes reporting");
 assert.match(await read("app/stories/[slug]/page.tsx"), /<ReportProblem targetType="story" slug=\{slug\} \/>/);
 assert.match(await read("app/admin/components/admin-shell.tsx"), /id: 'reports'/);
 assert.match(await read("app/admin/page.tsx"), /<ReportsInbox onOpenMerchantManager=\{\(\) => setActiveTab\('merchant-manager'\)\} onOpenJobs=\{\(\) => setActiveTab\('jobs'\)\} onOpenStoryEditor=\{openReportStory\} \/>/);
