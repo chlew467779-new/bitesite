@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '@/lib/i18n';
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { findArea, matchAreas, type AreaItem } from '@/lib/areas-core.mjs';
 import { getAreas } from '@/lib/supabase';
@@ -29,6 +30,7 @@ type Props = {
 };
 
 export function AreaField({ name, label, value, onChange, readOnly = false, merchantId, address, getHeaders, areaRequests }: Props) {
+  const t = useT();
   const id = `field-${name}`;
   const listId = `${id}-list`;
   const [areas, setAreas] = useState<AreaItem[] | null>(null);
@@ -64,7 +66,7 @@ export function AreaField({ name, label, value, onChange, readOnly = false, merc
     try {
       await requests.submit({ merchantId, area: requestedArea, address, getHeaders });
     } catch (error) {
-      setRequestError({ key: requestKey, message: error instanceof Error ? error.message : 'Could not reach BiteSite. Please retry.' });
+      setRequestError({ key: requestKey, message: error instanceof Error ? error.message : t('owner.location.couldNotReachBitesitePleaseRetry') });
     } finally {
       sendingRef.current = false;
       setSending(false);
@@ -91,7 +93,7 @@ export function AreaField({ name, label, value, onChange, readOnly = false, merc
         id={id}
         name={name}
         value={value}
-        placeholder="Start typing, e.g. Sungai Besi"
+        placeholder={t('owner.location.startTypingEGSungaiBesi')}
         autoComplete="off"
         maxLength={80}
         role="combobox"
@@ -128,16 +130,16 @@ export function AreaField({ name, label, value, onChange, readOnly = false, merc
       )}
       {unlisted ? (
         <p id={`${id}-error`} className="mt-1 text-sm text-red-700">
-          Choose an area from the list. If yours is not listed, ask BiteSite to add it, then clear this field before saving.
+          {t('owner.location.chooseAnAreaFromTheList')}
         </p>
       ) : (
         <p id={`${id}-hint`} className="mt-1 text-xs text-[#6B6560]">
-          {loadFailed ? 'The area list could not load. You can still type your area; it is checked when you save.' : 'Pick from the list. Short names like PJ or TTDI work too.'}
+          {loadFailed ? t('owner.location.theAreaListCouldNotLoad') : t('owner.location.pickFromTheListShortNames')}
         </p>
       )}
-      {canRequest && (wasSent ? <p role="status" className="mt-2 text-sm text-emerald-800">Sent. We&apos;ll add it and let you know.</p> : <div className="mt-2 space-y-2">
+      {canRequest && (wasSent ? <p role="status" className="mt-2 text-sm text-emerald-800">{t('owner.location.sentWeLlAddItAnd')}</p> : <div className="mt-2 space-y-2">
         <button type="button" disabled={sending} onClick={() => void askForArea()} className="min-h-11 w-full whitespace-normal break-words rounded-lg border border-[#2C3E2D] px-3 py-2 text-left text-sm font-medium text-[#2C3E2D] disabled:opacity-50">
-          {sending ? 'Sending…' : <>Ask BiteSite to add &quot;{requestedArea}&quot;</>}
+          {sending ? t('owner.common.sending') : t('owner.location.askBitesiteToAdd', { area: requestedArea })}
         </button>
         {requestError?.key === requestKey && <p role="alert" className="break-words text-sm text-red-700">{requestError.message}</p>}
       </div>)}

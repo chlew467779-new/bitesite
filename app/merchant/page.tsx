@@ -35,7 +35,7 @@ import { createAreaRequests } from '@/lib/area-requests.mjs';
 import { ChecklistLink, DASHBOARD_TILES, DashboardSideNav, DashboardTiles, ViewBar, useDashboardView, viewOfSection, type DashboardView } from './components/dashboard-shell';
 import { StatusPill } from '@/components/ui/status-pill';
 import { buttonClasses } from '@/components/ui/button';
-import { useT } from '@/lib/i18n';
+import { useT, type MessageKey } from '@/lib/i18n';
 import { ChevronRight } from 'lucide-react';
 
 /**
@@ -81,8 +81,16 @@ function archivedLast(choices: Choice[]) {
 // Below the sticky site header and the view bar.
 const cardClass = 'scroll-mt-32 rounded-[20px] border border-line bg-page p-4 sm:p-6';
 
-function statusLabel(value: string | null | undefined, fallback: string) {
-  return (value || fallback).replaceAll('_', ' ').toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
+function statusLabel(value: string | null | undefined, fallback: string, t: ReturnType<typeof useT>) {
+  if (!value) return fallback;
+  const keys: Record<string, MessageKey> = {
+    draft: 'owner.common.draft', pending: 'owner.common.pendingReview', pending_review: 'owner.common.pendingReview',
+    approved: 'owner.common.approved', rejected: 'owner.common.rejected', published: 'owner.common.published',
+    suspended: 'owner.common.suspended', archived: 'owner.common.archived',
+    open: 'owner.common.open', temporarily_closed: 'owner.closure.temporarilyClosed', moved: 'owner.common.moved', permanently_closed: 'owner.common.permanentlyClosed',
+  };
+  const key = keys[value.toLowerCase()];
+  return key ? t(key) : value.replaceAll('_', ' ').toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
 }
 
 async function readJson(response: Response): Promise<Record<string, unknown>> {
@@ -132,9 +140,27 @@ function SectionCard({ id, title, description, hidden, soleTitle, children }: { 
 
 
 /** Text section (About or Contact): one TextField per path. */
+const PROFILE_MESSAGES: Record<string, MessageKey> = {
+  "This field cannot be edited here.": "owner.profile.thisFieldCannotBeEditedHere",
+  "Enter text.": "owner.profile.enterText",
+  "Enter an email address like name@example.com.": "owner.profile.enterAnEmailAddressLikeName",
+  "Enter a full web address starting with https://": "owner.profile.enterAFullWebAddressStarting",
+  "Use digits, spaces, +, - and brackets only.": "owner.profile.useDigitsSpacesAndBracketsOnly",
+  "Enter a phone number with 7 to 15 digits.": "owner.profile.enterAPhoneNumberWith7",
+  "Use digits, spaces, + and - only.": "owner.profile.useDigitsSpacesAndOnly",
+  "Enter a WhatsApp number with 8 to 15 digits.": "owner.profile.enterAWhatsappNumberWith8",
+  "Start with the country code, e.g. +60 12-345 6789, so the WhatsApp link works.": "owner.profile.startWithTheCountryCodeE",
+};
+
 function TextSection({ id, config, ...props }: SectionProps & { id: string; config: { path: string; label: string; field: string; placeholder?: string; multiline?: boolean; rows?: number; maxLength?: number; type?: string; inputMode?: 'text' | 'tel' | 'email' | 'url'; hint?: string }[] }) {
+  const t = useT();
   const paths = useMemo(() => config.map((item) => item.path), [config]);
   const section = useSectionSave(paths, props.fields, props.send, props.onConfirmed);
+  const validationText = (message: string) => {
+    const key = PROFILE_MESSAGES[message];
+    const length = /^Use ([\d,]+) characters or fewer\.$/.exec(message);
+    return key ? t(key) : length ? t('owner.profile.useCharactersOrFewer', { limit: length[1] }) : message;
+  };
   const [formatErrors, setFormatErrors] = useState<Record<string, string>>({});
   const { register } = props;
   useEffect(() => { register(id, section.handle); return () => register(id, null); }, [id, register, section.handle]);
@@ -144,7 +170,7 @@ function TextSection({ id, config, ...props }: SectionProps & { id: string; conf
     const message = value ? validateProfileField(field, value) : null;
     setFormatErrors((current) => {
       const next = { ...current };
-      if (message) next[path] = message; else delete next[path];
+      if (message) next[path] = validationText(message); else delete next[path];
       return next;
     });
   };
@@ -154,7 +180,7 @@ function TextSection({ id, config, ...props }: SectionProps & { id: string; conf
     for (const item of config) {
       const value = textOf(section.state.draft[item.path]).trim();
       const message = value ? validateProfileField(item.field, value) : null;
-      if (message) errors[item.path] = message;
+      if (message) errors[item.path] = validationText(message);
     }
     setFormatErrors(errors);
     if (Object.keys(errors).length === 0) void section.save();
@@ -209,7 +235,7 @@ function TextSection({ id, config, ...props }: SectionProps & { id: string; conf
         dirty={section.dirty}
         readOnly={props.readOnly}
         lastOutcome={section.lastOutcome}
-        savedMessage="Saved."
+        savedMessage={t('owner.common.saved')}
         onSave={save}
         onRetry={() => void section.retry()}
         onKeepCurrent={section.chooseCurrent}
@@ -219,18 +245,20 @@ function TextSection({ id, config, ...props }: SectionProps & { id: string; conf
   );
 }
 
-const ABOUT_FIELDS = [
-  { path: 'profile.tagline', field: 'tagline', label: 'Tagline', placeholder: 'e.g. Kopi and kaya toast since 1968', maxLength: 300 },
-  { path: 'profile.description', field: 'description', label: 'About your restaurant', placeholder: 'e.g. We serve family recipes and freshly brewed kopi every morning in Sungai Besi.', multiline: true, rows: 6, maxLength: 10000 },
-];
-const CONTACT_FIELDS = [
-  { path: 'profile.phone', field: 'phone', label: 'Phone' },
-  { path: 'profile.whatsapp', field: 'whatsapp', label: 'WhatsApp' },
-  { path: 'profile.email', field: 'email', label: 'Email', type: 'email', inputMode: 'email' as const, placeholder: 'hello@yourshop.my' },
-];
-
 export default function MerchantDashboardPage() {
   const t = useT();
+  // Keep field configs stable between edits; only labels change with the interface language.
+  const ABOUT_FIELDS = useMemo(() => [
+    { path: 'profile.tagline', field: 'tagline', label: t('owner.dashboard.tagline'), placeholder: t('owner.dashboard.eGKopiAndKayaToast'), maxLength: 300 },
+    { path: 'profile.description', field: 'description', label: t('owner.dashboard.aboutYourRestaurant'), placeholder: t('owner.dashboard.eGWeServeFamilyRecipes'), multiline: true, rows: 6, maxLength: 10000 },
+  ], [t]);
+  const CONTACT_FIELDS = useMemo(() => [
+    { path: 'profile.phone', field: 'phone', label: t('owner.dashboard.phone') },
+    { path: 'profile.whatsapp', field: 'whatsapp', label: 'WhatsApp' },
+    { path: 'profile.email', field: 'email', label: t('owner.common.email'), type: 'email', inputMode: 'email' as const, placeholder: 'hello@yourshop.my' },
+  ], [t]);
+  const currentT = useRef(t);
+  currentT.current = t;
   const { view, open, home } = useDashboardView();
   const [areaRequests] = useState(createAreaRequests);
   const [load, setLoad] = useState<LoadState>({ kind: 'loading' });
@@ -279,25 +307,25 @@ export default function MerchantDashboardPage() {
       const me = await readJson(meResponse);
       if (seq !== loadSeq.current) return;
       if (meResponse.status === 401) { setLoad({ kind: 'signed-out' }); return; }
-      if (!meResponse.ok) { setLoad({ kind: 'error', message: errorMessage(me, 'We could not load your merchant account.') }); return; }
+      if (!meResponse.ok) { setLoad({ kind: 'error', message: errorMessage(me, currentT.current('owner.dashboard.weCouldNotLoadYourMerchant')) }); return; }
       const merchants = Array.isArray(me.merchants) ? (me.merchants as Choice[]) : [];
       if (!me.merchant) { setLoad(merchants.length === 0 ? { kind: 'no-merchant' } : { kind: 'choose', merchants }); return; }
       const profile = me.merchant as Profile;
       const fieldsResponse = await fetch(`/api/merchant/restaurants/${encodeURIComponent(profile.id)}/fields`, { headers, cache: 'no-store' });
       const fieldsData = await readJson(fieldsResponse);
       if (seq !== loadSeq.current) return;
-      if (!fieldsResponse.ok) { setLoad({ kind: 'error', message: errorMessage(fieldsData, 'We could not load your restaurant details.') }); return; }
+      if (!fieldsResponse.ok) { setLoad({ kind: 'error', message: errorMessage(fieldsData, currentT.current('owner.dashboard.weCouldNotLoadYourRestaurant')) }); return; }
       const fields = ((fieldsData.data as { fields?: Record<string, Snapshot> } | undefined)?.fields) ?? {};
       const listingResponse = await fetch(`/api/merchant/restaurants/${encodeURIComponent(profile.id)}/listing`, { headers, cache: 'no-store' });
       const listingData = await readJson(listingResponse);
       if (seq !== loadSeq.current) return;
-      if (!listingResponse.ok || !(listingData.data as { state?: ListingState })?.state) { setLoad({ kind: 'error', message: errorMessage(listingData, 'Could not load listing status.') }); return; }
+      if (!listingResponse.ok || !(listingData.data as { state?: ListingState })?.state) { setLoad({ kind: 'error', message: errorMessage(listingData, currentT.current('owner.dashboard.couldNotLoadListingStatus')) }); return; }
       setListing((listingData.data as { state: ListingState }).state);
       setData({ userId, profile, merchants, fields, loadId: seq });
       setConfirmed(fields);
       setLoad({ kind: 'ready' });
     } catch {
-      if (seq === loadSeq.current) setLoad({ kind: 'error', message: 'We could not reach BiteSite. Check your connection and try again.' });
+      if (seq === loadSeq.current) setLoad({ kind: 'error', message: currentT.current('owner.dashboard.weCouldNotReachBitesiteCheck') });
     }
   }, []);
 
@@ -309,7 +337,7 @@ export default function MerchantDashboardPage() {
     const { data: session } = await supabase.auth.getSession();
     // A save belongs to the account and restaurant it was made for; a changed session is not used.
     if (!session.session?.access_token || session.session.user.id !== current.userId) {
-      return new Response(JSON.stringify({ error: { code: 'AUTH_REQUIRED', message: 'Your session has ended or changed. Sign in again as the same account in a new tab, then retry. Your changes are still here.' } }), { status: 401 });
+      return new Response(JSON.stringify({ error: { code: 'AUTH_REQUIRED', message: currentT.current('owner.dashboard.yourSessionHasEndedOrChanged') } }), { status: 401 });
     }
     return fetch(`/api/merchant/restaurants/${encodeURIComponent(current.profile.id)}/fields`, {
       method: 'PATCH',
@@ -341,7 +369,7 @@ export default function MerchantDashboardPage() {
       if (!response.ok || !body.data?.state) throw new Error('listing');
       if (seq !== listingSeq.current || merchantLoad !== loadSeq.current) return;
       onListingState(body.data.state); setListingError('');
-    } catch { if (seq === listingSeq.current && merchantLoad === loadSeq.current) setListingError('Could not refresh listing status. Try Refresh status again.'); }
+    } catch { if (seq === listingSeq.current && merchantLoad === loadSeq.current) setListingError(currentT.current('owner.dashboard.couldNotRefreshListingStatusTry')); }
   }, [listingMerchantId, photoHeaders, onListingState]);
   useEffect(() => { void refreshListing(); }, [confirmed, refreshListing]);
 
@@ -376,7 +404,7 @@ export default function MerchantDashboardPage() {
   const requestSwitch = (targetId: string) => {
     if (!data || targetId === data.profile.id) return;
     const status = anyStatus();
-    if (status.busy) { setSwitchPrompt({ targetId, message: 'A save is still in progress or unconfirmed. Wait for it (or choose Retry) before switching restaurants.' }); return; }
+    if (status.busy) { setSwitchPrompt({ targetId, message: t('owner.dashboard.aSaveIsStillInProgress') }); return; }
     if (status.dirty) { setSwitchPrompt({ targetId }); return; }
     goTo(targetId);
   };
@@ -390,12 +418,12 @@ export default function MerchantDashboardPage() {
       results.push(`${id}: ${outcome}`);
       if (outcome !== 'saved' && outcome !== 'noop') {
         setSwitching(false);
-        setSwitchPrompt({ targetId, message: `Not switched. ${outcome === 'skipped' ? 'Finish or cancel the open edit in Photos / Links / Menu first.' : outcome === 'conflict' ? 'A section has a conflict to resolve.' : 'A section could not be saved.'} Sections saved before it stay saved.` });
+        setSwitchPrompt({ targetId, message: t('owner.dashboard.notSwitchedSectionsSavedBeforeIt', { reason: outcome === 'skipped' ? t('owner.dashboard.finishOrCancelTheOpenEdit') : outcome === 'conflict' ? t('owner.dashboard.aSectionHasAConflictTo') : t('owner.dashboard.aSectionCouldNotBeSaved') }) });
         return;
       }
     }
     setSwitching(false);
-    if (anyStatus().dirty) { setSwitchPrompt({ targetId, message: 'You kept typing while saving. Save or discard those changes first.' }); return; }
+    if (anyStatus().dirty) { setSwitchPrompt({ targetId, message: t('owner.dashboard.youKeptTypingWhileSavingSave') }); return; }
     goTo(targetId);
   };
 
@@ -429,7 +457,7 @@ export default function MerchantDashboardPage() {
   const requestStories = () => {
     const status = anyStatus();
     if (status.busy) {
-      setLeavePrompt({ kind: 'stories', message: 'A save is still in progress or unconfirmed. Wait for it (or choose Retry) before leaving.' });
+      setLeavePrompt({ kind: 'stories', message: t('owner.dashboard.aSaveIsStillInProgress2') });
       return;
     }
     if (status.dirty) {
@@ -442,7 +470,7 @@ export default function MerchantDashboardPage() {
   const requestNewRestaurant = () => {
     const status = anyStatus();
     if (status.busy) {
-      setLeavePrompt({ kind: 'new', message: 'A save is still in progress or unconfirmed. Wait for it (or choose Retry) before leaving.' });
+      setLeavePrompt({ kind: 'new', message: t('owner.dashboard.aSaveIsStillInProgress2') });
       return;
     }
     if (status.dirty) {
@@ -455,7 +483,7 @@ export default function MerchantDashboardPage() {
   const requestSignOut = () => {
     const status = anyStatus();
     if (status.busy) {
-      setLeavePrompt({ kind: 'signout', message: 'A save is still in progress or unconfirmed. Wait for it (or choose Retry) before signing out.' });
+      setLeavePrompt({ kind: 'signout', message: t('owner.dashboard.aSaveIsStillInProgress3') });
       return;
     }
     if (status.dirty) {
@@ -481,13 +509,13 @@ export default function MerchantDashboardPage() {
       const outcome = await handle.save();
       if (outcome !== 'saved' && outcome !== 'noop') {
         setSwitching(false);
-        setLeavePrompt({ kind, message: `Not leaving. ${outcome === 'skipped' ? 'Finish or cancel the open edit in Photos / Links / Menu first.' : outcome === 'conflict' ? 'A section has a conflict to resolve.' : 'A section could not be saved.'} Your changes are still here.` });
+        setLeavePrompt({ kind, message: t('owner.dashboard.notLeavingYourChangesAreStill', { reason: outcome === 'skipped' ? t('owner.dashboard.finishOrCancelTheOpenEdit') : outcome === 'conflict' ? t('owner.dashboard.aSectionHasAConflictTo') : t('owner.dashboard.aSectionCouldNotBeSaved') }) });
         return;
       }
     }
     setSwitching(false);
     if (anyStatus().dirty) {
-      setLeavePrompt({ kind, message: 'You kept typing while saving. Save or discard those changes first.' });
+      setLeavePrompt({ kind, message: t('owner.dashboard.youKeptTypingWhileSavingSave') });
       return;
     }
     finishLeave(kind);
@@ -557,29 +585,29 @@ export default function MerchantDashboardPage() {
   const readOnly = profile.restriction === 'suspended' || profile.restriction === 'archived' || listing?.reviewStatus === 'pending' || listing?.restriction !== 'none' || listingBusy;
   const restriction = profile.restriction !== 'none' && profile.restriction ? profile.restriction : listing?.restriction;
   const readOnlyNotice = restriction === 'suspended'
-    ? 'This restaurant is suspended by BiteSite, so it cannot be changed. Contact the BiteSite team through Feedback.'
+    ? t('owner.dashboard.thisRestaurantIsSuspendedByBitesite')
     : restriction === 'archived'
-      ? 'This restaurant is archived and cannot be changed.'
+      ? t('owner.dashboard.thisRestaurantIsArchivedAndCannot')
       : listing?.reviewStatus === 'pending'
-        ? 'Your restaurant is waiting for review, so it cannot be changed. Withdraw it from review if you need to edit.'
+        ? t('owner.dashboard.yourRestaurantIsWaitingForReview')
         : null;
   const value = (path: string) => snapshotValue(confirmed[path]);
   const savedLocation = value('location');
   const liveArea = savedLocation && typeof savedLocation === 'object' && typeof (savedLocation as { area?: unknown }).area === 'string' ? (savedLocation as { area: string }).area : null;
   const hasText = (path: string) => typeof value(path) === 'string' && (value(path) as string).trim() !== '';
   const checklist = listing?.stateSource === 'managed' ? [
-    { label: 'Restaurant name', complete: listing.checks.name, anchor: 'basics' },
-    { label: 'Address', complete: listing.checks.address, anchor: 'basics' },
-    { label: 'A way to contact you', complete: listing.checks.contact, anchor: 'contact' },
-    { label: 'Cuisine', complete: listing.checks.category, anchor: 'basics' },
-    { label: 'At least one dish', complete: listing.checks.dish, anchor: 'menu' },
+    { label: t('owner.common.restaurantName'), complete: listing.checks.name, anchor: 'basics' },
+    { label: t('owner.common.address'), complete: listing.checks.address, anchor: 'basics' },
+    { label: t('owner.dashboard.aWayToContactYou'), complete: listing.checks.contact, anchor: 'contact' },
+    { label: t('owner.common.cuisine'), complete: listing.checks.category, anchor: 'basics' },
+    { label: t('owner.dashboard.atLeastOneDish'), complete: listing.checks.dish, anchor: 'menu' },
   ] : [
-    { label: 'Short description', complete: hasText('profile.description'), anchor: 'about' },
-    { label: 'A way to contact you', complete: hasText('profile.phone') || hasText('profile.whatsapp') || hasText('profile.email'), anchor: 'contact' },
-    { label: 'Cover photo or logo', complete: Boolean(profile.cover_image || profile.logo_image), anchor: 'photos' },
+    { label: t('owner.dashboard.shortDescription'), complete: hasText('profile.description'), anchor: 'about' },
+    { label: t('owner.dashboard.aWayToContactYou'), complete: hasText('profile.phone') || hasText('profile.whatsapp') || hasText('profile.email'), anchor: 'contact' },
+    { label: t('owner.dashboard.coverPhotoOrLogo'), complete: Boolean(profile.cover_image || profile.logo_image), anchor: 'photos' },
     // A dish in the menu editor or a menu link (Contact & links) both give visitors a menu.
-    { label: 'Menu', complete: Boolean(listing?.checks.dish) || hasText('profile.menu_pdf_url'), anchor: 'menu' },
-    { label: 'Opening hours', complete: WEEK_DAYS.some((day) => confirmed[`hours.${DAY_CODES[day]}`]?.exists), anchor: 'hours' },
+    { label: t('owner.tile.menu'), complete: Boolean(listing?.checks.dish) || hasText('profile.menu_pdf_url'), anchor: 'menu' },
+    { label: t('owner.tile.hours'), complete: WEEK_DAYS.some((day) => confirmed[`hours.${DAY_CODES[day]}`]?.exists), anchor: 'hours' },
   ];
   const completed = checklist.filter((item) => item.complete).length;
   const percent = Math.round((completed / checklist.length) * 100);
@@ -599,16 +627,16 @@ export default function MerchantDashboardPage() {
       {switchPrompt && (
         <div role="dialog" aria-modal="true" aria-labelledby="switch-title" className="fixed inset-0 z-40 flex items-end justify-center bg-black/30 p-4 sm:items-center">
           <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
-            <h2 id="switch-title" className="font-serif text-xl text-[#2C3E2D]">Unsaved changes</h2>
+            <h2 id="switch-title" className="font-serif text-xl text-[#2C3E2D]">{t('owner.dashboard.unsavedChanges')}</h2>
             <p className="mt-2 text-sm text-[#4B4540]">
-              {switchPrompt.message ?? `You have unsaved changes for ${profile.name}. Save them before switching, discard them, or stay here.`}
+              {switchPrompt.message ?? t('owner.dashboard.youHaveUnsavedChangesForSave', { name: profile.name })}
             </p>
             <div className="mt-5 flex flex-wrap justify-end gap-2">
-              <button type="button" onClick={() => setSwitchPrompt(null)} className="rounded-lg px-4 py-2 text-sm font-medium text-[#2C3E2D]">Cancel</button>
+              <button type="button" onClick={() => setSwitchPrompt(null)} className="min-h-11 min-w-11 rounded-lg px-4 py-2 text-sm font-medium text-[#2C3E2D]">{t('owner.common.cancel')}</button>
               {!anyStatus().busy && (
                 <>
-                  <button type="button" disabled={switching} onClick={() => discardAndSwitch(switchPrompt.targetId)} className="rounded-lg border border-red-700 px-4 py-2 text-sm font-medium text-red-700 disabled:opacity-50">Discard</button>
-                  <button type="button" disabled={switching} onClick={() => void saveAllAndSwitch(switchPrompt.targetId)} className="rounded-lg bg-[#2C3E2D] px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{switching ? 'Saving…' : 'Save'}</button>
+                  <button type="button" disabled={switching} onClick={() => discardAndSwitch(switchPrompt.targetId)} className="min-h-11 min-w-11 rounded-lg border border-red-700 px-4 py-2 text-sm font-medium text-red-700 disabled:opacity-50">{t('owner.dashboard.discard')}</button>
+                  <button type="button" disabled={switching} onClick={() => void saveAllAndSwitch(switchPrompt.targetId)} className="min-h-11 min-w-11 rounded-lg bg-[#2C3E2D] px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{switching ? t('owner.common.saving') : t('owner.common.save')}</button>
                 </>
               )}
             </div>
@@ -619,16 +647,16 @@ export default function MerchantDashboardPage() {
       {leavePrompt && (
         <div role="dialog" aria-modal="true" aria-labelledby="leave-title" className="fixed inset-0 z-40 flex items-end justify-center bg-black/30 p-4 sm:items-center">
           <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
-            <h2 id="leave-title" className="font-serif text-xl text-[#2C3E2D]">Unsaved changes</h2>
+            <h2 id="leave-title" className="font-serif text-xl text-[#2C3E2D]">{t('owner.dashboard.unsavedChanges')}</h2>
             <p className="mt-2 text-sm text-[#4B4540]">
-              {leavePrompt.message ?? `You have unsaved changes for ${profile.name}. Save them before ${leavePrompt.kind === 'signout' ? 'signing out' : leavePrompt.kind === 'new' ? 'creating another restaurant' : 'opening Stories'}, discard them, or stay here.`}
+              {leavePrompt.message ?? t('owner.dashboard.youHaveUnsavedChangesForSave2', { name: profile.name, action: leavePrompt.kind === 'signout' ? t('owner.dashboard.signingOut') : leavePrompt.kind === 'new' ? t('owner.dashboard.creatingAnotherRestaurant') : t('owner.dashboard.openingStories') })}
             </p>
             <div className="mt-5 flex flex-wrap justify-end gap-2">
-              <button type="button" disabled={switching} onClick={() => setLeavePrompt(null)} className="rounded-lg px-4 py-2 text-sm font-medium text-[#2C3E2D] disabled:opacity-50">Cancel</button>
+              <button type="button" disabled={switching} onClick={() => setLeavePrompt(null)} className="min-h-11 min-w-11 rounded-lg px-4 py-2 text-sm font-medium text-[#2C3E2D] disabled:opacity-50">{t('owner.common.cancel')}</button>
               {!anyStatus().busy && (
                 <>
-                  <button type="button" disabled={switching} onClick={discardAndLeave} className="rounded-lg border border-red-700 px-4 py-2 text-sm font-medium text-red-700 disabled:opacity-50">Discard</button>
-                  <button type="button" disabled={switching} onClick={() => void saveAllAndLeave()} className="rounded-lg bg-[#2C3E2D] px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{switching ? 'Saving…' : 'Save'}</button>
+                  <button type="button" disabled={switching} onClick={discardAndLeave} className="min-h-11 min-w-11 rounded-lg border border-red-700 px-4 py-2 text-sm font-medium text-red-700 disabled:opacity-50">{t('owner.dashboard.discard')}</button>
+                  <button type="button" disabled={switching} onClick={() => void saveAllAndLeave()} className="min-h-11 min-w-11 rounded-lg bg-[#2C3E2D] px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{switching ? t('owner.common.saving') : t('owner.common.save')}</button>
                 </>
               )}
             </div>
@@ -652,8 +680,8 @@ export default function MerchantDashboardPage() {
           <div hidden={view !== null} className="space-y-5 pt-5 lg:pt-0">
             <div>
               <div className="flex flex-wrap gap-2">
-                <StatusPill tone={isLive ? 'open' : 'neutral'} dot={isLive}>{listing?.stateSource === 'managed' ? (listing.public ? 'Live' : statusLabel(listing.reviewStatus, 'Draft')) : statusLabel(profile.platform_status, 'Published')}</StatusPill>
-                {profile.business_status && profile.business_status !== 'OPEN' && <StatusPill tone="closed">{statusLabel(profile.business_status, 'Open')}</StatusPill>}
+                <StatusPill tone={isLive ? 'open' : 'neutral'} dot={isLive}>{listing?.stateSource === 'managed' ? (listing.public ? t('owner.common.live') : statusLabel(listing.reviewStatus, t('owner.common.draft'), t)) : statusLabel(profile.platform_status, t('owner.common.published'), t)}</StatusPill>
+                {profile.business_status && profile.business_status !== 'OPEN' && <StatusPill tone="closed">{statusLabel(profile.business_status, t('owner.common.open'), t)}</StatusPill>}
               </div>
               <h1 className="mt-2 break-words text-[26px] font-extrabold leading-tight tracking-[-0.03em] text-ink lg:text-[32px]">{profile.name}</h1>
               {merchants.length > 1 && (
@@ -665,7 +693,7 @@ export default function MerchantDashboardPage() {
                     className="min-h-11 min-w-0 max-w-full rounded-[14px] border border-line-strong bg-page px-3 text-sm"
                   >
                     {archivedLast(merchants).map((choice) => (
-                      <option key={choice.id} value={choice.id}>{choice.name}{choice.restriction === 'archived' ? ' (Discarded)' : choice.restriction !== 'none' ? ' (read only)' : ''}</option>
+                      <option key={choice.id} value={choice.id}>{choice.name}{choice.restriction === 'archived' ? ' ' + t('owner.dashboard.discarded') : choice.restriction !== 'none' ? ' ' + t('owner.dashboard.readOnly') : ''}</option>
                     ))}
                   </select>
                 </label>
@@ -726,15 +754,15 @@ export default function MerchantDashboardPage() {
             <HoursSection key={`hours:${sectionKey}`} {...sectionProps} />
           </SectionCard>
 
-          <SectionCard id="photos" title="Photos" description="Choose a photo from your phone or take a new one. It is resized before upload and appears on your page after BiteSite checks the file. The public gallery shows up to 8 photos: your cover first, then dish photos in menu order." {...sole('photos')}>
+          <SectionCard id="photos" title={t('owner.tile.photos')} description={t('owner.dashboard.chooseAPhotoFromYourPhone')} {...sole('photos')}>
             <ProfileImagesPanel key={`photos:${profile.id}:${data.loadId}`} apiBase={`/api/merchant/restaurants/${encodeURIComponent(profile.id)}/media`} getHeaders={photoHeaders} disabled={readOnly} register={register} onChanged={onPhotoChanged} />
           </SectionCard>
 
-          <SectionCard id="basics" title="Listing basics" description="Your restaurant name, location and cuisine." hidden={view !== 'info'}>
+          <SectionCard id="basics" title={t('owner.dashboard.listingBasics')} description={t('owner.dashboard.yourRestaurantNameLocationAndCuisine')} hidden={view !== 'info'}>
             <ListingBasics key={`basics:${sectionKey}`} {...sectionProps} readOnly={readOnly || !listing?.basicsEditable} merchantId={profile.id} getHeaders={photoHeaders} areaRequests={areaRequests} />
             {listing && !listing.basicsEditable && <BasicsRequests key={`basics-requests:${profile.id}:${data.loadId}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={readOnly} register={register} areaRequests={areaRequests} />}
           </SectionCard>
-          <SectionCard id="about" title="About" description="A short line and description help visitors decide to come in." hidden={view !== 'info'}>
+          <SectionCard id="about" title={t('owner.dashboard.about')} description={t('owner.dashboard.aShortLineAndDescriptionHelp')} hidden={view !== 'info'}>
             <TextSection key={`about:${sectionKey}`} id="about" config={ABOUT_FIELDS} {...sectionProps} />
             {'tags.amenities' in sectionProps.fields && 'tags.occasion' in sectionProps.fields && (
               <div className="mt-6 border-t border-line pt-5">
@@ -748,7 +776,7 @@ export default function MerchantDashboardPage() {
               </div>
             )}
           </SectionCard>
-          <SectionCard id="contact" title="Contact & links" description="All optional. Leave a field empty to hide it from your page." hidden={view !== 'info'}>
+          <SectionCard id="contact" title={t('owner.dashboard.contactLinks')} description={t('owner.dashboard.allOptionalLeaveAFieldEmpty')} hidden={view !== 'info'}>
             <TextSection key={`contact:${sectionKey}`} id="contact" config={CONTACT_FIELDS} {...sectionProps} />
             {/* Shown once the database offers tags.payment (migration 20260929120000). */}
             {'tags.payment' in sectionProps.fields && (
@@ -757,13 +785,13 @@ export default function MerchantDashboardPage() {
               </div>
             )}
             <div className="mt-6 rounded-[14px] border border-line bg-surface p-4">
-              <h3 className="mb-2 text-sm font-bold text-ink">Links</h3>
+              <h3 className="mb-2 text-sm font-bold text-ink">{t('owner.dashboard.links')}</h3>
               <LinkRequests key={`links:${profile.id}:${data.loadId}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={readOnly} register={register} />
             </div>
           </SectionCard>
 
           {'presentation.layout' in sectionProps.fields && (
-            <SectionCard id="style" title="Page style" description="Choose how your page looks and which sections it shows. Changes show on your page right away." {...sole('style')}>
+            <SectionCard id="style" title={t('owner.dashboard.pageStyle')} description={t('owner.dashboard.chooseHowYourPageLooksAnd')} {...sole('style')}>
               <PageStyleSection key={`style:${sectionKey}`} {...sectionProps} />
               <div className="mt-8 border-t border-line pt-6">
                 <TableQrPanel slug={profile.slug} name={profile.name} layoutKey={typeof value('presentation.layout') === 'string' ? (value('presentation.layout') as string) : null} isPublic={isLive} />
@@ -773,17 +801,17 @@ export default function MerchantDashboardPage() {
 
           <div hidden={view !== 'stats'} className="space-y-4">
             {isLive && <MonthlySummaryCard key={`summary:${profile.id}`} merchantId={profile.id} getHeaders={photoHeaders} />}
-            <SectionCard id="stats" title="Visitors" description="How many people opened your page and what they did." soleTitle>
+            <SectionCard id="stats" title={t('owner.tile.stats')} description={t('owner.dashboard.howManyPeopleOpenedYourPage')} soleTitle>
               <StatsPanel key={`stats:${profile.id}`} merchantId={profile.id} getHeaders={photoHeaders} />
             </SectionCard>
           </div>
 
           <div hidden={view !== 'jobs'}>
             <JobsPanel key={`jobs:${profile.id}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={readOnly} register={register} onAvailable={setJobsOn}
-              renderSection={(body) => <SectionCard id="jobs" title="Hiring" description="Looking for staff? Post a job on your page. People apply by WhatsApp or phone; posts stay up for 30 days." soleTitle>{body}</SectionCard>} />
+              renderSection={(body) => <SectionCard id="jobs" title={t('owner.tile.jobs')} description={t('owner.dashboard.lookingForStaffPostAJob')} soleTitle>{body}</SectionCard>} />
           </div>
 
-          <SectionCard id="feedback" title="Feedback" description="Tell the BiteSite team what would make the dashboard or your page work better for you." {...sole('feedback')}>
+          <SectionCard id="feedback" title={t('owner.tile.feedback')} description={t('owner.dashboard.tellTheBitesiteTeamWhatWould')} {...sole('feedback')}>
             <FeedbackPanel merchantId={profile.id} getHeaders={photoHeaders} />
           </SectionCard>
         </div>

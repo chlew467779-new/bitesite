@@ -1,6 +1,8 @@
 /* bitesite/app/merchant/components/link-requests.tsx */
 'use client';
 
+import { useT, type MessageKey } from '@/lib/i18n';
+
 /**
  * Owner links (website, Instagram, Facebook, menu PDF, GrabFood, ShopeeFood, foodpanda). A change is a request that the
  * BiteSite team reviews before it appears on the page; one request per link can wait at a time
@@ -11,7 +13,22 @@
 import type { SectionHandle } from '@/app/components/section-save/use-section-save';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { availableLinkFields, LINK_PROBLEM_TEXT, linkProblem, type LinkField, type LinkRequestItem } from '@/lib/merchant-links-core.mjs';
+import { availableLinkFields, linkProblem, type LinkField, type LinkRequestItem } from '@/lib/merchant-links-core.mjs';
+
+const PROBLEM_KEYS = {
+  "too_long": "owner.links.theLinkIsTooLong500",
+  "https_only": "owner.links.theLinkMustStartWithHttps",
+  "credentials": "owner.links.linksWithAUserNameOr",
+  "host": "owner.links.useANormalWebAddressNot",
+  "host_instagram": "owner.links.useAnInstagramComLink",
+  "host_facebook": "owner.links.useAFacebookComLink",
+  "host_grabfood": "owner.links.useAGrabfoodLinkGrabCom",
+  "host_shopeefood": "owner.links.useAShopeefoodLinkShopeeCom",
+  "host_foodpanda": "owner.links.useAFoodpandaLinkFoodpandaMy",
+  "grab_main_site": "owner.links.thisIsGrabSMainWebsite",
+  "delivery_home": "owner.links.thisIsTheAppSHome",
+} as const;
+const LINK_LABELS: Partial<Record<LinkField, MessageKey>> = { website: 'owner.links.website', menu_pdf_url: 'owner.links.menuLinkPdf' };
 
 type Links = Partial<Record<LinkField, string | null>>;
 type Pending = { requestId: string; body: Record<string, unknown>; success: string };
@@ -30,6 +47,7 @@ export function LinkRequests({ merchantId, getHeaders, readOnly, register }: {
   readOnly: boolean;
   register?: (id: string, handle: SectionHandle | null) => void;
 }) {
+  const t = useT();
   const api = `/api/merchant/restaurants/${encodeURIComponent(merchantId)}/links`;
   const [links, setLinks] = useState<Links | null>(null);
   const [requests, setRequests] = useState<LinkRequestItem[]>([]);
@@ -57,16 +75,16 @@ export function LinkRequests({ merchantId, getHeaders, readOnly, register }: {
     setLoadError('');
     try {
       const headers = await getHeaders();
-      if (!headers) { setLoadError('Your session has ended. Sign in again.'); return; }
+      if (!headers) { setLoadError(t('owner.common.yourSessionHasEndedSignIn')); return; }
       const response = await fetch(api, { headers, cache: 'no-store' });
       const data = await response.json().catch(() => null);
-      if (!response.ok || !data?.data) { setLoadError(data?.error?.message || data?.error || 'Could not load your links.'); return; }
+      if (!response.ok || !data?.data) { setLoadError(data?.error?.message || data?.error || t('owner.links.couldNotLoadYourLinks')); return; }
       setLinks(data.data.links as Links);
       setRequests(data.data.requests as LinkRequestItem[]);
     } catch {
-      setLoadError('Could not reach BiteSite. Check your connection.');
+      setLoadError(t('owner.common.couldNotReachBitesiteCheckYour'));
     }
-  }, [api, getHeaders]);
+  }, [api, getHeaders, t]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -77,24 +95,24 @@ export function LinkRequests({ merchantId, getHeaders, readOnly, register }: {
     setMessage(null);
     try {
       const headers = await getHeaders();
-      if (!headers) { setMessage({ kind: 'error', text: 'Your session has ended. Sign in again, then retry.' }); return false; }
+      if (!headers) { setMessage({ kind: 'error', text: t('owner.common.yourSessionHasEndedSignIn2') }); return false; }
       let response: Response;
       try {
         response = await fetch(api, { method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify({ requestId: pending.requestId, ...pending.body }) });
       } catch {
         setUnknown(pending);
-        setMessage({ kind: 'error', text: 'Could not reach BiteSite. Retry sends the same request, so it is never sent twice.' });
+        setMessage({ kind: 'error', text: t('owner.common.couldNotReachBitesiteRetrySends') });
         return false;
       }
       const data = await response.json().catch(() => null);
       if (response.status >= 500 || !data) {
         setUnknown(pending);
-        setMessage({ kind: 'error', text: 'The result is not confirmed. Retry sends the same request, so it is never sent twice.' });
+        setMessage({ kind: 'error', text: t('owner.common.theResultIsNotConfirmedRetry') });
         return false;
       }
       setUnknown(null);
-      if (!response.ok) { setMessage({ kind: 'error', text: data.error?.message || 'The request was not sent.' }); return false; }
-      setMessage({ kind: 'ok', text: data.data?.status === 'noop' ? 'That is already your current link.' : pending.success });
+      if (!response.ok) { setMessage({ kind: 'error', text: data.error?.message || t('owner.common.theRequestWasNotSent') }); return false; }
+      setMessage({ kind: 'ok', text: data.data?.status === 'noop' ? t('owner.links.thatIsAlreadyYourCurrentLink') : pending.success });
       await load();
       return true;
     } finally {
@@ -103,20 +121,20 @@ export function LinkRequests({ merchantId, getHeaders, readOnly, register }: {
     }
   };
 
-  if (loadError) return <p className="text-sm text-red-700" role="alert">{loadError} <button type="button" className="ml-1 min-h-11 underline" onClick={() => void load()}>Try again</button></p>;
+  if (loadError) return <p className="text-sm text-red-700" role="alert">{loadError} <button type="button" className="ml-1 inline-flex min-h-11 min-w-11 items-center justify-center underline" onClick={() => void load()}>{t('owner.entry.retry')}</button></p>;
   if (!links) return <Loader2 className="h-5 w-5 animate-spin text-[#2C3E2D]" />;
 
   const locked = readOnly || busy || !!unknown;
   const submit = async (field: LinkField, value: string) => {
     const problem = linkProblem(field, value);
-    if (problem) { setFormError(field, LINK_PROBLEM_TEXT[problem]); return; }
+    if (problem) { setFormError(field, t(PROBLEM_KEYS[problem])); return; }
     const url = value.trim() || null;
-    if (await send({ requestId: crypto.randomUUID(), body: { action: 'request', field, url }, success: url ? 'Sent. BiteSite will check the link before it appears on your page.' : 'Sent. BiteSite will remove the link after checking.' })) setDraft(field, null);
+    if (await send({ requestId: crypto.randomUUID(), body: { action: 'request', field, url }, success: url ? t('owner.links.sentBitesiteWillCheckTheLink') : t('owner.links.sentBitesiteWillRemoveTheLink') })) setDraft(field, null);
   };
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-[#6B6560]">Links are checked by the BiteSite team before they appear on your page. Your current links stay until a change is approved.</p>
+      <p className="text-xs text-[#6B6560]">{t('owner.links.linksAreCheckedByTheBitesite')}</p>
       {availableLinkFields(links).map(({ field, label, placeholder }) => {
         const current = links[field] ?? null;
         const pending = requests.find((r) => r.field === field && r.status === 'pending');
@@ -126,40 +144,40 @@ export function LinkRequests({ merchantId, getHeaders, readOnly, register }: {
         const formError = formErrors[field];
         return (
           <div key={field} className="rounded-xl border border-[#DDE5DC] p-3">
-            <p className="text-sm font-medium text-[#2C3E2D]">{label}</p>
+            <p className="text-sm font-medium text-[#2C3E2D]">{LINK_LABELS[field] ? t(LINK_LABELS[field]) : label}</p>
             <p className="mt-1 break-all text-sm text-[#2C3E2D]">
-              {href ? <a href={href} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">{current}</a> : <span className="text-[#6B6560]">Not set</span>}
+              {href ? <a href={href} target="_blank" rel="noopener noreferrer" className="inline-block min-h-11 min-w-11 break-all underline underline-offset-2">{current}</a> : <span className="text-[#6B6560]">{t('owner.links.notSet')}</span>}
             </p>
             {pending && (
               <div className="mt-2 rounded-lg bg-amber-50 p-2 text-sm text-amber-900">
-                <p>Waiting for review: {pending.proposedUrl ? <span className="break-all">{pending.proposedUrl}</span> : 'remove this link'}</p>
-                {(field === 'grabfood' || field === 'shopeefood' || field === 'foodpanda') && pending.proposedUrl && <p className="mt-1">BiteSite approves it before the button shows on your page.</p>}
-                <button type="button" disabled={locked} onClick={() => void send({ requestId: crypto.randomUUID(), body: { action: 'withdraw', linkRequestId: pending.id }, success: 'Request withdrawn.' })}
-                  className={`${btn} mt-2 w-full border border-amber-800 sm:w-auto`}>Withdraw request</button>
+                <p>{t('owner.links.waitingForReview')} {pending.proposedUrl ? <span className="break-all">{pending.proposedUrl}</span> : t('owner.links.removeThisLink')}</p>
+                {(field === 'grabfood' || field === 'shopeefood' || field === 'foodpanda') && pending.proposedUrl && <p className="mt-1">{t('owner.links.bitesiteApprovesItBeforeTheButton')}</p>}
+                <button type="button" disabled={locked} onClick={() => void send({ requestId: crypto.randomUUID(), body: { action: 'withdraw', linkRequestId: pending.id }, success: t('owner.common.requestWithdrawn') })}
+                  className={`${btn} mt-2 w-full border border-amber-800 sm:w-auto`}>{t('owner.common.withdrawRequest')}</button>
               </div>
             )}
-            {rejected && <p className="mt-2 text-sm text-red-700">Not approved: {rejected.reviewNote}</p>}
+            {rejected && <p className="mt-2 text-sm text-red-700">{t('owner.links.notApproved')} {rejected.reviewNote}</p>}
             {draft !== undefined ? (
               <form className="mt-2 space-y-2" onSubmit={(event) => { event.preventDefault(); void submit(field, draft); }}>
-                <label className="block text-sm">New link
+                <label className="block text-sm">{t('owner.links.newLink')}
                   <input className={input} type="url" inputMode="url" autoCapitalize="off" autoCorrect="off" placeholder={placeholder} value={draft}
                     onChange={(event) => { setDraft(field, event.target.value); setFormError(field, ''); }} autoFocus />
                 </label>
                 {formError && <p className="text-sm text-red-700" role="alert">{formError}</p>}
                 <div className="flex flex-col gap-2 sm:flex-row">
-                  <button type="submit" disabled={locked || !draft.trim()} className={`${btn} bg-[#2C3E2D] text-white`}>Send for review</button>
-                  {current && <button type="button" disabled={locked} onClick={() => void submit(field, '')} className={`${btn} border border-red-700 text-red-700`}>Ask to remove this link</button>}
-                  <button type="button" onClick={() => { setDraft(field, null); setFormError(field, ''); }} className={`${btn} border border-[#C9D6C7]`}>Cancel</button>
+                  <button type="submit" disabled={locked || !draft.trim()} className={`${btn} bg-[#2C3E2D] text-white`}>{t('owner.common.sendForReview')}</button>
+                  {current && <button type="button" disabled={locked} onClick={() => void submit(field, '')} className={`${btn} border border-red-700 text-red-700`}>{t('owner.links.askToRemoveThisLink')}</button>}
+                  <button type="button" onClick={() => { setDraft(field, null); setFormError(field, ''); }} className={`${btn} border border-[#C9D6C7]`}>{t('owner.common.cancel')}</button>
                 </div>
               </form>
             ) : (
               <button type="button" disabled={locked} onClick={() => { setDraft(field, pending?.proposedUrl ?? current ?? ''); setFormError(field, ''); }}
-                className={`${btn} mt-2 w-full border border-[#2C3E2D] text-[#2C3E2D] sm:w-auto`}>{pending ? 'Change request' : 'Request a change'}</button>
+                className={`${btn} mt-2 w-full border border-[#2C3E2D] text-[#2C3E2D] sm:w-auto`}>{pending ? t('owner.common.changeRequest') : t('owner.common.requestAChange')}</button>
             )}
           </div>
         );
       })}
-      {unknown && <button type="button" disabled={busy} onClick={() => void send(unknown)} className={`${btn} w-full border border-[#2C3E2D] sm:w-auto`}>{busy ? 'Retrying…' : 'Retry'}</button>}
+      {unknown && <button type="button" disabled={busy} onClick={() => void send(unknown)} className={`${btn} w-full border border-[#2C3E2D] sm:w-auto`}>{busy ? t('owner.common.retrying') : t('owner.common.retry')}</button>}
       {message && <p className={`text-sm ${message.kind === 'ok' ? 'text-emerald-800' : 'text-red-700'}`} role={message.kind === 'error' ? 'alert' : 'status'}>{message.text}</p>}
     </div>
   );
