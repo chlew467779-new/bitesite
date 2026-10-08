@@ -6,6 +6,7 @@
  */
 
 import { snapshotValue, type SectionState } from '@/lib/section-save.mjs';
+import { buttonClasses } from '@/components/ui/button';
 
 export type FieldLabel = { path: string; label: string; format?: (value: unknown) => string };
 
@@ -46,8 +47,14 @@ export function SectionSaveBar({ state, labels, canSave, dirty, readOnly, savedM
   else if (dirty) status = 'Unsaved changes in this section.';
   else if (lastOutcome === 'saved' || lastOutcome === 'noop') status = savedMessage ?? 'Saved.';
 
+  // While something is unsaved or saving, the bar sticks to the bottom of the screen (inside its
+  // own section), so the Save button is in reach on a phone without scrolling to the end.
+  const sticky = !readOnly && (dirty || state.pending || unknown || conflictPaths.length > 0);
+
   return (
-    <div className="mt-5 border-t border-[#EEF2EC] pt-4">
+    <div className={sticky
+      ? 'sticky bottom-0 z-20 mt-5 border-t border-line bg-page pb-[calc(12px+env(safe-area-inset-bottom,0px))] pt-3 shadow-[0_-10px_12px_-8px_rgba(23,32,27,0.12)]'
+      : 'mt-5 border-t border-line pt-4'}>
       {conflictPaths.length > 0 && (
         <div role="alert" className="mb-4 space-y-3 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
           <p className="font-medium">This section was not saved. Another session changed:</p>
@@ -76,13 +83,13 @@ export function SectionSaveBar({ state, labels, canSave, dirty, readOnly, savedM
         </div>
       )}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p aria-live="polite" className={`min-w-0 flex-1 text-sm ${state.error && !unknown ? 'text-red-700' : conflictPaths.length || unknown ? 'text-amber-800' : 'text-[#6B6560]'}`}>
+        <p aria-live="polite" className={`min-w-0 flex-1 text-sm ${state.error && !unknown ? 'text-red-700' : conflictPaths.length || unknown ? 'text-amber-800' : dirty ? 'font-semibold text-ink' : 'text-muted'}`}>
           {status}
         </p>
         {unknown ? (
-          <button type="button" onClick={onRetry} className="rounded-lg bg-[#2C3E2D] px-4 py-2 text-sm font-medium text-white">Retry</button>
+          <button type="button" onClick={onRetry} className={buttonClasses({ variant: 'primary', size: 'md' })}>Retry</button>
         ) : (
-          <button type="button" onClick={onSave} disabled={!canSave || readOnly} className="min-h-11 rounded-lg bg-[#2C3E2D] px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50">
+          <button type="button" onClick={onSave} disabled={!canSave || readOnly} className={buttonClasses({ variant: 'primary', size: 'md' })}>
             {state.pending ? 'Saving…' : 'Save this section'}
           </button>
         )}
