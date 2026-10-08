@@ -146,8 +146,7 @@ export default async function MerchantPage({ params }: PageProps) {
           merchant={{ slug: merchant.slug, name: merchant.name }}
           temporarilyClosed={temporarilyClosed}
           closure={closure}
-          relatedMerchants={relatedMerchants.map(({ slug, name, cuisine_type }) => ({ slug, name, cuisine_type }))}
-          footerText={settings.footer_text}
+          relatedMerchants={relatedMerchants.map(({ slug, name, cuisine_type, area, cover_image }) => ({ slug, name, cuisine_type, area: area ?? null, cover_image: cover_image ?? null }))}
         />
       </>
     );
