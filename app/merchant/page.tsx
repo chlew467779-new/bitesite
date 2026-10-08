@@ -712,14 +712,14 @@ export default function MerchantDashboardPage() {
           {/* One view at a time. Every card stays mounted so nothing typed is lost when moving between views. */}
           {activeTile && <ViewBar title={t(activeTile.title)} onBack={home} />}
 
-          <SectionCard id="menu" title="Menu" description="Add categories and dishes, change prices, and mark dishes sold out. Changes show on your page right away." {...sole('menu')}>
+          <SectionCard id="menu" title={t('owner.tile.menu')} description={t('owner.dashboard.addCategoriesAndDishesChangePrices')} {...sole('menu')}>
             {/* Dishes first: marking one sold out is the most frequent job on a phone. */}
             <MenuManager onChanged={refreshListing} key={`menu:${profile.id}:${data.loadId}`} merchantId={profile.id} currency={currency} getHeaders={photoHeaders} readOnly={readOnly} />
             <div className="mt-8 border-t border-line pt-6"><MenuPhotosPanel key={`menu-photos:${profile.id}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={profile.restriction === 'suspended' || profile.restriction === 'archived'} /></div>
             <div className="mt-6"><CurrencySetting key={`currency:${profile.id}`} merchantId={profile.id} area={liveArea} getHeaders={photoHeaders} readOnly={profile.restriction === 'suspended' || profile.restriction === 'archived'} onCurrency={setCurrency} /></div>
           </SectionCard>
 
-          <SectionCard id="hours" title="Opening hours" description="Customers see these on your page. Changes to one day leave the other days as they are." {...sole('hours')}>
+          <SectionCard id="hours" title={t('owner.tile.hours')} description={t('owner.dashboard.customersSeeTheseOnYourPage')} {...sole('hours')}>
             <div className="mb-6 border-b border-line pb-6">
               <ClosurePanel key={`closure:${profile.id}:${data.loadId}`} merchantId={profile.id} getHeaders={photoHeaders} readOnly={readOnly} onStatus={onBusinessStatus} />
             </div>
