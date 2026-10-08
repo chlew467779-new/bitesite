@@ -8,7 +8,7 @@
  */
 
 import type { Metadata } from 'next';
-import Link from 'next/link';
+import { DiscoveryHeading, DiscoveryMore, DiscoveryChips } from './discovery-copy';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { MerchantCard } from '@/components/sections/merchant-card';
 import { PageViewTracker } from '@/app/components/page-view-tracker';
@@ -70,50 +70,25 @@ export async function DiscoveryLandingPage({ kind, slug: rawSlug }: { kind: Disc
   };
 
   return (
-    <main className="min-h-screen bg-[#FAFBF7]">
+    <main className="min-h-screen bg-page">
       <PageViewTracker pageType="discovery" />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(itemList) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbs) }} />
       <div className="mx-auto max-w-6xl px-4 py-8 sm:py-12">
-        <nav aria-label="Breadcrumb" className="text-sm text-[#6B6560]">
-          <ol className="flex flex-wrap items-center gap-1">
-            <li><Link href="/" className="inline-flex min-h-11 items-center underline-offset-2 hover:underline">Home</Link></li>
-            <li aria-hidden="true">/</li>
-            <li aria-current="page" className="text-[#2C3E2D]">{copy.title}</li>
-          </ol>
-        </nav>
-        <h1 className="mt-2 font-serif text-3xl text-[#2C3E2D] sm:text-4xl">{copy.heading}</h1>
-        <p className="mt-2 max-w-2xl text-[#6B6560]">{copy.description}</p>
+        <DiscoveryHeading kind={kind} label={landing.label} count={landing.merchants.length} />
 
         <ul className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {landing.merchants.map((merchant) => <li key={merchant.id}><MerchantCard merchant={merchant} /></li>)}
         </ul>
 
         {(otherAreas.length > 0 || otherCuisines.length > 0) && (
-          <section aria-labelledby="explore-more" className="mt-12 border-t border-[#DDE5DC] pt-8">
-            <h2 id="explore-more" className="font-serif text-2xl text-[#2C3E2D]">Explore more</h2>
-            {otherAreas.length > 0 && <ChipList title="Areas" kind="area" groups={otherAreas} />}
-            {otherCuisines.length > 0 && <ChipList title="Cuisines" kind="cuisine" groups={otherCuisines} />}
+          <section aria-labelledby="explore-more" className="mt-12 border-t border-line pt-8">
+            <DiscoveryMore />
+            {otherAreas.length > 0 && <DiscoveryChips kind="area" groups={otherAreas} />}
+            {otherCuisines.length > 0 && <DiscoveryChips kind="cuisine" groups={otherCuisines} />}
           </section>
         )}
       </div>
     </main>
-  );
-}
-
-function ChipList({ title, kind, groups }: { title: string; kind: DiscoveryKind; groups: { slug: string; label: string; count: number }[] }) {
-  return (
-    <div className="mt-4">
-      <h3 className="text-sm font-medium text-[#6B6560]">{title}</h3>
-      <ul className="mt-2 flex flex-wrap gap-2">
-        {groups.map((g) => (
-          <li key={g.slug}>
-            <Link href={discoveryPath(kind, g.slug)} className="inline-flex min-h-11 items-center rounded-full border border-[#C9D6C7] bg-white px-4 text-sm text-[#2C3E2D] hover:border-emerald-700">
-              {g.label} <span className="ml-1.5 text-xs text-[#6B6560]">{g.count}</span>
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </div>
   );
 }
