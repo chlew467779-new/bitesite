@@ -6,6 +6,7 @@ import { createClient } from "@supabase/supabase-js";
 import { getSiteUrl } from "@/lib/site-url";
 import { PUBLIC_MERCHANT_SELECT } from "@/lib/public-merchant-projection.mjs";
 import { discoveryGroups, discoveryPath, type DiscoveryKind } from "@/lib/discovery-core.mjs";
+import { isNoindexStore } from "@/lib/seo-config.mjs";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -20,7 +21,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .from("merchants")
     .select("slug, updated_at");
 
-  const merchantUrls = (merchants || []).map((m) => ({
+  // Sample listings are not real restaurants and are kept out of search (lib/seo-config.mjs).
+  const merchantUrls = (merchants || []).filter((m) => !isNoindexStore(m.slug)).map((m) => ({
     url: `${siteUrl}/store/${m.slug}`,
     lastModified: m.updated_at ? new Date(m.updated_at) : new Date(),
     changeFrequency: "weekly" as const,
@@ -44,6 +46,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   return [
+    { url: `${siteUrl}/stories`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.7 },
+    { url: `${siteUrl}/our-partner`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.6 },
+    { url: `${siteUrl}/join-us`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.5 },
     { url: `${siteUrl}/jobs`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.6 },
     { url: `${siteUrl}/terms`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.3 },
     { url: `${siteUrl}/privacy`, lastModified: new Date(`${PRIVACY_EFFECTIVE_DATE.iso}T00:00:00+08:00`), changeFrequency: 'yearly', priority: 0.3 },

@@ -1,3 +1,4 @@
+export declare function parseSlots(hoursText: unknown): { open: number; close: number }[];
 export declare function shortTime(minutesOfDay: number): string;
 export declare function openStatus(
   todayHours: string | null | undefined,

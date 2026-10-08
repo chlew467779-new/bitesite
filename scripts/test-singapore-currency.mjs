@@ -9,6 +9,7 @@ import { readFile, readdir } from "node:fs/promises";
 import { CURRENCIES, currencyAreaMismatch, currencySymbol, formatPrice } from "../lib/price-format.mjs";
 import { PUBLIC_MERCHANT_COLUMNS } from "../lib/public-merchant-projection.mjs";
 import { validateRestaurantDraft } from "../lib/merchant-auth-validation.mjs";
+import { restaurantSchema } from "../lib/store-schema.mjs";
 
 const read = async (relPath) => (await readFile(new URL(`../${relPath}`, import.meta.url), "utf8")).replace(/\r\n/g, "\n");
 
@@ -60,7 +61,11 @@ assert.match(await read("app/merchant/page.tsx"), /<CurrencySetting /);
 
 /* Singapore restaurants are not described as Malaysian (search engines, share previews). */
 const store = await read("app/store/[merchant]/page.tsx");
-assert.match(store, /addressCountry: merchant\.currency === "SGD" \? "SG" : "MY"/);
+// The Restaurant data for Google is built in lib/store-schema.mjs; check its behaviour directly.
+const sgSchema = restaurantSchema({ merchant: { name: "S", address: "1 Road", currency: "SGD" }, url: "u", categories: [], products: [], cuisines: [] });
+assert.equal(sgSchema.address.addressCountry, "SG");
+assert.equal(restaurantSchema({ merchant: { name: "M", address: "1 Jalan", currency: "MYR" }, url: "u", categories: [], products: [], cuisines: [] }).address.addressCountry, "MY");
+assert.match(store, /restaurantSchema\(\{ merchant, /, "the store page uses the shared Restaurant data");
 assert.match(store, /locale: merchant\.currency === "SGD" \? "en_SG" : "en_MY"/);
 assert.doesNotMatch(await read("app/admin/components/restaurant-review-queue.tsx"), /RM \$\{/, "review queue uses the restaurant's currency");
 assert.match(await read("app/api/admin/restaurant-reviews/route.ts"), /select\('id, currency'\)/);

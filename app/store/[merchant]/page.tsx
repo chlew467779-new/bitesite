@@ -26,6 +26,9 @@ import { getRestaurantJobs } from "@/lib/jobs-public";
 import { DELIVERY_LINK_TYPES } from "@/lib/merchant-links-core.mjs";
 import { getSiteUrl } from "@/lib/site-url";
 import { safeJsonLd } from "@/lib/safe-json-ld.mjs";
+import { restaurantSchema, storeDescription, storeTitle } from "@/lib/store-schema.mjs";
+import { priceRange } from "@/lib/store-summary.mjs";
+import { isNoindexStore } from "@/lib/seo-config.mjs";
 import { discoveryPath, discoverySlug, merchantArea, merchantCuisines } from "@/lib/discovery-core.mjs";
 import { ReportProblem } from "@/app/components/report-problem";
 import { ClosedStore } from "@/components/store/closed-store";
@@ -73,29 +76,22 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   }
 
-  const description = merchant.description
-    ? merchant.description.length > 155
-      ? merchant.description.slice(0, 155) + "..."
-      : merchant.description
-    : `View the full menu, photos and opening hours for ${merchant.name} on BiteSite.`;
+  // Title and snippet carry what people search for: the name, the area and the kind of food.
+  const cuisine = merchantCuisines(merchant)[0] ?? merchant.cuisine_type ?? null;
+  const range = priceRange(await getProductsByMerchant(merchant.id), merchant.currency);
+  const description = storeDescription(merchant, cuisine, range);
   // The preview image is the generated share card (opengraph-image.tsx, PNG): covers are WebP,
   // which WhatsApp and other link previews do not always show.
   const canonicalUrl = `${siteUrl}/store/${merchant.slug}`;
   return {
-    title: `${merchant.name} | ${merchant.cuisine_type ?? "Restaurant"} Menu | BiteSite`,
+    title: storeTitle(merchant, cuisine),
     description,
-    keywords: [
-      merchant.name,
-      merchant.cuisine_type ?? "restaurant",
-      "menu",
-      "restaurant",
-      "cafe",
-      merchant.currency === "SGD" ? "Singapore restaurants" : "Malaysia restaurants",
-    ],
+    // Sample listings stay visible to visitors but out of Google (they are not real restaurants).
+    ...(isNoindexStore(merchant.slug) ? { robots: { index: false, follow: true } } : {}),
     alternates: { canonical: canonicalUrl },
     openGraph: {
-      title: `${merchant.name} — ${merchant.cuisine_type ?? "Restaurant"}`,
-      description: merchant.description || `Menu & opening hours for ${merchant.name}`,
+      title: `${merchant.name} — ${cuisine ?? "Restaurant"}`,
+      description,
       type: "website",
       locale: merchant.currency === "SGD" ? "en_SG" : "en_MY",
       url: canonicalUrl,
@@ -189,42 +185,8 @@ export default async function MerchantPage({ params }: PageProps) {
     .map((m) => ({ slug: m.slug, name: m.name, cuisine: merchantCuisines(m)[0] ?? null, image: m.cover_image ?? null }));
 
   const canonicalUrl = `${siteUrl}/store/${merchant.slug}`;
-  const dayMap: Record<string, string> = {
-    monday: "Mo", tuesday: "Tu", wednesday: "We", thursday: "Th",
-    friday: "Fr", saturday: "Sa", sunday: "Su",
-  };
-  const schemaData: Record<string, unknown> = {
-    "@context": "https://schema.org",
-    "@type": "Restaurant",
-    name: merchant.name,
-    image: merchant.cover_image,
-    description: merchant.description,
-    priceRange: "$$",
-    url: canonicalUrl,
-  };
-  if (merchant.address) {
-    schemaData.address = {
-      "@type": "PostalAddress",
-      streetAddress: merchant.address,
-      ...(merchant.area ? { addressLocality: merchant.area } : {}),
-      // Singapore restaurants price in S$ (#24); the price currency stands for the country here.
-      addressCountry: merchant.currency === "SGD" ? "SG" : "MY",
-    };
-  }
-  if (merchant.phone) schemaData.telephone = merchant.phone;
-  if (merchant.cuisine_type) schemaData.servesCuisine = merchant.cuisine_type;
-
-  schemaData.hasMenu = {
-    "@type": "Menu",
-    name: "Menu",
-    url: `${canonicalUrl}#menu-section`,
-  };
-
-  if (merchant.operating_hours && typeof merchant.operating_hours === "object") {
-    schemaData.openingHours = Object.entries(merchant.operating_hours).map(
-      ([day, time]) => `${dayMap[day] || day} ${time}`
-    );
-  }
+  // Restaurant facts for Google (lib/store-schema.mjs): hours, real price range, map position, the menu.
+  const schemaData = restaurantSchema({ merchant, url: canonicalUrl, categories, products, cuisines: merchantCuisines(merchant) });
   const breadcrumbSchema = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
