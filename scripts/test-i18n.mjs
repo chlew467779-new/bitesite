@@ -1,6 +1,8 @@
 // R8 interface languages: the three dictionaries stay in step and every key the code uses exists.
 import { REPORT_REASONS } from "../lib/public-report-core.mjs";
 import assert from "node:assert/strict";
+import ts from "typescript";
+import { runInNewContext } from "node:vm";
 import { readFile, readdir } from "node:fs/promises";
 
 const root = new URL("../", import.meta.url);
@@ -49,3 +51,16 @@ for (const [target, options] of Object.entries(REPORT_REASONS)) {
   }
 }
 console.log("All public report reasons have translated labels; backend values stay unchanged.");
+
+// Status codes localise, while missing/unknown values retain the dashboard fallback contract.
+const dashboard = await read("app/merchant/page.tsx");
+const statusSource = "function statusLabel" + dashboard.split("function statusLabel")[1].split("async function readJson")[0];
+const statusLabel = runInNewContext(ts.transpileModule(statusSource, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText + "; statusLabel");
+const statusKeys = { draft: "owner.common.draft", pending: "owner.common.pendingReview", PENDING_REVIEW: "owner.common.pendingReview", approved: "owner.common.approved", rejected: "owner.common.rejected", PUBLISHED: "owner.common.published", SUSPENDED: "owner.common.suspended", archived: "owner.common.archived", OPEN: "owner.common.open", TEMPORARILY_CLOSED: "owner.closure.temporarilyClosed", MOVED: "owner.common.moved", PERMANENTLY_CLOSED: "owner.common.permanentlyClosed" };
+for (const lang of ["en", "zh", "ms"]) {
+  const t = (key) => dicts[lang][key];
+  for (const [value, key] of Object.entries(statusKeys)) assert.equal(statusLabel(value, "fallback", t), t(key), `${lang}: ${value}`);
+  assert.equal(statusLabel("FUTURE_VENDOR_STATE", "fallback", t), "Future vendor state");
+  for (const value of [null, undefined, ""]) assert.equal(statusLabel(value, t("owner.common.draft"), t), t("owner.common.draft"));
+}
+console.log("Owner statuses localise in all three languages; unknown enums keep their previous display.");

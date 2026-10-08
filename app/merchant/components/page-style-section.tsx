@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '@/lib/i18n';
 import { useEffect } from 'react';
 import { Check } from 'lucide-react';
 import { getPersistableLayouts } from '@/lib/layout-registry.mjs';
@@ -16,31 +17,42 @@ import type { SectionProps } from '@/app/components/section-save/hours-section';
  * switching back to the default leaves the stored value unset.
  */
 
+const COLOUR_KEYS = {
+  "modern": "owner.pageStyle.forest",
+  "classic": "owner.pageStyle.amber",
+  "rustic": "owner.pageStyle.chilli",
+  "ocean": "owner.pageStyle.ocean",
+  "minimal": "owner.pageStyle.stone",
+  "elegant": "owner.pageStyle.night",
+} as const;
 const LAYOUTS = getPersistableLayouts();
 // Shown in the design order (Forest, Amber, Chilli, Stone, Night), not registry order.
 const COLOUR_ORDER = Object.keys(PAGE_COLOURS);
 const ORDERED_LAYOUTS = [...LAYOUTS].sort((a, b) => COLOUR_ORDER.indexOf(a.key) - COLOUR_ORDER.indexOf(b.key));
 const SECTIONS = [
-  { key: 'hero', label: 'Cover photo', desc: 'Your cover photo across the top of the page.' },
-  { key: 'about', label: 'About text', desc: 'Your short description under the name.' },
-  { key: 'seasonal_popup', label: 'Popular dishes', desc: 'The dishes you mark "Featured" in the menu, in a row near the top.' },
-  { key: 'gallery', label: 'Photo gallery', desc: 'Your cover and dish photos in a row you can swipe.' },
-  { key: 'appointment', label: 'Book a table', desc: 'Visitors send a booking request to your WhatsApp. Needs a WhatsApp number.' },
-  { key: 'contact', label: 'Contact, hours & map', desc: 'WhatsApp, call and directions buttons, opening hours and map.' },
+  { key: 'hero', label: 'owner.common.coverPhoto', desc: 'owner.pageStyle.yourCoverPhotoAcrossTheTop' },
+  { key: 'about', label: 'owner.pageStyle.aboutText', desc: 'owner.pageStyle.yourShortDescriptionUnderTheName' },
+  { key: 'seasonal_popup', label: 'owner.pageStyle.popularDishes', desc: 'owner.pageStyle.theDishesYouMarkFeaturedIn' },
+  { key: 'gallery', label: 'owner.pageStyle.photoGallery', desc: 'owner.pageStyle.yourCoverAndDishPhotosIn' },
+  { key: 'appointment', label: 'owner.pageStyle.bookATable', desc: 'owner.pageStyle.visitorsSendABookingRequestTo' },
+  { key: 'contact', label: 'owner.pageStyle.contactHoursMap', desc: 'owner.pageStyle.whatsappCallAndDirectionsButtonsOpening' },
 ] as const;
 const layoutPaths = ['presentation.layout'];
 const sectionPaths = SECTIONS.map((s) => `features.${s.key}`);
 
 function LayoutPicker(props: SectionProps) {
+  const t = useT();
   const section = useSectionSave(layoutPaths, props.fields, props.send, props.onConfirmed);
   const { register } = props;
   useEffect(() => { register('page-style', section.handle); return () => register('page-style', null); }, [register, section.handle]);
   const value = section.state.draft['presentation.layout'];
+  const preview = t('owner.pageStyle.previewPage');
+  const [beforePreview, afterPreview] = t('owner.pageStyle.buttonsAndTitlesOnYourPage').split('{preview}');
   return (
     <div className="space-y-3">
       <fieldset disabled={props.readOnly}>
-        <legend className="text-base font-extrabold text-ink">1. Colour</legend>
-        <p className="mt-1 text-sm text-muted">Buttons and titles on your page use this colour. Save, then tap <strong>Preview page</strong> at the top to see it.</p>
+        <legend className="text-base font-extrabold text-ink">{t('owner.pageStyle.text1Colour')}</legend>
+        <p className="mt-1 text-sm text-muted">{beforePreview}<strong>{preview}</strong>{afterPreview}</p>
         <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-5">
           {ORDERED_LAYOUTS.map((layout) => {
             const on = value === layout.key;
@@ -51,13 +63,13 @@ function LayoutPicker(props: SectionProps) {
                 <span aria-hidden className="flex size-10 items-center justify-center rounded-full" style={{ backgroundColor: colour.colour, boxShadow: colour.dark ? 'inset 0 0 0 3px #FDE68A' : undefined }}>
                   {on && <Check size={20} className={colour.dark ? 'text-[#FDE68A]' : 'text-white'} />}
                 </span>
-                {colour.name}
+                {t(COLOUR_KEYS[layout.key as keyof typeof COLOUR_KEYS] ?? COLOUR_KEYS.classic)}
               </button>
             );
           })}
         </div>
       </fieldset>
-      <SectionSaveBar state={section.state} labels={[{ path: 'presentation.layout', label: 'Colour' }]} canSave={section.canSave} dirty={section.dirty} readOnly={props.readOnly} lastOutcome={section.lastOutcome} savedMessage="Saved. Your page uses the new colour now." onSave={() => void section.save()} onRetry={() => void section.retry()} onKeepCurrent={section.chooseCurrent} onUseMine={section.chooseMine} />
+      <SectionSaveBar state={section.state} labels={[{ path: 'presentation.layout', label: t('owner.pageStyle.colour') }]} canSave={section.canSave} dirty={section.dirty} readOnly={props.readOnly} lastOutcome={section.lastOutcome} savedMessage={t('owner.pageStyle.savedYourPageUsesTheNew')} onSave={() => void section.save()} onRetry={() => void section.retry()} onKeepCurrent={section.chooseCurrent} onUseMine={section.chooseMine} />
     </div>
   );
 }
@@ -66,6 +78,7 @@ const menuLookPaths = ['features.menu_grid'];
 
 /** R4b: list or photo grid. Offered only once release SQL 20261006120000 adds the field. */
 function MenuLookPicker(props: SectionProps) {
+  const t = useT();
   const section = useSectionSave(menuLookPaths, props.fields, props.send, props.onConfirmed);
   const { register } = props;
   useEffect(() => { register('menu-look', section.handle); return () => register('menu-look', null); }, [register, section.handle]);
@@ -82,27 +95,28 @@ function MenuLookPicker(props: SectionProps) {
   return (
     <div className="space-y-3">
       <fieldset disabled={props.readOnly}>
-        <legend className="text-base font-extrabold text-ink">2. How the menu looks</legend>
-        <p className="mt-1 text-sm text-muted">Photo grid suits cafés and desserts with good dish photos. List suits long menus.</p>
+        <legend className="text-base font-extrabold text-ink">{t('owner.pageStyle.text2HowTheMenuLooks')}</legend>
+        <p className="mt-1 text-sm text-muted">{t('owner.pageStyle.photoGridSuitsCafSAnd')}</p>
         <div className="mt-3 grid grid-cols-2 gap-2">
-          {option(false, 'List', (
+          {option(false, t('owner.pageStyle.list'), (
             <span aria-hidden className="flex w-16 flex-col gap-1.5">
               {[0, 1, 2].map((i) => <span key={i} className="flex items-center gap-1.5"><span className="h-2 flex-1 rounded bg-line-strong" /><span className="size-4 rounded bg-line-strong" /></span>)}
             </span>
           ))}
-          {option(true, 'Photo grid', (
+          {option(true, t('owner.pageStyle.photoGrid'), (
             <span aria-hidden className="grid w-16 grid-cols-2 gap-1.5">
               {[0, 1, 2, 3].map((i) => <span key={i} className="aspect-square rounded bg-line-strong" />)}
             </span>
           ))}
         </div>
       </fieldset>
-      <SectionSaveBar state={section.state} labels={[{ path: 'features.menu_grid', label: 'Menu look' }]} canSave={section.canSave} dirty={section.dirty} readOnly={props.readOnly} lastOutcome={section.lastOutcome} savedMessage="Saved. Your menu uses the new look now." onSave={() => void section.save()} onRetry={() => void section.retry()} onKeepCurrent={section.chooseCurrent} onUseMine={section.chooseMine} />
+      <SectionSaveBar state={section.state} labels={[{ path: 'features.menu_grid', label: t('owner.pageStyle.menuLook') }]} canSave={section.canSave} dirty={section.dirty} readOnly={props.readOnly} lastOutcome={section.lastOutcome} savedMessage={t('owner.pageStyle.savedYourMenuUsesTheNew')} onSave={() => void section.save()} onRetry={() => void section.retry()} onKeepCurrent={section.chooseCurrent} onUseMine={section.chooseMine} />
     </div>
   );
 }
 
 function SectionSwitches(props: SectionProps & { step: number }) {
+  const t = useT();
   const section = useSectionSave(sectionPaths, props.fields, props.send, props.onConfirmed);
   const { register } = props;
   useEffect(() => { register('page-sections', section.handle); return () => register('page-sections', null); }, [register, section.handle]);
@@ -110,8 +124,8 @@ function SectionSwitches(props: SectionProps & { step: number }) {
   return (
     <div className="space-y-3">
       <fieldset disabled={props.readOnly}>
-        <legend className="text-base font-extrabold text-ink">{props.step}. Sections on your page</legend>
-        <p className="mt-1 text-sm text-muted">Your name and menu are always shown.</p>
+        <legend className="text-base font-extrabold text-ink">{t('owner.pageStyle.sectionsOnYourPage', { step: props.step })}</legend>
+        <p className="mt-1 text-sm text-muted">{t('owner.pageStyle.yourNameAndMenuAreAlways')}</p>
         <div className="mt-3 divide-y divide-line overflow-hidden rounded-2xl border border-line">
           {SECTIONS.map((item) => {
             const path = `features.${item.key}`;
@@ -121,8 +135,8 @@ function SectionSwitches(props: SectionProps & { step: number }) {
             return (
               <label key={item.key} className="flex min-h-14 cursor-pointer items-center gap-3 bg-page px-4 py-3">
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[15px] font-semibold text-ink">{item.label}</span>
-                  <span className="block text-sm text-muted">{item.desc}</span>
+                  <span className="block text-[15px] font-semibold text-ink">{t(item.label)}</span>
+                  <span className="block text-sm text-muted">{t(item.desc)}</span>
                 </span>
                 <input type="checkbox" className="h-6 w-6 shrink-0 accent-[#1F4D3A]" checked={shown}
                   onChange={() => {
@@ -135,7 +149,7 @@ function SectionSwitches(props: SectionProps & { step: number }) {
           })}
         </div>
       </fieldset>
-      <SectionSaveBar state={section.state} labels={SECTIONS.map((s) => ({ path: `features.${s.key}`, label: s.label }))} canSave={section.canSave} dirty={section.dirty} readOnly={props.readOnly} lastOutcome={section.lastOutcome} savedMessage="Saved. Your page shows these sections now." onSave={() => void section.save()} onRetry={() => void section.retry()} onKeepCurrent={section.chooseCurrent} onUseMine={section.chooseMine} />
+      <SectionSaveBar state={section.state} labels={SECTIONS.map((s) => ({ path: `features.${s.key}`, label: t(s.label) }))} canSave={section.canSave} dirty={section.dirty} readOnly={props.readOnly} lastOutcome={section.lastOutcome} savedMessage={t('owner.pageStyle.savedYourPageShowsTheseSections')} onSave={() => void section.save()} onRetry={() => void section.retry()} onKeepCurrent={section.chooseCurrent} onUseMine={section.chooseMine} />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '@/lib/i18n';
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import { Download, Printer } from 'lucide-react';
@@ -13,6 +14,7 @@ import { tableCardHtml } from '@/lib/table-qr-card.mjs';
  * stored or sent. Download a picture, or print a ready-made table card (design: QR).
  */
 export function TableQrPanel({ slug, name, layoutKey, isPublic }: { slug: string; name: string; layoutKey: string | null; isPublic: boolean }) {
+  const t = useT();
   const url = `${getSiteUrl()}/store/${slug}`;
   const [svg, setSvg] = useState('');
   // The printable card as a blob: link, so it opens from a normal tap (no pop-up to block).
@@ -30,9 +32,9 @@ export function TableQrPanel({ slug, name, layoutKey, isPublic }: { slug: string
         setSvg(value);
         setCardUrl(blobUrl);
       })
-      .catch(() => { if (live) setMessage('Could not make the QR code on this device.'); });
+      .catch(() => { if (live) setMessage(t('owner.tableQr.couldNotMakeTheQrCode')); });
     return () => { live = false; if (blobUrl) URL.revokeObjectURL(blobUrl); };
-  }, [url, name, accent]);
+  }, [url, name, accent, t]);
 
   const download = async () => {
     try {
@@ -42,7 +44,7 @@ export function TableQrPanel({ slug, name, layoutKey, isPublic }: { slug: string
       link.download = `${slug}-menu-qr.png`;
       link.click();
     } catch {
-      setMessage('Could not make the picture. Try again.');
+      setMessage(t('owner.tableQr.couldNotMakeThePictureTry'));
     }
   };
 
@@ -55,20 +57,20 @@ export function TableQrPanel({ slug, name, layoutKey, isPublic }: { slug: string
         dangerouslySetInnerHTML={{ __html: svg }}
       />
       <div className="min-w-0 space-y-2">
-        <h3 className="text-base font-extrabold text-ink">Table QR code</h3>
+        <h3 className="text-base font-extrabold text-ink">{t('owner.tableQr.tableQrCode')}</h3>
         <p className="text-sm text-muted">
           {isPublic
-            ? 'Print it and put it on your tables. Guests scan it to open your menu.'
-            : 'Your QR code works once your page is published. You can print it now and use it after.'}
+            ? t('owner.tableQr.printItAndPutItOn')
+            : t('owner.tableQr.yourQrCodeWorksOnceYour')}
         </p>
         <p className="break-all text-xs text-muted">{url}</p>
         <div className="flex flex-wrap gap-2 pt-1">
           {cardUrl && (
             <a href={cardUrl} target="_blank" rel="noopener" className={buttonClasses({ size: 'md' })}>
-              <Printer size={16} aria-hidden />Print table card
+              <Printer size={16} aria-hidden />{t('owner.tableQr.printTableCard')}
             </a>
           )}
-          <Button size="md" variant="secondary" onClick={() => void download()}><Download size={16} aria-hidden />Download picture</Button>
+          <Button size="md" variant="secondary" onClick={() => void download()}><Download size={16} aria-hidden />{t('owner.tableQr.downloadPicture')}</Button>
         </div>
         {message && <p role="status" className="text-sm text-soldout">{message}</p>}
       </div>

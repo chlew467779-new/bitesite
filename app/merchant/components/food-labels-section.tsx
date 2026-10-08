@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '@/lib/i18n';
 import { useEffect } from 'react';
 import { useSectionSave } from '@/app/components/section-save/use-section-save';
 import { SectionSaveBar } from '@/app/components/section-save/section-save-bar';
@@ -15,6 +16,9 @@ const PATH = 'features.vegetarian_options';
 const paths = [PATH];
 
 export function FoodLabelsSection(props: SectionProps) {
+  const t = useT();
+  const feedback = t('owner.tile.feedback');
+  const [beforeFeedback, afterFeedback] = t('owner.foodLabels.bitesiteShowsThisLabelOnlyFor').split('{feedback}');
   const section = useSectionSave(paths, props.fields, props.send, props.onConfirmed);
   const { register } = props;
   useEffect(() => { register('food-labels', section.handle); return () => register('food-labels', null); }, [register, section.handle]);
@@ -23,27 +27,25 @@ export function FoodLabelsSection(props: SectionProps) {
   return (
     <div className="space-y-3">
       <fieldset disabled={props.readOnly}>
-        <legend className="text-sm font-semibold text-ink">Food labels</legend>
+        <legend className="text-sm font-semibold text-ink">{t('owner.foodLabels.foodLabels')}</legend>
         <label className="mt-3 flex min-h-14 cursor-pointer items-start gap-3 rounded-2xl border border-line p-4">
           <input type="checkbox" className="mt-0.5 h-6 w-6 shrink-0 accent-[#1F4D3A]" checked={on}
             onChange={() => section.edit(PATH, !stored?.exists && on ? null : !on)} />
           <span className="min-w-0">
-            <span className="block text-[15px] font-semibold text-ink">Vegetarian options</span>
+            <span className="block text-[15px] font-semibold text-ink">{t('owner.foodLabels.vegetarianOptions')}</span>
             <span className="block text-sm text-muted">
-              Tick only if at least one dish has no meat, fish or seafood, including the stock and sauce
-              (egg and dairy are fine; say so in the dish description). Your page will show it as declared by you.
+              {t('owner.foodLabels.tickOnlyIfAtLeastOne')}
             </span>
           </span>
         </label>
         <div className="mt-3 rounded-2xl bg-surface p-4 text-sm text-ink-2">
-          <p className="font-semibold text-ink">Halal-certified</p>
+          <p className="font-semibold text-ink">{t('owner.foodLabels.halalCertified')}</p>
           <p className="mt-1">
-            BiteSite shows this label only for an outlet with a valid certificate from JAKIM or your state
-            religious authority (Malaysia) or MUIS (Singapore). Send your certificate through <a href="/feedback" className="font-semibold text-brand underline">Feedback</a> and we will add the label after checking it.
+            {beforeFeedback}<a href="/feedback" className="inline-flex min-h-11 min-w-11 items-center font-semibold text-brand underline">{feedback}</a>{afterFeedback}
           </p>
         </div>
       </fieldset>
-      <SectionSaveBar state={section.state} labels={[{ path: PATH, label: 'Vegetarian options' }]} canSave={section.canSave} dirty={section.dirty} readOnly={props.readOnly} lastOutcome={section.lastOutcome} savedMessage="Saved. Your page shows this now." onSave={() => void section.save()} onRetry={() => void section.retry()} onKeepCurrent={section.chooseCurrent} onUseMine={section.chooseMine} />
+      <SectionSaveBar state={section.state} labels={[{ path: PATH, label: t('owner.foodLabels.vegetarianOptions') }]} canSave={section.canSave} dirty={section.dirty} readOnly={props.readOnly} lastOutcome={section.lastOutcome} savedMessage={t('owner.foodLabels.savedYourPageShowsThisNow')} onSave={() => void section.save()} onRetry={() => void section.retry()} onKeepCurrent={section.chooseCurrent} onUseMine={section.chooseMine} />
     </div>
   );
 }

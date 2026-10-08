@@ -1,6 +1,8 @@
 /* bitesite/app/components/media/profile-image-field.tsx */
 'use client';
 
+import { useT, type MessageKey } from '@/lib/i18n';
+
 /**
  * Logo / cover photo control (M6b), shared by the Admin editor and the Merchant dashboard, and
  * dish photos (slot 'dish' + productId; apiBase .../menu/dish-photo).
@@ -38,12 +40,11 @@ type Props = {
 type Stage = 'idle' | 'preparing' | 'uploading' | 'checking' | 'removing';
 type PendingBind = { requestId: string; uploadId: string | null; expected: string | null } & ({ slot: MediaSlot } | { productId: string });
 
-const STAGE_TEXT: Record<Stage, string> = {
-  idle: '',
-  preparing: 'Preparing photo…',
-  uploading: 'Uploading…',
-  checking: 'Checking and saving…',
-  removing: 'Removing…',
+const STAGE_TEXT: Record<Exclude<Stage, 'idle'>, MessageKey> = {
+  preparing: 'owner.photos.preparingPhoto',
+  uploading: 'owner.photos.uploading',
+  checking: 'owner.photos.checkingAndSaving',
+  removing: 'owner.photos.removing',
 };
 
 function safeSrc(value: string | null) {
@@ -66,6 +67,7 @@ async function json(response: Response): Promise<ApiReply | null> {
 }
 
 export function ProfileImageField({ slot, productId, label, value, apiBase, getHeaders, onChanged, disabled, register }: Props) {
+  const t = useT();
   const key = slot === 'dish' ? `dish-${productId}` : slot;
   const target = (): { slot: MediaSlot } | { productId: string } => (slot === 'dish' ? { productId: productId as string } : { slot });
   const [stage, setStage] = useState<Stage>('idle');
@@ -89,22 +91,22 @@ export function ProfileImageField({ slot, productId, label, value, apiBase, getH
       response = await fetch(apiBase, { method: 'PUT', headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify(pending) });
     } catch {
       setUnknown(pending);
-      setMessage({ kind: 'error', text: 'Could not reach BiteSite. Retry sends the same request, so the photo is never changed twice.' });
+      setMessage({ kind: 'error', text: t('owner.photos.couldNotReachBitesiteRetrySends') });
       return;
     }
     const data = await json(response);
     if (response.status >= 500 || !data) {
       setUnknown(pending);
-      setMessage({ kind: 'error', text: 'The result is not confirmed. Retry sends the same request, so the photo is never changed twice.' });
+      setMessage({ kind: 'error', text: t('owner.photos.theResultIsNotConfirmedRetry') });
       return;
     }
     setUnknown(null);
     if (response.ok) {
       onChanged(data.data?.value ?? null);
-      setMessage({ kind: 'ok', text: pending.uploadId ? `${label} saved.` : `${label} removed.` });
+      setMessage({ kind: 'ok', text: pending.uploadId ? t('owner.photos.saved', { label }) : t('owner.photos.removed', { label }) });
     } else {
       if (data.error?.code === 'FIELD_CONFLICT') onChanged(data.error.current ?? null);
-      setMessage({ kind: 'error', text: data.error?.message || 'The photo was not saved.' });
+      setMessage({ kind: 'error', text: data.error?.message || t('owner.photos.thePhotoWasNotSaved') });
     }
   };
 
@@ -114,10 +116,10 @@ export function ProfileImageField({ slot, productId, label, value, apiBase, getH
     setMessage(null);
     try {
       const headers = await getHeaders();
-      if (!headers) { setMessage({ kind: 'error', text: 'Your session has ended. Sign in again, then retry.' }); return; }
+      if (!headers) { setMessage({ kind: 'error', text: t('owner.common.yourSessionHasEndedSignIn2') }); return; }
       await task(headers);
     } catch (error) {
-      setMessage({ kind: 'error', text: error instanceof Error && error.message ? error.message : 'Something went wrong. Please try again.' });
+      setMessage({ kind: 'error', text: error instanceof Error && error.message ? error.message : t('owner.photos.somethingWentWrongPleaseTryAgain') });
     } finally {
       busyRef.current = false;
       setStage('idle');
@@ -135,10 +137,10 @@ export function ProfileImageField({ slot, productId, label, value, apiBase, getH
       body: JSON.stringify({ ...target(), contentType: 'image/webp', size: resized.size }),
     });
     const ticket = await json(ticketResponse);
-    if (!ticketResponse.ok || !ticket?.data) throw new Error(ticket?.error?.message || 'The photo could not be prepared for upload.');
+    if (!ticketResponse.ok || !ticket?.data) throw new Error(ticket?.error?.message || t('owner.common.thePhotoCouldNotBePrepared'));
     setStage('uploading');
     const { error } = await supabase.storage.from(ticket.data.bucket as string).uploadToSignedUrl(ticket.data.path as string, ticket.data.token as string, resized, { contentType: 'image/webp', cacheControl: IMMUTABLE_CACHE_SECONDS });
-    if (error) throw new Error('The upload did not finish. Check your connection and choose the photo again.');
+    if (error) throw new Error(t('owner.photos.theUploadDidNotFinishCheck'));
     await bind({ requestId: crypto.randomUUID(), ...target(), uploadId: ticket.data.uploadId as string, expected: value }, headers);
   });
 
@@ -156,14 +158,14 @@ export function ProfileImageField({ slot, productId, label, value, apiBase, getH
         {src
           ? // eslint-disable-next-line @next/next/no-img-element -- upload preview uses blob URLs and short-lived signed URLs
           <img src={src} alt={label} className={`h-full w-full object-cover ${busy ? 'opacity-60' : ''}`} />
-          : <div className="flex h-full items-center justify-center px-2 text-center text-xs text-[#6B6560]">No {label.toLowerCase()}</div>}
-        {busy && <div className="absolute inset-x-0 bottom-0 bg-black/60 px-3 py-2 text-xs font-medium text-white" role="status">{STAGE_TEXT[stage]}</div>}
+          : <div className="flex h-full items-center justify-center px-2 text-center text-xs text-[#6B6560]">{t('owner.photos.no', { label: label.toLowerCase() })}</div>}
+        {busy && <div className="absolute inset-x-0 bottom-0 bg-black/60 px-3 py-2 text-xs font-medium text-white" role="status">{t(STAGE_TEXT[stage])}</div>}
       </div>
 
       <div className="flex flex-col gap-2 sm:flex-row">
         <label htmlFor={inputId}
           className={`inline-flex min-h-11 w-full items-center justify-center rounded-lg px-4 text-sm font-medium sm:w-auto ${slot === 'dish' ? 'border border-[#2C3E2D] bg-white text-[#2C3E2D]' : 'bg-[#2C3E2D] text-white'} ${locked ? 'pointer-events-none opacity-50' : 'cursor-pointer'}`}>
-          {value ? 'Change photo' : 'Choose photo'}
+          {value ? t('owner.photos.changePhoto') : t('owner.photos.choosePhoto')}
         </label>
         {/* JPEG/PNG/WebP only: phones convert HEIC photos to JPEG for these types. */}
         <input id={inputId} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" disabled={locked}
@@ -171,19 +173,19 @@ export function ProfileImageField({ slot, productId, label, value, apiBase, getH
         {value && !confirmRemove && (
           <button type="button" disabled={locked} onClick={() => setConfirmRemove(true)}
             className="min-h-11 w-full rounded-lg border border-red-700 px-4 text-sm font-medium text-red-700 disabled:opacity-50 sm:w-auto">
-            Remove
+            {t('owner.photos.remove')}
           </button>
         )}
         {confirmRemove && (
           <div className="flex w-full gap-2 sm:w-auto">
-            <button type="button" onClick={remove} className="min-h-11 flex-1 rounded-lg bg-red-700 px-4 text-sm font-medium text-white sm:flex-none">Remove {label.toLowerCase()}</button>
-            <button type="button" onClick={() => setConfirmRemove(false)} className="min-h-11 flex-1 rounded-lg border border-[#C9D6C7] px-4 text-sm font-medium sm:flex-none">Keep</button>
+            <button type="button" onClick={remove} className="min-h-11 flex-1 rounded-lg bg-red-700 px-4 text-sm font-medium text-white sm:flex-none">{t('owner.photos.remove2', { label: label.toLowerCase() })}</button>
+            <button type="button" onClick={() => setConfirmRemove(false)} className="min-h-11 flex-1 rounded-lg border border-[#C9D6C7] px-4 text-sm font-medium sm:flex-none">{t('owner.photos.keep')}</button>
           </div>
         )}
       </div>
       {unknown && (
         <button type="button" disabled={busy} onClick={retry} className="min-h-11 w-full rounded-lg border border-[#2C3E2D] px-4 text-sm font-medium disabled:opacity-50 sm:w-auto">
-          {busy ? 'Retrying…' : 'Retry'}
+          {busy ? t('owner.common.retrying') : t('owner.common.retry')}
         </button>
       )}
       {message && <p className={`text-sm ${message.kind === 'ok' ? 'text-emerald-800' : 'text-red-700'}`} role={message.kind === 'error' ? 'alert' : 'status'}>{message.text}</p>}

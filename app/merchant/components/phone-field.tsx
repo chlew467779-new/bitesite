@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '@/lib/i18n';
 import { useState } from 'react';
 import { PHONE_COUNTRIES, joinPhone, splitPhone } from '@/lib/phone-core.mjs';
 
@@ -19,6 +20,7 @@ type Props = {
 };
 
 export function PhoneField({ name, label, value, onChange, onBlur, error, readOnly = false }: Props) {
+  const t = useT();
   const id = `field-${name}`;
   const parts = splitPhone(value);
   // The picked country is kept while the number is empty, so choosing +65 first is not undone.
@@ -35,7 +37,7 @@ export function PhoneField({ name, label, value, onChange, onBlur, error, readOn
       <label htmlFor={id} className="text-sm font-medium text-[#2C3E2D]">{label}</label>
       <div className="flex gap-2">
         <select
-          aria-label={`${label} country code`}
+          aria-label={t('owner.contact.countryCode', { label })}
           value={country}
           disabled={readOnly}
           onChange={(event) => {
@@ -65,7 +67,7 @@ export function PhoneField({ name, label, value, onChange, onBlur, error, readOn
       {error ? (
         <p id={`${id}-error`} className="mt-1 text-sm text-red-700">{error}</p>
       ) : (
-        <p id={`${id}-hint`} className="mt-1 text-xs text-[#6B6560]">Type the number without the first 0, e.g. {example}.</p>
+        <p id={`${id}-hint`} className="mt-1 text-xs text-[#6B6560]">{t('owner.contact.typeTheNumberWithoutTheFirst', { example })}</p>
       )}
     </div>
   );

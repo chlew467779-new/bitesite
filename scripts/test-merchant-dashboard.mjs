@@ -226,10 +226,13 @@ for (const link of ["website", "instagram", "facebook", "menu_pdf_url"]) {
 }
 assert.match(pageSource, /<LinkRequests /, "link changes are requests reviewed by BiteSite (link review queue)");
 assert.doesNotMatch(pageSource, /media\/upload-url|type="file"/, "profile photo upload is closed (M6b)");
-assert.match(pageSource, /Your changes are still here/, "a failed or refused save says the typed values are kept");
+const dashboardEnglish = JSON.parse(await read("lib/i18n/en.json"));
+assert.match(pageSource, /owner\.dashboard\.notLeavingYourChangesAreStill/, "the guarded leave failure uses the translated retained-changes message");
+assert.match(dashboardEnglish["owner.dashboard.notLeavingYourChangesAreStill"], /Your changes are still here/, "a failed or refused save says the typed values are kept");
 assert.doesNotMatch(pageSource, /applyMerchant/, "no whole-page reset after a save");
 assert.ok(pageSource.includes("if (id === 'stories') requestStories();"), "Stories navigation (the Stories tile) is guarded before leaving the dashboard");
-assert.match(pageSource, /A save is still in progress or unconfirmed\. Wait for it \(or choose Retry\) before signing out\./, "sign out is blocked while a save result is unknown");
+assert.match(pageSource, /if \(status\.busy\)[\s\S]*?kind: 'signout', message: t\('owner\.dashboard\.aSaveIsStillInProgress3'\)/, "sign out is blocked while a save result is unknown");
+assert.match(dashboardEnglish["owner.dashboard.aSaveIsStillInProgress3"], /before signing out\./, "the translated notice explains when signing out is blocked");
 assert.match(pageSource, /const saveAllAndLeave = async \(\) =>/, "leaving with dirty sections offers a save path");
 assert.match(pageSource, /const discardAndLeave = \(\) =>/, "leaving with dirty sections offers a discard path");
 
