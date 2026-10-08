@@ -1,8 +1,7 @@
 /* bitesite/components/sections/story-related.tsx */
 
 import { StoryRelatedHeading } from "./story-detail-text";
-import Link from "next/link";
-import { SafeImage } from "@/app/components/safe-image";
+import { StoryCard } from "./story-card";
 import { supabase } from "@/lib/supabase";
 import { PUBLIC_ARTICLE_SELECT } from "@/lib/public-article-projection.mjs";
 import type { PublicArticle } from "@/types";
@@ -36,45 +35,18 @@ export async function StoryRelated({ currentSlug, category }: StoryRelatedProps)
 
   if (articles.length === 0) return null;
 
+  // Always on the site's white page, whatever the Story's own colour theme, so the rows read the same everywhere.
   return (
-    <section className="border-t border-[#DDE5DC] px-4 py-12 sm:px-6 lg:px-8">
+    <section className="border-t border-line bg-page px-4 py-10 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-3xl">
-        <h2 className="mb-8 font-serif text-2xl font-medium text-[#2C3E2D]">
+        <h2 className="mb-4 text-xl font-extrabold tracking-[-0.02em] text-ink">
           <StoryRelatedHeading />
         </h2>
-        <div className="grid gap-6 sm:grid-cols-3">
+        <ul className="grid gap-4 sm:grid-cols-2">
           {articles.map((article) => (
-            <Link
-              key={article.id}
-              href={`/stories/${article.slug}`}
-              className="group block"
-            >
-              <article className="overflow-hidden rounded-xl border border-[#DDE5DC] bg-white transition-shadow duration-300 hover:shadow-md">
-                <div className="relative aspect-[4/3] overflow-hidden">
-                  {article.cover_image ? (
-                    <SafeImage
-                      src={article.cover_image}
-                      alt={article.title}
-                      fill
-                      className="object-cover transition-transform duration-500 group-hover:scale-105"
-                      sizes="(max-width: 640px) 100vw, 33vw"
-                    />
-                  ) : (
-                    <div className="h-full w-full bg-[#F0F4EC]" />
-                  )}
-                </div>
-                <div className="p-4">
-                  <span className="mb-1 inline-block rounded-full bg-[#5A8F6E]/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-[#5A8F6E]">
-                    {article.category}
-                  </span>
-                  <h3 className="font-serif text-sm font-medium text-[#2C3E2D] transition-colors group-hover:text-[#5A8F6E] line-clamp-2">
-                    {article.title}
-                  </h3>
-                </div>
-              </article>
-            </Link>
+            <li key={article.id}><StoryCard article={article} /></li>
           ))}
-        </div>
+        </ul>
       </div>
     </section>
   );

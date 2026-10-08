@@ -15,12 +15,12 @@ interface StoryContentProps {
 
 const themeColors = {
   default: {
-    heading: '#2C3E2D',
-    body: '#6B6560',
-    accent: '#5A8F6E',
-    quoteBg: '#F0F4EC',
-    border: '#DDE5DC',
-    bodyLight: '#8A968B',
+    heading: '#17201B',
+    body: '#3D4741',
+    accent: '#1F4D3A',
+    quoteBg: '#EAF2EC',
+    border: '#E3E7DF',
+    bodyLight: '#5B655E',
   },
   warm: {
     heading: '#4A3728',
@@ -89,17 +89,17 @@ export function StoryContent({ content, articleSlug, theme = 'default' }: StoryC
             remarkPlugins={[remarkGfm, remarkBreaks]}
             components={{
               h1: ({ children }) => (
-                <h1 className="mb-6 mt-8 font-serif text-2xl font-medium sm:text-3xl" style={{ color: 'var(--sc-heading)' }}>
+                <h1 className="mb-5 mt-8 text-2xl font-extrabold tracking-[-0.02em] sm:text-3xl" style={{ color: 'var(--sc-heading)' }}>
                   {children}
                 </h1>
               ),
               h2: ({ children }) => (
-                <h2 className="mb-4 mt-8 font-serif text-xl font-medium sm:text-2xl" style={{ color: 'var(--sc-heading)' }}>
+                <h2 className="mb-3 mt-8 text-xl font-extrabold tracking-[-0.02em] sm:text-2xl" style={{ color: 'var(--sc-heading)' }}>
                   {children}
                 </h2>
               ),
               p: ({ children }) => (
-                <p className="mb-4 text-base leading-relaxed" style={{ color: 'var(--sc-body)' }}>
+                <p className="mb-4 text-[17px] leading-[1.7]" style={{ color: 'var(--sc-body)' }}>
                   {children}
                 </p>
               ),
@@ -149,7 +149,7 @@ export function StoryContent({ content, articleSlug, theme = 'default' }: StoryC
                 <li className="text-base leading-relaxed">{children}</li>
               ),
               img: ({ src, alt }) => (
-                <div className="my-6 overflow-hidden rounded-xl">
+                <div className="my-6 overflow-hidden rounded-[20px]">
                   {/* eslint-disable-next-line @next/next/no-img-element -- Story body images use authored URLs from any host */}
                   <img
                     src={src}

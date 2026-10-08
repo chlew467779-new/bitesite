@@ -12,15 +12,16 @@ interface StoryHeroProps {
 }
 
 const themeColors = {
+  // Site palette (docs/DESIGN.md): ink, ink-2, brand, line, brand-soft, muted.
   default: {
-    heading: '#2C3E2D',
-    body: '#6B6560',
-    accent: '#5A8F6E',
-    border: '#DDE5DC',
-    tagBg: 'rgba(90, 143, 110, 0.1)',
-    tagText: '#5A8F6E',
-    bodyLight: '#8A968B',
-    tagBorder: '#DDE5DC',
+    heading: '#17201B',
+    body: '#3D4741',
+    accent: '#1F4D3A',
+    border: '#E3E7DF',
+    tagBg: '#EAF2EC',
+    tagText: '#1F4D3A',
+    bodyLight: '#5B655E',
+    tagBorder: '#E3E7DF',
     tagBgWhite: '#FFFFFF',
   },
   warm: {
@@ -101,7 +102,7 @@ export function StoryHero({ article, theme = 'default' }: StoryHeroProps) {
         {/* Category & Tags */}
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <span 
-            className="rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wider"
+            className="rounded-full px-3 py-1 text-xs font-bold"
             style={{ backgroundColor: colors.tagBg, color: colors.tagText }}
           >
             {article.category}
@@ -109,7 +110,7 @@ export function StoryHero({ article, theme = 'default' }: StoryHeroProps) {
           {article.tags?.map((tag) => (
             <span
               key={tag}
-              className="rounded-full border px-3 py-1 text-xs font-medium uppercase tracking-wider"
+              className="rounded-full border px-3 py-1 text-xs font-semibold"
               style={{ borderColor: colors.tagBorder, backgroundColor: colors.tagBgWhite, color: colors.bodyLight }}
             >
               {tag}
@@ -119,7 +120,7 @@ export function StoryHero({ article, theme = 'default' }: StoryHeroProps) {
 
         {/* Title */}
         <h1 
-          className="mb-4 font-serif text-3xl font-medium leading-tight sm:text-4xl md:text-5xl"
+          className="mb-4 text-[30px] font-extrabold leading-[1.1] tracking-[-0.03em] [text-wrap:balance] sm:text-4xl md:text-5xl"
           style={{ color: colors.heading }}
         >
           {article.title}
@@ -134,7 +135,7 @@ export function StoryHero({ article, theme = 'default' }: StoryHeroProps) {
 
         {/* Cover Image */}
         {article.cover_image && (
-          <div className="relative aspect-[16/9] overflow-hidden rounded-2xl">
+          <div className="relative aspect-[16/9] overflow-hidden rounded-[20px] bg-surface">
             <SafeImage
               src={article.cover_image}
               alt={article.title}

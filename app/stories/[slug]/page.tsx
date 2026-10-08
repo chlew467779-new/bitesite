@@ -77,7 +77,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 const bgColors: Record<string, string> = {
-  default: '#FAFBF7',
+  default: '#FFFFFF',
   warm: '#FDF8F3',
   cool: '#F5F7FA',
   dark: '#1A1A1A',
@@ -86,7 +86,7 @@ const bgColors: Record<string, string> = {
 };
 
 const hashtagColors: Record<string, { border: string; text: string }> = {
-  default: { border: '#DDE5DC', text: '#8A968B' },
+  default: { border: '#E3E7DF', text: '#5B655E' },
   warm: { border: '#E8DDD0', text: '#9A8B7D' },
   cool: { border: '#E2E8F0', text: '#718096' },
   dark: { border: '#333333', text: '#888888' },

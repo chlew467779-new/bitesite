@@ -5,6 +5,7 @@
 import { useT } from '@/lib/i18n';
 import { useRouter } from 'next/navigation';
 import { trackEvent } from '@/lib/analytics';
+import { buttonClasses } from '@/components/ui/button';
 
 interface StoryMerchantLinkProps {
   slug: string;
@@ -30,8 +31,7 @@ export function StoryMerchantLink({ slug, articleSlug }: StoryMerchantLinkProps)
             });
             router.push(`/store/${slug}`);
           }}
-          className="inline-flex items-center gap-2 rounded-full bg-[#5A8F6E] px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-[#4A7A5E] active:scale-[0.98]"
-          style={{ WebkitTapHighlightColor: 'transparent' }}
+          className={buttonClasses({ variant: 'primary', size: 'lg' })}
         >
           {t('stories.restaurant')}
           <svg
