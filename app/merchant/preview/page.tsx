@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '@/lib/i18n';
 
 /**
  * Owner private preview of the restaurant page (`/merchant/preview?merchant=<id>`): the same layout
@@ -11,7 +12,7 @@
  */
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { layouts } from '@/app/layouts';
 import { resolvePublicLayoutKey } from '@/lib/layout-registry.mjs';
@@ -32,17 +33,20 @@ type PreviewData = {
 };
 type State = { kind: 'loading' } | { kind: 'error'; message: string; signedOut?: boolean } | { kind: 'ready'; data: PreviewData };
 
-function statusText(status: PreviewData['status']) {
-  if (status.restriction === 'suspended') return 'Suspended by BiteSite — not visible to visitors.';
-  if (status.restriction === 'archived') return 'Archived — not visible to visitors.';
-  if (status.public) return 'This page is live. Visitors see it like this.';
-  if (status.stateSource !== 'managed') return 'Not visible to visitors yet.';
-  if (status.reviewStatus === 'pending') return 'Waiting for review — not visible to visitors yet.';
-  if (status.reviewStatus === 'approved') return 'Approved — publish it from your dashboard when you are ready.';
-  return 'Draft — not visible to visitors yet.';
+function statusText(status: PreviewData['status'], t: ReturnType<typeof useT>) {
+  if (status.restriction === 'suspended') return t('owner.preview.suspendedByBitesiteNotVisibleTo');
+  if (status.restriction === 'archived') return t('owner.preview.archivedNotVisibleToVisitors');
+  if (status.public) return t('owner.preview.thisPageIsLiveVisitorsSee');
+  if (status.stateSource !== 'managed') return t('owner.preview.notVisibleToVisitorsYet');
+  if (status.reviewStatus === 'pending') return t('owner.preview.waitingForReviewNotVisibleTo');
+  if (status.reviewStatus === 'approved') return t('owner.preview.approvedPublishItFromYourDashboard');
+  return t('owner.preview.draftNotVisibleToVisitorsYet');
 }
 
 export default function MerchantPreviewPage() {
+  const t = useT();
+  const tRef = useRef(t);
+  tRef.current = t;
   const [state, setState] = useState<State>({ kind: 'loading' });
   const [merchantId, setMerchantId] = useState<string | null>(null);
   const [asAdmin, setAsAdmin] = useState(false);
@@ -59,13 +63,13 @@ export default function MerchantPreviewPage() {
       if (admin) {
         let adminToken: string | null = null;
         try { adminToken = localStorage.getItem('admin_token'); } catch { adminToken = null; }
-        if (!adminToken || !selected) { if (!cancelled) setState({ kind: 'error', message: 'Sign in to Admin first, then open the preview again.', signedOut: true }); return; }
+        if (!adminToken || !selected) { if (!cancelled) setState({ kind: 'error', message: tRef.current('owner.preview.signInToAdminFirstThen'), signedOut: true }); return; }
         url = `/api/admin/merchants/${encodeURIComponent(selected)}/preview`;
         headers = { 'x-admin-token': adminToken };
       } else {
         const { data: session } = await supabase.auth.getSession();
         const token = session.session?.access_token;
-        if (!token) { if (!cancelled) setState({ kind: 'error', message: 'Sign in to preview your restaurant page.', signedOut: true }); return; }
+        if (!token) { if (!cancelled) setState({ kind: 'error', message: tRef.current('owner.preview.signInToPreviewYourRestaurant'), signedOut: true }); return; }
         url = merchantApiUrl('/api/merchant/preview', selected);
         headers = { Authorization: `Bearer ${token}` };
       }
@@ -74,29 +78,29 @@ export default function MerchantPreviewPage() {
         const body = await response.json().catch(() => null);
         if (cancelled) return;
         if (!response.ok || !body?.data) {
-          setState({ kind: 'error', message: body?.error?.message || 'The preview could not be loaded.', signedOut: response.status === 401 });
+          setState({ kind: 'error', message: body?.error?.message || tRef.current('owner.preview.thePreviewCouldNotBeLoaded'), signedOut: response.status === 401 });
           return;
         }
         setState({ kind: 'ready', data: body.data as PreviewData });
       } catch {
-        if (!cancelled) setState({ kind: 'error', message: 'Could not reach BiteSite. Check your connection and try again.' });
+        if (!cancelled) setState({ kind: 'error', message: tRef.current('feedback.offline') });
       }
     })();
     return () => { cancelled = true; };
   }, []);
 
   const back = asAdmin ? '/admin' : merchantPageUrl('/merchant', merchantId);
-  const backLabel = asAdmin ? 'Back to Admin' : 'Back to dashboard';
+  const backLabel = asAdmin ? t('owner.preview.backToAdmin') : t('owner.home.back');
 
   if (state.kind !== 'ready') {
     return (
-      <main className="min-h-screen bg-[#FAFBF7] px-4 py-16" {...analyticsSuppressedProps}>
-        <div className="mx-auto max-w-xl rounded-2xl border border-[#DDE5DC] bg-white p-6 text-[#2C3E2D]">
-          <h1 className="font-serif text-2xl">Page preview</h1>
-          <p className="mt-3 text-sm text-[#6B6560]" role={state.kind === 'error' ? 'alert' : 'status'}>{state.kind === 'loading' ? 'Loading your preview…' : state.message}</p>
+      <main className="min-h-screen bg-page px-4 py-16" {...analyticsSuppressedProps}>
+        <div className="mx-auto max-w-xl rounded-[20px] border border-line bg-white p-6 text-ink">
+          <h1 className="font-extrabold tracking-[-0.02em] text-2xl">{t('owner.preview.pagePreview')}</h1>
+          <p className="mt-3 text-sm text-muted" role={state.kind === 'error' ? 'alert' : 'status'}>{state.kind === 'loading' ? t('owner.preview.loadingYourPreview') : state.message}</p>
           {state.kind === 'error' && (
-            <Link href={state.signedOut ? (asAdmin ? '/admin' : '/merchant/login') : back} className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-[#2C3E2D] px-4 text-sm font-medium text-white sm:w-auto">
-              {state.signedOut ? 'Sign in' : backLabel}
+            <Link href={state.signedOut ? (asAdmin ? '/admin' : '/merchant/login') : back} className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-brand px-4 text-sm font-medium text-white sm:w-auto">
+              {state.signedOut ? t('owner.entry.signIn') : backLabel}
             </Link>
           )}
         </div>
@@ -111,8 +115,8 @@ export default function MerchantPreviewPage() {
       <div className="sticky top-0 z-[70] border-b border-amber-300 bg-amber-50 px-4 py-2 text-amber-950" role="status">
         <div className="mx-auto flex max-w-6xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="text-sm">
-            <p><span className="font-semibold">{asAdmin ? 'Admin preview.' : 'Preview — only you can see this.'}</span> {statusText(data.status)}</p>
-            <p className="mt-1">Changes waiting for BiteSite review (links, name, address, cuisine) are not shown here until approved.</p>
+            <p><span className="font-semibold">{asAdmin ? t('owner.preview.adminPreview') : t('owner.preview.previewOnlyYouCanSeeThis')}</span> {statusText(data.status, t)}</p>
+            <p className="mt-1">{t('owner.preview.changesWaitingForBitesiteReviewLinks')}</p>
           </div>
           <Link href={back} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-amber-800 px-4 text-sm font-medium">{backLabel}</Link>
         </div>

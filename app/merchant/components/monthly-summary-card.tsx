@@ -1,4 +1,5 @@
 'use client';
+import { useT, useLang } from '@/lib/i18n';
 
 /**
  * "This month vs last month" (CH 2026-09-30), shown near the top of the dashboard once the page is
@@ -14,26 +15,30 @@ import { changeWords, summaryChange, type SummaryRanges, type SummaryTotals } fr
 type Summary = { ranges: SummaryRanges; thisMonth: SummaryTotals; sameDaysLastMonth: SummaryTotals; lastMonth: SummaryTotals };
 
 const dayOf = (date: string) => Number(date.slice(8, 10));
-const shortMonth = (label: string) => label.split(' ')[0].slice(0, 3);
+const monthLabel = (date: string, locale: string, year = false) => new Intl.DateTimeFormat(locale, { month: year ? 'long' : 'short', ...(year ? { year: 'numeric' as const } : {}), timeZone: 'UTC' }).format(new Date(`${date.slice(0, 7)}-01T00:00:00Z`));
 
 function Metric({ label, current, previous }: { label: string; current: number; previous: number }) {
+  const t = useT();
   const change = summaryChange(current, previous);
   const words = changeWords(current, previous);
   return (
-    <div className="rounded-xl bg-emerald-50 p-3 sm:p-4">
-      <p className="text-xs text-emerald-900">{label}</p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums text-[#2C3E2D]">{current.toLocaleString('en-US')}</p>
-      <p className={`mt-1 inline-flex items-center gap-0.5 text-xs ${change.direction === 'up' || change.direction === 'new' ? 'text-emerald-800' : change.direction === 'down' ? 'text-amber-800' : 'text-[#6B6560]'}`}>
+    <div className="rounded-xl bg-brand-soft p-3 sm:p-4">
+      <p className="text-xs text-brand">{label}</p>
+      <p className="mt-1 text-2xl font-semibold tabular-nums text-ink">{current.toLocaleString('en-US')}</p>
+      <p className={`mt-1 inline-flex items-center gap-0.5 text-xs ${change.direction === 'up' || change.direction === 'new' ? 'text-brand' : change.direction === 'down' ? 'text-amber-800' : 'text-muted'}`}>
         {change.direction === 'up' && <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />}
         {change.direction === 'down' && <ArrowDownRight className="h-3.5 w-3.5" aria-hidden />}
-        {words ? (words === 'new' ? `new (0 before)` : words) : 'no visits yet'}
-        <span className="sr-only">compared with the same days last month ({previous})</span>
+        {words ? (words === 'new' ? t('owner.analytics.new0Before') : words === 'the same' ? t('owner.analytics.theSame') : t(change.direction === 'up' ? 'owner.analytics.increase' : 'owner.analytics.decrease', { percent: change.percent ?? 0 })) : t('owner.analytics.noVisitsYet')}
+        <span className="sr-only">{t('owner.analytics.comparedWithTheSameDaysLast', { change: previous })}</span>
       </p>
     </div>
   );
 }
 
 export function MonthlySummaryCard({ merchantId, getHeaders }: { merchantId: string; getHeaders: () => Promise<Record<string, string> | null> }) {
+  const t = useT();
+  const lang = useLang();
+  const locale = lang === 'zh' ? 'zh-Hans-MY' : lang === 'ms' ? 'ms-MY' : 'en-MY';
   const [summary, setSummary] = useState<Summary | null>(null);
 
   const load = useCallback(async () => {
@@ -50,25 +55,25 @@ export function MonthlySummaryCard({ merchantId, getHeaders }: { merchantId: str
   if (!summary) return null;
   const { ranges, thisMonth, sameDaysLastMonth, lastMonth } = summary;
   const days = `${dayOf(ranges.thisMonth.from)}–${dayOf(ranges.thisMonth.to)}`;
-  const thisPeriod = dayOf(ranges.thisMonth.to) === 1 ? `${shortMonth(ranges.thisMonth.label)} 1` : `${shortMonth(ranges.thisMonth.label)} ${days}`;
-  const lastPeriod = dayOf(ranges.sameDaysLastMonth.to) === 1 ? `${shortMonth(ranges.sameDaysLastMonth.label)} 1` : `${shortMonth(ranges.sameDaysLastMonth.label)} ${dayOf(ranges.sameDaysLastMonth.from)}–${dayOf(ranges.sameDaysLastMonth.to)}`;
+  const thisPeriod = dayOf(ranges.thisMonth.to) === 1 ? `${monthLabel(ranges.thisMonth.from, locale)} 1` : `${monthLabel(ranges.thisMonth.from, locale)} ${days}`;
+  const lastPeriod = dayOf(ranges.sameDaysLastMonth.to) === 1 ? `${monthLabel(ranges.sameDaysLastMonth.from, locale)} 1` : `${monthLabel(ranges.sameDaysLastMonth.from, locale)} ${dayOf(ranges.sameDaysLastMonth.from)}–${dayOf(ranges.sameDaysLastMonth.to)}`;
 
   return (
-    <section aria-labelledby="month-summary-title" className="rounded-2xl border border-[#DDE5DC] bg-white p-5 shadow-sm">
+    <section aria-labelledby="month-summary-title" className="rounded-[20px] border border-line bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 id="month-summary-title" className="font-serif text-xl text-[#2C3E2D]">This month so far</h2>
-        <p className="text-xs text-[#6B6560]">{thisPeriod} compared with {lastPeriod}</p>
+        <h2 id="month-summary-title" className="font-extrabold tracking-[-0.02em] text-xl text-ink">{t('owner.analytics.thisMonthSoFar')}</h2>
+        <p className="text-xs text-muted">{t('owner.analytics.periodComparison', { current: thisPeriod, previous: lastPeriod })}</p>
       </div>
       <div className="mt-3 grid grid-cols-1 gap-3 min-[420px]:grid-cols-3">
-        <Metric label="People who opened your page" current={thisMonth.views} previous={sameDaysLastMonth.views} />
-        <Metric label="Customers who tried to reach you" current={thisMonth.contacts} previous={sameDaysLastMonth.contacts} />
-        <Metric label="Menu views" current={thisMonth.menuViews} previous={sameDaysLastMonth.menuViews} />
+        <Metric label={t('owner.analytics.peopleWhoOpenedYourPage')} current={thisMonth.views} previous={sameDaysLastMonth.views} />
+        <Metric label={t('owner.analytics.customersWhoTriedToReachYou')} current={thisMonth.contacts} previous={sameDaysLastMonth.contacts} />
+        <Metric label={t('owner.analytics.menuViews')} current={thisMonth.menuViews} previous={sameDaysLastMonth.menuViews} />
       </div>
-      <p className="mt-3 text-sm text-[#4B4540]">
-        All of {ranges.lastMonth.label}: {lastMonth.views.toLocaleString('en-US')} page views, {lastMonth.contacts.toLocaleString('en-US')} customers reached you (WhatsApp {lastMonth.whatsapp}, calls {lastMonth.calls}, directions {lastMonth.directions}).
+      <p className="mt-3 text-sm text-ink-2">
+        {t(lastMonth.views === 1 && lastMonth.contacts === 1 ? 'owner.analytics.allOfPageViewsCustomersReachedViewsAndContactsOne' : lastMonth.views === 1 ? 'owner.analytics.allOfPageViewsCustomersReachedViewsOne' : lastMonth.contacts === 1 ? 'owner.analytics.allOfPageViewsCustomersReachedContactsOne' : 'owner.analytics.allOfPageViewsCustomersReached', { month: monthLabel(ranges.lastMonth.from, locale, true), views: lastMonth.views.toLocaleString('en-US'), contacts: lastMonth.contacts.toLocaleString('en-US'), whatsapp: lastMonth.whatsapp, calls: lastMonth.calls, directions: lastMonth.directions })}
       </p>
-      <p className="mt-1 text-xs text-[#6B6560]">
-        Numbers update every hour. <a href="#stats" className="inline-flex min-h-11 items-center underline underline-offset-2">See all visitor details</a>
+      <p className="mt-1 text-xs text-muted">
+        {t('owner.analytics.numbersUpdateEveryHour')} <a href="#stats" className="inline-flex min-h-11 items-center underline underline-offset-2">{t('owner.analytics.seeAllVisitorDetails')}</a>
       </p>
     </section>
   );

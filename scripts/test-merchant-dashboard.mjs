@@ -247,7 +247,8 @@ assert.match(feedbackSource, /disabled=\{!FEEDBACK_SENDING_ENABLED \|\| busy\}/,
 assert.match(feedbackSource, /if \(!FEEDBACK_SENDING_ENABLED \|\| !api \|\| !getHeaders\) return;/, "nothing is loaded while switched off");
 assert.match(feedbackSource, /event\.preventDefault\(\);\n\s*if \(!FEEDBACK_SENDING_ENABLED \|\| !api \|\| !getHeaders \|\| busy\) return;/, "submitting sends nothing while switched off");
 assert.equal((feedbackSource.match(/fetch\(/g) || []).length, 2, "only the guarded load and submit call the API");
-assert.match(feedbackSource, /Nothing you type here is sent or saved/, "merchants are told nothing is sent");
+assert.match(feedbackSource, /owner\.feedback\.sendingFeedbackFromTheDashboardIs/, "the disabled feedback notice is translated");
+assert.match(dashboardEnglish["owner.feedback.sendingFeedbackFromTheDashboardIs"], /Nothing you type here is sent or saved/, "merchants are told nothing is sent");
 // D2-B: there is no page-wide listing form any more (sections save on their own), so feedback can
 // never be submitted as part of a listing save.
 assert.ok(!pageSource.includes("<form") && pageSource.includes("<FeedbackPanel merchantId={profile.id} getHeaders={photoHeaders} />"), "feedback is not part of any listing save");
