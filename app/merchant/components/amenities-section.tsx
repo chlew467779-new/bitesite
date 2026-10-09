@@ -45,7 +45,7 @@ export function AmenitiesSection(props: SectionProps) {
                 const on = chosen.includes(tag);
                 return (
                   <button key={tag} type="button" aria-pressed={on} disabled={!on && full} onClick={() => toggle(tag)}
-                    className={`min-h-11 rounded-full border px-4 text-sm disabled:opacity-40 ${on ? 'border-[#2C3E2D] bg-[#2C3E2D] text-white' : 'border-[#C9D6C7] text-[#2C3E2D]'}`}>
+                    className={`min-h-11 rounded-full border px-4 text-sm disabled:opacity-40 ${on ? 'border-brand bg-brand text-on-brand' : 'border-line-strong bg-page text-ink'}`}>
                     {presetLabel(lang, tag)}
                   </button>
                 );

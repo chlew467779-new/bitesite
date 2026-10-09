@@ -64,3 +64,32 @@ for (const lang of ["en", "zh", "ms"]) {
   for (const value of [null, undefined, ""]) assert.equal(statusLabel(value, t("owner.common.draft"), t), t("owner.common.draft"));
 }
 console.log("Owner statuses localise in all three languages; unknown enums keep their previous display.");
+
+// G43c keeps stored option values and validates every display map against the dictionaries.
+for (const [file, names] of [["app/merchant/components/jobs-panel.tsx", ["jobTypeKeys", "problemKeys"]], ["app/merchant/components/feedback-panel.tsx", ["topicKeys"]], ["app/merchant/components/listing-panel.tsx", ["checkKeys", "intakeKeys"]], ["app/merchant/stories/page.tsx", ["submissionKeys"]]]) {
+  const source = await read(file);
+  for (const name of names) {
+    const body = source.match(new RegExp(`const ${name}[^=]*=\\s*\\{([\\s\\S]*?)\\}`));
+    assert.ok(body, `${file}: ${name} exists`);
+    const values = [...body[1].matchAll(/:\s*['"]([^'"]+)['"]/g)].map(m => m[1]);
+    assert.ok(values.length > 0);
+    for (const key of values) assert.ok(keys.includes(key), `${file}: ${key} exists in all locales`);
+  }
+}
+const jobs = await read("app/merchant/components/jobs-panel.tsx");
+const stateText = runInNewContext(ts.transpileModule("function stateText" + jobs.split("function stateText")[1].split("const emptyDraft")[0], { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText + "; stateText", { jobDaysLeft: () => 1 });
+for (const lang of ["en", "zh", "ms"]) {
+  const t = (key, vars = {}) => dicts[lang][key].replace(/\{(\w+)\}/g, (_, name) => vars[name] ?? `{${name}}`);
+  assert.equal(stateText({ status: "open", expiresAt: "x" }, t).text, t("owner.jobs.onYourPageDaysLeftOne", { days: 1 }));
+  assert.equal(stateText({ hidden: true }, t).text, t("owner.jobs.hiddenByBitesite"));
+}
+console.log("G43c option/status maps retain backend values and use three-language labels.");
+
+// Monthly percentages are UI text; the shared calculation and WhatsApp wording stay unchanged.
+const { changeWords, summaryChange } = await import("../lib/monthly-summary-core.mjs");
+const monthly = await read("app/merchant/components/monthly-summary-card.tsx");
+for (const lang of ["en", "zh", "ms"]) {
+  const t = (key, vars = {}) => dicts[lang][key].replace(/\{(\w+)\}/g, (_, name) => vars[name] ?? `{${name}}`);
+  const Metric = runInNewContext(ts.transpileModule("function Metric" + monthly.split("function Metric")[1].split("export function MonthlySummaryCard")[0], { compilerOptions: { target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.React } }).outputText + "; Metric", { React: { createElement: (tag, props, ...children) => ({ tag, props, children }) }, useT: () => t, changeWords, summaryChange, ArrowUpRight: () => null, ArrowDownRight: () => null });
+  for (const [current, key, percent] of [[60, "owner.analytics.increase", 20], [40, "owner.analytics.decrease", 20], [50, "owner.analytics.theSame", 0]]) assert.ok(JSON.stringify(Metric({ label: "Metric", current, previous: 50 })).includes(t(key, { percent })), `${lang}: monthly ${key} renders in this language`);
+}

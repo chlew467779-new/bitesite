@@ -49,7 +49,9 @@ assert.match(migration, /cron\.schedule\('privacy_retention_cleanup', '30 19 \* 
 /* Linked where people need it. */
 assert.match(await read("components/sections/footer.tsx"), /href(=|: )"\/privacy"/, "footer link");
 assert.match(await read("app/merchant/login/page.tsx"), /mode === 'register' && <p[^\n]*href="\/privacy"/, "sign-up page link");
-assert.match(await read("app/merchant/new/page.tsx"), /have read the <a href="\/privacy"/, "create-restaurant agreement mentions it");
+const newRestaurant = await read("app/merchant/new/page.tsx");
+assert.match(newRestaurant, /owner\.onboarding\.andHaveReadThe[^\n]*href="\/privacy"/, "create-restaurant agreement still links the privacy policy");
+assert.match(JSON.parse(await read("lib/i18n/en.json"))["owner.onboarding.andHaveReadThe"], /have read the/, "the agreement retains its meaning");
 assert.match(await read("app/sitemap.ts"), /\$\{siteUrl\}\/privacy/, "in the sitemap");
 const page = await read("app/privacy/page.tsx");
 assert.match(page, /id="english"/);

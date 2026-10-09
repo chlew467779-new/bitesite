@@ -27,7 +27,8 @@ assert.doesNotMatch(page, /PageViewTracker|ViewTracker|GrabFoodOrderButton/, "no
 assert.doesNotMatch(page, /supabase-admin|SERVICE_ROLE/i, "no service role in browser code");
 assert.match(page, /<DeliveryOrderButtons links=\{data\.deliveryLinks/, "the preview shows the approved order buttons (T2)");
 assert.match(await read("app/api/_lib/merchant-preview.ts"), /merchant_external_links'\)\.select\('link_type, url'\)[^\n]*\.eq\('is_active', true\)/, "only approved delivery links");
-assert.match(page, /Preview — only you can see this/);
+assert.match(page, /owner\.preview\.previewOnlyYouCanSeeThis/);
+assert.match(JSON.parse(await read("lib/i18n/en.json"))["owner.preview.previewOnlyYouCanSeeThis"], /Preview — only you can see this/);
 assert.match(page, /\/api\/admin\/merchants\/\$\{encodeURIComponent\(selected\)\}\/preview/, "Admin preview uses the Admin route");
 assert.match(await read("app/merchant/preview/layout.tsx"), /robots: \{ index: false, follow: false \}/);
 assert.match(await read("app/merchant/page.tsx"), /merchantPageUrl\('\/merchant\/preview', profile\.id\)/, "dashboard links to the preview");
